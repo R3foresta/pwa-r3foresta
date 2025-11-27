@@ -1,18 +1,90 @@
+import { useMemo, useState } from 'react'
+
+type CollectionType = 'seed' | 'cutting'
+type Screen =
+  | 'home'
+  | 'collections'
+  | 'map'
+  | 'scan'
+  | 'report'
+  | 'profile'
+  | 'nursery'
+  | 'planting'
+  | 'co2'
+
+type FilterKey = 'Todos' | 'Semilla' | 'Esqueje' | 'Ambos'
+
+type CollectionRecord = {
+  id: string
+  location: string
+  species: string
+  quantity: string
+  date: string
+  types: CollectionType[]
+}
+
 const metrics = [
   { label: 'Plantaciones', value: '3', helper: '' },
   { label: 'Listos para trasplantar', value: '120', helper: '' },
   { label: 'T CO₂', value: '20,6', helper: '' },
 ]
 
-const actions = ['Recolección', 'Vivero', 'Plantación', 'CO₂']
-
-const navItems = [
-  { label: 'Inicio', active: true, icon: 'home' },
-  { label: 'Mapa', active: false, icon: 'map' },
-  { label: 'Escanear', active: false, icon: 'scan' },
-  { label: 'Reporte', active: false, icon: 'report' },
-  { label: 'Perfil', active: false, icon: 'user' },
+const actions: { label: string; target: Screen }[] = [
+  { label: 'Recolección', target: 'collections' },
+  { label: 'Vivero', target: 'nursery' },
+  { label: 'Plantación', target: 'planting' },
+  { label: 'CO₂', target: 'co2' },
 ]
+
+const collectionFilters: FilterKey[] = ['Todos', 'Semilla', 'Esqueje', 'Ambos']
+
+const collectionRecords: CollectionRecord[] = [
+  {
+    id: 'REC-2025-014',
+    location: 'San Juan',
+    species: 'Cedrela sp.',
+    quantity: '2.88 kg',
+    date: '2025-11-05',
+    types: ['seed'],
+  },
+  {
+    id: 'REC-2025-013',
+    location: 'Samaipata',
+    species: 'Quercus sp.',
+    quantity: '50 unidades',
+    date: '2025-11-03',
+    types: ['cutting'],
+  },
+  {
+    id: 'REC-2025-012',
+    location: 'Coroico',
+    species: 'Pinus sp.',
+    quantity: '1.2 kg + 30 unidades',
+    date: '2025-11-01',
+    types: ['seed', 'cutting'],
+  },
+]
+
+const navItems: { label: string; icon: string; screen: Screen }[] = [
+  { label: 'Inicio', icon: 'home', screen: 'home' },
+  { label: 'Recolección', icon: 'leaf', screen: 'collections' },
+  { label: 'Mapa', icon: 'map', screen: 'map' },
+  { label: 'Escanear', icon: 'scan', screen: 'scan' },
+  { label: 'Reporte', icon: 'report', screen: 'report' },
+  { label: 'Perfil', icon: 'user', screen: 'profile' },
+]
+
+const screenTitle: Record<Screen, string> = {
+  home: 'Inicio',
+  collections: 'Recolecciones',
+  map: 'Mapa',
+  scan: 'Escanear',
+  report: 'Reporte',
+  profile: 'Perfil',
+  nursery: 'Vivero',
+  planting: 'Plantación',
+  co2: 'CO₂',
+}
 
 function Icon({ name, className }: { name: string; className?: string }) {
   const common = 'stroke-current'
@@ -142,86 +214,371 @@ function Icon({ name, className }: { name: string; className?: string }) {
           />
         </svg>
       )
+    case 'search':
+      return (
+        <svg
+          className={`${common} ${className ?? ''}`}
+          viewBox="0 0 24 24"
+          fill="none"
+          strokeWidth="1.8"
+        >
+          <circle cx="11" cy="11" r="6.5" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="m15.5 15.5 3 3" />
+        </svg>
+      )
+    case 'leaf':
+      return (
+        <svg
+          className={`${common} ${className ?? ''}`}
+          viewBox="0 0 24 24"
+          fill="none"
+          strokeWidth="1.8"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M18 5s-3 0-6 1.6C9 8 6 10.5 6 13c0 3 2.5 5 5.5 5 2.5 0 4.5-2 4.5-4.5C16 10 18 5 18 5Z"
+          />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 13.5 8 11" />
+        </svg>
+      )
+    case 'cutting':
+      return (
+        <svg
+          className={`${common} ${className ?? ''}`}
+          viewBox="0 0 24 24"
+          fill="none"
+          strokeWidth="1.8"
+        >
+          <circle cx="7" cy="7" r="2.2" />
+          <circle cx="7" cy="17" r="2.2" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="m9 7 10-4" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="m9 17 10 4" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="m8.5 12 9-5" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="m8.5 12 9 5" />
+        </svg>
+      )
+    case 'plus':
+      return (
+        <svg
+          className={`${common} ${className ?? ''}`}
+          viewBox="0 0 24 24"
+          fill="none"
+          strokeWidth="2"
+        >
+          <path strokeLinecap="round" d="M12 5v14" />
+          <path strokeLinecap="round" d="M5 12h14" />
+        </svg>
+      )
+    case 'arrow-left':
+      return (
+        <svg
+          className={`${common} ${className ?? ''}`}
+          viewBox="0 0 24 24"
+          fill="none"
+          strokeWidth="2"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 5 8 12l7 7" />
+        </svg>
+      )
+    case 'pin':
+      return (
+        <svg
+          className={`${common} ${className ?? ''}`}
+          viewBox="0 0 24 24"
+          fill="none"
+          strokeWidth="1.8"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 21s6-4.5 6-10a6 6 0 1 0-12 0c0 5.5 6 10 6 10Z"
+          />
+          <circle cx="12" cy="11" r="2.5" />
+        </svg>
+      )
     default:
       return null
   }
 }
 
-function App() {
+function CollectionCard({ record }: { record: CollectionRecord }) {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#f6f7f3] to-[#eef1eb] text-brand-700">
-      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-28 pt-6">
-        <header className="flex items-center justify-between">
-          <div className="text-2xl font-semibold tracking-tight text-brand-700">
-            R3foresta
+    <article className="relative rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="space-y-1">
+          <h3 className="text-xl font-extrabold tracking-tight text-slate-800">
+            {record.id}
+          </h3>
+          <div className="flex items-center gap-1 text-sm font-semibold text-slate-600">
+            <Icon name="pin" className="h-4 w-4 text-brand-500" />
+            <span>{record.location}</span>
           </div>
+          <p className="text-base font-semibold text-slate-700">{record.species}</p>
+          <p className="text-sm font-semibold text-slate-500">{record.quantity}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          {record.types.includes('seed') && (
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100">
+              <Icon name="leaf" className="h-5 w-5" />
+            </span>
+          )}
+          {record.types.includes('cutting') && (
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-teal-50 text-teal-600 ring-1 ring-teal-100">
+              <Icon name="cutting" className="h-5 w-5" />
+            </span>
+          )}
+        </div>
+      </div>
+      <div className="mt-2 text-right text-sm font-semibold text-slate-500">
+        {record.date}
+      </div>
+    </article>
+  )
+}
+
+function HomeScreen({
+  onOpenCollections,
+  onOpenPlaceholder,
+}: {
+  onOpenCollections: () => void
+  onOpenPlaceholder: (screen: Screen) => void
+}) {
+  return (
+    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-28 pt-6">
+      <header className="flex items-center justify-between">
+        <div className="text-2xl font-semibold tracking-tight text-brand-700">
+          R3foresta
+        </div>
+        <button
+          type="button"
+          className="rounded-full bg-white/90 p-2 shadow-sm transition hover:shadow-soft"
+          aria-label="Notificaciones"
+        >
+          <Icon name="bell" className="h-5 w-5 text-brand-700" />
+        </button>
+      </header>
+
+      <section className="mt-5">
+        <div className="flex items-center gap-3 rounded-2xl bg-brand-100 px-4 py-3 text-sm font-medium text-brand-700 shadow-sm">
+          <Icon name="dot" className="h-3 w-3 text-brand-600" />
+          <span>Elementos pendientes de sincronización</span>
+        </div>
+      </section>
+
+      <section className="mt-5 grid grid-cols-3 gap-3">
+        {metrics.map((item) => (
+          <div
+            key={item.label}
+            className="rounded-2xl bg-white px-3 py-3 text-brand-700 shadow-soft"
+          >
+            <div className="text-lg font-semibold leading-tight">{item.value}</div>
+            <p className="mt-1 text-[13px] font-medium text-brand-600">{item.label}</p>
+            {item.helper && <p className="mt-1 text-xs text-brand-500">{item.helper}</p>}
+          </div>
+        ))}
+      </section>
+
+      <section className="mt-6 grid grid-cols-2 gap-4">
+        {actions.map((action) => (
+          <button
+            key={action.label}
+            type="button"
+            onClick={() =>
+              action.target === 'collections'
+                ? onOpenCollections()
+                : onOpenPlaceholder(action.target)
+            }
+            className="rounded-2xl bg-brand-500 py-5 text-center text-lg font-semibold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99]"
+          >
+            {action.label}
+          </button>
+        ))}
+      </section>
+    </div>
+  )
+}
+
+function CollectionsScreen({ onBack }: { onBack: () => void }) {
+  const [filter, setFilter] = useState<FilterKey>('Todos')
+  const [query, setQuery] = useState('')
+
+  const filteredCollections = useMemo(() => {
+    const normalized = query.trim().toLowerCase()
+    return collectionRecords.filter((record) => {
+      const matchesSearch =
+        !normalized ||
+        [record.id, record.species, record.location]
+          .join(' ')
+          .toLowerCase()
+          .includes(normalized)
+
+      const matchesFilter =
+        filter === 'Todos'
+          ? true
+          : filter === 'Semilla'
+            ? record.types.includes('seed')
+            : filter === 'Esqueje'
+              ? record.types.includes('cutting')
+              : record.types.length > 1
+
+      return matchesSearch && matchesFilter
+    })
+  }, [filter, query])
+
+  return (
+    <div className="relative min-h-screen bg-[#eef2ed] text-brand-700">
+      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-32">
+        <div className="relative rounded-b-3xl bg-[#0f8351] px-5 pb-12 pt-10 text-white shadow-soft">
           <button
             type="button"
-            className="rounded-full bg-white/90 p-2 shadow-sm transition hover:shadow-soft"
-            aria-label="Notificaciones"
+            aria-label="Volver"
+            onClick={onBack}
+            className="absolute left-4 top-5 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
           >
-            <Icon name="bell" className="h-5 w-5 text-brand-700" />
+            <Icon name="arrow-left" className="h-5 w-5" />
           </button>
-        </header>
+          <p className="text-sm font-semibold uppercase tracking-wide text-white/80">
+            Recolecciones
+          </p>
+          <h1 className="mt-1 text-3xl font-extrabold leading-tight">Recolecciones</h1>
+          <p className="text-sm font-medium text-white/90">
+            Registro de material forestal
+          </p>
+        </div>
 
-        <section className="mt-5">
-          <div className="flex items-center gap-3 rounded-2xl bg-brand-100 px-4 py-3 text-sm font-medium text-brand-700 shadow-sm">
-            <Icon name="dot" className="h-3 w-3 text-brand-600" />
-            <span>Elementos pendientes de sincronización</span>
+        <div className="-mt-10 space-y-4 px-5">
+          <label className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-500 shadow-soft ring-1 ring-black/5">
+            <Icon name="search" className="h-5 w-5 text-slate-400" />
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Buscar por ID, especie o comunidad..."
+              className="w-full border-none bg-transparent text-base font-semibold text-slate-700 outline-none placeholder:font-medium placeholder:text-slate-400"
+              type="search"
+            />
+          </label>
+
+          <div className="flex flex-wrap gap-3">
+            {collectionFilters.map((option) => {
+              const isActive = filter === option
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setFilter(option)}
+                  className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                    isActive
+                      ? 'border-brand-500 bg-brand-500 text-white shadow-soft'
+                      : 'border-brand-100 bg-white text-brand-600 hover:border-brand-300'
+                  }`}
+                >
+                  {option}
+                </button>
+              )
+            })}
           </div>
-        </section>
 
-        <section className="mt-5 grid grid-cols-3 gap-3">
-          {metrics.map((item) => (
-            <div
-              key={item.label}
-              className="rounded-2xl bg-white px-3 py-3 text-brand-700 shadow-soft"
-            >
-              <div className="text-lg font-semibold leading-tight">{item.value}</div>
-              <p className="mt-1 text-[13px] font-medium text-brand-600">
-                {item.label}
-              </p>
-              {item.helper && (
-                <p className="mt-1 text-xs text-brand-500">{item.helper}</p>
-              )}
-            </div>
-          ))}
-        </section>
-
-        <section className="mt-6 grid grid-cols-2 gap-4">
-          {actions.map((action) => (
-            <button
-              key={action}
-              type="button"
-              className="rounded-2xl bg-brand-500 py-5 text-center text-lg font-semibold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99]"
-            >
-              {action}
-            </button>
-          ))}
-        </section>
+          <div className="space-y-3">
+            {filteredCollections.map((record) => (
+              <CollectionCard key={record.id} record={record} />
+            ))}
+            {filteredCollections.length === 0 && (
+              <div className="rounded-3xl bg-white px-4 py-6 text-center text-sm font-semibold text-slate-600 shadow-soft ring-1 ring-black/5">
+                No se encontraron recolecciones con esos filtros.
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 border-t border-white/60 bg-white/95 px-3 py-2 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-md items-center justify-between">
-          {navItems.map((item) => (
+      <button
+        type="button"
+        aria-label="Nueva recolección"
+        className="fixed bottom-24 right-6 flex h-14 w-14 items-center justify-center rounded-full bg-brand-500 text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.98]"
+      >
+        <Icon name="plus" className="h-6 w-6" />
+      </button>
+    </div>
+  )
+}
+
+function PlaceholderScreen({ title }: { title: string }) {
+  return (
+    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center px-6 pb-28 text-center text-brand-700">
+      <div className="rounded-3xl bg-white px-6 py-6 shadow-soft ring-1 ring-black/5">
+        <p className="text-sm font-semibold uppercase tracking-wide text-brand-600">
+          Próximamente
+        </p>
+        <h1 className="mt-2 text-2xl font-extrabold text-brand-700">{title}</h1>
+        <p className="mt-2 text-sm font-medium text-brand-600">
+          Estamos preparando esta sección.
+        </p>
+      </div>
+    </div>
+  )
+}
+
+function BottomNav({
+  active,
+  onChange,
+}: {
+  active: Screen
+  onChange: (screen: Screen) => void
+}) {
+  const activeNav = navItems.some((item) => item.screen === active) ? active : 'home'
+  return (
+    <nav className="fixed inset-x-0 bottom-0 border-t border-white/60 bg-white/95 px-2 py-2 backdrop-blur">
+      <div className="mx-auto flex w-full max-w-md items-center justify-between">
+        {navItems.map((item) => {
+          const isActive = item.screen === activeNav
+          return (
             <button
               key={item.label}
-              className={`flex flex-1 flex-col items-center gap-1 rounded-xl px-1 py-2 text-xs font-semibold transition ${
-                item.active ? 'text-brand-600' : 'text-brand-500'
+              onClick={() => onChange(item.screen)}
+              className={`flex flex-1 flex-col items-center gap-1 rounded-xl px-1 py-2 text-[11px] font-semibold transition ${
+                isActive ? 'text-brand-600' : 'text-brand-500'
               }`}
             >
               <div
                 className={`flex h-10 w-10 items-center justify-center rounded-xl ${
-                  item.active ? 'bg-brand-100 text-brand-600' : 'text-brand-500'
+                  isActive ? 'bg-brand-100 text-brand-600' : 'text-brand-500'
                 }`}
               >
                 <Icon name={item.icon} className="h-5 w-5" />
               </div>
               <span>{item.label}</span>
             </button>
-          ))}
-        </div>
-      </nav>
+          )
+        })}
+      </div>
+    </nav>
+  )
+}
+
+function App() {
+  const [screen, setScreen] = useState<Screen>('home')
+
+  const content = (() => {
+    switch (screen) {
+      case 'home':
+        return (
+          <HomeScreen
+            onOpenCollections={() => setScreen('collections')}
+            onOpenPlaceholder={(target) => setScreen(target)}
+          />
+        )
+      case 'collections':
+        return <CollectionsScreen onBack={() => setScreen('home')} />
+      default:
+        return <PlaceholderScreen title={screenTitle[screen]} />
+    }
+  })()
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-[#f6f7f3] to-[#eef1eb] text-brand-700">
+      {content}
+      <BottomNav active={screen} onChange={setScreen} />
     </div>
   )
 }
