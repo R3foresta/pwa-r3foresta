@@ -1,0 +1,117 @@
+import { useMemo, useState } from 'react'
+import Icon from '../../components/Icon'
+import { collectionFilters, collectionRecords } from './data'
+import CollectionCard from './CollectionCard'
+import type { FilterKey } from './types'
+
+type Props = {
+  onBack: () => void
+  onCreate: () => void
+}
+
+function CollectionsScreen({ onBack, onCreate }: Props) {
+  const [filter, setFilter] = useState<FilterKey>('Todos')
+  const [query, setQuery] = useState('')
+
+  const filteredCollections = useMemo(() => {
+    const normalized = query.trim().toLowerCase()
+    return collectionRecords.filter((record) => {
+      const matchesSearch =
+        !normalized ||
+        [record.id, record.species, record.location]
+          .join(' ')
+          .toLowerCase()
+          .includes(normalized)
+
+      const matchesFilter =
+        filter === 'Todos'
+          ? true
+          : filter === 'Semilla'
+            ? record.types.includes('seed')
+            : filter === 'Esqueje'
+              ? record.types.includes('cutting')
+              : record.types.length > 1
+
+      return matchesSearch && matchesFilter
+    })
+  }, [filter, query])
+
+  return (
+    <div className="relative min-h-screen bg-[#eef2ed] text-brand-700">
+      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-32">
+        <div className="relative rounded-b-3xl bg-[#0f8351] px-5 pb-12 pt-10 text-white shadow-soft">
+          <button
+            type="button"
+            aria-label="Volver"
+            onClick={onBack}
+            className="absolute left-4 top-5 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
+          >
+            <Icon name="arrow-left" className="h-5 w-5" />
+          </button>
+          <p className="text-sm font-semibold uppercase tracking-wide text-white/80">
+            Recolecciones
+          </p>
+          <h1 className="mt-1 text-3xl font-extrabold leading-tight">Recolecciones</h1>
+          <p className="text-sm font-medium text-white/90">
+            Registro de material forestal
+          </p>
+        </div>
+
+        <div className="-mt-10 space-y-4 px-5">
+          <label className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-500 shadow-soft ring-1 ring-black/5">
+            <Icon name="search" className="h-5 w-5 text-slate-400" />
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Buscar por ID, especie o comunidad..."
+              className="w-full border-none bg-transparent text-base font-semibold text-slate-700 outline-none placeholder:font-medium placeholder:text-slate-400"
+              type="search"
+            />
+          </label>
+
+          <div className="flex flex-wrap gap-3">
+            {collectionFilters.map((option) => {
+              const isActive = filter === option
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setFilter(option)}
+                  className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                    isActive
+                      ? 'border-brand-500 bg-brand-500 text-white shadow-soft'
+                      : 'border-brand-100 bg-white text-brand-600 hover:border-brand-300'
+                  }`}
+                >
+                  {option}
+                </button>
+              )
+            })}
+          </div>
+
+          <div className="space-y-3">
+            {filteredCollections.map((record) => (
+              <CollectionCard key={record.id} record={record} />
+            ))}
+            {filteredCollections.length === 0 && (
+              <div className="rounded-3xl bg-white px-4 py-6 text-center text-sm font-semibold text-slate-600 shadow-soft ring-1 ring-black/5">
+                No se encontraron recolecciones con esos filtros.
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        aria-label="Nueva recolección"
+        onClick={onCreate}
+        className="fixed bottom-24 right-6 flex h-14 w-14 items-center justify-center rounded-full bg-brand-500 text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.98]"
+      >
+        <Icon name="plus" className="h-6 w-6" />
+      </button>
+    </div>
+  )
+}
+
+export default CollectionsScreen
