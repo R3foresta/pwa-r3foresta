@@ -39,22 +39,21 @@ function CollectionsScreen({ onBack, onCreate }: Props) {
   return (
     <div className="relative min-h-screen bg-[#eef2ed] text-brand-700">
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-32">
-        <div className="relative rounded-b-3xl bg-[#0f8351] px-5 pb-12 pt-10 text-white shadow-soft">
+        <div className="flex rounded-b-3xl bg-[#0f8351] mb-3 px-5 pb-12 pt-10 text-white shadow-soft">
           <button
             type="button"
             aria-label="Volver"
             onClick={onBack}
-            className="absolute left-4 top-5 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
+            className="left-4 top-5 mr-4 my-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
           >
             <Icon name="arrow-left" className="h-5 w-5" />
           </button>
-          <p className="text-sm font-semibold uppercase tracking-wide text-white/80">
-            Recolecciones
-          </p>
-          <h1 className="mt-1 text-3xl font-extrabold leading-tight">Recolecciones</h1>
-          <p className="text-sm font-medium text-white/90">
-            Registro de material forestal
-          </p>
+          <div className="flex flex-col justify-center">
+            <h1 className="mt-1 text-3xl font-extrabold leading-tight">Recolecciones</h1>
+            <p className="text-sm font-medium text-white/90">
+              Registro de material forestal
+            </p>
+          </div>
         </div>
 
         <div className="-mt-10 space-y-4 px-5">
