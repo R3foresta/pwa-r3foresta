@@ -11,7 +11,7 @@ function BottomNav({ active, onChange }: Props) {
   const activeNav = NAV_ACTIVE_FOR[active] ?? 'home'
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 border-t border-white/60 bg-white/95 px-2 py-2 backdrop-blur">
+    <nav className="fixed inset-x-0 bottom-0 pb-8 border-t border-white/60 bg-white/95 px-2 py-2 backdrop-blur">
       <div className="mx-auto flex w-full max-w-md items-center justify-between">
         {NAV_ITEMS.map((item) => {
           const isActive = item.screen === activeNav
