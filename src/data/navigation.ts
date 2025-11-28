@@ -13,6 +13,7 @@ export const NAV_ITEMS: NavItem<IconName>[] = [
 export const SCREEN_TITLE: Record<Screen, string> = {
   home: 'Inicio',
   collections: 'Recolecciones',
+  collectionDetail: 'Recolección',
   collectionForm: 'Nueva recolección',
   map: 'Mapa',
   scan: 'Escanear',
@@ -26,6 +27,7 @@ export const SCREEN_TITLE: Record<Screen, string> = {
 export const NAV_ACTIVE_FOR: Record<Screen, Screen> = {
   home: 'home',
   collections: 'collections',
+  collectionDetail: 'collections',
   collectionForm: 'collections',
   map: 'map',
   scan: 'scan',

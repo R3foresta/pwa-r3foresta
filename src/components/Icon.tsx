@@ -16,6 +16,7 @@ export type IconName =
   | 'chevron-down'
   | 'photo'
   | 'info'
+  | 'qr'
 
 type Props = {
   name: IconName
@@ -279,6 +280,30 @@ function Icon({ name, className }: Props) {
           <circle cx="12" cy="12" r="9" />
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6" />
           <circle cx="12" cy="8" r="0.8" fill="currentColor" />
+        </svg>
+      )
+    case 'qr':
+      return (
+        <svg
+          className={`${common} ${className ?? ''}`}
+          viewBox="0 0 24 24"
+          fill="none"
+          strokeWidth="1.6"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4 5a1 1 0 0 1 1-1h3v3H4Z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M13 4h3a1 1 0 0 1 1 1v3h-4Z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4 13h4v4H5a1 1 0 0 1-1-1Z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M14 14h2v2h-2Z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M16 16h2v2h-2Z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M14 18h2v2h-2Z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M18 14h2v2h-2Z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M14 10h2v2h-2Z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M18 10h2v2h-2Z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M18 18h2v2h-2Z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 9h2" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 6v2" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18h2" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M18 6v2" />
         </svg>
       )
     default:

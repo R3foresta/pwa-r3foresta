@@ -6,10 +6,11 @@ import type { FilterKey } from './types'
 
 type Props = {
   onBack: () => void
+  onSelect: (id: string) => void
   onCreate: () => void
 }
 
-function CollectionsScreen({ onBack, onCreate }: Props) {
+function CollectionsScreen({ onBack, onSelect, onCreate }: Props) {
   const [filter, setFilter] = useState<FilterKey>('Todos')
   const [query, setQuery] = useState('')
 
@@ -90,7 +91,14 @@ function CollectionsScreen({ onBack, onCreate }: Props) {
 
           <div className="space-y-3">
             {filteredCollections.map((record) => (
-              <CollectionCard key={record.id} record={record} />
+              <button
+                key={record.id}
+                type="button"
+                onClick={() => onSelect(record.id)}
+                className="w-full text-left"
+              >
+                <CollectionCard record={record} />
+              </button>
             ))}
             {filteredCollections.length === 0 && (
               <div className="rounded-3xl bg-white px-4 py-6 text-center text-sm font-semibold text-slate-600 shadow-soft ring-1 ring-black/5">

@@ -1,6 +1,7 @@
 export type Screen =
   | 'home'
   | 'collections'
+  | 'collectionDetail'
   | 'collectionForm'
   | 'map'
   | 'scan'
