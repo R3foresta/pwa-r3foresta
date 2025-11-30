@@ -1,7 +1,36 @@
 import Icon from "../../components/Icon";
-import type { CollectionRecord } from "./types";
+import type { CollectionRecord, CollectionType, CollectionEstado } from "./types";
 
 function CollectionCard({ record }: { record: CollectionRecord }) {
+  // Función para obtener los estilos del tipo
+  const getTypeStyles = (type: CollectionType) => {
+    switch (type) {
+      case 'Semilla':
+        return 'bg-emerald-50 text-emerald-700 ring-emerald-100';
+      case 'Esqueje':
+        return 'bg-orange-50 text-orange-700 ring-orange-100';
+      default:
+        return 'bg-slate-50 text-slate-700 ring-slate-100';
+    }
+  };
+
+  // Función para obtener los estilos del estado
+  const getEstadoStyles = (estado: CollectionEstado) => {
+    switch (estado) {
+      case 'Alamacenado':
+        return 'bg-green-50 text-green-700 ring-green-100';
+      case 'Usado':
+        return 'bg-blue-50 text-blue-700 ring-blue-100';
+      case 'Vencido':
+        return 'bg-orange-50 text-orange-700 ring-orange-100';
+      case 'Perdidido':
+      case 'Desechado':
+        return 'bg-red-50 text-red-700 ring-red-100';
+      default:
+        return 'bg-slate-50 text-slate-700 ring-slate-100';
+    }
+  };
+
   return (
     <article className="relative rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
       <div className="flex items-start justify-between gap-3">
@@ -53,6 +82,24 @@ function CollectionCard({ record }: { record: CollectionRecord }) {
             )}
           </div>
         </div>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {record.types.map((type, index) => (
+          <span 
+            key={`type-${index}`}
+            className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${getTypeStyles(type)}`}
+          >
+            {type}
+          </span>
+        ))}
+        {record.estado?.map((estado, index) => (
+          <span 
+            key={`estado-${index}`}
+            className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${getEstadoStyles(estado)}`}
+          >
+            {estado}
+          </span>
+        ))}
       </div>
     </article>
   );

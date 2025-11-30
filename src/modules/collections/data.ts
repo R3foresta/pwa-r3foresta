@@ -10,7 +10,8 @@ export const collectionRecords: CollectionRecord[] = [
     species: 'Cedrela sp.',
     quantity: '2.88 kg',
     date: '2025-11-05',
-    types: ['seed'],
+    types: ['Semilla'],
+    estado: ['Alamacenado'],
   },
   {
     id: 'REC-2025-013',
@@ -19,7 +20,8 @@ export const collectionRecords: CollectionRecord[] = [
     species: 'Quercus sp.',
     quantity: '50 unidades',
     date: '2025-11-03',
-    types: ['cutting'],
+    types: ['Esqueje'],
+    estado: ['Usado'],
   },
   {
     id: 'REC-2025-012',
@@ -28,7 +30,8 @@ export const collectionRecords: CollectionRecord[] = [
     species: 'Pinus sp.',
     quantity: '1.2 kg + 30 unidades',
     date: '2025-11-01',
-    types: ['seed', 'cutting'],
+    types: ['Semilla', 'Esqueje'],
+    estado: ['Alamacenado'],
   },
   {
     id: 'REC-2025-015',
@@ -37,7 +40,8 @@ export const collectionRecords: CollectionRecord[] = [
     species: 'Cedrela sp.',
     quantity: '2.88 kg',
     date: '2025-11-05',
-    types: ['seed'],
+    types: ['Semilla'],
+    estado: ['Alamacenado'],
   },
   {
     id: 'REC-2025-016',
@@ -46,7 +50,8 @@ export const collectionRecords: CollectionRecord[] = [
     species: 'Quercus sp.',
     quantity: '50 unidades',
     date: '2025-11-03',
-    types: ['cutting'],
+    types: ['Esqueje'],
+    estado: ['Alamacenado'],
   },
   {
     id: 'REC-2025-017',
@@ -55,7 +60,8 @@ export const collectionRecords: CollectionRecord[] = [
     species: 'Pinus sp.',
     quantity: '1.2 kg + 30 unidades',
     date: '2025-11-01',
-    types: ['seed', 'cutting'],
+    types: ['Semilla', 'Esqueje'],
+    estado: ['Alamacenado'],
   },
 ]
 

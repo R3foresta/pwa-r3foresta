@@ -1,5 +1,5 @@
-export type CollectionType = 'seed' | 'cutting'
-
+export type CollectionType = 'Semilla' | 'Esqueje'
+export type CollectionEstado = 'Alamacenado' | 'Usado' | 'Vencido' | 'Perdidido' | 'Desechado'
 export type CollectionRecord = {
   id: string
   locationRecolecion: string
@@ -8,6 +8,7 @@ export type CollectionRecord = {
   quantity: string
   date: string
   types: CollectionType[]
+  estado?: CollectionEstado[]
   imageUrl?: string
 }
 
