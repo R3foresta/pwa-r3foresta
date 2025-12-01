@@ -1,4 +1,6 @@
+import { useState } from "react";
 import Icon from "../../components/Icon";
+import SuccessModal from "./SuccessModal";
 
 type Props = {
   onBack: () => void;
@@ -6,6 +8,7 @@ type Props = {
 };
 
 function SummaryForm({ onBack, onConfirm }: Props) {
+  const [showSuccess, setShowSuccess] = useState(false);
   // Aquí irían los datos del formulario que se pasarían como props
   // Por ahora uso datos de ejemplo
   
@@ -208,7 +211,7 @@ function SummaryForm({ onBack, onConfirm }: Props) {
 
             <button
               type="button"
-              onClick={onConfirm}
+              onClick={() => setShowSuccess(true)}
               className="w-full rounded-2xl bg-brand-500 py-4 text-center text-lg font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99]"
             >
               Subir registro a Blockchain
@@ -216,6 +219,20 @@ function SummaryForm({ onBack, onConfirm }: Props) {
           </div>
         </div>
       </div>
+
+      {showSuccess && (
+        <SuccessModal
+          onViewBlockchain={() => {
+            // Aquí iría la lógica para ver el registro en blockchain
+            setShowSuccess(false);
+            onConfirm();
+          }}
+          onBackToMenu={() => {
+            setShowSuccess(false);
+            onConfirm();
+          }}
+        />
+      )}
     </div>
   );
 }
