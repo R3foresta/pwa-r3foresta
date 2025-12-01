@@ -16,7 +16,9 @@ export type IconName =
   | 'chevron-down'
   | 'photo'
   | 'info'
-  | 'qr'
+  | 'balance'
+  | 'package'
+  | 'date'
 
 type Props = {
   name: IconName
@@ -282,28 +284,60 @@ function Icon({ name, className }: Props) {
           <circle cx="12" cy="8" r="0.8" fill="currentColor" />
         </svg>
       )
-    case 'qr':
+    case 'balance':
       return (
         <svg
           className={`${common} ${className ?? ''}`}
           viewBox="0 0 24 24"
           fill="none"
-          strokeWidth="1.6"
+          strokeWidth="1.8"
         >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M4 5a1 1 0 0 1 1-1h3v3H4Z" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M13 4h3a1 1 0 0 1 1 1v3h-4Z" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M4 13h4v4H5a1 1 0 0 1-1-1Z" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M14 14h2v2h-2Z" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M16 16h2v2h-2Z" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M14 18h2v2h-2Z" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M18 14h2v2h-2Z" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M14 10h2v2h-2Z" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M18 10h2v2h-2Z" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M18 18h2v2h-2Z" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M6 9h2" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 6v2" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18h2" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M18 6v2" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M6 9 4 15h8L10 9"
+          />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M14 9 12 15h8l-2-6"
+          />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 9h12" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9V6" />
+          <circle cx="12" cy="4.5" r="1.2" fill="currentColor" />
+          <path strokeLinecap="round" d="M5 19h14" />
+        </svg>
+      )
+    case 'package':
+      return (
+        <svg
+          className={`${common} ${className ?? ''}`}
+          viewBox="0 0 24 24"
+          fill="none"
+          strokeWidth="1.8"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 3 4 7v10l8 4 8-4V7l-8-4Z"
+          />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 12 4 8" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 12v9" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="m12 12 8-4" />
+        </svg>
+      )
+    case 'date':
+      return (
+        <svg
+          className={`${common} ${className ?? ''}`}
+          viewBox="0 0 24 24"
+          fill="none"
+          strokeWidth="1.8"
+        >
+          <rect x="4" y="5" width="16" height="16" rx="2" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4 10h16" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8 3v4" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M16 3v4" />
         </svg>
       )
     default:
