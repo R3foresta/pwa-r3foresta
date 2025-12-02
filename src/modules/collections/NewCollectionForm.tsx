@@ -1,25 +1,26 @@
-import { useState } from 'react'
-import Icon from '../../components/Icon'
-import { methodOptions, speciesOptions } from './data'
-import type { CollectionType } from './types'
+import { useState } from "react";
+import Icon from "../../components/Icon";
+import { methodOptions, speciesOptions } from "./data";
+import type { CollectionType } from "./types";
 
 type Props = {
-  onBack: () => void
-}
+  onBack: () => void;
+  onContinue: () => void;
+};
 
-function NewCollectionForm({ onBack }: Props) {
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10))
-  const [type, setType] = useState<CollectionType>('seed')
-  const [species, setSpecies] = useState('')
-  const [method, setMethod] = useState('')
-  const [quantity, setQuantity] = useState(3)
-  const [unit, setUnit] = useState<'Kg' | 'Unidades'>('Kg')
-  const [notes, setNotes] = useState('')
-  const [isNewFind, setIsNewFind] = useState(false)
+function NewCollectionForm({ onBack, onContinue }: Props) {
+  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [type, setType] = useState<CollectionType>("Semilla");
+  const [species, setSpecies] = useState("");
+  const [method, setMethod] = useState("");
+  const [quantity, setQuantity] = useState(3);
+  const [unit, setUnit] = useState<"Kg" | "Unidades">("Kg");
+  const [notes, setNotes] = useState("");
+  const [isNewFind, setIsNewFind] = useState(false);
 
   const changeQuantity = (delta: number) => {
-    setQuantity((value) => Math.max(0, value + delta))
-  }
+    setQuantity((value) => Math.max(0, value + delta));
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#f6f7f3] to-[#eef1eb] text-brand-700">
@@ -38,7 +39,8 @@ function NewCollectionForm({ onBack }: Props) {
               Nueva recolección
             </h1>
             <p className="text-sm font-semibold text-brand-500">
-              Paso 1 de 3 · <span className="text-slate-500">Datos generales</span>
+              Paso 1 de 3 ·{" "}
+              <span className="text-slate-500">Datos generales</span>
             </p>
           </div>
         </header>
@@ -55,13 +57,15 @@ function NewCollectionForm({ onBack }: Props) {
           </div>
 
           <div className="space-y-3">
-            <p className="text-base font-extrabold text-brand-700">Seleccionar tipo</p>
+            <p className="text-base font-extrabold text-brand-700">
+              Seleccionar tipo
+            </p>
             <div className="flex gap-3">
               {[
-                { label: 'Semilla', value: 'seed' as CollectionType },
-                { label: 'Esqueje', value: 'cutting' as CollectionType },
+                { label: "Semilla", value: "Semilla" as CollectionType },
+                { label: "Esqueje", value: "Esqueje" as CollectionType },
               ].map((option) => {
-                const isActive = type === option.value
+                const isActive = type === option.value;
                 return (
                   <button
                     key={option.value}
@@ -69,19 +73,21 @@ function NewCollectionForm({ onBack }: Props) {
                     onClick={() => setType(option.value)}
                     className={`flex-1 rounded-2xl border px-4 py-3 text-center text-base font-extrabold shadow-soft transition ${
                       isActive
-                        ? 'border-brand-500 bg-emerald-50 text-brand-600 ring-2 ring-emerald-100'
-                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                        ? "border-brand-500 bg-emerald-50 text-brand-600 ring-2 ring-emerald-100"
+                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
                     }`}
                   >
                     {option.label}
                   </button>
-                )
+                );
               })}
             </div>
           </div>
 
           <div className="space-y-2">
-            <p className="text-base font-extrabold text-brand-700">Especie de la semilla</p>
+            <p className="text-base font-extrabold text-brand-700">
+              Especie de la semilla
+            </p>
             <div className="flex items-center rounded-2xl border border-slate-200 bg-white px-4 shadow-soft focus-within:border-brand-400 focus-within:ring-2 focus-within:ring-brand-200">
               <select
                 value={species}
@@ -114,19 +120,26 @@ function NewCollectionForm({ onBack }: Props) {
                   type="number"
                   min={0}
                   value={quantity}
-                  onChange={(event) => setQuantity(Math.max(0, Number(event.target.value)))}
+                  onChange={(event) =>
+                    setQuantity(Math.max(0, Number(event.target.value)))
+                  }
                   className="w-16 bg-transparent text-center text-lg font-extrabold outline-none"
                 />
                 <div className="relative flex items-center">
                   <select
                     value={unit}
-                    onChange={(event) => setUnit(event.target.value as 'Kg' | 'Unidades')}
+                    onChange={(event) =>
+                      setUnit(event.target.value as "Kg" | "Unidades")
+                    }
                     className="appearance-none bg-transparent pr-6 text-sm font-bold text-slate-600 outline-none"
                   >
                     <option value="Kg">Kg</option>
                     <option value="Unidades">Unidades</option>
                   </select>
-                  <Icon name="chevron-down" className="pointer-events-none absolute right-0 h-4 w-4 text-slate-400" />
+                  <Icon
+                    name="chevron-down"
+                    className="pointer-events-none absolute right-0 h-4 w-4 text-slate-400"
+                  />
                 </div>
               </div>
               <button
@@ -140,7 +153,9 @@ function NewCollectionForm({ onBack }: Props) {
           </div>
 
           <div className="space-y-2">
-            <p className="text-base font-extrabold text-brand-700">Seleccionar método</p>
+            <p className="text-base font-extrabold text-brand-700">
+              Seleccionar método
+            </p>
             <div className="flex items-center rounded-2xl border border-slate-200 bg-white px-4 shadow-soft focus-within:border-brand-400 focus-within:ring-2 focus-within:ring-brand-200">
               <select
                 value={method}
@@ -160,11 +175,16 @@ function NewCollectionForm({ onBack }: Props) {
 
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <p className="text-base font-extrabold text-brand-700">Evidencia fotográfica</p>
-              <Icon name="arrow-left" className="h-4 w-4 rotate-180 text-slate-400" />
+              <p className="text-base font-extrabold text-brand-700">
+                Evidencia fotográfica
+              </p>
+              <Icon
+                name="arrow-left"
+                className="h-4 w-4 rotate-180 text-slate-400"
+              />
             </div>
             <div className="grid grid-cols-2 gap-3">
-              {['Lugar', 'Total recolectado'].map((label) => (
+              {["Lugar", "Total recolectado"].map((label) => (
                 <button
                   key={label}
                   type="button"
@@ -210,19 +230,17 @@ function NewCollectionForm({ onBack }: Props) {
               </p>
             </div>
           </label>
+          <button
+            type="button"
+            onClick={onContinue}
+            className="w-full rounded-2xl bg-brand-500 py-4 text-center text-lg font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99]"
+          >
+            Continuar
+          </button>
         </div>
       </div>
-
-      <div className="fixed inset-x-0 bottom-0 bg-gradient-to-t from-white via-white/95 to-white/80 px-5 pb-6 pt-3">
-        <button
-          type="button"
-          className="w-full rounded-2xl bg-brand-500 py-4 text-center text-lg font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99]"
-        >
-          Continuar
-        </button>
-      </div>
     </div>
-  )
+  );
 }
 
-export default NewCollectionForm
+export default NewCollectionForm;
