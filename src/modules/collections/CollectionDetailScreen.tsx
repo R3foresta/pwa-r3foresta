@@ -81,7 +81,7 @@ function CollectionDetailScreen({ record, onBack }: Props) {
               <Icon name="arrow-left" className="h-4 w-4 rotate-180 text-slate-400" />
             </div>
             <div className="mt-3 grid grid-cols-3 gap-3">
-              {detail?.photos.map((photo) => (
+              {detail?.photos.map((photo: { url: string; label: string }) => (
                 <figure key={photo.url} className="space-y-1 text-center">
                   <div className="overflow-hidden rounded-2xl shadow-sm ring-1 ring-slate-100">
                     <img
@@ -122,7 +122,7 @@ function CollectionDetailScreen({ record, onBack }: Props) {
           <section className="rounded-3xl bg-white px-4 py-4 shadow-soft">
             <h2 className="text-lg font-extrabold text-brand-700">Historial de ediciones</h2>
             <div className="mt-3 space-y-2 text-sm font-semibold text-slate-700">
-              {(detail?.edits ?? []).map((edit) => (
+              {(detail?.edits ?? []).map((edit: { date: string; description: string }) => (
                 <div key={`${edit.date}-${edit.description}`} className="flex gap-3">
                   <span className="min-w-[96px] text-slate-500">{edit.date}</span>
                   <span>{edit.description}</span>

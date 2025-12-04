@@ -4,6 +4,8 @@ import { SCREEN_TITLE } from './data/navigation'
 import CollectionsScreen from './modules/collections/CollectionsScreen'
 import CollectionDetailScreen from './modules/collections/CollectionDetailScreen'
 import NewCollectionForm from './modules/collections/NewCollectionForm'
+import LocationForm from './modules/collections/LocationForm'
+import SummaryForm from './modules/collections/SummaryForm'
 import HomeScreen from './modules/home/HomeScreen'
 import PlaceholderScreen from './modules/PlaceholderScreen'
 import { collectionRecords } from './modules/collections/data'
@@ -26,7 +28,7 @@ function App() {
         return (
           <CollectionsScreen
             onBack={() => setScreen('home')}
-            onSelect={(id) => {
+            onSelect={(id: string) => {
               setSelectedCollectionId(id)
               setScreen('collectionDetail')
             }}
@@ -44,7 +46,30 @@ function App() {
         )
       }
       case 'collectionForm':
-        return <NewCollectionForm onBack={() => setScreen('collections')} />
+        return (
+          <NewCollectionForm
+            onBack={() => setScreen('collections')}
+            onContinue={() => setScreen('collectionFormStep2')}
+          />
+        )
+      case 'collectionFormStep2':
+        return (
+          <LocationForm
+            onBack={() => setScreen('collectionForm')}
+            onContinue={() => setScreen('collectionFormStep3')}
+          />
+        )
+      case 'collectionFormStep3':
+        return (
+          <SummaryForm
+            onBack={() => setScreen('collectionFormStep2')}
+            onConfirm={() => {
+              // Aquí iría la lógica para guardar en blockchain
+              alert('Registro guardado exitosamente!')
+              setScreen('collections')
+            }}
+          />
+        )
       default:
         return <PlaceholderScreen title={SCREEN_TITLE[screen] ?? 'Próximamente'} />
     }

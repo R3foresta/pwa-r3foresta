@@ -19,6 +19,7 @@ export type IconName =
   | 'balance'
   | 'package'
   | 'date'
+  | 'qr'
 
 type Props = {
   name: IconName
@@ -338,6 +339,20 @@ function Icon({ name, className }: Props) {
           <path strokeLinecap="round" strokeLinejoin="round" d="M4 10h16" />
           <path strokeLinecap="round" strokeLinejoin="round" d="M8 3v4" />
           <path strokeLinecap="round" strokeLinejoin="round" d="M16 3v4" />
+        </svg>
+      )
+    case 'qr':
+      return (
+        <svg
+          className={`${common} ${className ?? ''}`}
+          viewBox="0 0 24 24"
+          fill="none"
+          strokeWidth="1.8"
+        >
+          <rect x="4" y="4" width="7" height="7" rx="1" />
+          <rect x="13" y="4" width="7" height="7" rx="1" />
+          <rect x="4" y="13" width="7" height="7" rx="1" />
+          <rect x="15" y="15" width="3" height="3" rx="0.5" fill="currentColor" />
         </svg>
       )
     default:

@@ -3,6 +3,8 @@ export type Screen =
   | 'collections'
   | 'collectionDetail'
   | 'collectionForm'
+  | 'collectionFormStep2'
+  | 'collectionFormStep3'
   | 'map'
   | 'scan'
   | 'report'

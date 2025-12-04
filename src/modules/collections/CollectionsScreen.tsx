@@ -2,19 +2,15 @@ import { useMemo, useState } from 'react'
 import Icon from '../../components/Icon'
 import { collectionFilters, collectionRecords } from './data'
 import CollectionCard from './CollectionCard'
-import NewCollectionForm from './NewCollectionForm'
-import LocationForm from './LocationForm'
-import SummaryForm from './SummaryForm'
 import type { FilterKey } from './types'
 
 type Props = {
   onBack: () => void
+  onSelect: (id: string) => void
+  onCreate: () => void
 }
 
-type View = 'list' | 'form-step1' | 'form-step2' | 'form-step3'
-
-function CollectionsScreen({ onBack }: Props) {
-  const [view, setView] = useState<View>('list')
+function CollectionsScreen({ onBack, onSelect, onCreate }: Props) {
   const [filter, setFilter] = useState<FilterKey>('Todos')
   const [query, setQuery] = useState('')
 
@@ -40,37 +36,6 @@ function CollectionsScreen({ onBack }: Props) {
       return matchesSearch && matchesFilter
     })
   }, [filter, query])
-
-  if (view === 'form-step1') {
-    return (
-      <NewCollectionForm
-        onBack={() => setView('list')}
-        onContinue={() => setView('form-step2')}
-      />
-    )
-  }
-
-  if (view === 'form-step2') {
-    return (
-      <LocationForm
-        onBack={() => setView('form-step1')}
-        onContinue={() => setView('form-step3')}
-      />
-    )
-  }
-
-  if (view === 'form-step3') {
-    return (
-      <SummaryForm
-        onBack={() => setView('form-step2')}
-        onConfirm={() => {
-          // Aquí iría la lógica para guardar en blockchain
-          alert('Registro guardado exitosamente!')
-          setView('list')
-        }}
-      />
-    )
-  }
 
   return (
     <div className="relative min-h-screen bg-[#eef2ed] text-brand-700">
@@ -147,7 +112,7 @@ function CollectionsScreen({ onBack }: Props) {
       <button
         type="button"
         aria-label="Nueva recolección"
-        onClick={() => setView('form-step1')}
+        onClick={onCreate}
         className="fixed bottom-24 right-6 mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-brand-500 text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.98]"
       >
         <Icon name="plus" className="h-6 w-6" />

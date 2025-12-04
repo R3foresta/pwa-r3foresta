@@ -10,6 +10,7 @@ export type CollectionRecord = {
   types: CollectionType[]
   estado?: CollectionEstado[]
   imageUrl?: string
+  detail?: CollectionDetail
 }
 
 export type FilterKey = 'Todos' | 'Semilla' | 'Esqueje' | 'Ambos'
