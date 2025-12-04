@@ -39,7 +39,7 @@ function LocationForm({ onBack, onContinue }: Props) {
           </div>
         </header>
 
-        <div className="flex-1 space-y-5 px-5">
+        <div className="flex-1 space-y-5 px-5 pb-7">
           <div>
             <h2 className="text-lg font-extrabold text-brand-700 mb-3">
               Registrar ubicación
@@ -175,7 +175,7 @@ function LocationForm({ onBack, onContinue }: Props) {
           <button
             type="button"
             onClick={onContinue}
-            className="w-full rounded-2xl bg-brand-500 py-4 text-center text-lg font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99]"
+            className="mb-8 w-full rounded-2xl bg-brand-500 py-4 text-center text-lg font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99]"
           >
             Subir registro a Blockchain
           </button>

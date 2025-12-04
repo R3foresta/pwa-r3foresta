@@ -24,7 +24,7 @@ function NewCollectionForm({ onBack, onContinue }: Props) {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#f6f7f3] to-[#eef1eb] text-brand-700">
-      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-24">
+      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-32">
         <header className="relative flex items-center justify-center px-5 pb-4 pt-6">
           <button
             type="button"
@@ -233,7 +233,7 @@ function NewCollectionForm({ onBack, onContinue }: Props) {
           <button
             type="button"
             onClick={onContinue}
-            className="w-full rounded-2xl bg-brand-500 py-4 text-center text-lg font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99]"
+            className="mb-8 w-full rounded-2xl bg-brand-500 py-4 text-center text-lg font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99]"
           >
             Continuar
           </button>
