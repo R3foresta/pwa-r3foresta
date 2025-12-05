@@ -1,16 +1,19 @@
 import { useState } from "react";
 import Icon from "../../components/Icon";
 import SuccessModal from "./SuccessModal";
+import type { CollectionFormData } from "./formTypes";
 
 type Props = {
   onBack: () => void;
   onConfirm: () => void;
+  formData: CollectionFormData;
 };
 
-function SummaryForm({ onBack, onConfirm }: Props) {
+function SummaryForm({ onBack, onConfirm, formData }: Props) {
   const [showSuccess, setShowSuccess] = useState(false);
-  // Aquí irían los datos del formulario que se pasarían como props
-  // Por ahora uso datos de ejemplo
+  const [traceabilityCode] = useState(() => 
+    `REC-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`
+  );
   
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-100 to-slate-200">
@@ -67,11 +70,11 @@ function SummaryForm({ onBack, onConfirm }: Props) {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="font-semibold text-slate-600">Fecha:</span>
-                  <span className="font-bold text-slate-800">2025-04-15</span>
+                  <span className="font-bold text-slate-800">{formData.date}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="font-semibold text-slate-600">Recolector:</span>
-                  <span className="font-bold text-slate-800">Juan Pérez</span>
+                  <span className="font-bold text-slate-800">Pablo</span>
                 </div>
               </div>
             </div>
@@ -87,19 +90,19 @@ function SummaryForm({ onBack, onConfirm }: Props) {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="font-semibold text-slate-600">Tipo:</span>
-                  <span className="font-bold text-slate-800">Semillas</span>
+                  <span className="font-bold text-slate-800">{formData.type}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="font-semibold text-slate-600">Especie:</span>
-                  <span className="font-bold text-slate-800">Pino ocarpa</span>
+                  <span className="font-bold text-slate-800">{formData.species || 'No especificada'}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="font-semibold text-slate-600">Cantidad:</span>
-                  <span className="font-bold text-slate-800">2.5 kg</span>
+                  <span className="font-bold text-slate-800">{formData.quantity} {formData.unit}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="font-semibold text-slate-600">Método:</span>
-                  <span className="font-bold text-slate-800">Colecta manual</span>
+                  <span className="font-bold text-slate-800">{formData.method || 'No especificado'}</span>
                 </div>
               </div>
             </div>
@@ -118,22 +121,28 @@ function SummaryForm({ onBack, onConfirm }: Props) {
                   <span className="text-xs font-semibold text-green-600">✓</span>
                 </div>
               </div>
-              <p className="mb-3 text-xs font-semibold text-slate-600">Obligatorio: 2/2 fotos</p>
+              <p className="mb-3 text-xs font-semibold text-slate-600">
+                Lugar: {formData.placePhotos.length} foto(s) | Total: {formData.totalPhotos.length} foto(s)
+              </p>
               <div className="grid grid-cols-2 gap-3">
-                <div className="aspect-square overflow-hidden rounded-xl bg-slate-100">
-                  <img 
-                    src="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400" 
-                    alt="Lugar"
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-                <div className="aspect-square overflow-hidden rounded-xl bg-slate-100">
-                  <img 
-                    src="https://images.unsplash.com/photo-1569163139394-de4798aa62b0?w=400" 
-                    alt="Mapa"
-                    className="h-full w-full object-cover"
-                  />
-                </div>
+                {formData.placePhotos.slice(0, 2).map((photo, index) => (
+                  <div key={index} className="aspect-square overflow-hidden rounded-xl bg-slate-100">
+                    <img 
+                      src={photo}
+                      alt={`Lugar ${index + 1}`}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                ))}
+                {formData.totalPhotos.slice(0, 2).map((photo, index) => (
+                  <div key={index} className="aspect-square overflow-hidden rounded-xl bg-slate-100">
+                    <img 
+                      src={photo}
+                      alt={`Total ${index + 1}`}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -146,33 +155,41 @@ function SummaryForm({ onBack, onConfirm }: Props) {
                 </h3>
               </div>
               <div className="space-y-2">
+                {formData.direccion && (
+                  <div className="flex justify-between text-sm">
+                    <span className="font-semibold text-slate-600">Dirección:</span>
+                    <span className="font-bold text-slate-800 text-right ml-4">{formData.direccion}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-sm">
                   <span className="font-semibold text-slate-600">País:</span>
-                  <span className="font-bold text-slate-800">Bolivia</span>
+                  <span className="font-bold text-slate-800">{formData.pais}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="font-semibold text-slate-600">Depto:</span>
-                  <span className="font-bold text-slate-800">La Paz</span>
+                  <span className="font-bold text-slate-800">{formData.depto}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="font-semibold text-slate-600">Provincia:</span>
-                  <span className="font-bold text-slate-800">Nor Yungas</span>
+                  <span className="font-bold text-slate-800">{formData.provincia}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="font-semibold text-slate-600">Comunidad:</span>
-                  <span className="font-bold text-slate-800">Comunidad San Juan</span>
+                  <span className="font-bold text-slate-800">{formData.comunidad}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="font-semibold text-slate-600">Coordenadas:</span>
-                  <span className="font-bold text-slate-800">-16.489689, -68.119293</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="font-semibold text-slate-600">Elevación:</span>
+                  <span className="font-semibold text-slate-600">Elevacion:</span>
                   <span className="font-bold text-slate-800">3640m</span>
                 </div>
+                {(formData.latitud && formData.longitud) && (
+                  <div className="flex justify-between text-sm">
+                    <span className="font-semibold text-slate-600">Coordenadas:</span>
+                    <span className="font-bold text-slate-800">{formData.latitud}, {formData.longitud}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-sm">
                   <span className="font-semibold text-slate-600">Almacenamiento:</span>
-                  <span className="font-bold text-slate-800">Vivero Mallasa</span>
+                  <span className="font-bold text-slate-800">{formData.almacenamiento}</span>
                 </div>
               </div>
             </div>
@@ -180,16 +197,22 @@ function SummaryForm({ onBack, onConfirm }: Props) {
             {/* Código de Trazabilidad */}
             <div className="rounded-2xl bg-white px-4 py-4 shadow-soft">
               <div className="mb-3 flex items-center gap-2">
-                <Icon name="scan" className="h-5 w-5 text-brand-500" />
+                <Icon name="qr" className="h-5 w-5 text-brand-500" />
                 <h3 className="text-base font-extrabold text-brand-700">
                   Código de Trazabilidad
                 </h3>
               </div>
               <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
-                <span className="font-bold text-slate-800">REC-2025-014</span>
+                <span className="font-bold text-slate-800">
+                  {traceabilityCode}
+                </span>
                 <button
                   type="button"
-                  className="text-xs font-semibold text-slate-400 underline"
+                  onClick={() => {
+                    navigator.clipboard.writeText(traceabilityCode);
+                    alert('Código copiado al portapapeles');
+                  }}
+                  className="text-xs font-semibold text-slate-400 underline hover:text-slate-600"
                 >
                   Copiar
                 </button>
@@ -197,17 +220,30 @@ function SummaryForm({ onBack, onConfirm }: Props) {
             </div>
 
             {/* Notas */}
-            <div className="rounded-2xl bg-white px-4 py-4 shadow-soft">
-              <div className="mb-3 flex items-center gap-2">
-                <Icon name="info" className="h-5 w-5 text-brand-500" />
-                <h3 className="text-base font-extrabold text-brand-700">
-                  Notas
-                </h3>
+            {formData.notes && (
+              <div className="rounded-2xl bg-white px-4 py-4 shadow-soft">
+                <div className="mb-3 flex items-center gap-2">
+                  <Icon name="info" className="h-5 w-5 text-brand-500" />
+                  <h3 className="text-base font-extrabold text-brand-700">
+                    Notas
+                  </h3>
+                </div>
+                <p className="text-sm text-slate-700">
+                  {formData.notes}
+                </p>
               </div>
-              <p className="text-sm text-slate-700">
-                Árboles sanos con buena producción. Colecta en horas matutinas.
-              </p>
-            </div>
+            )}
+
+            {formData.isNewFind && (
+              <div className="rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3 shadow-soft">
+                <div className="flex items-center gap-2">
+                  <Icon name="info" className="h-5 w-5 text-amber-600" />
+                  <p className="text-sm font-semibold text-amber-800">
+                    Marcado como posible nuevo hallazgo
+                  </p>
+                </div>
+              </div>
+            )}
 
             <button
               type="button"

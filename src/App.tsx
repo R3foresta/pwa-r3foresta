@@ -10,10 +10,13 @@ import HomeScreen from './modules/home/HomeScreen'
 import PlaceholderScreen from './modules/PlaceholderScreen'
 import { collectionRecords } from './modules/collections/data'
 import type { Screen } from './types/navigation'
+import type { CollectionFormData } from './modules/collections/formTypes'
+import { initialFormData } from './modules/collections/formTypes'
 
 function App() {
   const [screen, setScreen] = useState<Screen>('home')
   const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null)
+  const [formData, setFormData] = useState<CollectionFormData>(initialFormData)
 
   const content = (() => {
     switch (screen) {
@@ -48,15 +51,26 @@ function App() {
       case 'collectionForm':
         return (
           <NewCollectionForm
-            onBack={() => setScreen('collections')}
-            onContinue={() => setScreen('collectionFormStep2')}
+            onBack={() => {
+              setFormData(initialFormData)
+              setScreen('collections')
+            }}
+            onContinue={(data) => {
+              setFormData(prev => ({ ...prev, ...data }))
+              setScreen('collectionFormStep2')
+            }}
+            initialData={formData}
           />
         )
       case 'collectionFormStep2':
         return (
           <LocationForm
             onBack={() => setScreen('collectionForm')}
-            onContinue={() => setScreen('collectionFormStep3')}
+            onContinue={(data) => {
+              setFormData(prev => ({ ...prev, ...data }))
+              setScreen('collectionFormStep3')
+            }}
+            initialData={formData}
           />
         )
       case 'collectionFormStep3':
@@ -65,9 +79,12 @@ function App() {
             onBack={() => setScreen('collectionFormStep2')}
             onConfirm={() => {
               // Aquí iría la lógica para guardar en blockchain
+              console.log('Datos completos:', formData)
               alert('Registro guardado exitosamente!')
+              setFormData(initialFormData)
               setScreen('collections')
             }}
+            formData={formData}
           />
         )
       default:

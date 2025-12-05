@@ -1,20 +1,22 @@
 import { useState } from "react";
 import Icon from "../../components/Icon";
+import type { CollectionFormData } from "./formTypes";
 
 type Props = {
   onBack: () => void;
-  onContinue: () => void;
+  onContinue: (data: Partial<CollectionFormData>) => void;
+  initialData?: Partial<CollectionFormData>;
 };
 
-function LocationForm({ onBack, onContinue }: Props) {
-  const [direccion, setDireccion] = useState("");
-  const [latitud, setLatitud] = useState("");
-  const [longitud, setLongitud] = useState("");
-  const [pais, setPais] = useState("Bolivia");
-  const [depto, setDepto] = useState("La Paz");
-  const [provincia, setProvincia] = useState("Bolivia");
-  const [comunidad, setComunidad] = useState("La Paz");
-  const [almacenamiento, setAlmacenamiento] = useState("Vivero Mallasa");
+function LocationForm({ onBack, onContinue, initialData }: Props) {
+  const [direccion, setDireccion] = useState(initialData?.direccion || "");
+  const [latitud, setLatitud] = useState(initialData?.latitud || "");
+  const [longitud, setLongitud] = useState(initialData?.longitud || "");
+  const [pais, setPais] = useState(initialData?.pais || "Bolivia");
+  const [depto, setDepto] = useState(initialData?.depto || "La Paz");
+  const [provincia, setProvincia] = useState(initialData?.provincia || "Bolivia");
+  const [comunidad, setComunidad] = useState(initialData?.comunidad || "La Paz");
+  const [almacenamiento, setAlmacenamiento] = useState(initialData?.almacenamiento || "Vivero Mallasa");
   const [loadingLocation, setLoadingLocation] = useState(false);
 
   const getLocation = () => {
@@ -247,10 +249,21 @@ function LocationForm({ onBack, onContinue }: Props) {
 
           <button
             type="button"
-            onClick={onContinue}
+            onClick={() => {
+              onContinue({
+                direccion,
+                latitud,
+                longitud,
+                pais,
+                depto,
+                provincia,
+                comunidad,
+                almacenamiento,
+              });
+            }}
             className="mb-8 w-full rounded-2xl bg-brand-500 py-4 text-center text-lg font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99]"
           >
-            Subir registro a Blockchain
+            Continuar
           </button>
         </div>
       </div>

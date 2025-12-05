@@ -2,23 +2,29 @@ import { useState } from "react";
 import Icon from "../../components/Icon";
 import { methodOptions, speciesOptions } from "./data";
 import type { CollectionType } from "./types";
+import type { CollectionFormData } from "./formTypes";
 
 type Props = {
   onBack: () => void;
-  onContinue: () => void;
+  onContinue: (data: Partial<CollectionFormData>) => void;
+  initialData?: Partial<CollectionFormData>;
 };
 
-function NewCollectionForm({ onBack, onContinue }: Props) {
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
-  const [type, setType] = useState<CollectionType>("Semilla");
-  const [species, setSpecies] = useState("");
+function NewCollectionForm({ onBack, onContinue, initialData }: Props) {
+  const [date, setDate] = useState(() => initialData?.date || new Date().toISOString().slice(0, 10));
+  const [type, setType] = useState<CollectionType>(initialData?.type || "Semilla");
+  const [species, setSpecies] = useState(initialData?.species || "");
   const [customSpecies, setCustomSpecies] = useState("");
   const [showCustomSpecies, setShowCustomSpecies] = useState(false);
-  const [method, setMethod] = useState("");
-  const [quantity, setQuantity] = useState("0");
-  const [unit, setUnit] = useState<"Kg" | "Unidades" | "gr">("Kg");
-  const [notes, setNotes] = useState("");
-  const [isNewFind, setIsNewFind] = useState(false);
+  const [method, setMethod] = useState(initialData?.method || "");
+  const [quantity, setQuantity] = useState(initialData?.quantity || "0");
+  const [unit, setUnit] = useState<"Kg" | "Unidades" | "gr">(initialData?.unit || "Kg");
+  const [notes, setNotes] = useState(initialData?.notes || "");
+  const [isNewFind, setIsNewFind] = useState(initialData?.isNewFind || false);
+  const [placePhotos, setPlacePhotos] = useState<string[]>(initialData?.placePhotos || []);
+  const [totalPhotos, setTotalPhotos] = useState<string[]>(initialData?.totalPhotos || []);
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [modalType, setModalType] = useState<'place' | 'total'>('place');
 
   // Cambiar unidad automáticamente cuando cambia el tipo
   const handleTypeChange = (newType: CollectionType) => {
@@ -32,10 +38,6 @@ function NewCollectionForm({ onBack, onContinue }: Props) {
       }
     }
   };
-  const [placePhotos, setPlacePhotos] = useState<string[]>([]);
-  const [totalPhotos, setTotalPhotos] = useState<string[]>([]);
-  const [showPhotoModal, setShowPhotoModal] = useState(false);
-  const [modalType, setModalType] = useState<'place' | 'total'>('place');
 
   const changeQuantity = (delta: number) => {
     setQuantity((value) => {
@@ -92,7 +94,18 @@ function NewCollectionForm({ onBack, onContinue }: Props) {
       alert('Debes subir al menos una foto de Lugar y una de Total recolectado para continuar');
       return;
     }
-    onContinue();
+    onContinue({
+      date,
+      type,
+      species,
+      method,
+      quantity,
+      unit,
+      notes,
+      isNewFind,
+      placePhotos,
+      totalPhotos,
+    });
   };
 
   const hasMinimumPhotos = placePhotos.length >= 1 && totalPhotos.length >= 1;
