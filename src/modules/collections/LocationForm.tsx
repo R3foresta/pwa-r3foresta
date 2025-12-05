@@ -19,12 +19,12 @@ function LocationForm({ onBack, onContinue }: Props) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#f6f7f3] to-[#eef1eb] text-brand-700">
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-24">
-        <header className="relative flex items-center justify-center px-5 pb-4 pt-6">
+        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md flex items-center justify-center pb-4 pt-6 shadow-sm border-b border-slate-200/50">
           <button
             type="button"
             aria-label="Volver"
             onClick={onBack}
-            className="absolute left-4 top-6 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-brand-700 shadow-soft transition hover:bg-white"
+            className="absolute left-5 top-6 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-brand-700 shadow-soft transition hover:bg-white"
           >
             <Icon name="arrow-left" className="h-5 w-5" />
           </button>

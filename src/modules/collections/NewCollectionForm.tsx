@@ -15,7 +15,7 @@ function NewCollectionForm({ onBack, onContinue }: Props) {
   const [customSpecies, setCustomSpecies] = useState("");
   const [showCustomSpecies, setShowCustomSpecies] = useState(false);
   const [method, setMethod] = useState("");
-  const [quantity, setQuantity] = useState(3);
+  const [quantity, setQuantity] = useState("0");
   const [unit, setUnit] = useState<"Kg" | "Unidades" | "gr">("Kg");
   const [notes, setNotes] = useState("");
   const [isNewFind, setIsNewFind] = useState(false);
@@ -38,7 +38,27 @@ function NewCollectionForm({ onBack, onContinue }: Props) {
   const [modalType, setModalType] = useState<'place' | 'total'>('place');
 
   const changeQuantity = (delta: number) => {
-    setQuantity((value) => Math.max(0, value + delta));
+    setQuantity((value) => {
+      const numValue = parseFloat(value) || 0;
+      const newValue = Math.max(0, numValue + delta);
+      return newValue.toString();
+    });
+  };
+
+  const handleQuantityChange = (value: string) => {
+    // Permitir vacío, números y decimales
+    if (value === "" || value === "0") {
+      setQuantity("0");
+      return;
+    }
+    
+    // Remover ceros a la izquierda excepto si es "0." o "0.algo"
+    const cleanValue = value.replace(/^0+(?=\d)/, "");
+    
+    // Validar que sea un número válido con posible decimal
+    if (/^\d*\.?\d*$/.test(cleanValue)) {
+      setQuantity(cleanValue);
+    }
   };
 
   const handlePhotoUpload = (type: 'place' | 'total', event: React.ChangeEvent<HTMLInputElement>) => {
@@ -88,12 +108,12 @@ function NewCollectionForm({ onBack, onContinue }: Props) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#f6f7f3] to-[#eef1eb] text-brand-700">
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-32">
-        <header className="relative flex items-center justify-center px-5 pb-4 pt-6">
+        <header className="sticky top-0 z-40 bg-white/150 backdrop-blur-md flex items-center justify-center pb-4 pt-6 shadow-sm border-b border-slate-200/50">
           <button
             type="button"
             aria-label="Volver"
             onClick={onBack}
-            className="absolute left-4 top-6 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-brand-700 shadow-soft transition hover:bg-white"
+            className="absolute left-5 top-6 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-brand-700 shadow-soft transition hover:bg-white"
           >
             <Icon name="arrow-left" className="h-5 w-5" />
           </button>
@@ -244,12 +264,16 @@ function NewCollectionForm({ onBack, onContinue }: Props) {
               </button>
               <div className="flex flex-1 items-center justify-center gap-2">
                 <input
-                  type="number"
-                  min={0}
+                  type="text"
+                  inputMode="decimal"
                   value={quantity}
-                  onChange={(event) =>
-                    setQuantity(Math.max(0, Number(event.target.value)))
-                  }
+                  onChange={(event) => handleQuantityChange(event.target.value)}
+                  onBlur={() => {
+                    // Al perder foco, si está vacío poner 0
+                    if (quantity === "" || quantity === ".") {
+                      setQuantity("0");
+                    }
+                  }}
                   className="w-20 rounded-xl border border-slate-200 bg-transparent px-3 py-2 text-center text-lg font-extrabold text-slate-700 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
                 />
                 {type === "Semilla" ? (
