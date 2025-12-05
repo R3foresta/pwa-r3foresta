@@ -15,6 +15,64 @@ function LocationForm({ onBack, onContinue }: Props) {
   const [provincia, setProvincia] = useState("Bolivia");
   const [comunidad, setComunidad] = useState("La Paz");
   const [almacenamiento, setAlmacenamiento] = useState("Vivero Mallasa");
+  const [loadingLocation, setLoadingLocation] = useState(false);
+
+  const getLocation = () => {
+    setLoadingLocation(true);
+    
+    if (!navigator.geolocation) {
+      alert('La geolocalización no está disponible en tu navegador');
+      setLoadingLocation(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const lat = position.coords.latitude.toFixed(6);
+        const lng = position.coords.longitude.toFixed(6);
+        
+        setLatitud(lat);
+        setLongitud(lng);
+
+        // Obtener dirección usando Nominatim (OpenStreetMap)
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=es`
+          );
+          const data = await response.json();
+          
+          if (data.address) {
+            // Construir solo la dirección de calle/camino
+            const addressParts = [];
+            if (data.address.road) addressParts.push(data.address.road);
+            if (data.address.house_number) addressParts.push(data.address.house_number);
+            if (data.address.neighbourhood) addressParts.push(data.address.neighbourhood);
+            if (data.address.suburb) addressParts.push(data.address.suburb);
+            
+            const streetAddress = addressParts.length > 0 
+              ? addressParts.join(', ') 
+              : data.display_name.split(',')[0];
+            
+            setDireccion(streetAddress);
+          }
+        } catch (error) {
+          console.error('Error al obtener la dirección:', error);
+        }
+        
+        setLoadingLocation(false);
+      },
+      (error) => {
+        console.error('Error al obtener ubicación:', error);
+        alert('No se pudo obtener tu ubicación. Verifica los permisos.');
+        setLoadingLocation(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#f6f7f3] to-[#eef1eb] text-brand-700">
@@ -58,9 +116,24 @@ function LocationForm({ onBack, onContinue }: Props) {
                   />
                   <button
                     type="button"
-                    className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-brand-700 shadow-soft transition hover:bg-slate-50"
+                    onClick={getLocation}
+                    disabled={loadingLocation}
+                    className="rounded-2xl border border-brand-300 bg-brand-50 px-4 py-3 text-sm font-semibold text-brand-600 shadow-soft transition hover:bg-brand-100 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Map
+                    {loadingLocation ? (
+                      <span className="flex items-center gap-2">
+                        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        <span>...</span>
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1">
+                        <Icon name="pin" className="h-4 w-4" />
+                        <span>Map</span>
+                      </span>
+                    )}
                   </button>
                 </div>
               </div>
