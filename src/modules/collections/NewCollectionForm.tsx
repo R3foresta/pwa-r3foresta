@@ -17,10 +17,58 @@ function NewCollectionForm({ onBack, onContinue }: Props) {
   const [unit, setUnit] = useState<"Kg" | "Unidades">("Kg");
   const [notes, setNotes] = useState("");
   const [isNewFind, setIsNewFind] = useState(false);
+  const [placePhotos, setPlacePhotos] = useState<string[]>([]);
+  const [totalPhotos, setTotalPhotos] = useState<string[]>([]);
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [modalType, setModalType] = useState<'place' | 'total'>('place');
 
   const changeQuantity = (delta: number) => {
     setQuantity((value) => Math.max(0, value + delta));
   };
+
+  const handlePhotoUpload = (type: 'place' | 'total', event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files) {
+      Array.from(files).forEach(file => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const result = reader.result as string;
+          if (type === 'place') {
+            setPlacePhotos(prev => [...prev, result]);
+          } else {
+            setTotalPhotos(prev => [...prev, result]);
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  };
+
+  const removePhoto = (type: 'place' | 'total', index: number) => {
+    if (type === 'place') {
+      setPlacePhotos(prev => prev.filter((_, i) => i !== index));
+    } else {
+      setTotalPhotos(prev => prev.filter((_, i) => i !== index));
+    }
+  };
+
+  const handleContinue = () => {
+    if (placePhotos.length === 0 || totalPhotos.length === 0) {
+      alert('Debes subir al menos una foto de Lugar y una de Total recolectado para continuar');
+      return;
+    }
+    onContinue();
+  };
+
+  const hasMinimumPhotos = placePhotos.length >= 1 && totalPhotos.length >= 1;
+
+  const openPhotoModal = (type: 'place' | 'total') => {
+    setModalType(type);
+    setShowPhotoModal(true);
+  };
+
+  const currentPhotos = modalType === 'place' ? placePhotos : totalPhotos;
+  const modalTitle = modalType === 'place' ? 'Lugar' : 'Total recolectado';
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#f6f7f3] to-[#eef1eb] text-brand-700">
@@ -184,22 +232,81 @@ function NewCollectionForm({ onBack, onContinue }: Props) {
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
-              {["Lugar", "Total recolectado"].map((label) => (
-                <button
-                  key={label}
-                  type="button"
-                  className="flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-200 bg-white px-4 py-5 text-sm font-semibold text-slate-600 shadow-soft transition hover:border-brand-300 hover:bg-brand-50"
-                >
+              <button
+                type="button"
+                onClick={() => openPhotoModal('place')}
+                className="relative flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-200 bg-white px-4 py-5 text-sm font-semibold text-slate-600 shadow-soft transition hover:border-brand-300 hover:bg-brand-50 overflow-hidden"
+              >
+                {placePhotos.length > 0 ? (
+                  <div className="relative h-14 w-14">
+                    {placePhotos.slice(0, 3).map((photo, index) => (
+                      <img
+                        key={index}
+                        src={photo}
+                        alt={`Lugar ${index + 1}`}
+                        className="absolute h-14 w-14 rounded-xl object-cover shadow-md"
+                        style={{
+                          top: `${index * 3}px`,
+                          left: `${index * 3}px`,
+                          opacity: 1 - (index * 0.15),
+                          zIndex: 3 - index
+                        }}
+                      />
+                    ))}
+                  </div>
+                ) : (
                   <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
                     <Icon name="photo" className="h-6 w-6" />
                   </span>
-                  <span>{label}</span>
-                </button>
-              ))}
+                )}
+                {placePhotos.length > 0 && (
+                  <span className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-brand-500 text-xs font-bold text-white shadow-md">
+                    {placePhotos.length}
+                  </span>
+                )}
+                <span className={placePhotos.length > 0 ? "text-brand-600 font-extrabold" : ""}>Lugar</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => openPhotoModal('total')}
+                className="relative flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-200 bg-white px-4 py-5 text-sm font-semibold text-slate-600 shadow-soft transition hover:border-brand-300 hover:bg-brand-50 overflow-hidden"
+              >
+                {totalPhotos.length > 0 ? (
+                  <div className="relative h-14 w-14">
+                    {totalPhotos.slice(0, 3).map((photo, index) => (
+                      <img
+                        key={index}
+                        src={photo}
+                        alt={`Total ${index + 1}`}
+                        className="absolute h-14 w-14 rounded-xl object-cover shadow-md"
+                        style={{
+                          top: `${index * 3}px`,
+                          left: `${index * 3}px`,
+                          opacity: 1 - (index * 0.15),
+                          zIndex: 3 - index
+                        }}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
+                    <Icon name="photo" className="h-6 w-6" />
+                  </span>
+                )}
+                {totalPhotos.length > 0 && (
+                  <span className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-brand-500 text-xs font-bold text-white shadow-md">
+                    {totalPhotos.length}
+                  </span>
+                )}
+                <span className={totalPhotos.length > 0 ? "text-brand-600 font-extrabold" : ""}>Total recolectado</span>
+              </button>
             </div>
             <div className="flex items-center gap-2 text-xs font-semibold text-slate-600">
               <Icon name="info" className="h-4 w-4 text-brand-500" />
-              <span>Obligatorio: 0/2</span>
+              <span className={hasMinimumPhotos ? "text-brand-600" : ""}>
+                Obligatorio: Mínimo 1 de cada tipo ({placePhotos.length} lugar, {totalPhotos.length} total)
+              </span>
             </div>
           </div>
 
@@ -232,13 +339,83 @@ function NewCollectionForm({ onBack, onContinue }: Props) {
           </label>
           <button
             type="button"
-            onClick={onContinue}
-            className="mb-8 w-full rounded-2xl bg-brand-500 py-4 text-center text-lg font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99]"
+            onClick={handleContinue}
+            className="mb-8 w-full rounded-2xl bg-brand-500 py-4 text-center text-lg font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!hasMinimumPhotos}
           >
             Continuar
           </button>
         </div>
       </div>
+
+      {showPhotoModal && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50">
+          <div className="w-full max-w-md rounded-t-3xl bg-white pb-8">
+            <div className="rounded-3xl sticky top-0 flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4">
+              <h2 className="text-lg font-extrabold text-brand-700">
+                Fotos de {modalTitle}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowPhotoModal(false)}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="max-h-96 space-y-3 overflow-y-auto px-5 py-4">
+              {currentPhotos.length === 0 ? (
+                <p className="py-8 text-center text-sm font-semibold text-slate-500">
+                  No hay fotos aún
+                </p>
+              ) : (
+                currentPhotos.map((photo, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-3 rounded-2xl bg-slate-50 p-3"
+                  >
+                    <img
+                      src={photo}
+                      alt={`${modalTitle} ${index + 1}`}
+                      className="h-20 w-20 rounded-xl object-cover"
+                    />
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-slate-700">
+                        Foto {index + 1}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removePhoto(modalType, index)}
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-red-500 text-sm font-bold text-white transition hover:bg-red-600"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="px-5">
+              <label className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-brand-500 py-3 text-center text-base font-extrabold text-white shadow-soft transition hover:bg-brand-600">
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => {
+                    handlePhotoUpload(modalType, e);
+                    e.target.value = '';
+                  }}
+                  className="hidden"
+                />
+                <Icon name="photo" className="h-5 w-5" />
+                <span>Agregar foto</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
