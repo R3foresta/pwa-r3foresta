@@ -365,7 +365,7 @@ function NewCollectionForm({ onBack, onContinue, initialData }: Props) {
               <button
                 type="button"
                 onClick={() => openPhotoModal('place')}
-                className="relative flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-200 bg-white px-4 py-5 text-sm font-semibold text-slate-600 shadow-soft transition hover:border-brand-300 hover:bg-brand-50 overflow-hidden"
+                className="relative z-0 flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-200 bg-white px-4 py-5 text-sm font-semibold text-slate-600 shadow-soft transition hover:border-brand-300 hover:bg-brand-50 overflow-hidden"
               >
                 {placePhotos.length > 0 ? (
                   <div className="relative h-14 w-14">
@@ -400,7 +400,7 @@ function NewCollectionForm({ onBack, onContinue, initialData }: Props) {
               <button
                 type="button"
                 onClick={() => openPhotoModal('total')}
-                className="relative flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-200 bg-white px-4 py-5 text-sm font-semibold text-slate-600 shadow-soft transition hover:border-brand-300 hover:bg-brand-50 overflow-hidden"
+                className="relative z-0 flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-200 bg-white px-4 py-5 text-sm font-semibold text-slate-600 shadow-soft transition hover:border-brand-300 hover:bg-brand-50 overflow-hidden"
               >
                 {totalPhotos.length > 0 ? (
                   <div className="relative h-14 w-14">
