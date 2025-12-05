@@ -20,6 +20,9 @@ export type IconName =
   | 'package'
   | 'date'
   | 'qr'
+  | 'trash'
+  | 'check'
+  | 'x'
 
 type Props = {
   name: IconName
@@ -353,6 +356,44 @@ function Icon({ name, className }: Props) {
           <rect x="13" y="4" width="7" height="7" rx="1" />
           <rect x="4" y="13" width="7" height="7" rx="1" />
           <rect x="15" y="15" width="3" height="3" rx="0.5" fill="currentColor" />
+        </svg>
+      )
+    case 'trash':
+      return (
+        <svg
+          className={`${common} ${className ?? ''}`}
+          viewBox="0 0 24 24"
+          fill="none"
+          strokeWidth="1.8"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 6v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M10 11v6" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M14 11v6" />
+        </svg>
+      )
+    case 'check':
+      return (
+        <svg
+          className={`${common} ${className ?? ''}`}
+          viewBox="0 0 24 24"
+          fill="none"
+          strokeWidth="2.5"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      )
+    case 'x':
+      return (
+        <svg
+          className={`${common} ${className ?? ''}`}
+          viewBox="0 0 24 24"
+          fill="none"
+          strokeWidth="2"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M18 6L6 18" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 6l12 12" />
         </svg>
       )
     default:

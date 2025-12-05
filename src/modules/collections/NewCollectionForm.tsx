@@ -12,11 +12,26 @@ function NewCollectionForm({ onBack, onContinue }: Props) {
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [type, setType] = useState<CollectionType>("Semilla");
   const [species, setSpecies] = useState("");
+  const [customSpecies, setCustomSpecies] = useState("");
+  const [showCustomSpecies, setShowCustomSpecies] = useState(false);
   const [method, setMethod] = useState("");
   const [quantity, setQuantity] = useState(3);
-  const [unit, setUnit] = useState<"Kg" | "Unidades">("Kg");
+  const [unit, setUnit] = useState<"Kg" | "Unidades" | "gr">("Kg");
   const [notes, setNotes] = useState("");
   const [isNewFind, setIsNewFind] = useState(false);
+
+  // Cambiar unidad automáticamente cuando cambia el tipo
+  const handleTypeChange = (newType: CollectionType) => {
+    setType(newType);
+    if (newType === "Esqueje") {
+      setUnit("Unidades");
+    } else {
+      // Si cambia a Semilla y está en Unidades, cambiar a Kg
+      if (unit === "Unidades") {
+        setUnit("Kg");
+      }
+    }
+  };
   const [placePhotos, setPlacePhotos] = useState<string[]>([]);
   const [totalPhotos, setTotalPhotos] = useState<string[]>([]);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
@@ -118,7 +133,7 @@ function NewCollectionForm({ onBack, onContinue }: Props) {
                   <button
                     key={option.value}
                     type="button"
-                    onClick={() => setType(option.value)}
+                    onClick={() => handleTypeChange(option.value)}
                     className={`flex-1 rounded-2xl border px-4 py-3 text-center text-base font-extrabold shadow-soft transition ${
                       isActive
                         ? "border-brand-500 bg-emerald-50 text-brand-600 ring-2 ring-emerald-100"
@@ -136,21 +151,85 @@ function NewCollectionForm({ onBack, onContinue }: Props) {
             <p className="text-base font-extrabold text-brand-700">
               Especie de la semilla
             </p>
-            <div className="flex items-center rounded-2xl border border-slate-200 bg-white px-4 shadow-soft focus-within:border-brand-400 focus-within:ring-2 focus-within:ring-brand-200">
-              <select
-                value={species}
-                onChange={(event) => setSpecies(event.target.value)}
-                className="w-full bg-transparent py-3 text-base font-semibold text-slate-700 outline-none"
-              >
-                <option value="">Seleccionar especie</option>
-                {speciesOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-              <Icon name="chevron-down" className="h-4 w-4 text-slate-400" />
-            </div>
+            {!showCustomSpecies ? (
+              <div className="flex gap-2">
+                {species ? (
+                  <div className="flex flex-1 items-center justify-between rounded-2xl border border-brand-400 bg-brand-50 px-4 py-3 shadow-soft">
+                    <span className="text-base font-semibold text-brand-700">
+                      {species}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setSpecies("")}
+                      className="flex h-6 w-6 items-center justify-center rounded-full text-slate-500 transition hover:bg-white hover:text-red-500"
+                      title="Cambiar especie"
+                    >
+                      <Icon name="x" className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-1 items-center rounded-2xl border border-slate-200 bg-white px-4 shadow-soft focus-within:border-brand-400 focus-within:ring-2 focus-within:ring-brand-200">
+                    <select
+                      value={species}
+                      onChange={(event) => setSpecies(event.target.value)}
+                      className="w-full bg-transparent py-3 text-base font-semibold text-slate-700 outline-none"
+                    >
+                      <option value="">Seleccionar especie</option>
+                      {speciesOptions.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setShowCustomSpecies(true)}
+                  className="flex h-[52px] w-12 items-center justify-center rounded-2xl border border-brand-300 bg-brand-50 text-brand-600 shadow-soft transition hover:bg-brand-100"
+                  title="Agregar nueva especie"
+                >
+                  <Icon name="plus" className="h-5 w-5" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={customSpecies}
+                  onChange={(event) => setCustomSpecies(event.target.value)}
+                  placeholder="Nueva especie..."
+                  autoFocus
+                  className="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base font-semibold text-slate-700 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (customSpecies.trim()) {
+                      setSpecies(customSpecies.trim());
+                      setCustomSpecies("");
+                      setShowCustomSpecies(false);
+                    }
+                  }}
+                  disabled={!customSpecies.trim()}
+                  className="flex h-[52px] w-12 items-center justify-center rounded-2xl bg-brand-500 text-white shadow-soft transition hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Confirmar"
+                >
+                  <Icon name="check" className="h-5 w-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCustomSpecies(false);
+                    setCustomSpecies("");
+                  }}
+                  className="flex h-[52px] w-12 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-soft transition hover:bg-slate-50"
+                  title="Cancelar"
+                >
+                  <Icon name="x" className="h-5 w-5" />
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -163,7 +242,7 @@ function NewCollectionForm({ onBack, onContinue }: Props) {
               >
                 <Icon name="minus" className="h-5 w-5" />
               </button>
-              <div className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 px-3 py-2 font-extrabold text-slate-700">
+              <div className="flex flex-1 items-center justify-center gap-2">
                 <input
                   type="number"
                   min={0}
@@ -171,24 +250,38 @@ function NewCollectionForm({ onBack, onContinue }: Props) {
                   onChange={(event) =>
                     setQuantity(Math.max(0, Number(event.target.value)))
                   }
-                  className="w-16 bg-transparent text-center text-lg font-extrabold outline-none"
+                  className="w-20 rounded-xl border border-slate-200 bg-transparent px-3 py-2 text-center text-lg font-extrabold text-slate-700 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
                 />
-                <div className="relative flex items-center">
-                  <select
-                    value={unit}
-                    onChange={(event) =>
-                      setUnit(event.target.value as "Kg" | "Unidades")
-                    }
-                    className="appearance-none bg-transparent pr-6 text-sm font-bold text-slate-600 outline-none"
-                  >
-                    <option value="Kg">Kg</option>
-                    <option value="Unidades">Unidades</option>
-                  </select>
-                  <Icon
-                    name="chevron-down"
-                    className="pointer-events-none absolute right-0 h-4 w-4 text-slate-400"
-                  />
-                </div>
+                {type === "Semilla" ? (
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setUnit("Kg")}
+                      className={`rounded-xl border px-3 py-2 text-sm font-bold transition ${
+                        unit === "Kg"
+                          ? "border-brand-500 bg-brand-500 text-white shadow-sm"
+                          : "border-slate-200 bg-white text-slate-600 hover:border-brand-300 hover:bg-brand-50"
+                      }`}
+                    >
+                      Kg
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setUnit("gr")}
+                      className={`rounded-xl border px-3 py-2 text-sm font-bold transition ${
+                        unit === "gr"
+                          ? "border-brand-500 bg-brand-500 text-white shadow-sm"
+                          : "border-slate-200 bg-white text-slate-600 hover:border-brand-300 hover:bg-brand-50"
+                      }`}
+                    >
+                      gr
+                    </button>
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-brand-500 bg-brand-500 px-3 py-2 text-sm font-bold text-white shadow-sm">
+                    Unidades
+                  </div>
+                )}
               </div>
               <button
                 type="button"
@@ -358,7 +451,7 @@ function NewCollectionForm({ onBack, onContinue }: Props) {
               <button
                 type="button"
                 onClick={() => setShowPhotoModal(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-red-500 text-white transition hover:bg-red-700"
               >
                 ×
               </button>
@@ -390,7 +483,7 @@ function NewCollectionForm({ onBack, onContinue }: Props) {
                       onClick={() => removePhoto(modalType, index)}
                       className="flex h-8 w-8 items-center justify-center rounded-full bg-red-500 text-sm font-bold text-white transition hover:bg-red-600"
                     >
-                      ×
+                      <Icon name="trash" className="h-4 w-4" />
                     </button>
                   </div>
                 ))
