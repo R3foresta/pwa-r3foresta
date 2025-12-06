@@ -25,6 +25,12 @@ function NewCollectionForm({ onBack, onContinue, initialData }: Props) {
   const [totalPhotos, setTotalPhotos] = useState<string[]>(initialData?.totalPhotos || []);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [modalType, setModalType] = useState<'place' | 'total'>('place');
+  const [errors, setErrors] = useState({
+    date: false,
+    quantity: false,
+    photos: false,
+    method: false,
+  });
 
   // Cambiar unidad automáticamente cuando cambia el tipo
   const handleTypeChange = (newType: CollectionType) => {
@@ -60,6 +66,9 @@ function NewCollectionForm({ onBack, onContinue, initialData }: Props) {
     // Validar que sea un número válido con posible decimal
     if (/^\d*\.?\d*$/.test(cleanValue)) {
       setQuantity(cleanValue);
+      if (parseFloat(cleanValue) > 0) {
+        setErrors(prev => ({ ...prev, quantity: false }));
+      }
     }
   };
 
@@ -71,9 +80,23 @@ function NewCollectionForm({ onBack, onContinue, initialData }: Props) {
         reader.onloadend = () => {
           const result = reader.result as string;
           if (type === 'place') {
-            setPlacePhotos(prev => [...prev, result]);
+            setPlacePhotos(prev => {
+              const newPhotos = [...prev, result];
+              // Limpiar error si ahora hay fotos en ambos tipos
+              if (newPhotos.length > 0 && totalPhotos.length > 0) {
+                setErrors(prevErrors => ({ ...prevErrors, photos: false }));
+              }
+              return newPhotos;
+            });
           } else {
-            setTotalPhotos(prev => [...prev, result]);
+            setTotalPhotos(prev => {
+              const newPhotos = [...prev, result];
+              // Limpiar error si ahora hay fotos en ambos tipos
+              if (newPhotos.length > 0 && placePhotos.length > 0) {
+                setErrors(prevErrors => ({ ...prevErrors, photos: false }));
+              }
+              return newPhotos;
+            });
           }
         };
         reader.readAsDataURL(file);
@@ -90,10 +113,21 @@ function NewCollectionForm({ onBack, onContinue, initialData }: Props) {
   };
 
   const handleContinue = () => {
-    if (placePhotos.length === 0 || totalPhotos.length === 0) {
-      alert('Debes subir al menos una foto de Lugar y una de Total recolectado para continuar');
+    // Validar todos los campos obligatorios
+    const newErrors = {
+      date: !date,
+      quantity: parseFloat(quantity) <= 0,
+      photos: placePhotos.length === 0 || totalPhotos.length === 0,
+      method: !method,
+    };
+    
+    setErrors(newErrors);
+    
+    // Si hay algún error, no continuar
+    if (Object.values(newErrors).some(error => error)) {
       return;
     }
+    
     onContinue({
       date,
       type,
@@ -143,13 +177,23 @@ function NewCollectionForm({ onBack, onContinue, initialData }: Props) {
 
         <div className="flex-1 space-y-5 px-5">
           <div className="space-y-2">
-            <p className="text-sm font-semibold text-brand-700">Fecha</p>
+            <p className="text-sm font-semibold text-brand-700">Fecha <span className="text-red-500">*</span></p>
             <input
               type="date"
               value={date}
-              onChange={(event) => setDate(event.target.value)}
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base font-semibold text-slate-700 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
+              onChange={(event) => {
+                setDate(event.target.value);
+                setErrors(prev => ({ ...prev, date: false }));
+              }}
+              className={`w-full rounded-2xl border px-4 py-3 text-base font-semibold text-slate-700 shadow-soft outline-none transition focus:ring-2 ${
+                errors.date
+                  ? 'border-red-400 focus:border-red-400 focus:ring-red-200'
+                  : 'border-slate-200 bg-white focus:border-brand-400 focus:ring-brand-200'
+              }`}
             />
+            {errors.date && (
+              <p className="text-xs font-semibold text-red-500">* La fecha es obligatoria</p>
+            )}
           </div>
 
           <div className="space-y-3">
@@ -266,8 +310,12 @@ function NewCollectionForm({ onBack, onContinue, initialData }: Props) {
           </div>
 
           <div className="space-y-2">
-            <p className="text-base font-extrabold text-brand-700">Cantidad</p>
-            <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-3 shadow-soft">
+            <p className="text-base font-extrabold text-brand-700">Cantidad <span className="text-red-500">*</span></p>
+            <div className={`flex items-center gap-3 rounded-2xl border px-3 py-3 shadow-soft ${
+              errors.quantity
+                ? 'border-red-400 bg-red-50'
+                : 'border-slate-200 bg-white'
+            }`}>
               <button
                 type="button"
                 onClick={() => changeQuantity(-1)}
@@ -328,16 +376,26 @@ function NewCollectionForm({ onBack, onContinue, initialData }: Props) {
                 <Icon name="plus" className="h-5 w-5" />
               </button>
             </div>
+            {errors.quantity && (
+              <p className="text-xs font-semibold text-red-500">* La cantidad debe ser mayor a 0</p>
+            )}
           </div>
 
           <div className="space-y-2">
             <p className="text-base font-extrabold text-brand-700">
-              Seleccionar método
+              Seleccionar método <span className="text-red-500">*</span>
             </p>
-            <div className="flex items-center rounded-2xl border border-slate-200 bg-white px-4 shadow-soft focus-within:border-brand-400 focus-within:ring-2 focus-within:ring-brand-200">
+            <div className={`flex items-center rounded-2xl border px-4 shadow-soft ${
+              errors.method
+                ? 'border-red-400 bg-red-50 focus-within:border-red-400 focus-within:ring-2 focus-within:ring-red-200'
+                : 'border-slate-200 bg-white focus-within:border-brand-400 focus-within:ring-2 focus-within:ring-brand-200'
+            }`}>
               <select
                 value={method}
-                onChange={(event) => setMethod(event.target.value)}
+                onChange={(event) => {
+                  setMethod(event.target.value);
+                  setErrors(prev => ({ ...prev, method: false }));
+                }}
                 className="w-full bg-transparent py-3 text-base font-semibold text-slate-700 outline-none"
               >
                 <option value="">Seleccionar método</option>
@@ -349,12 +407,15 @@ function NewCollectionForm({ onBack, onContinue, initialData }: Props) {
               </select>
               <Icon name="chevron-down" className="h-4 w-4 text-slate-400" />
             </div>
+            {errors.method && (
+              <p className="text-xs font-semibold text-red-500">* Debes seleccionar un método de recolección</p>
+            )}
           </div>
 
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <p className="text-base font-extrabold text-brand-700">
-                Evidencia fotográfica
+                Evidencia fotográfica <span className="text-red-500">*</span>
               </p>
               <Icon
                 name="arrow-left"
@@ -438,6 +499,9 @@ function NewCollectionForm({ onBack, onContinue, initialData }: Props) {
                 Obligatorio: Mínimo 1 de cada tipo ({placePhotos.length} lugar, {totalPhotos.length} total)
               </span>
             </div>
+            {errors.photos && (
+              <p className="text-xs font-semibold text-red-500">* Debes agregar al menos 1 foto de Lugar y 1 de Total recolectado</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -470,8 +534,7 @@ function NewCollectionForm({ onBack, onContinue, initialData }: Props) {
           <button
             type="button"
             onClick={handleContinue}
-            className="mb-8 w-full rounded-2xl bg-brand-500 py-4 text-center text-lg font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={!hasMinimumPhotos}
+            className="mb-8 w-full rounded-2xl bg-brand-500 py-4 text-center text-lg font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99]"
           >
             Continuar
           </button>
@@ -556,7 +619,8 @@ function NewCollectionForm({ onBack, onContinue, initialData }: Props) {
               <button
                 type="button"
                 onClick={() => setShowPhotoModal(false)}
-                className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-brand-500 py-3 text-center text-base font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99]"
+                disabled={currentPhotos.length === 0}
+                className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-brand-500 py-3 text-center text-base font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500"
               >
                 <span>Continuar</span>
               </button>

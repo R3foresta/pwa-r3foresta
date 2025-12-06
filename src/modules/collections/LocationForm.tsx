@@ -18,6 +18,10 @@ function LocationForm({ onBack, onContinue, initialData }: Props) {
   const [comunidad, setComunidad] = useState(initialData?.comunidad || "La Paz");
   const [almacenamiento, setAlmacenamiento] = useState(initialData?.almacenamiento || "Vivero Mallasa");
   const [loadingLocation, setLoadingLocation] = useState(false);
+  const [errors, setErrors] = useState({
+    direccion: false,
+    coordinates: false,
+  });
 
   const getLocation = () => {
     setLoadingLocation(true);
@@ -35,6 +39,7 @@ function LocationForm({ onBack, onContinue, initialData }: Props) {
         
         setLatitud(lat);
         setLongitud(lng);
+        setErrors({ direccion: false, coordinates: false });
 
         // Obtener dirección usando Nominatim (OpenStreetMap)
         try {
@@ -79,7 +84,7 @@ function LocationForm({ onBack, onContinue, initialData }: Props) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#f6f7f3] to-[#eef1eb] text-brand-700">
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-24">
-        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md flex items-center justify-center pb-4 pt-6 shadow-sm border-b border-slate-200/50">
+        <header className="sticky top-0 z-40 bg-white/10 backdrop-blur-md flex items-center justify-center pb-4 pt-6 shadow-sm border-b border-slate-200/50">
           <button
             type="button"
             aria-label="Volver"
@@ -107,14 +112,23 @@ function LocationForm({ onBack, onContinue, initialData }: Props) {
             
             <div className="space-y-4">
               <div className="space-y-2">
-                <p className="text-sm font-semibold text-brand-700">Dirección</p>
+                <p className="text-sm font-semibold text-brand-700">Dirección <span className="text-red-500">*</span></p>
                 <div className="flex gap-2">
                   <input
                     type="text"
                     value={direccion}
-                    onChange={(event) => setDireccion(event.target.value)}
+                    onChange={(event) => {
+                      setDireccion(event.target.value);
+                      if (event.target.value.trim()) {
+                        setErrors(prev => ({ ...prev, direccion: false }));
+                      }
+                    }}
                     placeholder="Municipio Yanacachi, Provincia Sud Yun..."
-                    className="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
+                    className={`flex-1 rounded-2xl border px-4 py-3 text-sm font-semibold text-slate-700 shadow-soft outline-none transition focus:ring-2 ${
+                      errors.direccion
+                        ? 'border-red-400 bg-red-50 focus:border-red-400 focus:ring-red-200'
+                        : 'border-slate-200 bg-white focus:border-brand-400 focus:ring-brand-200'
+                    }`}
                   />
                   <button
                     type="button"
@@ -138,30 +152,58 @@ function LocationForm({ onBack, onContinue, initialData }: Props) {
                     )}
                   </button>
                 </div>
+                {errors.direccion && (
+                  <p className="text-xs font-semibold text-red-500">
+                    * La dirección es obligatoria. Usa el botón "Map" para obtenerla automáticamente o ingrésala manualmente.
+                  </p>
+                )}
               </div>
 
               <div className="flex gap-3">
                 <div className="flex-1 space-y-2">
-                  <p className="text-sm font-semibold text-brand-700">Latitud:</p>
+                  <p className="text-sm font-semibold text-brand-700">Latitud <span className="text-red-500">*</span></p>
                   <input
                     type="text"
                     value={latitud}
-                    onChange={(event) => setLatitud(event.target.value)}
-                    placeholder="-16.433"
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
+                    onChange={(event) => {
+                      setLatitud(event.target.value);
+                      if (event.target.value.trim() && longitud.trim()) {
+                        setErrors(prev => ({ ...prev, coordinates: false }));
+                      }
+                    }}
+                    placeholder="-16.500000"
+                    className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-slate-700 shadow-soft outline-none transition focus:ring-2 ${
+                      errors.coordinates
+                        ? 'border-red-400 bg-red-50 focus:border-red-400 focus:ring-red-200'
+                        : 'border-slate-200 bg-white focus:border-brand-400 focus:ring-brand-200'
+                    }`}
                   />
                 </div>
                 <div className="flex-1 space-y-2">
-                  <p className="text-sm font-semibold text-brand-700">Longitud:</p>
+                  <p className="text-sm font-semibold text-brand-700">Longitud <span className="text-red-500">*</span></p>
                   <input
                     type="text"
                     value={longitud}
-                    onChange={(event) => setLongitud(event.target.value)}
-                    placeholder="-67.136"
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
+                    onChange={(event) => {
+                      setLongitud(event.target.value);
+                      if (event.target.value.trim() && latitud.trim()) {
+                        setErrors(prev => ({ ...prev, coordinates: false }));
+                      }
+                    }}
+                    placeholder="-68.150000"
+                    className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-slate-700 shadow-soft outline-none transition focus:ring-2 ${
+                      errors.coordinates
+                        ? 'border-red-400 bg-red-50 focus:border-red-400 focus:ring-red-200'
+                        : 'border-slate-200 bg-white focus:border-brand-400 focus:ring-brand-200'
+                    }`}
                   />
                 </div>
               </div>
+              {errors.coordinates && (
+                <p className="text-xs font-semibold text-red-500">
+                  * Las coordenadas (latitud y longitud) son obligatorias. Usa el botón "Map" para obtenerlas automáticamente o ingrésalas manualmente.
+                </p>
+              )}
 
               <div className="flex gap-3">
                 <div className="flex-1 space-y-2">
@@ -228,7 +270,6 @@ function LocationForm({ onBack, onContinue, initialData }: Props) {
                   </div>
                 </div>
               </div>
-
               <div className="space-y-2">
                 <p className="text-sm font-semibold text-brand-700">Alamacenamiento:</p>
                 <div className="flex items-center rounded-2xl border border-slate-200 bg-white px-4 shadow-soft focus-within:border-brand-400 focus-within:ring-2 focus-within:ring-brand-200">
@@ -250,6 +291,17 @@ function LocationForm({ onBack, onContinue, initialData }: Props) {
           <button
             type="button"
             onClick={() => {
+              const newErrors = {
+                direccion: !direccion.trim(),
+                coordinates: !latitud.trim() || !longitud.trim(),
+              };
+              
+              setErrors(newErrors);
+              
+              if (Object.values(newErrors).some(error => error)) {
+                return;
+              }
+              
               onContinue({
                 direccion,
                 latitud,
