@@ -485,63 +485,81 @@ function NewCollectionForm({ onBack, onContinue, initialData }: Props) {
               <h2 className="text-lg font-extrabold text-brand-700">
                 Fotos de {modalTitle}
               </h2>
-              <button
-                type="button"
-                onClick={() => setShowPhotoModal(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-red-500 text-white transition hover:bg-red-700"
-              >
-                ×
-              </button>
             </div>
 
-            <div className="max-h-96 space-y-3 overflow-y-auto px-5 py-4">
+            <div className="px-5 py-4">
               {currentPhotos.length === 0 ? (
-                <p className="py-8 text-center text-sm font-semibold text-slate-500">
-                  No hay fotos aún
-                </p>
-              ) : (
-                currentPhotos.map((photo, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-3 rounded-2xl bg-slate-50 p-3"
-                  >
-                    <img
-                      src={photo}
-                      alt={`${modalTitle} ${index + 1}`}
-                      className="h-20 w-20 rounded-xl object-cover"
+                <div className="flex flex-col items-center justify-center py-1">
+                  <label className="mb-4 flex h-32 w-32 cursor-pointer items-center justify-center rounded-3xl border-2 border-dashed border-slate-300 bg-slate-50 transition hover:border-brand-400 hover:bg-brand-50 active:scale-95">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={(e) => {
+                        handlePhotoUpload(modalType, e);
+                        e.target.value = '';
+                      }}
+                      className="hidden"
                     />
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold text-slate-700">
-                        Foto {index + 1}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => removePhoto(modalType, index)}
-                      className="flex h-8 w-8 items-center justify-center rounded-full bg-red-500 text-sm font-bold text-white transition hover:bg-red-600"
+                    <Icon name="photo" className="h-12 w-12 text-slate-400" />
+                  </label>
+                  <p className="text-center text-sm font-semibold text-slate-500">
+                    No hay fotos aún
+                  </p>
+                  <p className="mt-1 text-center text-xs text-slate-400">
+                    Toca el ícono de imagen para agregar
+                  </p>
+                </div>
+              ) : (
+                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                  <label className="relative flex h-40 w-40 flex-shrink-0 cursor-pointer items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 transition hover:border-brand-400 hover:bg-brand-50 active:scale-95">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={(e) => {
+                        handlePhotoUpload(modalType, e);
+                        e.target.value = '';
+                      }}
+                      className="hidden"
+                    />
+                    <Icon name="plus" className="h-8 w-8 text-slate-400" />
+                  </label>
+                  {currentPhotos.map((photo, index) => (
+                    <div
+                      key={index}
+                      className="relative flex-shrink-0"
                     >
-                      <Icon name="trash" className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))
+                      <img
+                        src={photo}
+                        alt={`${modalTitle} ${index + 1}`}
+                        className="h-40 w-40 rounded-2xl object-cover shadow-md"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removePhoto(modalType, index)}
+                        className="absolute -right-2 -top-0 flex h-8 w-8 items-center justify-center rounded-full bg-red-500 text-white shadow-lg transition hover:bg-red-600 active:scale-95"
+                      >
+                        <Icon name="x" className="h-4 w-4" />
+                      </button>
+                      <div className="absolute bottom-2 left-2 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-xs font-bold text-white">
+                        {index + 1}
+                      </div>
+                    </div>
+                  ))}
+                  
+                </div>
               )}
             </div>
 
             <div className="px-5">
-              <label className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-brand-500 py-3 text-center text-base font-extrabold text-white shadow-soft transition hover:bg-brand-600">
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={(e) => {
-                    handlePhotoUpload(modalType, e);
-                    e.target.value = '';
-                  }}
-                  className="hidden"
-                />
-                <Icon name="photo" className="h-5 w-5" />
-                <span>Agregar foto</span>
-              </label>
+              <button
+                type="button"
+                onClick={() => setShowPhotoModal(false)}
+                className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-brand-500 py-3 text-center text-base font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99]"
+              >
+                <span>Continuar</span>
+              </button>
             </div>
           </div>
         </div>
