@@ -17,4 +17,5 @@ export type NavItem<IconKey = string> = {
   label: string
   icon: IconKey
   screen: Screen
+  path: string
 }

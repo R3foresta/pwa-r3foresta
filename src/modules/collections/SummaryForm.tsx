@@ -1,19 +1,21 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Icon from "../../components/Icon";
 import SuccessModal from "./SuccessModal";
-import type { CollectionFormData } from "./formTypes";
+import { useCollectionForm } from "./CollectionFormContext";
 
-type Props = {
-  onBack: () => void;
-  onConfirm: () => void;
-  formData: CollectionFormData;
-};
-
-function SummaryForm({ onBack, onConfirm, formData }: Props) {
+function SummaryForm() {
+  const navigate = useNavigate();
+  const { formData, resetForm } = useCollectionForm();
   const [showSuccess, setShowSuccess] = useState(false);
   const [traceabilityCode] = useState(() => 
     `REC-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`
   );
+  const summaryText = `${formData.quantity} ${formData.unit} de ${formData.species || formData.type}`;
+  const finalize = () => {
+    resetForm();
+    navigate('/app/collections');
+  };
   
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-100 to-slate-200">
@@ -22,7 +24,7 @@ function SummaryForm({ onBack, onConfirm, formData }: Props) {
           <button
             type="button"
             aria-label="Volver"
-            onClick={onBack}
+            onClick={() => navigate('/app/collections/new/location')}
             className="mr-4 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
           >
             <Icon name="arrow-left" className="h-5 w-5" />
@@ -261,12 +263,13 @@ function SummaryForm({ onBack, onConfirm, formData }: Props) {
           onViewBlockchain={() => {
             // Aquí iría la lógica para ver el registro en blockchain
             setShowSuccess(false);
-            onConfirm();
+            finalize();
           }}
           onBackToMenu={() => {
             setShowSuccess(false);
-            onConfirm();
+            finalize();
           }}
+          summaryText={summaryText}
         />
       )}
     </div>

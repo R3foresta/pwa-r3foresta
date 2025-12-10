@@ -1,102 +1,75 @@
-import { useState } from 'react'
-import BottomNav from './components/BottomNav'
-import { SCREEN_TITLE } from './data/navigation'
+import { Navigate, Route, Routes, useParams } from 'react-router-dom'
+import AuthLayout from './layouts/AuthLayout'
+import AppLayout from './layouts/AppLayout'
+import ProtectedRoute from './routes/ProtectedRoute'
+import GuestRoute from './routes/GuestRoute'
+import HomeScreen from './modules/home/HomeScreen'
 import CollectionsScreen from './modules/collections/CollectionsScreen'
 import CollectionDetailScreen from './modules/collections/CollectionDetailScreen'
 import NewCollectionForm from './modules/collections/NewCollectionForm'
 import LocationForm from './modules/collections/LocationForm'
 import SummaryForm from './modules/collections/SummaryForm'
-import HomeScreen from './modules/home/HomeScreen'
 import PlaceholderScreen from './modules/PlaceholderScreen'
+import CollectionFormLayout from './modules/collections/CollectionFormLayout'
+import LoginScreen from './modules/auth/LoginScreen'
+import RegisterScreen from './modules/auth/RegisterScreen'
+import RecoverScreen from './modules/auth/RecoverScreen'
 import { collectionRecords } from './modules/collections/data'
-import type { Screen } from './types/navigation'
-import type { CollectionFormData } from './modules/collections/formTypes'
-import { initialFormData } from './modules/collections/formTypes'
+import { useAuth } from './contexts/AuthContext'
+
+function RootRedirect() {
+  const { isAuthenticated, hydrated } = useAuth()
+  if (!hydrated) return null
+  return <Navigate to={isAuthenticated ? '/app/home' : '/auth/login'} replace />
+}
+
+function CollectionDetailRoute() {
+  const { id } = useParams()
+  const record = collectionRecords.find((item) => item.id === id)
+  if (!record) return <PlaceholderScreen title="Recolección no encontrada" />
+  return <CollectionDetailScreen record={record} onBackPath="/app/collections" />
+}
 
 function App() {
-  const [screen, setScreen] = useState<Screen>('home')
-  const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null)
-  const [formData, setFormData] = useState<CollectionFormData>(initialFormData)
-
-  const content = (() => {
-    switch (screen) {
-      case 'home':
-        return (
-          <HomeScreen
-            onOpenCollections={() => setScreen('collections')}
-            onOpenPlaceholder={(target) => setScreen(target)}
-          />
-        )
-      case 'collections':
-        return (
-          <CollectionsScreen
-            onBack={() => setScreen('home')}
-            onSelect={(id: string) => {
-              setSelectedCollectionId(id)
-              setScreen('collectionDetail')
-            }}
-            onCreate={() => setScreen('collectionForm')}
-          />
-        )
-      case 'collectionDetail': {
-        const record = collectionRecords.find((item) => item.id === selectedCollectionId)
-        if (!record) return <PlaceholderScreen title="Recolección no encontrada" />
-        return (
-          <CollectionDetailScreen
-            record={record}
-            onBack={() => setScreen('collections')}
-          />
-        )
-      }
-      case 'collectionForm':
-        return (
-          <NewCollectionForm
-            onBack={() => {
-              setFormData(initialFormData)
-              setScreen('collections')
-            }}
-            onContinue={(data) => {
-              setFormData(prev => ({ ...prev, ...data }))
-              setScreen('collectionFormStep2')
-            }}
-            initialData={formData}
-          />
-        )
-      case 'collectionFormStep2':
-        return (
-          <LocationForm
-            onBack={() => setScreen('collectionForm')}
-            onContinue={(data) => {
-              setFormData(prev => ({ ...prev, ...data }))
-              setScreen('collectionFormStep3')
-            }}
-            initialData={formData}
-          />
-        )
-      case 'collectionFormStep3':
-        return (
-          <SummaryForm
-            onBack={() => setScreen('collectionFormStep2')}
-            onConfirm={() => {
-              // Aquí iría la lógica para guardar en blockchain
-              console.log('Datos completos:', formData)
-              alert('Registro guardado exitosamente!')
-              setFormData(initialFormData)
-              setScreen('collections')
-            }}
-            formData={formData}
-          />
-        )
-      default:
-        return <PlaceholderScreen title={SCREEN_TITLE[screen] ?? 'Próximamente'} />
-    }
-  })()
-
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#f6f7f3] to-[#eef1eb] text-brand-700">
-      {content}
-      <BottomNav active={screen} onChange={setScreen} />
-    </div>
+    <Routes>
+      <Route path="/" element={<RootRedirect />} />
+
+      <Route element={<GuestRoute />}>
+        <Route path="/auth" element={<AuthLayout />}>
+          <Route index element={<Navigate to="login" replace />} />
+          <Route path="login" element={<LoginScreen />} />
+          <Route path="register" element={<RegisterScreen />} />
+          <Route path="recover" element={<RecoverScreen />} />
+        </Route>
+      </Route>
+
+      <Route element={<ProtectedRoute />}>
+        <Route path="/app" element={<AppLayout />}>
+          <Route index element={<Navigate to="home" replace />} />
+          <Route path="home" element={<HomeScreen />} />
+          <Route path="collections">
+            <Route index element={<CollectionsScreen />} />
+            <Route path=":id" element={<CollectionDetailRoute />} />
+            <Route path="new" element={<CollectionFormLayout />}>
+              <Route index element={<NewCollectionForm />} />
+              <Route path="location" element={<LocationForm />} />
+              <Route path="summary" element={<SummaryForm />} />
+            </Route>
+          </Route>
+          <Route path="nursery" element={<PlaceholderScreen title="Vivero" />} />
+          <Route path="planting" element={<PlaceholderScreen title="Plantación" />} />
+          <Route path="co2" element={<PlaceholderScreen title="CO₂" />} />
+          <Route path="map" element={<PlaceholderScreen title="Mapa" />} />
+          <Route path="scan" element={<PlaceholderScreen title="Escanear" />} />
+          <Route path="report" element={<PlaceholderScreen title="Reporte" />} />
+          <Route path="profile" element={<PlaceholderScreen title="Perfil" />} />
+          <Route path="*" element={<PlaceholderScreen title="Próximamente" />} />
+        </Route>
+      </Route>
+
+      <Route path="*" element={<PlaceholderScreen title="Página no encontrada" />} />
+    </Routes>
   )
 }
 

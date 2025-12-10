@@ -1,14 +1,23 @@
+import { useNavigate } from 'react-router-dom'
 import Icon from '../../components/Icon'
 import { SCREEN_TITLE } from '../../data/navigation'
 import type { CollectionRecord } from './types'
 
 type Props = {
   record: CollectionRecord
-  onBack: () => void
+  onBackPath?: string
 }
 
-function CollectionDetailScreen({ record, onBack }: Props) {
+function CollectionDetailScreen({ record, onBackPath }: Props) {
+  const navigate = useNavigate()
   const detail = record.detail
+  const handleBack = () => {
+    if (onBackPath) {
+      navigate(onBackPath)
+    } else {
+      navigate(-1)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#f6f7f3] to-[#eef1eb] text-brand-700">
@@ -17,7 +26,7 @@ function CollectionDetailScreen({ record, onBack }: Props) {
           <button
             type="button"
             aria-label="Volver"
-            onClick={onBack}
+            onClick={handleBack}
             className="absolute left-4 top-6 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-brand-700 shadow-soft transition hover:bg-white"
           >
             <Icon name="arrow-left" className="h-5 w-5" />

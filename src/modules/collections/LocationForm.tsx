@@ -1,22 +1,19 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Icon from "../../components/Icon";
-import type { CollectionFormData } from "./formTypes";
+import { useCollectionForm } from "./CollectionFormContext";
 
-type Props = {
-  onBack: () => void;
-  onContinue: (data: Partial<CollectionFormData>) => void;
-  initialData?: Partial<CollectionFormData>;
-};
-
-function LocationForm({ onBack, onContinue, initialData }: Props) {
-  const [direccion, setDireccion] = useState(initialData?.direccion || "");
-  const [latitud, setLatitud] = useState(initialData?.latitud || "");
-  const [longitud, setLongitud] = useState(initialData?.longitud || "");
-  const [pais, setPais] = useState(initialData?.pais || "Bolivia");
-  const [depto, setDepto] = useState(initialData?.depto || "La Paz");
-  const [provincia, setProvincia] = useState(initialData?.provincia || "Bolivia");
-  const [comunidad, setComunidad] = useState(initialData?.comunidad || "La Paz");
-  const [almacenamiento, setAlmacenamiento] = useState(initialData?.almacenamiento || "Vivero Mallasa");
+function LocationForm() {
+  const navigate = useNavigate();
+  const { formData, updateForm } = useCollectionForm();
+  const [direccion, setDireccion] = useState(formData?.direccion || "");
+  const [latitud, setLatitud] = useState(formData?.latitud || "");
+  const [longitud, setLongitud] = useState(formData?.longitud || "");
+  const [pais, setPais] = useState(formData?.pais || "Bolivia");
+  const [depto, setDepto] = useState(formData?.depto || "La Paz");
+  const [provincia, setProvincia] = useState(formData?.provincia || "Bolivia");
+  const [comunidad, setComunidad] = useState(formData?.comunidad || "La Paz");
+  const [almacenamiento, setAlmacenamiento] = useState(formData?.almacenamiento || "Vivero Mallasa");
   const [loadingLocation, setLoadingLocation] = useState(false);
   const [errors, setErrors] = useState({
     direccion: false,
@@ -88,7 +85,7 @@ function LocationForm({ onBack, onContinue, initialData }: Props) {
           <button
             type="button"
             aria-label="Volver"
-            onClick={onBack}
+            onClick={() => navigate('/app/collections/new')}
             className="absolute left-5 top-6 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-brand-700 shadow-soft transition hover:bg-white"
           >
             <Icon name="arrow-left" className="h-5 w-5" />
@@ -301,8 +298,8 @@ function LocationForm({ onBack, onContinue, initialData }: Props) {
               if (Object.values(newErrors).some(error => error)) {
                 return;
               }
-              
-              onContinue({
+
+              updateForm({
                 direccion,
                 latitud,
                 longitud,
@@ -312,6 +309,7 @@ function LocationForm({ onBack, onContinue, initialData }: Props) {
                 comunidad,
                 almacenamiento,
               });
+              navigate('/app/collections/new/summary');
             }}
             className="mb-8 w-full rounded-2xl bg-brand-500 py-4 text-center text-lg font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99]"
           >

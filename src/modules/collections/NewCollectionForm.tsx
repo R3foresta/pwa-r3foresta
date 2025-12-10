@@ -1,28 +1,25 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Icon from "../../components/Icon";
 import { methodOptions, speciesOptions } from "./data";
 import type { CollectionType } from "./types";
-import type { CollectionFormData } from "./formTypes";
+import { useCollectionForm } from "./CollectionFormContext";
 
-type Props = {
-  onBack: () => void;
-  onContinue: (data: Partial<CollectionFormData>) => void;
-  initialData?: Partial<CollectionFormData>;
-};
-
-function NewCollectionForm({ onBack, onContinue, initialData }: Props) {
-  const [date, setDate] = useState(() => initialData?.date || new Date().toISOString().slice(0, 10));
-  const [type, setType] = useState<CollectionType>(initialData?.type || "Semilla");
-  const [species, setSpecies] = useState(initialData?.species || "");
+function NewCollectionForm() {
+  const navigate = useNavigate();
+  const { formData, updateForm } = useCollectionForm();
+  const [date, setDate] = useState(() => formData?.date || new Date().toISOString().slice(0, 10));
+  const [type, setType] = useState<CollectionType>(formData?.type || "Semilla");
+  const [species, setSpecies] = useState(formData?.species || "");
   const [customSpecies, setCustomSpecies] = useState("");
   const [showCustomSpecies, setShowCustomSpecies] = useState(false);
-  const [method, setMethod] = useState(initialData?.method || "");
-  const [quantity, setQuantity] = useState(initialData?.quantity || "0");
-  const [unit, setUnit] = useState<"Kg" | "Unidades" | "gr">(initialData?.unit || "Kg");
-  const [notes, setNotes] = useState(initialData?.notes || "");
-  const [isNewFind, setIsNewFind] = useState(initialData?.isNewFind || false);
-  const [placePhotos, setPlacePhotos] = useState<string[]>(initialData?.placePhotos || []);
-  const [totalPhotos, setTotalPhotos] = useState<string[]>(initialData?.totalPhotos || []);
+  const [method, setMethod] = useState(formData?.method || "");
+  const [quantity, setQuantity] = useState(formData?.quantity || "0");
+  const [unit, setUnit] = useState<"Kg" | "Unidades" | "gr">(formData?.unit || "Kg");
+  const [notes, setNotes] = useState(formData?.notes || "");
+  const [isNewFind, setIsNewFind] = useState(formData?.isNewFind || false);
+  const [placePhotos, setPlacePhotos] = useState<string[]>(formData?.placePhotos || []);
+  const [totalPhotos, setTotalPhotos] = useState<string[]>(formData?.totalPhotos || []);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [modalType, setModalType] = useState<'place' | 'total'>('place');
   const [errors, setErrors] = useState({
@@ -113,22 +110,20 @@ function NewCollectionForm({ onBack, onContinue, initialData }: Props) {
   };
 
   const handleContinue = () => {
-    // Validar todos los campos obligatorios
     const newErrors = {
       date: !date,
       quantity: parseFloat(quantity) <= 0,
       photos: placePhotos.length === 0 || totalPhotos.length === 0,
       method: !method,
-    };
-    
-    setErrors(newErrors);
-    
-    // Si hay algún error, no continuar
-    if (Object.values(newErrors).some(error => error)) {
-      return;
     }
-    
-    onContinue({
+
+    setErrors(newErrors)
+
+    if (Object.values(newErrors).some(error => error)) {
+      return
+    }
+
+    updateForm({
       date,
       type,
       species,
@@ -139,8 +134,9 @@ function NewCollectionForm({ onBack, onContinue, initialData }: Props) {
       isNewFind,
       placePhotos,
       totalPhotos,
-    });
-  };
+    })
+    navigate('/app/collections/new/location')
+  }
 
   const hasMinimumPhotos = placePhotos.length >= 1 && totalPhotos.length >= 1;
 
@@ -159,7 +155,7 @@ function NewCollectionForm({ onBack, onContinue, initialData }: Props) {
           <button
             type="button"
             aria-label="Volver"
-            onClick={onBack}
+            onClick={() => navigate('/app/collections')}
             className="absolute left-5 top-6 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-brand-700 shadow-soft transition hover:bg-white"
           >
             <Icon name="arrow-left" className="h-5 w-5" />

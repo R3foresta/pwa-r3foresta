@@ -1,16 +1,12 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Icon from '../../components/Icon'
 import { collectionFilters, collectionRecords } from './data'
 import CollectionCard from './CollectionCard'
 import type { FilterKey } from './types'
 
-type Props = {
-  onBack: () => void
-  onSelect: (id: string) => void
-  onCreate: () => void
-}
-
-function CollectionsScreen({ onBack, onSelect, onCreate }: Props) {
+function CollectionsScreen() {
+  const navigate = useNavigate()
   const [filter, setFilter] = useState<FilterKey>('Todos')
   const [query, setQuery] = useState('')
 
@@ -44,7 +40,7 @@ function CollectionsScreen({ onBack, onSelect, onCreate }: Props) {
           <button
             type="button"
             aria-label="Volver"
-            onClick={onBack}
+            onClick={() => navigate('/app/home')}
             className="left-4 top-5 mr-4 my-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
           >
             <Icon name="arrow-left" className="h-5 w-5" />
@@ -94,7 +90,7 @@ function CollectionsScreen({ onBack, onSelect, onCreate }: Props) {
               <button
                 key={record.id}
                 type="button"
-                onClick={() => onSelect(record.id)}
+                onClick={() => navigate(`/app/collections/${record.id}`)}
                 className="w-full text-left"
               >
                 <CollectionCard record={record} />
@@ -112,7 +108,7 @@ function CollectionsScreen({ onBack, onSelect, onCreate }: Props) {
       <button
         type="button"
         aria-label="Nueva recolección"
-        onClick={onCreate}
+        onClick={() => navigate('/app/collections/new')}
         className="fixed bottom-24 right-6 mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-brand-500 text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.98]"
       >
         <Icon name="plus" className="h-6 w-6" />

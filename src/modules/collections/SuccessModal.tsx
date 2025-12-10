@@ -1,9 +1,10 @@
 type Props = {
   onViewBlockchain: () => void;
   onBackToMenu: () => void;
+  summaryText?: string;
 };
 
-function SuccessModal({ onViewBlockchain, onBackToMenu }: Props) {
+function SuccessModal({ onViewBlockchain, onBackToMenu, summaryText }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
       <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl">
@@ -36,7 +37,7 @@ function SuccessModal({ onViewBlockchain, onBackToMenu }: Props) {
               Se recolecto:
             </p>
             <p className="mt-1 text-lg font-extrabold text-slate-800">
-              123 gr semillas de X árbol
+              {summaryText ?? 'Registro listo para subir'}
             </p>
           </div>
 

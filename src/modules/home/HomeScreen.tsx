@@ -1,13 +1,26 @@
+import { useNavigate } from 'react-router-dom'
 import Icon from '../../components/Icon'
 import { actions, metrics } from '../../data/home'
 import type { Screen } from '../../types/navigation'
 
-type Props = {
-  onOpenCollections: () => void
-  onOpenPlaceholder: (screen: Screen) => void
-}
+function HomeScreen() {
+  const navigate = useNavigate()
+  const targetPath: Record<Screen, string> = {
+    home: '/app/home',
+    collections: '/app/collections',
+    collectionDetail: '/app/collections',
+    collectionForm: '/app/collections/new',
+    collectionFormStep2: '/app/collections/new/location',
+    collectionFormStep3: '/app/collections/new/summary',
+    map: '/app/map',
+    scan: '/app/scan',
+    report: '/app/report',
+    profile: '/app/profile',
+    nursery: '/app/nursery',
+    planting: '/app/planting',
+    co2: '/app/co2',
+  }
 
-function HomeScreen({ onOpenCollections, onOpenPlaceholder }: Props) {
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-28 pt-6">
       <header className="flex items-center justify-between">
@@ -48,11 +61,7 @@ function HomeScreen({ onOpenCollections, onOpenPlaceholder }: Props) {
           <button
             key={action.label}
             type="button"
-            onClick={() =>
-              action.target === 'collections'
-                ? onOpenCollections()
-                : onOpenPlaceholder(action.target)
-            }
+            onClick={() => navigate(targetPath[action.target] ?? '/app/home')}
             className="rounded-2xl bg-brand-500 py-5 text-center text-lg font-semibold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99]"
           >
             {action.label}
