@@ -1,4 +1,4 @@
-const CACHE_NAME = 'r3foresta-v5'
+const CACHE_NAME = 'r3foresta-v0.1.1.10'
 const ASSETS = ['/', '/manifest.webmanifest']
 
 self.addEventListener('install', (event) => {
