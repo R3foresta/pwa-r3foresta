@@ -11,7 +11,9 @@ function SummaryForm() {
   const [traceabilityCode] = useState(() => 
     `REC-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`
   );
-  const summaryText = `${formData.quantity} ${formData.unit} de ${formData.species || formData.type}`;
+  const typeLabel = formData.type === 'seed' ? 'Semilla' : 'Esqueje';
+  const unitLabel = formData.unit === 'kg' ? 'kg' : 'unidades';
+  const summaryText = `${formData.quantity} ${unitLabel} de ${formData.species || typeLabel}`;
   const finalize = () => {
     resetForm();
     navigate('/app/collections');
@@ -92,7 +94,7 @@ function SummaryForm() {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="font-semibold text-slate-600">Tipo:</span>
-                  <span className="font-bold text-slate-800">{formData.type}</span>
+                  <span className="font-bold text-slate-800">{typeLabel}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="font-semibold text-slate-600">Especie:</span>
@@ -100,7 +102,7 @@ function SummaryForm() {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="font-semibold text-slate-600">Cantidad:</span>
-                  <span className="font-bold text-slate-800">{formData.quantity} {formData.unit}</span>
+                  <span className="font-bold text-slate-800">{formData.quantity} {unitLabel}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="font-semibold text-slate-600">Método:</span>

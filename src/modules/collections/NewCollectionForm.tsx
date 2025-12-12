@@ -2,20 +2,20 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Icon from "../../components/Icon";
 import { methodOptions, speciesOptions } from "./data";
-import type { CollectionType } from "./types";
+import type { MaterialType, Unit } from "./types";
 import { useCollectionForm } from "./CollectionFormContext";
 
 function NewCollectionForm() {
   const navigate = useNavigate();
   const { formData, updateForm } = useCollectionForm();
   const [date, setDate] = useState(() => formData?.date || new Date().toISOString().slice(0, 10));
-  const [type, setType] = useState<CollectionType>(formData?.type || "Semilla");
+  const [type, setType] = useState<MaterialType>(formData?.type || "seed");
   const [species, setSpecies] = useState(formData?.species || "");
   const [customSpecies, setCustomSpecies] = useState("");
   const [showCustomSpecies, setShowCustomSpecies] = useState(false);
   const [method, setMethod] = useState(formData?.method || "");
   const [quantity, setQuantity] = useState(formData?.quantity || "0");
-  const [unit, setUnit] = useState<"Kg" | "Unidades" | "gr">(formData?.unit || "Kg");
+  const [unit, setUnit] = useState<Unit>(formData?.unit || "kg");
   const [notes, setNotes] = useState(formData?.notes || "");
   const [isNewFind, setIsNewFind] = useState(formData?.isNewFind || false);
   const [placePhotos, setPlacePhotos] = useState<string[]>(formData?.placePhotos || []);
@@ -30,15 +30,12 @@ function NewCollectionForm() {
   });
 
   // Cambiar unidad automáticamente cuando cambia el tipo
-  const handleTypeChange = (newType: CollectionType) => {
+  const handleTypeChange = (newType: MaterialType) => {
     setType(newType);
-    if (newType === "Esqueje") {
-      setUnit("Unidades");
-    } else {
-      // Si cambia a Semilla y está en Unidades, cambiar a Kg
-      if (unit === "Unidades") {
-        setUnit("Kg");
-      }
+    if (newType === "cutting") {
+      setUnit("units");
+    } else if (unit === "units") {
+      setUnit("kg");
     }
   };
 
@@ -198,8 +195,8 @@ function NewCollectionForm() {
             </p>
             <div className="flex gap-3">
               {[
-                { label: "Semilla", value: "Semilla" as CollectionType },
-                { label: "Esqueje", value: "Esqueje" as CollectionType },
+                { label: "Semilla", value: "seed" as MaterialType },
+                { label: "Esqueje", value: "cutting" as MaterialType },
               ].map((option) => {
                 const isActive = type === option.value;
                 return (
@@ -333,13 +330,13 @@ function NewCollectionForm() {
                   }}
                   className="w-20 rounded-xl border border-slate-200 bg-transparent px-3 py-2 text-center text-lg font-extrabold text-slate-700 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
                 />
-                {type === "Semilla" ? (
+                {type === "seed" ? (
                   <div className="flex gap-2">
                     <button
                       type="button"
-                      onClick={() => setUnit("Kg")}
+                      onClick={() => setUnit("kg")}
                       className={`rounded-xl border px-3 py-2 text-sm font-bold transition ${
-                        unit === "Kg"
+                        unit === "kg"
                           ? "border-brand-500 bg-brand-500 text-white shadow-sm"
                           : "border-slate-200 bg-white text-slate-600 hover:border-brand-300 hover:bg-brand-50"
                       }`}
@@ -348,14 +345,14 @@ function NewCollectionForm() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setUnit("gr")}
+                      onClick={() => setUnit("units")}
                       className={`rounded-xl border px-3 py-2 text-sm font-bold transition ${
-                        unit === "gr"
+                        unit === "units"
                           ? "border-brand-500 bg-brand-500 text-white shadow-sm"
                           : "border-slate-200 bg-white text-slate-600 hover:border-brand-300 hover:bg-brand-50"
                       }`}
                     >
-                      gr
+                      Unidades
                     </button>
                   </div>
                 ) : (

@@ -1,11 +1,13 @@
+import type { MaterialType, Unit } from "./types";
+
 export interface CollectionFormData {
   // Step 1: Datos generales
   date: string;
-  type: "Semilla" | "Esqueje";
+  type: MaterialType;
   species: string;
   method: string;
   quantity: string;
-  unit: "Kg" | "Unidades" | "gr";
+  unit: Unit;
   notes: string;
   isNewFind: boolean;
   placePhotos: string[];
@@ -24,11 +26,11 @@ export interface CollectionFormData {
 
 export const initialFormData: CollectionFormData = {
   date: new Date().toISOString().slice(0, 10),
-  type: "Semilla",
+  type: "seed",
   species: "",
   method: "",
   quantity: "0",
-  unit: "Kg",
+  unit: "kg",
   notes: "",
   isNewFind: false,
   placePhotos: [],

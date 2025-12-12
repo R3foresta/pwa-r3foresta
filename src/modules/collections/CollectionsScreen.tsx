@@ -1,33 +1,37 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Icon from '../../components/Icon'
-import { collectionFilters, collectionRecords } from './data'
+import { collectionRecords, locationsById, materialFilterOptions, plantsById } from './data'
 import CollectionCard from './CollectionCard'
-import type { FilterKey } from './types'
+
+type MaterialFilterKey = (typeof materialFilterOptions)[number]['key']
 
 function CollectionsScreen() {
   const navigate = useNavigate()
-  const [filter, setFilter] = useState<FilterKey>('Todos')
+  const [filter, setFilter] = useState<MaterialFilterKey>('all')
   const [query, setQuery] = useState('')
 
   const filteredCollections = useMemo(() => {
     const normalized = query.trim().toLowerCase()
     return collectionRecords.filter((record) => {
+      const plant = plantsById[record.plantId]
+      const location = locationsById[record.collectionLocationId]
       const matchesSearch =
         !normalized ||
-        [record.id, record.species, record.locationRecolecion]
+        [record.code, record.traceCode, plant?.commonName, plant?.scientificName, location?.community]
+          .filter(Boolean)
           .join(' ')
           .toLowerCase()
           .includes(normalized)
 
+      const hasSeed = record.materials.some((material) => material.materialType === 'seed')
+      const hasCutting = record.materials.some((material) => material.materialType === 'cutting')
       const matchesFilter =
-        filter === 'Todos'
+        filter === 'all'
           ? true
-          : filter === 'Semilla'
-            ? record.types.includes('Semilla')
-            : filter === 'Esqueje'
-              ? record.types.includes('Esqueje')
-              : record.types.length > 1
+          : filter === 'both'
+            ? hasSeed && hasCutting
+            : record.materials.some((material) => material.materialType === filter)
 
       return matchesSearch && matchesFilter
     })
@@ -66,20 +70,20 @@ function CollectionsScreen() {
           </label>
 
           <div className="flex flex-wrap gap-3">
-            {collectionFilters.map((option) => {
-              const isActive = filter === option
+            {materialFilterOptions.map((option) => {
+              const isActive = filter === option.key
               return (
                 <button
-                  key={option}
+                  key={option.key}
                   type="button"
-                  onClick={() => setFilter(option)}
+                  onClick={() => setFilter(option.key)}
                   className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
                     isActive
                       ? 'border-brand-500 bg-brand-500 text-white shadow-soft'
                       : 'border-brand-100 bg-white text-brand-600 hover:border-brand-300'
                   }`}
                 >
-                  {option}
+                  {option.label}
                 </button>
               )
             })}
