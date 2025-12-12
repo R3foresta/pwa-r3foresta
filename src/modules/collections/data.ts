@@ -100,13 +100,10 @@ export const collectionRecords: CollectionRecord[] = [
 
     methodId: 'm_3',
 
-    materials: [
-      { materialType: 'seed', quantity: { value: 1.2, unit: 'kg' } },
-      { materialType: 'cutting', quantity: { value: 30, unit: 'units' } },
-    ],
+    materials: [{ materialType: 'cutting', quantity: { value: 30, unit: 'units' } }],
 
     status: 'stored',
-    notes: 'Mixed material batch.',
+    notes: 'Cuttings batch stored.',
 
     photos: [],
 
@@ -146,5 +143,4 @@ export const materialFilterOptions = [
   { key: 'all', label: 'Todos' },
   { key: 'seed', label: 'Semilla' },
   { key: 'cutting', label: 'Esqueje' },
-  { key: 'both', label: 'Semilla + Esqueje' },
 ] as const

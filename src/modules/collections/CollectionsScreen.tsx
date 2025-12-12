@@ -24,14 +24,10 @@ function CollectionsScreen() {
           .toLowerCase()
           .includes(normalized)
 
-      const hasSeed = record.materials.some((material) => material.materialType === 'seed')
-      const hasCutting = record.materials.some((material) => material.materialType === 'cutting')
       const matchesFilter =
         filter === 'all'
           ? true
-          : filter === 'both'
-            ? hasSeed && hasCutting
-            : record.materials.some((material) => material.materialType === filter)
+          : record.materials.some((material) => material.materialType === filter)
 
       return matchesSearch && matchesFilter
     })
