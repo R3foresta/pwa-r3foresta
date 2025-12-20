@@ -16,17 +16,23 @@ function LoginScreen() {
     try {
       console.log('🔵 LoginScreen: Iniciando login...')
       const result = await loginWebAuthn()
-      console.log('✅ LoginScreen: Login exitoso, actualizando contexto...', result)
+      console.log('✅ LoginScreen: Login exitoso', result)
       
-      // Actualizar el AuthContext con el usuario
-      if (result.user) {
+      // Actualizar el AuthContext con los datos del usuario del backend
+      if (result.success && result.user) {
+        const userData = {
+          id: result.user.id,
+          username: result.user.username,
+          email: result.user.email,
+        }
+        localStorage.setItem('r3foresta:user', JSON.stringify(userData))
         await loginAuth(result.user.email || result.user.username)
+        console.log('✅ LoginScreen: Navegando a home...')
+        navigate('/app/home', { replace: true })
       }
-      
-      console.log('✅ LoginScreen: Navegando a home...')
-      navigate('/app/home', { replace: true })
     } catch (error) {
       console.error('❌ LoginScreen: Error en login:', error)
+      // El error ya se muestra a través del hook useWebAuthn
     }
   }
 
@@ -39,17 +45,23 @@ function LoginScreen() {
     try {
       console.log('🔵 LoginScreen: Iniciando registro...')
       const result = await registerWebAuthn(username, email || undefined)
-      console.log('✅ LoginScreen: Registro exitoso, actualizando contexto...', result)
+      console.log('✅ LoginScreen: Registro exitoso', result)
       
-      // Actualizar el AuthContext con el usuario
-      if (result.user) {
+      // Actualizar el AuthContext con los datos del usuario del backend
+      if (result.success && result.user) {
+        const userData = {
+          id: result.user.id,
+          username: result.user.username,
+          email: result.user.email,
+        }
+        localStorage.setItem('r3foresta:user', JSON.stringify(userData))
         await loginAuth(result.user.email || result.user.username)
+        console.log('✅ LoginScreen: Navegando a home...')
+        navigate('/app/home', { replace: true })
       }
-      
-      console.log('✅ LoginScreen: Navegando a home...')
-      navigate('/app/home', { replace: true })
     } catch (error) {
       console.error('❌ LoginScreen: Error en registro:', error)
+      // El error ya se muestra a través del hook useWebAuthn
     }
   }
 

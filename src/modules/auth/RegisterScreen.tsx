@@ -13,7 +13,7 @@ function RegisterScreen() {
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
     setLoading(true)
-    await login(email, password)
+    await login(email)
     setLoading(false)
     navigate('/app/home', { replace: true })
   }
