@@ -12,11 +12,10 @@ function HomeScreen() {
     collectionForm: '/app/collections/new',
     collectionFormStep2: '/app/collections/new/location',
     collectionFormStep3: '/app/collections/new/summary',
-    map: '/app/map',
+    germination: '/app/germination',
     scan: '/app/scan',
     report: '/app/report',
     profile: '/app/profile',
-    nursery: '/app/nursery',
     planting: '/app/planting',
     co2: '/app/co2',
   }

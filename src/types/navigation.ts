@@ -5,11 +5,10 @@ export type Screen =
   | 'collectionForm'
   | 'collectionFormStep2'
   | 'collectionFormStep3'
-  | 'map'
+  | 'germination'
   | 'scan'
   | 'report'
   | 'profile'
-  | 'nursery'
   | 'planting'
   | 'co2'
 

@@ -15,6 +15,7 @@ import LoginScreen from './modules/auth/LoginScreen'
 import RegisterScreen from './modules/auth/RegisterScreen'
 import RecoverScreen from './modules/auth/RecoverScreen'
 import { useAuth } from './contexts/AuthContext'
+import GerminationScreen from './modules/germination/GerminationScreen'
 
 function RootRedirect() {
   const { isAuthenticated, hydrated } = useAuth()
@@ -49,7 +50,11 @@ function App() {
               <Route path="summary" element={<SummaryForm />} />
             </Route>
           </Route>
-          <Route path="nursery" element={<PlaceholderScreen title="Vivero" />} />
+          <Route path="germination">
+            <Route index element={<GerminationScreen />} />
+            <Route path="new" element={<PlaceholderScreen title="Nuevo lote de germinación" />} />
+          </Route>
+          <Route path="nursery" element={<Navigate to="/app/germination" replace />} />
           <Route path="planting" element={<PlaceholderScreen title="Plantación" />} />
           <Route path="co2" element={<PlaceholderScreen title="CO₂" />} />
           <Route path="map" element={<PlaceholderScreen title="Mapa" />} />

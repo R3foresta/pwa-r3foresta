@@ -2,12 +2,12 @@ export type IconName =
   | 'bell'
   | 'dot'
   | 'home'
-  | 'map'
   | 'scan'
   | 'report'
   | 'user'
   | 'search'
   | 'leaf'
+  | 'germination'
   | 'cutting'
   | 'plus'
   | 'minus'
@@ -76,23 +76,6 @@ function Icon({ name, className }: Props) {
             strokeLinejoin="round"
             d="M6.5 10.5v8.5a.5.5 0 0 0 .5.5h3.5v-5h3v5H17a.5.5 0 0 0 .5-.5v-8.5"
           />
-        </svg>
-      )
-    case 'map':
-      return (
-        <svg
-          className={`${common} ${className ?? ''}`}
-          viewBox="0 0 24 24"
-          fill="none"
-          strokeWidth="1.8"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="m8.5 5.2 7-2.1a1 1 0 0 1 .7.1l3.5 1.7a1 1 0 0 1 .6.9v11.6a1 1 0 0 1-1.3 1l-2.8-1a1 1 0 0 0-.6 0l-7 2.1a1 1 0 0 1-.7-.1l-3.5-1.7a1 1 0 0 1-.6-.9V4.7a1 1 0 0 1 1.3-1l2.8 1a1 1 0 0 0 .6 0Z"
-          />
-          <path strokeLinecap="round" strokeLinejoin="round" d="m8 5.5 8 3" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="m8 13.5 8 3" />
         </svg>
       )
     case 'scan':
@@ -183,6 +166,28 @@ function Icon({ name, className }: Props) {
             d="M18 5s-3 0-6 1.6C9 8 6 10.5 6 13c0 3 2.5 5 5.5 5 2.5 0 4.5-2 4.5-4.5C16 10 18 5 18 5Z"
           />
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 13.5 8 11" />
+        </svg>
+      )
+    case 'germination':
+      return (
+        <svg
+          className={`${common} ${className ?? ''}`}
+          viewBox="0 0 24 24"
+          fill="none"
+          strokeWidth="1.8"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 19.5h9" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 19.5v-6.5" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 13Q9 13 9 9Q12 9 12 13Z"
+          />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 13.5Q15 13.5 15 9.5Q12 9.5 12 13.5Z"
+          />
         </svg>
       )
     case 'cutting':

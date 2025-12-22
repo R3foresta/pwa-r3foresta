@@ -4,7 +4,12 @@ import type { NavItem, Screen } from '../types/navigation'
 export const NAV_ITEMS: NavItem<IconName>[] = [
   { label: 'Inicio', icon: 'home', screen: 'home', path: '/app/home' },
   { label: 'Recolección', icon: 'leaf', screen: 'collections', path: '/app/collections' },
-  { label: 'Mapa', icon: 'map', screen: 'map', path: '/app/map' },
+  {
+    label: 'Germinación',
+    icon: 'germination',
+    screen: 'germination',
+    path: '/app/germination',
+  },
   { label: 'Escanear', icon: 'scan', screen: 'scan', path: '/app/scan' },
   { label: 'Reporte', icon: 'report', screen: 'report', path: '/app/report' },
   { label: 'Perfil', icon: 'user', screen: 'profile', path: '/app/profile' },
@@ -17,11 +22,10 @@ export const SCREEN_TITLE: Record<Screen, string> = {
   collectionForm: 'Nueva recolección',
   collectionFormStep2: 'Nueva recolección - Ubicación',
   collectionFormStep3: 'Nueva recolección - Resumen',
-  map: 'Mapa',
+  germination: 'Germinación',
   scan: 'Escanear',
   report: 'Reporte',
   profile: 'Perfil',
-  nursery: 'Vivero',
   planting: 'Plantación',
   co2: 'CO₂',
 }

@@ -8,7 +8,7 @@ export const metrics = [
 
 export const actions: { label: string; target: Screen }[] = [
   { label: 'Recolección', target: 'collections' },
-  { label: 'Vivero', target: 'nursery' },
+  { label: 'Germinación', target: 'germination' },
   { label: 'Plantación', target: 'planting' },
   { label: 'CO₂', target: 'co2' },
 ]
