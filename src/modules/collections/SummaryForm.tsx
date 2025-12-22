@@ -14,7 +14,6 @@ function SummaryForm() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [recoleccionId, setRecoleccionId] = useState<number | null>(null);
   const [traceabilityCode] = useState(() => 
     `REC-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`
   );
@@ -132,7 +131,6 @@ function SummaryForm() {
       console.log('✅ Respuesta del backend:', response);
       
       if (response.success) {
-        setRecoleccionId(response.data.id);
         setShowSuccess(true);
       } else {
         throw new Error('Error al crear recolección');

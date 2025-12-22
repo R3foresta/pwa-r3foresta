@@ -63,6 +63,10 @@ export interface Recoleccion {
     id: number;
     codigo: string;
     nombre: string;
+    ubicacion?: {
+      departamento?: string;
+      comunidad?: string;
+    };
   };
   metodo: {
     id: number;
@@ -83,6 +87,7 @@ export interface Recoleccion {
     peso_bytes: number;
   }>;
   created_at: string;
+  updated_at: string;
 }
 
 export interface Vivero {
@@ -272,7 +277,7 @@ export class RecoleccionService {
   /**
    * Listar recolecciones con filtros
    */
-  static async list(filters?: RecoleccionFilters): Promise<{ success: boolean; data: Recoleccion[]; pagination: { page: number; limit: number; total: number } }> {
+  static async list(filters?: RecoleccionFilters): Promise<{ success: boolean; data: Recoleccion[]; pagination: { page: number; limit: number; total: number; totalPages: number; hasNextPage: boolean; hasPrevPage: boolean } }> {
     try {
       const params = new URLSearchParams();
       if (filters) {
@@ -284,6 +289,7 @@ export class RecoleccionService {
       }
       
       const token = localStorage.getItem('authToken');
+      console.log('📋 Listando recolecciones con filtros:', filters);
       
       const response = await fetch(`${API_URL}/api/recolecciones?${params}`, {
         headers: {
@@ -295,7 +301,9 @@ export class RecoleccionService {
         throw new Error('Error al listar recolecciones');
       }
       
-      return response.json();
+      const result = await response.json();
+      console.log('✅ Recolecciones cargadas:', result.data.length);
+      return result;
     } catch (error) {
       console.error('❌ Error al listar recolecciones:', error);
       throw error;

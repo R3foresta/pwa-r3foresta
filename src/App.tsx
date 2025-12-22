@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes, useParams } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import AuthLayout from './layouts/AuthLayout'
 import AppLayout from './layouts/AppLayout'
 import ProtectedRoute from './routes/ProtectedRoute'
@@ -14,20 +14,12 @@ import CollectionFormLayout from './modules/collections/CollectionFormLayout'
 import LoginScreen from './modules/auth/LoginScreen'
 import RegisterScreen from './modules/auth/RegisterScreen'
 import RecoverScreen from './modules/auth/RecoverScreen'
-import { collectionRecords } from './modules/collections/data'
 import { useAuth } from './contexts/AuthContext'
 
 function RootRedirect() {
   const { isAuthenticated, hydrated } = useAuth()
   if (!hydrated) return null
   return <Navigate to={isAuthenticated ? '/app/home' : '/auth/login'} replace />
-}
-
-function CollectionDetailRoute() {
-  const { id } = useParams()
-  const record = collectionRecords.find((item) => item.id === id)
-  if (!record) return <PlaceholderScreen title="Recolección no encontrada" />
-  return <CollectionDetailScreen record={record} onBackPath="/app/collections" />
 }
 
 function App() {
@@ -50,7 +42,7 @@ function App() {
           <Route path="home" element={<HomeScreen />} />
           <Route path="collections">
             <Route index element={<CollectionsScreen />} />
-            <Route path=":id" element={<CollectionDetailRoute />} />
+            <Route path=":id" element={<CollectionDetailScreen />} />
             <Route path="new" element={<CollectionFormLayout />}>
               <Route index element={<NewCollectionForm />} />
               <Route path="location" element={<LocationForm />} />
