@@ -25,16 +25,21 @@ function CollectionsScreen() {
       const tipo_material = filter === 'all' ? undefined :
         filter === 'seed' ? 'SEMILLA' : 'ESTACA'
       
+      console.log('🔄 Cargando recolecciones con filtros:', { page, tipo_material });
+      
       const response = await RecoleccionService.list({
         page,
         limit: 20,
         tipo_material,
       })
       
-      setRecolecciones(response.data)
+      console.log('✅ Recolecciones recibidas:', response.data.length);
+      setRecolecciones(response.data || [])
     } catch (err) {
-      console.error('Error cargando recolecciones:', err)
+      console.error('❌ Error cargando recolecciones:', err)
       setError(err instanceof Error ? err.message : 'Error al cargar recolecciones')
+      // Mostrar array vacío en caso de error para mejor UX
+      setRecolecciones([])
     } finally {
       setLoading(false)
     }

@@ -123,10 +123,19 @@ export class WebAuthnService {
         throw new Error(data.message || 'Error en el registro');
       }
 
-      // Guardar token si existe
-      if (data.token) {
-        localStorage.setItem('authToken', data.token);
-        console.log('✅ Token guardado en localStorage');
+      // Guardar token y auth_id (ahora son obligatorios en la respuesta)
+      localStorage.setItem('authToken', data.token);
+      localStorage.setItem('auth_id', data.auth_id);
+      
+      console.log('✅ Token guardado en localStorage');
+      console.log('✅ Auth ID guardado:', data.auth_id);
+      
+      // Verificar que se guardó correctamente
+      const savedAuthId = localStorage.getItem('auth_id');
+      console.log('🔍 Verificación - auth_id en localStorage:', savedAuthId);
+      
+      if (!savedAuthId) {
+        console.error('⚠️ ERROR CRÍTICO: No se pudo guardar auth_id en localStorage!');
       }
 
       console.log('🎉 Registro exitoso!');
@@ -220,10 +229,19 @@ export class WebAuthnService {
         throw new Error(data.message || 'Error en el login');
       }
 
-      // Guardar token si existe
-      if (data.token) {
-        localStorage.setItem('authToken', data.token);
-        console.log('✅ Token guardado en localStorage');
+      // Guardar token y auth_id (ahora son obligatorios en la respuesta)
+      localStorage.setItem('authToken', data.token);
+      localStorage.setItem('auth_id', data.auth_id);
+      
+      console.log('✅ Token guardado en localStorage');
+      console.log('✅ Auth ID guardado:', data.auth_id);
+      
+      // Verificar que se guardó correctamente
+      const savedAuthId = localStorage.getItem('auth_id');
+      console.log('🔍 Verificación - auth_id en localStorage:', savedAuthId);
+      
+      if (!savedAuthId) {
+        console.error('⚠️ ERROR CRÍTICO: No se pudo guardar auth_id en localStorage!');
       }
 
       console.log('🎉 Login exitoso!');
@@ -243,6 +261,7 @@ export class WebAuthnService {
    */
   static logout(): void {
     localStorage.removeItem('authToken');
+    localStorage.removeItem('auth_id');
   }
 
   /**

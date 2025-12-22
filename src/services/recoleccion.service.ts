@@ -129,6 +129,44 @@ export interface RecoleccionFilters {
 // ===== SERVICIO =====
 export class RecoleccionService {
   /**
+   * Obtiene los headers con autenticación
+   */
+  private static getAuthHeaders(includeContentType = true): HeadersInit {
+    const token = localStorage.getItem('authToken');
+    const authId = localStorage.getItem('auth_id');
+    
+    console.log('🔍 Verificando auth_id en localStorage...');
+    console.log('🔑 Token presente:', !!token);
+    console.log('🔑 Auth ID:', authId);
+    console.log('📦 localStorage completo:', {
+      authToken: token ? 'Presente' : 'No encontrado',
+      auth_id: authId || 'No encontrado',
+      allKeys: Object.keys(localStorage),
+    });
+    
+    if (!authId) {
+      console.error('⚠️ ADVERTENCIA: auth_id no está en localStorage!');
+      console.error('📋 Keys disponibles en localStorage:', Object.keys(localStorage));
+    }
+    
+    const headers: HeadersInit = {
+      'Authorization': token ? `Bearer ${token}` : '',
+    };
+    
+    // Solo agregar x-auth-id si existe
+    if (authId) {
+      headers['x-auth-id'] = authId;
+    }
+    
+    if (includeContentType) {
+      headers['Content-Type'] = 'application/json';
+    }
+    
+    console.log('📨 Headers que se enviarán:', headers);
+    return headers;
+  }
+
+  /**
    * Crear nueva recolección con fotos usando FormData
    */
   static async create(data: CreateRecoleccionDto): Promise<{ success: boolean; data: Recoleccion }> {
@@ -211,12 +249,28 @@ export class RecoleccionService {
       
       console.log('📡 Haciendo POST con FormData a:', `${API_URL}/api/recolecciones`);
       
+      const authId = localStorage.getItem('auth_id');
+      console.log('🔍 Verificando auth_id antes de enviar...');
+      console.log('🔑 Auth ID:', authId);
+      console.log('📦 localStorage completo:', Object.keys(localStorage));
+      
+      if (!authId) {
+        console.error('⚠️ ERROR CRÍTICO: No hay auth_id en localStorage!');
+        console.error('📋 Keys disponibles:', Object.keys(localStorage));
+        throw new Error('No se encontró auth_id. Por favor, cierra sesión e inicia sesión nuevamente.');
+      }
+      
+      // Construir headers para FormData (NO incluir Content-Type)
+      const headers: HeadersInit = {
+        'Authorization': token ? `Bearer ${token}` : '',
+        'x-auth-id': authId,
+      };
+      
+      console.log('📨 Headers que se enviarán:', headers);
+      
       const response = await fetch(`${API_URL}/api/recolecciones`, {
         method: 'POST',
-        headers: {
-          // NO incluir Content-Type, el navegador lo configura automáticamente con boundary
-          'Authorization': token ? `Bearer ${token}` : '',
-        },
+        headers: headers,
         body: formData,
       });
       
@@ -288,24 +342,90 @@ export class RecoleccionService {
         });
       }
       
-      const token = localStorage.getItem('authToken');
-      console.log('📋 Listando recolecciones con filtros:', filters);
+      const authId = localStorage.getItem('auth_id');
+      const url = `${API_URL}/api/recolecciones?${params}`;
       
-      const response = await fetch(`${API_URL}/api/recolecciones?${params}`, {
-        headers: {
-          'Authorization': token ? `Bearer ${token}` : '',
-        },
+      console.log('📋 Listando recolecciones...');
+      console.log('🔗 URL:', url);
+      console.log('🔑 Auth ID:', authId);
+      console.log('📦 Filtros:', filters);
+      
+      const response = await fetch(url, {
+        headers: this.getAuthHeaders(),
       });
       
+      console.log('📥 Response status:', response.status);
+      console.log('📥 Response headers:', Object.fromEntries(response.headers.entries()));
+      
+      // Verificar content-type ANTES de intentar parsear
+      const contentType = response.headers.get('content-type');
+      console.log('📄 Content-Type:', contentType);
+      
       if (!response.ok) {
-        throw new Error('Error al listar recolecciones');
+        // Si no es exitoso, intentar leer el error
+        if (contentType?.includes('application/json')) {
+          const errorJson = await response.json();
+          throw new Error(errorJson.message || `Error ${response.status}`);
+        } else {
+          const errorText = await response.text();
+          console.error('❌ Error response (HTML/texto):', errorText.substring(0, 500));
+          throw new Error(`Error ${response.status}: El servidor devolvió un error. Verifica la consola del backend.`);
+        }
+      }
+      
+      // Respuesta exitosa, verificar que sea JSON
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('❌ Respuesta no es JSON:', text.substring(0, 500));
+        console.error('🔍 Posibles causas:');
+        console.error('   1. El backend no está corriendo en:', API_URL);
+        console.error('   2. La URL del endpoint es incorrecta');
+        console.error('   3. El backend tiene un error y devuelve HTML en lugar de JSON');
+        console.error('   4. Falta configurar VITE_API_URL en las variables de entorno');
+        
+        // Devolver array vacío en lugar de error para mejorar UX
+        return {
+          success: true,
+          data: [],
+          pagination: {
+            page: 1,
+            limit: 20,
+            total: 0,
+            totalPages: 0,
+            hasNextPage: false,
+            hasPrevPage: false,
+          }
+        };
       }
       
       const result = await response.json();
-      console.log('✅ Recolecciones cargadas:', result.data.length);
+      console.log('✅ Recolecciones cargadas:', result.data?.length || 0);
+      
+      // Si el resultado no tiene la estructura esperada, normalizarlo
+      if (!result.data) {
+        return {
+          success: true,
+          data: Array.isArray(result) ? result : [],
+          pagination: {
+            page: 1,
+            limit: 20,
+            total: Array.isArray(result) ? result.length : 0,
+            totalPages: 1,
+            hasNextPage: false,
+            hasPrevPage: false,
+          }
+        };
+      }
+      
       return result;
     } catch (error) {
       console.error('❌ Error al listar recolecciones:', error);
+      
+      // Si es un error de red, proporcionar más información
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error(`No se puede conectar con el backend en ${API_URL}. Verifica que esté corriendo.`);
+      }
+      
       throw error;
     }
   }
@@ -315,12 +435,8 @@ export class RecoleccionService {
    */
   static async getById(id: number): Promise<{ success: boolean; data: Recoleccion }> {
     try {
-      const token = localStorage.getItem('authToken');
-      
       const response = await fetch(`${API_URL}/api/recolecciones/${id}`, {
-        headers: {
-          'Authorization': token ? `Bearer ${token}` : '',
-        },
+        headers: this.getAuthHeaders(),
       });
       
       if (!response.ok) {
