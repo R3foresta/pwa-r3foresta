@@ -1,54 +1,10 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Icon from '../../components/Icon'
+import { germinationLots } from './data'
+import type { GerminationPhase } from './data'
 
-type GerminationLot = {
-  id: string
-  codigo: string
-  especie: string
-  fuente: 'SEMILLA' | 'ESQUEJE'
-  estado: 'INICIO' | 'EMBOLSADO' | 'SOMBRA' | 'LISTA_PLANTAR' | 'SALIDA_VIVERO'
-  fechaInicio: string
-  diasDesdeInicio: number
-  cantidadInicial: number
-  germinadas: number
-  muertas: number
-  vivero: string
-  comunidad: string
-}
-
-const germinationLots: GerminationLot[] = [
-  {
-    id: 'lot-1',
-    codigo: 'GER-2025-001',
-    especie: 'Cedrela odorata',
-    fuente: 'SEMILLA',
-    estado: 'INICIO',
-    fechaInicio: '2025-09-21',
-    diasDesdeInicio: 12,
-    cantidadInicial: 200,
-    germinadas: 165,
-    muertas: 35,
-    vivero: 'Vivero 1',
-    comunidad: 'Comunidad A',
-  },
-  {
-    id: 'lot-2',
-    codigo: 'GER-2025-002',
-    especie: 'Cedrela odorata',
-    fuente: 'SEMILLA',
-    estado: 'LISTA_PLANTAR',
-    fechaInicio: '2025-08-21',
-    diasDesdeInicio: 14,
-    cantidadInicial: 200,
-    germinadas: 100,
-    muertas: 100,
-    vivero: 'Vivero 2',
-    comunidad: 'Comunidad B',
-  },
-]
-
-const estadoLabel: Record<GerminationLot['estado'], string> = {
+const estadoLabel: Record<GerminationPhase, string> = {
   INICIO: 'Germinación',
   EMBOLSADO: 'Embolsado',
   SOMBRA: 'Sombra',
@@ -56,10 +12,7 @@ const estadoLabel: Record<GerminationLot['estado'], string> = {
   SALIDA_VIVERO: 'Salida vivero',
 }
 
-const estadoBadgeStyle: Record<
-  GerminationLot['estado'],
-  { bg: string; text: string; border: string }
-> = {
+const estadoBadgeStyle: Record<GerminationPhase, { bg: string; text: string; border: string }> = {
   INICIO: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
   EMBOLSADO: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
   SOMBRA: { bg: 'bg-sky-50', text: 'text-sky-700', border: 'border-sky-200' },
@@ -78,9 +31,29 @@ function GerminationScreen() {
 
   const filteredLots = useMemo(() => {
     const normalized = query.trim().toLowerCase()
-    if (!normalized) return germinationLots
+    const withDerived = germinationLots.map((lot) => ({
+      id: lot.id,
+      codigo: lot.codigo,
+      especie: lot.planta.especie,
+      fuente: lot.planta.fuente,
+      estado: lot.estado,
+      fechaInicio: lot.fechas.INICIO ?? '',
+      diasDesdeInicio: lot.fechas.INICIO
+        ? Math.max(
+            0,
+            Math.round((Date.now() - new Date(lot.fechas.INICIO).getTime()) / (1000 * 60 * 60 * 24)),
+          )
+        : 0,
+      cantidadInicial: lot.cantidadInicio,
+      germinadas: lot.germinadas,
+      muertas: lot.muertas,
+      vivero: lot.vivero.nombre,
+      comunidad: lot.vivero.ubicacion.comunidad,
+    }))
 
-    return germinationLots.filter((lot) =>
+    if (!normalized) return withDerived
+
+    return withDerived.filter((lot) =>
       [lot.codigo, lot.especie, lot.comunidad, lot.vivero].some((field) =>
         field.toLowerCase().includes(normalized),
       ),
@@ -151,9 +124,11 @@ function GerminationScreen() {
               const badgeTone = estadoBadgeStyle[lot.estado]
 
               return (
-                <article
+                <button
                   key={lot.id}
-                  className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5"
+                  type="button"
+                  onClick={() => navigate(`/app/germination/${lot.id}`)}
+                  className="w-full rounded-3xl bg-white px-4 py-4 text-left shadow-soft ring-1 ring-black/5 transition hover:-translate-y-[2px] hover:shadow-md"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-1">
@@ -221,7 +196,7 @@ function GerminationScreen() {
                       {lot.vivero}
                     </span>
                   </div>
-                </article>
+                </button>
               )
             })}
 
