@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import Icon from "../../components/Icon";
-import { methodOptions, speciesOptions } from "./data";
+import { methodOptions } from "./data";
 import type { MaterialType, Unit } from "./types";
 import { useCollectionForm } from "./CollectionFormContext";
+import { RecoleccionService } from "../../services/recoleccion.service";
+import type { Planta } from "../../services/recoleccion.service";
 
 function NewCollectionForm() {
   const navigate = useNavigate();
@@ -22,12 +24,49 @@ function NewCollectionForm() {
   const [totalPhotos, setTotalPhotos] = useState<string[]>(formData?.totalPhotos || []);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [modalType, setModalType] = useState<'place' | 'total'>('place');
+  
+  // Plantas desde el backend
+  const [plantas, setPlantas] = useState<Planta[]>([]);
+  const [loadingPlantas, setLoadingPlantas] = useState(false);
+  const [selectedPlanta, setSelectedPlanta] = useState<Planta | null>(null);
+  
+  // Generar opciones de especies desde las plantas del backend
+  const speciesOptions = useMemo(() => {
+    return plantas.map(planta => planta.especie || planta.nombre_cientifico);
+  }, [plantas]);
+  
   const [errors, setErrors] = useState({
     date: false,
     quantity: false,
     photos: false,
     method: false,
   });
+
+  // Cargar plantas desde el backend
+  useEffect(() => {
+    const cargarPlantas = async () => {
+      setLoadingPlantas(true);
+      try {
+        const plantasBackend = await RecoleccionService.getPlantas();
+        setPlantas(plantasBackend);
+        console.log('✅ Plantas cargadas desde backend:', plantasBackend);
+        
+        // Si hay una planta guardada previamente, restaurarla
+        if (formData?.planta_id) {
+          const plantaGuardada = plantasBackend.find(p => p.id === formData.planta_id);
+          if (plantaGuardada) {
+            setSelectedPlanta(plantaGuardada);
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error al cargar plantas:', error);
+      } finally {
+        setLoadingPlantas(false);
+      }
+    };
+    
+    cargarPlantas();
+  }, []);
 
   // Cambiar unidad automáticamente cuando cambia el tipo
   const handleTypeChange = (newType: MaterialType) => {
@@ -120,6 +159,23 @@ function NewCollectionForm() {
       return
     }
 
+    // Obtener datos de la planta seleccionada
+    let planta_id: number | undefined;
+    let nombre_cientifico: string | undefined;
+    let nombre_comercial: string | undefined;
+    
+    if (!isNewFind) {
+      if (selectedPlanta) {
+        // Usar la planta seleccionada del backend
+        planta_id = selectedPlanta.id;
+        nombre_cientifico = selectedPlanta.nombre_cientifico;
+        nombre_comercial = selectedPlanta.especie;
+        console.log('✅ Planta seleccionada:', { planta_id, nombre_cientifico, nombre_comercial });
+      } else {
+        console.warn('⚠️ No se seleccionó una planta cuando especie_nueva = false');
+      }
+    }
+
     updateForm({
       date,
       type,
@@ -131,7 +187,17 @@ function NewCollectionForm() {
       isNewFind,
       placePhotos,
       totalPhotos,
+      planta_id,
+      nombre_cientifico: nombre_cientifico || species,
+      nombre_comercial: nombre_comercial || species,
     })
+    
+    console.log('📤 Datos guardados en formulario:', {
+      planta_id,
+      nombre_cientifico,
+      especie_nueva: isNewFind
+    });
+    
     navigate('/app/collections/new/location')
   }
 
@@ -241,10 +307,33 @@ function NewCollectionForm() {
                   <div className="flex flex-1 items-center rounded-2xl border border-slate-200 bg-white px-4 shadow-soft focus-within:border-brand-400 focus-within:ring-2 focus-within:ring-brand-200">
                     <select
                       value={species}
-                      onChange={(event) => setSpecies(event.target.value)}
+                      onChange={(event) => {
+                        const selectedValue = event.target.value;
+                        setSpecies(selectedValue);
+                        
+                        // Encontrar y guardar la planta seleccionada
+                        if (selectedValue && !isNewFind) {
+                          const planta = plantas.find(
+                            p => (p.especie || p.nombre_cientifico) === selectedValue
+                          );
+                          if (planta) {
+                            setSelectedPlanta(planta);
+                            console.log('🌱 Planta seleccionada:', {
+                              id: planta.id,
+                              especie: planta.especie,
+                              nombre_cientifico: planta.nombre_cientifico
+                            });
+                          }
+                        } else {
+                          setSelectedPlanta(null);
+                        }
+                      }}
                       className="w-full bg-transparent py-3 text-base font-semibold text-slate-700 outline-none"
+                      disabled={loadingPlantas}
                     >
-                      <option value="">Seleccionar especie</option>
+                      <option value="">
+                        {loadingPlantas ? 'Cargando especies...' : 'Seleccionar especie'}
+                      </option>
                       {speciesOptions.map((option) => (
                         <option key={option} value={option}>
                           {option}
@@ -512,7 +601,15 @@ function NewCollectionForm() {
             <input
               type="checkbox"
               checked={isNewFind}
-              onChange={(event) => setIsNewFind(event.target.checked)}
+              onChange={(event) => {
+                const checked = event.target.checked;
+                setIsNewFind(checked);
+                // Si marca como nuevo hallazgo, limpiar la planta seleccionada
+                if (checked) {
+                  setSelectedPlanta(null);
+                  console.log('⚠️ Nuevo hallazgo marcado, planta_id limpiado');
+                }
+              }}
               className="mt-1 h-5 w-5 accent-brand-600"
             />
             <div className="space-y-1">

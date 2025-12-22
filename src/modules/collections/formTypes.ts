@@ -22,6 +22,13 @@ export interface CollectionFormData {
   provincia: string;
   comunidad: string;
   almacenamiento: string;
+  
+  // Campos adicionales para backend
+  metodo_id?: number;
+  vivero_id?: number;
+  planta_id?: number;
+  nombre_cientifico?: string;
+  nombre_comercial?: string;
 }
 
 export const initialFormData: CollectionFormData = {
