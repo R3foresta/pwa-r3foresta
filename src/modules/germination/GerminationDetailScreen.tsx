@@ -105,60 +105,79 @@ function GerminationDetailScreen() {
               </span>
             </div>
 
-            <div className="mt-4 space-y-3">
-              <div className="flex items-center">
-                {phases.map((phase, index) => {
-                  const isCompleted = index <= currentPhaseIndex
-                  const isCurrent = index === currentPhaseIndex
-                  return (
-                    <div key={phase.key} className="flex flex-1 items-center last:flex-none">
-                      <div
-                        className={`flex h-9 w-9 items-center justify-center rounded-full border-2 text-[11px] font-extrabold ${
-                          isCurrent
-                            ? 'border-brand-600 bg-brand-50 text-brand-700'
-                            : isCompleted
-                              ? 'border-brand-500 bg-brand-100 text-brand-700'
-                              : 'border-slate-200 bg-slate-50 text-slate-400'
-                        }`}
-                      >
-                        {index + 1}
+            <div className="mt-4 grid grid-cols-[1.1fr,0.9fr] gap-4">
+              <div className="relative">
+                <div className="space-y-4">
+                  {phases.map((phase, index) => {
+                    const isCompleted = index <= currentPhaseIndex
+                    const isCurrent = index === currentPhaseIndex
+                    return (
+                      <div key={phase.key} className="flex items-start gap-3">
+                        <div className="flex flex-col items-center">
+                          <div
+                            className={`flex h-6 w-6 items-center justify-center rounded-full ring-2 ring-white ${
+                              isCompleted ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'
+                            }`}
+                          >
+                            <Icon name="check" className="h-3.5 w-3.5" />
+                          </div>
+                        </div>
+                        <div>
+                          <p
+                            className={`text-base font-extrabold ${
+                              isCompleted ? 'text-brand-700' : 'text-brand-400'
+                            }`}
+                          >
+                            {phase.label}
+                          </p>
+                          <p className="text-xs font-semibold text-brand-500">
+                            {lot.fechas[phase.key] ? formatDate(lot.fechas[phase.key]) : '--'}
+                          </p>
+                        </div>
                       </div>
-                      {index < phases.length - 1 && (
-                        <div
-                          className={`h-[3px] flex-1 ${
-                            index < currentPhaseIndex ? 'bg-brand-500' : 'bg-slate-200'
-                          }`}
-                        />
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 text-xs font-semibold text-brand-600">
-                {phases.map((phase) => (
-                  <div key={phase.key} className="rounded-2xl bg-brand-50 px-3 py-2">
-                    <p className="text-[11px] uppercase tracking-wide text-brand-500">
-                      {phase.label}
-                    </p>
-                    <p className="text-brand-700">{formatDate(lot.fechas[phase.key])}</p>
-                  </div>
-                ))}
-              </div>
-
-              {derived.currentPhoto && (
-                <div className="overflow-hidden rounded-2xl shadow-soft ring-1 ring-black/5">
-                  <img
-                    src={derived.currentPhoto}
-                    alt="Último registro del lote"
-                    className="h-40 w-full object-cover"
-                  />
-                  <div className="flex items-center gap-2 bg-white px-3 py-2 text-xs font-semibold text-brand-600">
-                    <Icon name="photo" className="h-4 w-4 text-brand-600" />
-                    <span>Última foto del estado actual</span>
-                  </div>
+                    )
+                  })}
                 </div>
-              )}
+              </div>
+
+              <div className="flex flex-col gap-3">
+                {derived.currentPhoto ? (
+                  <div className="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-black/5">
+                    <img
+                      src={derived.currentPhoto}
+                      alt="Último registro del lote"
+                      className="h-36 w-full object-cover"
+                    />
+                    <div className="flex items-center gap-2 bg-white px-3 py-2 text-xs font-semibold text-brand-600">
+                      <Icon name="photo" className="h-4 w-4 text-brand-600" />
+                      <span>Última foto del estado actual</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex h-36 items-center justify-center rounded-2xl bg-brand-50 text-sm font-semibold text-brand-500 ring-1 ring-dashed ring-brand-200">
+                    Sin foto aún
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/app/germination/${lot.id}/event/new`)}
+                    className="flex items-center justify-center gap-2 rounded-2xl bg-white px-3 py-3 text-sm font-semibold text-brand-700 shadow-soft ring-1 ring-brand-200 transition hover:ring-brand-300 active:scale-[0.99]"
+                  >
+                    <Icon name="plus" className="h-4 w-4" />
+                    Registrar evento
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/app/germination/${lot.id}/update`)}
+                    className="flex items-center justify-center gap-2 rounded-2xl bg-white px-3 py-3 text-sm font-semibold text-brand-700 shadow-soft ring-1 ring-brand-200 transition hover:ring-brand-300 active:scale-[0.99]"
+                  >
+                    <Icon name="photo" className="h-4 w-4" />
+                    Subir imagen
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -240,16 +259,8 @@ function GerminationDetailScreen() {
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
-                onClick={() => navigate(`/app/germination/${lot.id}/event/new`)}
-                className="flex items-center justify-center gap-2 rounded-2xl bg-brand-500 px-3 py-3 text-sm font-semibold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99]"
-              >
-                <Icon name="plus" className="h-4 w-4" />
-                Registrar evento
-              </button>
-              <button
-                type="button"
                 onClick={() => navigate(`/app/germination/${lot.id}/update`)}
-                className="flex items-center justify-center gap-2 rounded-2xl border border-brand-200 bg-white px-3 py-3 text-sm font-semibold text-brand-700 shadow-soft transition hover:border-brand-300 active:scale-[0.99]"
+                className="flex items-center justify-center gap-2 rounded-2xl bg-white px-3 py-3 text-sm font-semibold text-brand-700 shadow-soft ring-1 ring-brand-200 transition hover:ring-brand-300 active:scale-[0.99]"
               >
                 <Icon name="balance" className="h-4 w-4" />
                 Cambiar fase
@@ -258,10 +269,10 @@ function GerminationDetailScreen() {
                 type="button"
                 onClick={() => explorerUrl && window.open(explorerUrl, '_blank')}
                 disabled={!explorerUrl}
-                className="col-span-2 flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-3 py-3 text-sm font-semibold text-white shadow-soft transition hover:bg-slate-800 active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-slate-400"
+                className="col-span-2 flex items-center justify-center gap-2 rounded-2xl bg-emerald-100 px-3 py-3 text-sm font-semibold text-brand-700 shadow-soft ring-1 ring-emerald-200 transition hover:bg-emerald-200 active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-slate-400 disabled:text-white"
               >
-                <Icon name="qr" className="h-4 w-4 text-white" />
-                Ver hash en blockchain
+                <Icon name="qr" className="h-4 w-4 text-brand-700" />
+                Hash en Blockchains
               </button>
             </div>
           </div>
