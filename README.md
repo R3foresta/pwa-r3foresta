@@ -131,6 +131,7 @@ erDiagram
 
     RECOLECCION {
         bigint id PK
+        string codigo_trazabilidad "UNIQUE; REC-YYYY-XXXXX"
         date fecha "OBLIGATORIO; [hoy-45d .. hoy]"
         string nombre_cientifico "si no hay planta_id"
         string nombre_comercial "si no hay planta_id"
@@ -163,6 +164,7 @@ erDiagram
     %% =========================================
     LOTE_FASE_VIVERO {
         bigint id PK
+        string codigo_trazabilidad "UNIQUE; LFV-YYYY-XXXXX"
         bigint planta_id FK
         bigint vivero_id FK
         bigint responsable_id FK "creador/responsable"
@@ -232,7 +234,7 @@ erDiagram
 
     PLANTACION {
         bigint id PK
-        string codigo_trazabilidad "UNIQUE; código visible en el bono"
+        string codigo_trazabilidad "UNIQUE; PLA-YYYY-XXXXX"
         string destino "{ARBORIZACION|FORESTACION|REFORESTACION}"
         bigint ubicacion_id FK "dónde se plantó (campo)"
 
