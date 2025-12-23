@@ -10,9 +10,8 @@ export const NAV_ITEMS: NavItem<IconName>[] = [
     screen: 'germination',
     path: '/app/germination',
   },
-  { label: 'Escanear', icon: 'scan', screen: 'scan', path: '/app/scan' },
-  { label: 'Reporte', icon: 'report', screen: 'report', path: '/app/report' },
-  { label: 'Perfil', icon: 'user', screen: 'profile', path: '/app/profile' },
+  { label: 'Plantación', icon: 'planting', screen: 'planting', path: '/app/planting' },
+  { label: 'Mapa', icon: 'map', screen: 'report', path: '/app/report' },
 ]
 
 export const SCREEN_TITLE: Record<Screen, string> = {

@@ -23,6 +23,8 @@ export type IconName =
   | 'trash'
   | 'check'
   | 'x'
+  | 'planting'
+  | 'map'
 
 type Props = {
   name: IconName
@@ -399,6 +401,51 @@ function Icon({ name, className }: Props) {
         >
           <path strokeLinecap="round" strokeLinejoin="round" d="M18 6L6 18" />
           <path strokeLinecap="round" strokeLinejoin="round" d="M6 6l12 12" />
+        </svg>
+      )
+    case 'planting':
+      return (
+        <svg
+          className={`${common} ${className ?? ''}`}
+          viewBox="0 0 24 24"
+          fill="none"
+          strokeWidth="1.8"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 20v-8"
+          />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 12c0-3 2-5 4.5-5.5.5-.1.5-.8 0-.9-3-.7-4.5-2.6-4.5-5.6"
+          />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 12c0-3-2-5-4.5-5.5-.5-.1-.5-.8 0-.9 3-.7 4.5-2.6 4.5-5.6"
+          />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M7 20h10"
+          />
+        </svg>
+      )
+    case 'map':
+      return (
+        <svg
+          className={`${common} ${className ?? ''}`}
+          viewBox="0 0 24 24"
+          fill="none"
+          strokeWidth="1.8"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M9 4L4 6v14l5-2m0-14l6 2m-6-2v14m6-14l5-2v14l-5 2m0-14v14"
+          />
         </svg>
       )
     default:
