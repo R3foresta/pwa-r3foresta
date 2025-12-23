@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Icon from '../../components/Icon'
 import PlaceholderScreen from '../PlaceholderScreen'
+import GerminationLotCard, { type GerminationLotCardData } from './GerminationLotCard'
 import { germinationLotsById } from './data'
 import type { GerminationPhase } from './data'
 
@@ -41,11 +42,6 @@ function GerminationDetailScreen() {
   const derived = useMemo(() => {
     if (!lot) return null
 
-    const supervivencia = Math.max(
-      0,
-      Math.round(((lot.cantidadInicio - lot.muertas) / lot.cantidadInicio) * 100),
-    )
-
     const lastEvent = [...lot.eventos].sort(
       (a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime(),
     )[0]
@@ -57,7 +53,6 @@ function GerminationDetailScreen() {
     const currentPhoto = currentPhaseEvent?.fotoUrl ?? lastEvent?.fotoUrl
 
     return {
-      supervivencia,
       diasTotales: daysBetween(lot.fechas.INICIO),
       diasFaseActual: currentPhaseEvent ? daysBetween(currentPhaseEvent.fecha) : 0,
       currentPhoto,
@@ -72,6 +67,19 @@ function GerminationDetailScreen() {
   const explorerUrl = lot.blockchainHash
     ? `https://etherscan.io/tx/${lot.blockchainHash}`
     : undefined
+  const summaryLot: GerminationLotCardData = {
+    id: lot.id,
+    codigo: lot.codigo,
+    especie: lot.planta.especie,
+    fuente: lot.planta.fuente,
+    estado: lot.estado,
+    fechaInicio: lot.fechas.INICIO,
+    diasDesdeInicio: derived.diasTotales,
+    cantidadInicial: lot.cantidadInicio,
+    germinadas: lot.germinadas,
+    muertas: lot.muertas,
+    vivero: lot.vivero.nombre,
+  }
 
   return (
     <div className="relative min-h-screen bg-[#eef2ed] text-brand-700">
@@ -97,12 +105,11 @@ function GerminationDetailScreen() {
         </header>
 
         <div className="mt-6 space-y-5 px-5">
+          <GerminationLotCard lot={summaryLot} />
+
           <div className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-sm font-semibold text-brand-700">Estado del lote</span>
-              <span className="rounded-full bg-brand-100 px-3 py-1 text-[11px] font-semibold text-brand-600">
-                {phases[currentPhaseIndex].label}
-              </span>
+              <span className="text-xl font-semibold text-brand-700">Estado del lote</span>
             </div>
 
             <div className="mt-4 grid grid-cols-[1.1fr,0.9fr] gap-4">
@@ -178,54 +185,6 @@ function GerminationDetailScreen() {
                   </button>
                 </div>
               </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-2xl bg-white px-4 py-3 shadow-soft ring-1 ring-black/5">
-              <p className="text-xs uppercase tracking-wide text-brand-500">Cantidad inicial</p>
-              <p className="mt-1 text-3xl font-extrabold text-brand-700">{lot.cantidadInicio}</p>
-            </div>
-            <div className="rounded-2xl bg-white px-4 py-3 shadow-soft ring-1 ring-black/5">
-              <p className="text-xs uppercase tracking-wide text-brand-500">Vivas</p>
-              <p className="mt-1 text-3xl font-extrabold text-brand-700">
-                {lot.cantidadInicio - lot.muertas}
-              </p>
-            </div>
-            <div className="rounded-2xl bg-brand-50 px-4 py-3 shadow-soft ring-1 ring-black/5">
-              <p className="text-xs uppercase tracking-wide text-brand-500">Días en fase</p>
-              <p className="mt-1 text-3xl font-extrabold text-brand-700">
-                {derived.diasFaseActual}
-              </p>
-            </div>
-            <div className="rounded-2xl bg-brand-50 px-4 py-3 shadow-soft ring-1 ring-black/5">
-              <p className="text-xs uppercase tracking-wide text-brand-500">Días totales</p>
-              <p className="mt-1 text-3xl font-extrabold text-brand-700">{derived.diasTotales}</p>
-            </div>
-          </div>
-
-          <div className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
-            <p className="text-sm font-semibold text-brand-700">Supervivencia ({derived.supervivencia}%):</p>
-            <div className="mt-2 flex h-3 w-full overflow-hidden rounded-full bg-brand-50 ring-1 ring-black/5">
-              <div
-                className="h-full bg-[#9ed0ff]"
-                style={{ width: `${Math.min(derived.supervivencia, 100)}%` }}
-              />
-              <div
-                className="h-full bg-slate-200"
-                style={{ width: `${Math.max(0, 100 - derived.supervivencia)}%` }}
-              />
-            </div>
-            <div className="mt-3 grid grid-cols-3 gap-2 text-xs font-semibold text-brand-700">
-              <span className="flex items-center justify-center rounded-full bg-white px-3 py-2 shadow-sm ring-1 ring-brand-100">
-                {lot.planta.fuente === 'SEMILLA' ? 'Semilla' : 'Esqueje'}
-              </span>
-              <span className="flex items-center justify-center rounded-full bg-white px-3 py-2 shadow-sm ring-1 ring-brand-100">
-                {formatDate(lot.fechas.INICIO)}
-              </span>
-              <span className="flex items-center justify-center rounded-full bg-white px-3 py-2 shadow-sm ring-1 ring-brand-100">
-                {lot.vivero.nombre}
-              </span>
             </div>
           </div>
 
