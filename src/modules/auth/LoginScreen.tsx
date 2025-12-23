@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useWebAuthn } from '../../hooks/useWebAuthn'
 import { useAuth } from '../../contexts/AuthContext'
 import Icon from '../../components/Icon'
+import heroCanopy from '../../assets/home/hero-canopy.jpg'
 
 function LoginScreen() {
   const navigate = useNavigate()
@@ -66,150 +67,189 @@ function LoginScreen() {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-6">
-      {/* Tabs */}
-      <div className="flex gap-2 rounded-2xl bg-slate-100 p-1">
-        <button
-          type="button"
-          onClick={() => setIsRegistering(false)}
-          className={`flex-1 rounded-xl py-2.5 text-sm font-extrabold transition ${
-            !isRegistering
-              ? 'bg-white text-brand-700 shadow-soft'
-              : 'text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          Iniciar Sesión
-        </button>
-        <button
-          type="button"
-          onClick={() => setIsRegistering(true)}
-          className={`flex-1 rounded-xl py-2.5 text-sm font-extrabold transition ${
-            isRegistering
-              ? 'bg-white text-brand-700 shadow-soft'
-              : 'text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          Crear Cuenta
-        </button>
-      </div>
-
-      {/* Mensaje informativo */}
-      <div className="rounded-2xl bg-blue-50 border border-blue-200 p-4">
-        <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-blue-100">
-            <span className="text-2xl">🔐</span>
-          </div>
-          <div className="flex-1">
-            <h3 className="text-sm font-extrabold text-blue-900">
-              Autenticación sin contraseña
-            </h3>
-            <p className="mt-1 text-xs font-semibold text-blue-700">
-              {isRegistering 
-                ? 'Crea tu cuenta y configura tu huella digital, Face ID o Windows Hello.'
-                : 'Usa tu huella digital, Face ID o Windows Hello para iniciar sesión.'
-              }
-            </p>
+    <div className="flex min-h-[82vh] flex-col">
+      <div className="relative overflow-hidden rounded-[28px] bg-white text-brand-800 shadow-2xl backdrop-blur">
+        <div className="relative h-48">
+          <img
+            src={heroCanopy}
+            alt="Bosque"
+            className="absolute inset-0 h-full w-full object-cover"
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/65 via-black/60 to-brand-900/90" />
+          <div className="relative flex h-full flex-col justify-between p-5 text-white">
+            <div className="flex items-center justify-between text-xs font-semibold">
+              <span className="rounded-full bg-white/25 px-3 py-1 text-white backdrop-blur">
+                Passkeys
+              </span>
+              <span className="rounded-full bg-white/20 px-3 py-1 text-white">Biometría</span>
+            </div>
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.22em] text-white/90">Ingreso</p>
+              <h2 className="text-2xl font-semibold leading-tight text-white">Acceso sin contraseñas</h2>
+              <p className="mt-1 text-sm text-white">Face ID, huella o Windows Hello.</p>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Mensaje de error */}
-      {error && (
-        <div className="rounded-2xl bg-red-50 border border-red-200 p-4">
-          <div className="flex items-center gap-2">
-            <Icon name="info" className="h-5 w-5 text-red-600" />
-            <p className="text-sm font-semibold text-red-700">
-              {error}
-            </p>
+        <div className="space-y-5 px-5 pb-6 pt-5">
+          <div className="flex items-center justify-between">
+            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-500">
+              {isRegistering ? 'Crear cuenta' : 'Iniciar sesión'}
+            </div>
+            <div className="rounded-full bg-brand-50 px-3 py-1 text-[11px] font-bold text-brand-600">
+              Passkeys
+            </div>
           </div>
-        </div>
-      )}
 
-      {!isRegistering ? (
-        /* Login con Passkey */
-        <div className="flex flex-1 flex-col gap-6">
-          <button
-            type="button"
-            onClick={handleLogin}
-            disabled={loading}
-            className="w-full rounded-2xl bg-brand-500 py-4 text-center text-lg font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99] disabled:opacity-60 flex items-center justify-center gap-3"
-          >
-            {loading ? (
-              <>
-                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                </svg>
-                <span>Autenticando...</span>
-              </>
-            ) : (
-              <>
-                <Icon name="user" className="h-5 w-5" />
-                <span>Iniciar Sesión con Passkey</span>
-              </>
-            )}
-          </button>
-
-          <p className="text-center text-xs font-semibold text-slate-500">
-            Al iniciar sesión, se solicitará tu autenticación biométrica
-          </p>
-        </div>
-      ) : (
-        /* Registro */
-        <form onSubmit={handleRegister} className="flex flex-1 flex-col gap-6">
-          <div className="space-y-2">
-            <label className="text-sm font-semibold text-brand-700">
-              Nombre de usuario <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              required
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base font-semibold text-slate-700 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
-              placeholder="Tu nombre"
+          <div className="relative rounded-full border border-white/60 bg-slate-100/90 p-1 shadow-soft backdrop-blur">
+            <div
+              className={`absolute top-1 h-[calc(100%-8px)] w-[48%] rounded-full bg-gradient-to-r from-brand-600 to-brand-700 shadow-soft transition-all duration-300 ${
+                isRegistering ? 'translate-x-[104%]' : 'translate-x-[4%]'
+              }`}
             />
+            <div className="relative z-10 grid grid-cols-2 text-[13px] font-extrabold">
+              <button
+                type="button"
+                onClick={() => setIsRegistering(false)}
+                className={`flex items-center justify-center gap-1 rounded-full px-4 py-2 transition ${
+                  !isRegistering ? 'text-white mix-blend-difference' : 'text-slate-600'
+                }`}
+              >
+                <span>Iniciar</span>
+                <span className="hidden text-[11px] font-semibold md:inline">sesión</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsRegistering(true)}
+                className={`flex items-center justify-center gap-1 rounded-full px-4 py-2 transition ${
+                  isRegistering ? 'text-white mix-blend-difference' : 'text-slate-600'
+                }`}
+              >
+                <span>Crear</span>
+                <span className="hidden text-[11px] font-semibold md:inline">cuenta</span>
+              </button>
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-semibold text-brand-700">
-              Correo electrónico (opcional)
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base font-semibold text-slate-700 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
-              placeholder="tu@correo.com"
-            />
-          </div>
+          {error && (
+            <div className="rounded-2xl border-l-4 border-red-500 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 shadow-soft">
+              <div className="flex items-center gap-2">
+                <Icon name="info" className="h-5 w-5 text-red-600" />
+                <span>{error}</span>
+              </div>
+            </div>
+          )}
 
-          <button
-            type="submit"
-            disabled={loading || !username.trim()}
-            className="w-full rounded-2xl bg-brand-500 py-4 text-center text-lg font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-3"
-          >
-            {loading ? (
-              <>
-                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                </svg>
-                <span>Registrando...</span>
-              </>
-            ) : (
-              <>
-                <Icon name="user" className="h-5 w-5" />
-                <span>Crear Cuenta con Passkey</span>
-              </>
-            )}
-          </button>
+          {!isRegistering ? (
+            <div className="flex flex-col gap-5">
+              <button
+                type="button"
+                onClick={handleLogin}
+                disabled={loading}
+                className="flex w-full items-center justify-center gap-3 rounded-2xl bg-brand-600 px-4 py-4 text-center text-lg font-extrabold text-white shadow-soft transition hover:bg-brand-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loading ? (
+                  <>
+                    <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24">
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="none"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
+                    </svg>
+                    <span>Autenticando...</span>
+                  </>
+                ) : (
+                  <>
+                    <Icon name="user" className="h-5 w-5" />
+                    <span>Entrar con Passkey</span>
+                  </>
+                )}
+              </button>
 
-          <p className="text-center text-xs font-semibold text-slate-500">
-            Se te pedirá configurar tu autenticación biométrica después del registro
-          </p>
-        </form>
-      )}
+              <p className="text-center text-xs font-semibold text-slate-700">
+                Biometría solo cuando sea necesario.
+              </p>
+            </div>
+          ) : (
+            <form onSubmit={handleRegister} className="flex flex-col gap-5">
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-brand-700">
+                  Nombre de usuario <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-base font-semibold text-slate-800 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
+                  placeholder="Tu nombre"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-brand-700">
+                  Correo electrónico (opcional)
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-base font-semibold text-slate-800 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
+                  placeholder="tu@correo.com"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading || !username.trim()}
+                className="flex w-full items-center justify-center gap-3 rounded-2xl bg-brand-600 px-4 py-4 text-center text-lg font-extrabold text-white shadow-soft transition hover:bg-brand-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loading ? (
+                  <>
+                    <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24">
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="none"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
+                    </svg>
+                    <span>Registrando...</span>
+                  </>
+                ) : (
+                  <>
+                    <Icon name="user" className="h-5 w-5" />
+                    <span>Crear cuenta con Passkey</span>
+                  </>
+                )}
+              </button>
+
+              <p className="text-center text-xs font-semibold text-slate-700">
+                Face ID / huella para confirmar alta.
+              </p>
+            </form>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
