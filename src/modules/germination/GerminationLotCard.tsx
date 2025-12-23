@@ -50,13 +50,13 @@ function GerminationLotCard({ lot, onClick }: Props) {
     lot.estado === 'LISTA_PLANTAR' || lot.estado === 'SALIDA_VIVERO' ? 'final' : 'parcial'
   const badgeTone = estadoBadgeStyle[lot.estado]
   const isClickable = Boolean(onClick)
-  const Wrapper = (isClickable ? 'button' : 'div') as const
+  const baseClass =
+    'w-full rounded-3xl bg-white px-4 py-4 text-left shadow-soft ring-1 ring-black/5'
+  const interactiveClass = isClickable ? ' transition hover:-translate-y-[2px] hover:shadow-md' : ''
+  const wrapperClassName = `${baseClass}${interactiveClass}`
 
-  return (
-    <Wrapper
-      {...(isClickable ? { type: 'button', onClick } : {})}
-      className="w-full rounded-3xl bg-white px-4 py-4 text-left shadow-soft ring-1 ring-black/5 transition hover:-translate-y-[2px] hover:shadow-md"
-    >
+  const content = (
+    <>
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1">
           <h2 className="text-xl font-extrabold leading-tight">{lot.especie}</h2>
@@ -115,8 +115,18 @@ function GerminationLotCard({ lot, onClick }: Props) {
           {lot.vivero}
         </span>
       </div>
-    </Wrapper>
+    </>
   )
+
+  if (isClickable) {
+    return (
+      <button type="button" onClick={onClick} className={wrapperClassName}>
+        {content}
+      </button>
+    )
+  }
+
+  return <div className={wrapperClassName}>{content}</div>
 }
 
 export default GerminationLotCard

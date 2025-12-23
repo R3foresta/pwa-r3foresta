@@ -117,7 +117,6 @@ function GerminationDetailScreen() {
                 <div className="space-y-4">
                   {phases.map((phase, index) => {
                     const isCompleted = index <= currentPhaseIndex
-                    const isCurrent = index === currentPhaseIndex
                     return (
                       <div key={phase.key} className="flex items-start gap-3">
                         <div className="flex flex-col items-center">
