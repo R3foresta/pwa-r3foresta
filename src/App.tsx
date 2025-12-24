@@ -17,6 +17,7 @@ import RecoverScreen from './modules/auth/RecoverScreen'
 import { useAuth } from './contexts/AuthContext'
 import GerminationScreen from './modules/germination/GerminationScreen'
 import GerminationDetailScreen from './modules/germination/GerminationDetailScreen'
+import MapScreen from './modules/map/MapScreen'
 
 function RootRedirect() {
   const { isAuthenticated, hydrated } = useAuth()
@@ -69,7 +70,7 @@ function App() {
           <Route path="co2" element={<PlaceholderScreen title="CO₂" />} />
           <Route path="map" element={<PlaceholderScreen title="Mapa" />} />
           <Route path="scan" element={<PlaceholderScreen title="Escanear" />} />
-          <Route path="report" element={<PlaceholderScreen title="Reporte" />} />
+          <Route path="report" element={<MapScreen />} />
           <Route path="profile" element={<PlaceholderScreen title="Perfil" />} />
           <Route path="*" element={<PlaceholderScreen title="Próximamente" />} />
         </Route>
