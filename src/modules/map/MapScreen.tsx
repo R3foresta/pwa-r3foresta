@@ -327,16 +327,17 @@ function MapScreen() {
           <h1 className="text-xl font-semibold text-center" style={{ color: '#164d2f' }}>Mapa R3foresta</h1>
         </div>
 
-        {/* Contenedor del mapa - ocupa todo el espacio restante */}
+        {/* Contenedor del mapa - ocupa todo el espacio */}
         <div className="flex-1 relative pb-20">
           <MapContainer
             center={center}
             zoom={13}
             scrollWheelZoom={true}
+            attributionControl={false}
+            zoomControl={false}
             style={{ height: '100%', width: '100%' }}
           >
             <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               maxZoom={19}
             />
