@@ -319,9 +319,9 @@ function MapScreen() {
   const center = userLocation || defaultCenter
 
   return (
-    <div className="fixed inset-0 z-0 bg-gray-100 flex items-center justify-center">
-      {/* Contenedor móvil centrado */}
-      <div className="w-full max-w-md h-screen bg-white shadow-2xl flex flex-col">
+    <div className="fixed inset-0 z-0 bg-gray-100">
+      {/* Contenedor responsive */}
+      <div className="w-full h-screen bg-white flex flex-col">
         {/* Encabezado */}
         <div className="bg-white border-b px-4 py-3 shadow-sm">
           <h1 className="text-xl font-semibold text-center" style={{ color: '#164d2f' }}>Mapa R3foresta</h1>
