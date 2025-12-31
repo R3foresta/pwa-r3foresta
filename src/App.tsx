@@ -17,6 +17,7 @@ import RecoverScreen from './modules/auth/RecoverScreen'
 import { useAuth } from './contexts/AuthContext'
 import GerminationScreen from './modules/germination/GerminationScreen'
 import GerminationDetailScreen from './modules/germination/GerminationDetailScreen'
+import GerminationNewScreen from './modules/germination/GerminationNewScreen'
 import MapScreen from './modules/map/MapScreen'
 
 function RootRedirect() {
@@ -54,7 +55,7 @@ function App() {
           </Route>
           <Route path="germination">
             <Route index element={<GerminationScreen />} />
-            <Route path="new" element={<PlaceholderScreen title="Nuevo lote de germinación" />} />
+            <Route path="new" element={<GerminationNewScreen />} />
             <Route path=":id" element={<GerminationDetailScreen />} />
             <Route
               path=":id/event/new"
