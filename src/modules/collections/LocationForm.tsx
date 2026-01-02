@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Icon from "../../components/Icon";
 import { useCollectionForm } from "./CollectionFormContext";
@@ -77,6 +77,19 @@ function LocationForm() {
       }
     );
   };
+
+  // Obtener ubicación automáticamente al cargar el componente
+  useEffect(() => {
+    // Solo obtener ubicación si los campos están vacíos
+    if (!direccion && !latitud && !longitud) {
+      // Usar setTimeout para evitar llamadas síncronas de setState en el effect
+      const timer = setTimeout(() => {
+        getLocation();
+      }, 0);
+      
+      return () => clearTimeout(timer);
+    }
+  }, []); // Se ejecuta solo una vez al montar el componente
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#f6f7f3] to-[#eef1eb] text-brand-700">
