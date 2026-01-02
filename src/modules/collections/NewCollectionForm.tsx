@@ -285,7 +285,7 @@ function NewCollectionForm() {
 
           <div className="space-y-2">
             <p className="text-base font-extrabold text-brand-700">
-              Especie de la semilla
+              Especie de planta
             </p>
             {!showCustomSpecies ? (
               <div className="flex gap-2">
@@ -638,6 +638,15 @@ function NewCollectionForm() {
               <h2 className="text-lg font-extrabold text-brand-700">
                 Fotos de {modalTitle}
               </h2>
+              {currentPhotos.length === 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowPhotoModal(false)}
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200 active:scale-95"
+                >
+                  <Icon name="x" className="h-5 w-5" />
+                </button>
+              )}
             </div>
 
             <div className="px-5 py-4">
