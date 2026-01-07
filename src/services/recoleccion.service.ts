@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'https://backend-nestjs-production-c419.up.railway.app';
+const API_URL = import.meta.env.VITE_API_URL || 'https://back-reforesta.onrender.com';
 
 // ===== TIPOS =====
 export interface CreateRecoleccionDto {
