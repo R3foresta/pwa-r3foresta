@@ -1,41 +1,103 @@
+import { useState } from 'react'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import Icon from './Icon'
-import { NAV_ACTIVE_FOR, NAV_ITEMS } from '../data/navigation'
-import type { Screen } from '../types/navigation'
+import { NAV_ITEMS } from '../data/navigation'
 
-type Props = {
-  active: Screen
-  onChange: (screen: Screen) => void
-}
+function BottomNav() {
+  const navigate = useNavigate()
+  const { pathname } = useLocation()
+  const [open, setOpen] = useState(false)
 
-function BottomNav({ active, onChange }: Props) {
-  const activeNav = NAV_ACTIVE_FOR[active] ?? 'home'
+  const quickActions = [
+    { label: 'Registrar recolección', icon: 'package', to: '/app/collections/new' },
+    { label: 'Nuevo germinación', icon: 'germination', to: '/app/germination/new' },
+    { label: 'Registrar plantación', icon: 'leaf', to: '/app/planting' },
+    { label: 'Actualizar CO₂', icon: 'balance', to: '/app/co2' },
+  ]
+
+  const handleQuickNav = (to: string) => {
+    setOpen(false)
+    navigate(to)
+  }
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 border-t border-white/60 bg-white/95 px-2 py-2 backdrop-blur">
-      <div className="mx-auto flex w-full max-w-md items-center justify-between">
-        {NAV_ITEMS.map((item) => {
-          const isActive = item.screen === activeNav
-          return (
-            <button
-              key={item.label}
-              onClick={() => onChange(item.screen)}
-              className={`flex flex-1 flex-col items-center gap-1 rounded-xl px-1 py-2 text-[11px] font-semibold transition ${
-                isActive ? 'text-brand-600' : 'text-brand-500'
-              }`}
-            >
-              <div
-                className={`flex h-10 w-10 items-center justify-center rounded-xl ${
-                  isActive ? 'bg-brand-100 text-brand-600' : 'text-brand-500'
+    <>
+      {open && (
+        <div
+          className="fixed inset-0 z-30 bg-black/40 backdrop-blur-[2px]"
+          onClick={() => setOpen(false)}
+        />
+      )}
+
+      <div className="fixed inset-x-0 bottom-0 z-40 mb-3 flex justify-center">
+        <nav className="relative flex w-[92%] max-w-md items-end justify-between rounded-3xl bg-brand-600 px-4 py-3 text-white shadow-2xl shadow-brand-900/30">
+          {NAV_ITEMS.map((item) => {
+            const isActive = pathname.startsWith(item.path)
+            return (
+              <NavLink
+                key={item.label}
+                to={item.path}
+                className={`flex flex-1 flex-col items-center gap-1 rounded-xl px-1 py-2 text-[11px] font-semibold transition ${
+                  isActive ? 'text-white' : 'text-white/70'
                 }`}
               >
-                <Icon name={item.icon} className="h-5 w-5" />
-              </div>
-              <span>{item.label}</span>
-            </button>
-          )
-        })}
+                <div
+                  className={`flex h-10 w-10 items-center justify-center rounded-xl ${
+                    isActive ? 'bg-white/20 text-white' : 'text-white/70'
+                  }`}
+                >
+                  <Icon name={item.icon} className="h-5 w-5" />
+                </div>
+                <span>{item.label}</span>
+              </NavLink>
+            )
+          })}
+
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            className="absolute -top-5 left-1/2 flex h-14 w-14 -translate-x-1/2 items-center justify-center rounded-full bg-white text-brand-700 shadow-2xl transition hover:scale-105 active:scale-95"
+            aria-label="Abrir acciones rápidas"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-500 text-white shadow-soft">
+              <Icon name={open ? 'minus' : 'plus'} className="h-6 w-6" />
+            </div>
+          </button>
+        </nav>
       </div>
-    </nav>
+
+      {open && (
+        <div className="fixed inset-x-0 bottom-20 z-40 flex justify-center px-4">
+          <div className="w-full max-w-md rounded-3xl bg-white text-brand-800 shadow-2xl shadow-brand-900/20 ring-1 ring-black/5 backdrop-blur">
+            <div className="flex items-center justify-between px-4 pt-4">
+              <h3 className="text-sm font-semibold text-brand-800">Acciones rápidas</h3>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="rounded-full p-2 text-brand-500 hover:bg-slate-100"
+              >
+                <Icon name="x" className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="divide-y divide-slate-100 px-2 pb-2 pt-2">
+              {quickActions.map((action) => (
+                <button
+                  key={action.label}
+                  type="button"
+                  onClick={() => handleQuickNav(action.to)}
+                  className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-slate-50 active:bg-slate-100"
+                >
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
+                    <Icon name={action.icon as any} className="h-5 w-5" />
+                  </div>
+                  <span className="text-sm font-semibold text-brand-800">{action.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
 

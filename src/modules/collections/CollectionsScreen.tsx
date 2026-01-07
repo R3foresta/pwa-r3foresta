@@ -1,40 +1,64 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Icon from '../../components/Icon'
-import { collectionFilters, collectionRecords } from './data'
+import { materialFilterOptions } from './data'
 import CollectionCard from './CollectionCard'
-import type { FilterKey } from './types'
+import { RecoleccionService } from '../../services/recoleccion.service'
+import type { Recoleccion } from '../../services/recoleccion.service'
 
-type Props = {
-  onBack: () => void
-  onCreate: () => void
-}
+type MaterialFilterKey = (typeof materialFilterOptions)[number]['key']
 
-function CollectionsScreen({ onBack, onCreate }: Props) {
-  const [filter, setFilter] = useState<FilterKey>('Todos')
+function CollectionsScreen() {
+  const navigate = useNavigate()
+  const [filter, setFilter] = useState<MaterialFilterKey>('all')
   const [query, setQuery] = useState('')
+  const [recolecciones, setRecolecciones] = useState<Recoleccion[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
 
-  const filteredCollections = useMemo(() => {
-    const normalized = query.trim().toLowerCase()
-    return collectionRecords.filter((record) => {
-      const matchesSearch =
-        !normalized ||
-        [record.id, record.species, record.location]
-          .join(' ')
-          .toLowerCase()
-          .includes(normalized)
+  const cargarRecolecciones = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      const tipo_material = filter === 'all' ? undefined :
+        filter === 'seed' ? 'SEMILLA' : 'ESTACA'
+      
+      console.log('🔄 Cargando recolecciones con filtros:', { page, tipo_material });
+      
+      const response = await RecoleccionService.list({
+        page,
+        limit: 20,
+        tipo_material,
+      })
+      
+      console.log('✅ Recolecciones recibidas:', response.data.length);
+      setRecolecciones(response.data || [])
+    } catch (err) {
+      console.error('❌ Error cargando recolecciones:', err)
+      setError(err instanceof Error ? err.message : 'Error al cargar recolecciones')
+      // Mostrar array vacío en caso de error para mejor UX
+      setRecolecciones([])
+    } finally {
+      setLoading(false)
+    }
+  }
 
-      const matchesFilter =
-        filter === 'Todos'
-          ? true
-          : filter === 'Semilla'
-            ? record.types.includes('seed')
-            : filter === 'Esqueje'
-              ? record.types.includes('cutting')
-              : record.types.length > 1
+  useEffect(() => {
+    cargarRecolecciones()
+  }, [page, filter])
 
-      return matchesSearch && matchesFilter
-    })
-  }, [filter, query])
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (page === 1) {
+        cargarRecolecciones()
+      } else {
+        setPage(1)
+      }
+    }, 500)
+    return () => clearTimeout(timeoutId)
+  }, [query])
 
   return (
     <div className="relative min-h-screen bg-[#eef2ed] text-brand-700">
@@ -43,7 +67,7 @@ function CollectionsScreen({ onBack, onCreate }: Props) {
           <button
             type="button"
             aria-label="Volver"
-            onClick={onBack}
+            onClick={() => navigate('/app/home')}
             className="left-4 top-5 mr-4 my-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
           >
             <Icon name="arrow-left" className="h-5 w-5" />
@@ -69,42 +93,78 @@ function CollectionsScreen({ onBack, onCreate }: Props) {
           </label>
 
           <div className="flex flex-wrap gap-3">
-            {collectionFilters.map((option) => {
-              const isActive = filter === option
+            {materialFilterOptions.map((option) => {
+              const isActive = filter === option.key
               return (
                 <button
-                  key={option}
+                  key={option.key}
                   type="button"
-                  onClick={() => setFilter(option)}
+                  onClick={() => setFilter(option.key)}
                   className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
                     isActive
                       ? 'border-brand-500 bg-brand-500 text-white shadow-soft'
                       : 'border-brand-100 bg-white text-brand-600 hover:border-brand-300'
                   }`}
                 >
-                  {option}
+                  {option.label}
                 </button>
               )
             })}
           </div>
 
-          <div className="space-y-3">
-            {filteredCollections.map((record) => (
-              <CollectionCard key={record.id} record={record} />
-            ))}
-            {filteredCollections.length === 0 && (
-              <div className="rounded-3xl bg-white px-4 py-6 text-center text-sm font-semibold text-slate-600 shadow-soft ring-1 ring-black/5">
-                No se encontraron recolecciones con esos filtros.
+          {loading && (
+            <div className="rounded-3xl bg-white px-4 py-6 text-center text-sm font-semibold text-slate-600 shadow-soft ring-1 ring-black/5">
+              <div className="flex items-center justify-center gap-2">
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-brand-500 border-t-transparent"></div>
+                Cargando recolecciones...
               </div>
-            )}
-          </div>
+            </div>
+          )}
+          
+          {error && (
+            <div className="rounded-3xl bg-red-50 px-4 py-6 text-center text-sm font-semibold text-red-600 shadow-soft ring-1 ring-red-200">
+              ❌ {error}
+              <button
+                onClick={cargarRecolecciones}
+                className="mt-2 rounded-lg bg-red-100 px-3 py-1 text-xs font-bold text-red-700 hover:bg-red-200"
+              >
+                Reintentar
+              </button>
+            </div>
+          )}
+          
+          {!loading && !error && (
+            <div className="space-y-3">
+              {recolecciones.map((recoleccion) => (
+                <button
+                  key={recoleccion.id}
+                  type="button"
+                  onClick={() => navigate(`/app/collections/${recoleccion.id}`)}
+                  className="w-full text-left"
+                >
+                  <CollectionCard recoleccion={recoleccion} />
+                </button>
+              ))}
+              {recolecciones.length === 0 && (
+                <div className="rounded-3xl bg-white px-4 py-6 text-center shadow-soft ring-1 ring-black/5">
+                  <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100">
+                    <Icon name="package" className="h-8 w-8 text-slate-400" />
+                  </div>
+                  <p className="text-base font-bold text-slate-700">Sin recolecciones</p>
+                  <p className="mt-1 text-sm font-medium text-slate-500">
+                    {query ? 'No se encontraron resultados' : 'Aún no tienes recolecciones registradas'}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
       <button
         type="button"
         aria-label="Nueva recolección"
-        onClick={onCreate}
+        onClick={() => navigate('/app/collections/new')}
         className="fixed bottom-24 right-6 mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-brand-500 text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.98]"
       >
         <Icon name="plus" className="h-6 w-6" />

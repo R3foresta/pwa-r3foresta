@@ -2,12 +2,12 @@ export type IconName =
   | 'bell'
   | 'dot'
   | 'home'
-  | 'map'
   | 'scan'
   | 'report'
   | 'user'
   | 'search'
   | 'leaf'
+  | 'germination'
   | 'cutting'
   | 'plus'
   | 'minus'
@@ -16,6 +16,15 @@ export type IconName =
   | 'chevron-down'
   | 'photo'
   | 'info'
+  | 'balance'
+  | 'package'
+  | 'date'
+  | 'qr'
+  | 'trash'
+  | 'check'
+  | 'x'
+  | 'planting'
+  | 'map'
 
 type Props = {
   name: IconName
@@ -69,23 +78,6 @@ function Icon({ name, className }: Props) {
             strokeLinejoin="round"
             d="M6.5 10.5v8.5a.5.5 0 0 0 .5.5h3.5v-5h3v5H17a.5.5 0 0 0 .5-.5v-8.5"
           />
-        </svg>
-      )
-    case 'map':
-      return (
-        <svg
-          className={`${common} ${className ?? ''}`}
-          viewBox="0 0 24 24"
-          fill="none"
-          strokeWidth="1.8"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="m8.5 5.2 7-2.1a1 1 0 0 1 .7.1l3.5 1.7a1 1 0 0 1 .6.9v11.6a1 1 0 0 1-1.3 1l-2.8-1a1 1 0 0 0-.6 0l-7 2.1a1 1 0 0 1-.7-.1l-3.5-1.7a1 1 0 0 1-.6-.9V4.7a1 1 0 0 1 1.3-1l2.8 1a1 1 0 0 0 .6 0Z"
-          />
-          <path strokeLinecap="round" strokeLinejoin="round" d="m8 5.5 8 3" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="m8 13.5 8 3" />
         </svg>
       )
     case 'scan':
@@ -176,6 +168,28 @@ function Icon({ name, className }: Props) {
             d="M18 5s-3 0-6 1.6C9 8 6 10.5 6 13c0 3 2.5 5 5.5 5 2.5 0 4.5-2 4.5-4.5C16 10 18 5 18 5Z"
           />
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 13.5 8 11" />
+        </svg>
+      )
+    case 'germination':
+      return (
+        <svg
+          className={`${common} ${className ?? ''}`}
+          viewBox="0 0 24 24"
+          fill="none"
+          strokeWidth="1.8"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 19.5h9" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 19.5v-6.5" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 13Q9 13 9 9Q12 9 12 13Z"
+          />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 13.5Q15 13.5 15 9.5Q12 9.5 12 13.5Z"
+          />
         </svg>
       )
     case 'cutting':
@@ -279,6 +293,159 @@ function Icon({ name, className }: Props) {
           <circle cx="12" cy="12" r="9" />
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6" />
           <circle cx="12" cy="8" r="0.8" fill="currentColor" />
+        </svg>
+      )
+    case 'balance':
+      return (
+        <svg
+          className={`${common} ${className ?? ''}`}
+          viewBox="0 0 24 24"
+          fill="none"
+          strokeWidth="1.8"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M6 9 4 15h8L10 9"
+          />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M14 9 12 15h8l-2-6"
+          />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 9h12" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9V6" />
+          <circle cx="12" cy="4.5" r="1.2" fill="currentColor" />
+          <path strokeLinecap="round" d="M5 19h14" />
+        </svg>
+      )
+    case 'package':
+      return (
+        <svg
+          className={`${common} ${className ?? ''}`}
+          viewBox="0 0 24 24"
+          fill="none"
+          strokeWidth="1.8"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 3 4 7v10l8 4 8-4V7l-8-4Z"
+          />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 12 4 8" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 12v9" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="m12 12 8-4" />
+        </svg>
+      )
+    case 'date':
+      return (
+        <svg
+          className={`${common} ${className ?? ''}`}
+          viewBox="0 0 24 24"
+          fill="none"
+          strokeWidth="1.8"
+        >
+          <rect x="4" y="5" width="16" height="16" rx="2" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4 10h16" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8 3v4" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M16 3v4" />
+        </svg>
+      )
+    case 'qr':
+      return (
+        <svg
+          className={`${common} ${className ?? ''}`}
+          viewBox="0 0 24 24"
+          fill="none"
+          strokeWidth="1.8"
+        >
+          <rect x="4" y="4" width="7" height="7" rx="1" />
+          <rect x="13" y="4" width="7" height="7" rx="1" />
+          <rect x="4" y="13" width="7" height="7" rx="1" />
+          <rect x="15" y="15" width="3" height="3" rx="0.5" fill="currentColor" />
+        </svg>
+      )
+    case 'trash':
+      return (
+        <svg
+          className={`${common} ${className ?? ''}`}
+          viewBox="0 0 24 24"
+          fill="none"
+          strokeWidth="1.8"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 6v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M10 11v6" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M14 11v6" />
+        </svg>
+      )
+    case 'check':
+      return (
+        <svg
+          className={`${common} ${className ?? ''}`}
+          viewBox="0 0 24 24"
+          fill="none"
+          strokeWidth="2.5"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      )
+    case 'x':
+      return (
+        <svg
+          className={`${common} ${className ?? ''}`}
+          viewBox="0 0 24 24"
+          fill="none"
+          strokeWidth="2"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M18 6L6 18" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 6l12 12" />
+        </svg>
+      )
+    case 'planting':
+      return (
+        <svg
+          className={`${common} ${className ?? ''}`}
+          viewBox="0 0 24 24"
+          fill="none"
+          strokeWidth="1.8"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 20v-8"
+          />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 12c0-3 2-5 4.5-5.5.5-.1.5-.8 0-.9-3-.7-4.5-2.6-4.5-5.6"
+          />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 12c0-3-2-5-4.5-5.5-.5-.1-.5-.8 0-.9 3-.7 4.5-2.6 4.5-5.6"
+          />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M7 20h10"
+          />
+        </svg>
+      )
+    case 'map':
+      return (
+        <svg
+          className={`${common} ${className ?? ''}`}
+          viewBox="0 0 24 24"
+          fill="none"
+          strokeWidth="1.8"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M9 4L4 6v14l5-2m0-14l6 2m-6-2v14m6-14l5-2v14l-5 2m0-14v14"
+          />
         </svg>
       )
     default:
