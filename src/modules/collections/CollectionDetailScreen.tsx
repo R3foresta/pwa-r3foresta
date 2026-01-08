@@ -72,6 +72,11 @@ function CollectionDetailScreen() {
     }
   }
 
+  const handleNavigateToMap = () => {
+    // Navigate to the map with the collection's location as a parameter
+    navigate(`/app/map?focusLat=${recoleccion.ubicacion.latitud}&focusLng=${recoleccion.ubicacion.longitud}&focusId=${recoleccion.id}`);
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-[#f6f7f3] to-[#eef1eb] flex items-center justify-center">
@@ -197,7 +202,9 @@ function CollectionDetailScreen() {
           <section className="rounded-3xl bg-white px-4 py-4 shadow-soft">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-extrabold text-brand-700">Ubicación</h2>
-              <Icon name="arrow-left" className="h-4 w-4 rotate-180 text-slate-400" />
+              <button onClick={handleNavigateToMap} className="p-1">
+                <Icon name="arrow-left" className="h-4 w-4 rotate-180 text-slate-400" />
+              </button>
             </div>
             <div className="mt-3 space-y-3 text-sm font-semibold text-slate-700">
               <div>

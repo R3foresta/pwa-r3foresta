@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import type { LatLngExpression } from 'leaflet'
 import L from 'leaflet'
@@ -245,10 +246,13 @@ function ImageCarousel({ images }: { images: string[] }) {
 }
 
 function MapScreen() {
+  const [searchParams] = useSearchParams();
   // Coordenadas iniciales (centro de Bolivia como ejemplo)
   const defaultCenter: LatLngExpression = [-16.5, -68.15]
   const [userLocation, setUserLocation] = useState<LatLngExpression | null>(null)
   const [recolecciones, setRecolecciones] = useState<Recoleccion[]>([])
+  const [initialCenter, setInitialCenter] = useState<LatLngExpression>(defaultCenter)
+  const [initialZoom, setInitialZoom] = useState<number>(13)
 
   useEffect(() => {
     // Obtener ubicación del usuario
@@ -264,9 +268,20 @@ function MapScreen() {
       )
     }
 
+    // Check if there are focus parameters in the URL
+    const focusLat = searchParams.get('focusLat');
+    const focusLng = searchParams.get('focusLng');
+    const focusId = searchParams.get('focusId');
+
+    if (focusLat && focusLng) {
+      // Set the initial center to the focused location
+      setInitialCenter([parseFloat(focusLat), parseFloat(focusLng)]);
+      setInitialZoom(16); // Higher zoom for focusing on a specific location
+    }
+
     // Cargar recolecciones
     loadRecolecciones()
-  }, [])
+  }, [searchParams])
 
   const loadRecolecciones = async () => {
     try {
@@ -316,7 +331,8 @@ function MapScreen() {
     })
   }
 
-  const center = userLocation || defaultCenter
+  // Use the focused location if available, otherwise user location or default
+  const center = userLocation || initialCenter
 
   return (
     <div className="fixed inset-0 z-0 bg-gray-100">
@@ -331,7 +347,7 @@ function MapScreen() {
         <div className="flex-1 relative pb-20">
           <MapContainer
             center={center}
-            zoom={13}
+            zoom={initialZoom}
             scrollWheelZoom={true}
             attributionControl={false}
             zoomControl={false}
