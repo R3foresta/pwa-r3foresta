@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'https://back-reforesta.onrender.com';
+const API_URL = import.meta.env.VITE_API_URL || 'https://backend-r3foresta.onrender.com';
 
 // ===== TIPOS =====
 export interface CreateRecoleccionDto {
