@@ -86,6 +86,9 @@ export interface Recoleccion {
     formato: string;
     peso_bytes: number;
   }>;
+  blockchain_url?: string;
+  token_id?: string;
+  transaction_hash?: string;
   created_at: string;
   updated_at: string;
 }

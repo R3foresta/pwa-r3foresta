@@ -316,6 +316,41 @@ function CollectionDetailScreen() {
                   </div>
                 </>
               )}
+              
+              {/* Detalles de Blockchain */}
+              {recoleccion.blockchain_url && (
+                <div className="border-t border-slate-100 pt-2 mt-2 pb-9">
+                  <p className="text-xs uppercase tracking-wide text-slate-500 mb-2">Detalles de Blockchain</p>
+                  <div className="space-y-2">
+                    {recoleccion.token_id && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-600">Token ID</span>
+                        <span className="font-mono text-xs">{recoleccion.token_id}</span>
+                      </div>
+                    )}
+                    <div className="flex flex-col gap-1">
+                      <span className="text-slate-600 text-sm">Blockchain Explorer</span>
+                      <a 
+                        href={recoleccion.blockchain_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 rounded-lg bg-brand-50 px-3 py-2 text-sm font-semibold text-brand-700 hover:bg-brand-100 transition"
+                      >
+                        <Icon name="arrow-left" className="h-4 w-4 rotate-180" />
+                        Ver NFT en Explorer
+                      </a>
+                    </div>
+                    {recoleccion.transaction_hash && (
+                      <div className="flex flex-col gap-1">
+                        <span className="text-slate-600 text-sm">Transaction Hash</span>
+                        <code className="text-xs bg-slate-50 px-2 py-1 rounded border border-slate-200 break-all">
+                          {recoleccion.transaction_hash}
+                        </code>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </section>
         </div>
