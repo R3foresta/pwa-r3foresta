@@ -271,20 +271,51 @@ export class RecoleccionService {
       
       console.log('📨 Headers que se enviarán:', headers);
       
-      const response = await fetch(`${API_URL}/api/recolecciones`, {
-        method: 'POST',
-        headers: headers,
-        body: formData,
-      });
+      let response: Response | undefined;
       
-      const result = await this.handleResponse(response);
-      return result;
+      try {
+        response = await fetch(`${API_URL}/api/recolecciones`, {
+          method: 'POST',
+          headers: headers,
+          body: formData,
+        });
+        
+        console.log('📥 Response status:', response.status);
+        console.log('📥 Response ok:', response.ok);
+        
+        const result = await this.handleResponse(response);
+        return result;
+        
+      } catch (fetchError) {
+        console.error('❌ Error completo en fetch:', fetchError);
+        console.error('📊 Status de respuesta:', response?.status);
+        console.error('📊 Status text:', response?.statusText);
+        
+        if (response) {
+          try {
+            const errorText = await response.text();
+            console.error('📄 Contenido de la respuesta:', errorText);
+          } catch (textError) {
+            console.error('❌ No se pudo leer el texto de la respuesta:', textError);
+          }
+        }
+        
+        throw fetchError;
+      }
       
     } catch (error) {
-      console.error('❌ Error completo:', error);
+      console.error('❌ Error completo en create:', error);
+      console.error('📊 Tipo de error:', error instanceof Error ? error.constructor.name : typeof error);
+      console.error('📊 Mensaje:', error instanceof Error ? error.message : String(error));
+      
       if (error instanceof TypeError && error.message.includes('fetch')) {
         throw new Error('No se puede conectar con el servidor. Verifica que el backend esté corriendo y que CORS esté configurado correctamente.');
       }
+      
+      if (error instanceof Error && error.message.includes('timeout')) {
+        throw new Error('La solicitud tardó demasiado. El servidor puede estar procesando las imágenes en Pinata/Blockchain. Intenta nuevamente en unos momentos.');
+      }
+      
       throw error;
     }
   }
