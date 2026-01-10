@@ -1,5 +1,5 @@
-const API_URL = import.meta.env.VITE_API_URL || 'https://backend-r3foresta.vercel.app';
-
+//const API_URL = import.meta.env.VITE_API_URL || 'https://backend-r3foresta.vercel.app';
+const API_URL = 'https://backend-r3foresta.vercel.app';
 // ===== TIPOS =====
 export interface CreateRecoleccionDto {
   fecha: string; // YYYY-MM-DD
