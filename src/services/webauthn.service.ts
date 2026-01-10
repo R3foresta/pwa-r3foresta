@@ -1,7 +1,7 @@
 import { client } from '@passwordless-id/webauthn';
 import type { AuthResponse, ChallengeResponse } from '../types/auth.types';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://backend-nestjs-production-c419.up.railway.app';
+const API_URL = import.meta.env.VITE_API_URL || 'https://backend-r3foresta.onrender.com';
 
 // Tipos extendidos para manejar propiedades adicionales de WebAuthn
 interface ExtendedRegistration {
