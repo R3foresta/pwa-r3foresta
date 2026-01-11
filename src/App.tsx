@@ -69,7 +69,7 @@ function App() {
           <Route path="nursery" element={<Navigate to="/app/germination" replace />} />
           <Route path="planting" element={<PlaceholderScreen title="Plantación" />} />
           <Route path="co2" element={<PlaceholderScreen title="CO₂" />} />
-          <Route path="map" element={<PlaceholderScreen title="Mapa" />} />
+          <Route path="map" element={<MapScreen />} />
           <Route path="scan" element={<PlaceholderScreen title="Escanear" />} />
           <Route path="report" element={<MapScreen />} />
           <Route path="profile" element={<PlaceholderScreen title="Perfil" />} />
