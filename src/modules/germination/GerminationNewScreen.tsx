@@ -2,8 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Icon from '../../components/Icon'
 import { useAuth } from '../../contexts/AuthContext'
+import { useViveros } from '../../hooks/useViveros'
 import { RecoleccionService } from '../../services/recoleccion.service'
-import type { Recoleccion, Vivero } from '../../services/recoleccion.service'
+import type { Recoleccion } from '../../services/recoleccion.service'
 
 const createLotId = () => {
   const year = new Date().getFullYear()
@@ -34,9 +35,7 @@ function GerminationNewScreen() {
   const { user } = useAuth()
   const [lotId, setLotId] = useState(createLotId)
 
-  const [viveros, setViveros] = useState<Vivero[]>([])
-  const [viveroLoading, setViveroLoading] = useState(true)
-  const [viveroError, setViveroError] = useState<string | null>(null)
+  const { viveros, loading: viveroLoading, error: viveroError } = useViveros()
   const [selectedViveroId, setSelectedViveroId] = useState<number | null>(null)
 
   const [recolecciones, setRecolecciones] = useState<Recoleccion[]>([])
@@ -49,33 +48,6 @@ function GerminationNewScreen() {
   const [observaciones, setObservaciones] = useState('')
   const [photos, setPhotos] = useState<{ file: File; previewUrl: string }[]>([])
   const [showErrors, setShowErrors] = useState(false)
-
-  useEffect(() => {
-    let isMounted = true
-    const loadViveros = async () => {
-      try {
-        setViveroLoading(true)
-        setViveroError(null)
-        const response = await RecoleccionService.getViveros()
-        if (isMounted) {
-          setViveros(response.data || [])
-        }
-      } catch (error) {
-        if (isMounted) {
-          setViveroError(error instanceof Error ? error.message : 'Error al cargar viveros')
-        }
-      } finally {
-        if (isMounted) {
-          setViveroLoading(false)
-        }
-      }
-    }
-
-    loadViveros()
-    return () => {
-      isMounted = false
-    }
-  }, [])
 
   useEffect(() => {
     if (!selectedViveroId) {
@@ -360,7 +332,7 @@ function GerminationNewScreen() {
                       <div className="flex items-center justify-between gap-2">
                         <p className="text-sm font-extrabold">{getRecoleccionLabel(item)}</p>
                         <span className="rounded-full bg-white px-2 py-1 text-[11px] font-semibold text-brand-600 ring-1 ring-brand-100">
-                          #{item.id}
+                          #{item.codigo_trazabilidad}
                         </span>
                       </div>
                       <p className="text-xs font-semibold text-brand-500">

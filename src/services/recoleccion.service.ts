@@ -44,6 +44,7 @@ export interface Recoleccion {
   estado: string;
   especie_nueva: boolean;
   observaciones?: string;
+  codigo_trazabilidad: string;
   usuario: {
     id: number;
     nombre: string;
