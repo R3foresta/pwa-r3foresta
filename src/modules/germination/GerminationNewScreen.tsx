@@ -450,17 +450,17 @@ function GerminationNewScreen() {
               </div>
             </div>
           )}
-          <div className=" bottom-24 left-0 right-0 z-50 mx-auto w-full max-w-md px-5">
-          <button
-            type="submit"
-            aria-disabled={!canSubmit}
-            className={`flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-base font-extrabold text-white shadow-soft transition ${
-              canSubmit
-                ? 'bg-emerald-600 hover:bg-emerald-700'
-                : 'bg-slate-300 text-slate-600 cursor-not-allowed'
-            }`}
-          >
-              <Icon name="check" className="h-4 w-4" />
+          <div className="bottom-24 left-0 right-0 z-50 mx-0 w-full max-w-md ">
+            <button
+              type="submit"
+              aria-disabled={!canSubmit}
+              className={`flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-base font-extrabold text-white shadow-soft transition ${
+                canSubmit
+                  ? 'bg-emerald-600 hover:bg-emerald-700'
+                  : 'bg-slate-300 text-slate-600 cursor-not-allowed'
+              }`}
+            >
+            <Icon name="check" className="h-4 w-4" />
               Registrar germinacion
             </button>
           </div>
