@@ -23,6 +23,7 @@ function LocationForm() {
   const [errors, setErrors] = useState({
     direccion: false,
     coordinates: false,
+    vivero: false,
   });
 
   const getLocation = () => {
@@ -41,7 +42,7 @@ function LocationForm() {
         
         setLatitud(lat);
         setLongitud(lng);
-        setErrors({ direccion: false, coordinates: false });
+        setErrors((prev) => ({ ...prev, direccion: false, coordinates: false }));
 
         // Obtener dirección usando Nominatim (OpenStreetMap)
         try {
@@ -313,7 +314,11 @@ function LocationForm() {
                   </div>
                 ) : (
                   <>
-                    <div className="flex items-center rounded-2xl border border-slate-200 bg-white px-4 shadow-soft focus-within:border-brand-400 focus-within:ring-2 focus-within:ring-brand-200">
+                    <div className={`flex items-center rounded-2xl border px-4 shadow-soft focus-within:ring-2 ${
+                      errors.vivero
+                        ? 'border-red-400 bg-red-50 focus-within:border-red-400 focus-within:ring-red-200'
+                        : 'border-slate-200 bg-white focus-within:border-brand-400 focus-within:ring-brand-200'
+                    }`}>
                       <select
                         value={selectedViveroId ?? ""}
                         onChange={(event) => {
@@ -321,6 +326,9 @@ function LocationForm() {
                             ? Number(event.target.value)
                             : null;
                           setSelectedViveroId(nextId);
+                          if (nextId !== null) {
+                            setErrors((prev) => ({ ...prev, vivero: false }));
+                          }
                         }}
                         className="w-full bg-transparent py-3 text-sm font-semibold text-slate-700 outline-none"
                       >
@@ -336,6 +344,11 @@ function LocationForm() {
                     {viveroError && (
                       <p className="text-xs font-semibold text-red-500">{viveroError}</p>
                     )}
+                    {errors.vivero && (
+                      <p className="text-xs font-semibold text-red-500">
+                        * El vivero (almacenamiento) es obligatorio. Selecciona uno para continuar.
+                      </p>
+                    )}
                   </>
                 )}
               </div>
@@ -348,6 +361,7 @@ function LocationForm() {
               const newErrors = {
                 direccion: !direccion.trim(),
                 coordinates: !latitud.trim() || !longitud.trim(),
+                vivero: selectedViveroId === null,
               };
               
               setErrors(newErrors);
