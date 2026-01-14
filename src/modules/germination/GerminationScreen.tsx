@@ -1,37 +1,100 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Icon from '../../components/Icon'
 import GerminationLotCard, { type GerminationLotCardData } from './GerminationLotCard'
-import { germinationLots } from './data'
+import { GerminacionService, type LoteFaseVivero } from '../../services/germinacion.service'
 
 type ListLot = GerminationLotCardData & { comunidad: string }
 
 function GerminationScreen() {
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
+  const [lots, setLots] = useState<LoteFaseVivero[]>([])
+  const [loadingLots, setLoadingLots] = useState(true)
+  const [errorLots, setErrorLots] = useState<string | null>(null)
+
+  useEffect(() => {
+    let isMounted = true
+
+    const loadLots = async () => {
+      try {
+        setLoadingLots(true)
+        setErrorLots(null)
+        const response = await GerminacionService.list()
+        if (isMounted) {
+          setLots(response.data || [])
+        }
+      } catch (error) {
+        if (isMounted) {
+          setErrorLots(
+            error instanceof Error ? error.message : 'Error al cargar lotes de germinacion',
+          )
+        }
+      } finally {
+        if (isMounted) {
+          setLoadingLots(false)
+        }
+      }
+    }
+
+    loadLots()
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   const filteredLots = useMemo<ListLot[]>(() => {
-    const normalized = query.trim().toLowerCase()
-    const withDerived = germinationLots.map((lot) => ({
-      id: lot.id,
-      codigo: lot.codigo,
-      especie: lot.planta.especie,
-      fuente: lot.planta.fuente,
-      estado: lot.estado,
-      fechaInicio: lot.fechas.INICIO ?? '',
-      diasDesdeInicio: lot.fechas.INICIO
-        ? Math.max(
-            0,
-            Math.round((Date.now() - new Date(lot.fechas.INICIO).getTime()) / (1000 * 60 * 60 * 24)),
-          )
-        : 0,
-      cantidadInicial: lot.cantidadInicio,
-      germinadas: lot.germinadas,
-      muertas: lot.muertas,
-      vivero: lot.vivero.nombre,
-      comunidad: lot.vivero.ubicacion.comunidad,
-    }))
+    const withDerived = lots.map((lot) => {
+      const fechaInicio = lot.fecha_inicio ?? ''
+      const cantidadInicio = lot.cantidad_inicio ?? 0
 
+      const cantidadActual = (() => {
+        switch (lot.estado) {
+          case 'EMBOLSADO':
+            return lot.cantidad_embolsadas ?? cantidadInicio
+          case 'SOMBRA':
+            return lot.cantidad_sombra ?? lot.cantidad_embolsadas ?? cantidadInicio
+          case 'LISTA_PLANTAR':
+          case 'SALIDA_VIVERO':
+            return (
+              lot.cantidad_lista_plantar ??
+              lot.cantidad_sombra ??
+              lot.cantidad_embolsadas ??
+              cantidadInicio
+            )
+          case 'INICIO':
+          default:
+            return cantidadInicio
+        }
+      })()
+
+      const germinadas = Math.max(cantidadActual, 0)
+      const muertas = Math.max(cantidadInicio - germinadas, 0)
+
+      return {
+        id: String(lot.id),
+        codigo: lot.codigo_trazabilidad || `LFV-${lot.id}`,
+        especie: lot.planta?.especie || 'Sin especie',
+        fuente: lot.tipo_material === 'ESQUEJE' ? 'ESQUEJE' : 'SEMILLA',
+        estado: lot.estado,
+        fechaInicio,
+        diasDesdeInicio: fechaInicio
+          ? Math.max(
+              0,
+              Math.round(
+                (Date.now() - new Date(fechaInicio).getTime()) / (1000 * 60 * 60 * 24),
+              ),
+            )
+          : 0,
+        cantidadInicial: cantidadInicio,
+        germinadas,
+        muertas,
+        vivero: lot.vivero?.nombre || 'Sin vivero',
+        comunidad: lot.vivero?.ubicacion?.comunidad || 'Sin comunidad',
+      }
+    })
+
+    const normalized = query.trim().toLowerCase()
     if (!normalized) return withDerived
 
     return withDerived.filter((lot) =>
@@ -39,7 +102,7 @@ function GerminationScreen() {
         field.toLowerCase().includes(normalized),
       ),
     )
-  }, [query])
+  }, [lots, query])
 
   return (
     <div className="relative min-h-screen bg-[#eef2ed] text-brand-700">
@@ -93,15 +156,29 @@ function GerminationScreen() {
           </button>
 
           <div className="space-y-4">
-            {filteredLots.map((lot) => (
-              <GerminationLotCard
-                key={lot.id}
-                lot={lot}
-                onClick={() => navigate(`/app/germination/${lot.id}`)}
-              />
-            ))}
+            {loadingLots && (
+              <div className="rounded-3xl bg-white px-4 py-6 text-center text-sm font-semibold text-slate-600 shadow-soft ring-1 ring-black/5">
+                Cargando lotes de germinacion...
+              </div>
+            )}
 
-            {filteredLots.length === 0 && (
+            {errorLots && !loadingLots && (
+              <div className="rounded-3xl bg-white px-4 py-6 text-center text-sm font-semibold text-red-500 shadow-soft ring-1 ring-black/5">
+                {errorLots}
+              </div>
+            )}
+
+            {!loadingLots &&
+              !errorLots &&
+              filteredLots.map((lot) => (
+                <GerminationLotCard
+                  key={lot.id}
+                  lot={lot}
+                  onClick={() => navigate(`/app/germination/${lot.id}`)}
+                />
+              ))}
+
+            {!loadingLots && !errorLots && filteredLots.length === 0 && (
               <div className="rounded-3xl bg-white px-4 py-6 text-center text-sm font-semibold text-slate-600 shadow-soft ring-1 ring-black/5">
                 No se encontraron lotes con ese criterio de búsqueda.
               </div>
