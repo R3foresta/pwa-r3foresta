@@ -44,9 +44,11 @@ function GerminationScreen() {
   }, [])
 
   const filteredLots = useMemo<ListLot[]>(() => {
-    const withDerived = lots.map((lot) => {
+    const withDerived: ListLot[] = lots.map((lot) => {
       const fechaInicio = lot.fecha_inicio ?? ''
       const cantidadInicio = lot.cantidad_inicio ?? 0
+      const fuente: GerminationLotCardData['fuente'] =
+        lot.tipo_material === 'ESQUEJE' ? 'ESQUEJE' : 'SEMILLA'
 
       const cantidadActual = (() => {
         switch (lot.estado) {
@@ -75,7 +77,7 @@ function GerminationScreen() {
         id: String(lot.id),
         codigo: lot.codigo_trazabilidad || `LFV-${lot.id}`,
         especie: lot.planta?.especie || 'Sin especie',
-        fuente: lot.tipo_material === 'ESQUEJE' ? 'ESQUEJE' : 'SEMILLA',
+        fuente,
         estado: lot.estado,
         fechaInicio,
         diasDesdeInicio: fechaInicio
