@@ -118,6 +118,17 @@ export interface Planta {
   variedad: string;
   tipo_planta?: string;
   fuente: string;
+  imagen_url?: string;
+  nombres_comunes?: string;
+}
+
+export interface CreatePlantaDto {
+  especie: string;
+  nombre_cientifico: string;
+  tipo_planta: string;
+  fuente: 'SEMILLA' | 'ESQUEJE';
+  nombres_comunes: string;
+  imagen_url?: string;
 }
 
 export interface RecoleccionFilters {
@@ -538,6 +549,35 @@ export class RecoleccionService {
     } catch (error) {
       console.error('❌ Error al obtener plantas:', error);
       return [];
+    }
+  }
+
+  /**
+   * Crear nueva planta
+   */
+  static async createPlanta(data: CreatePlantaDto): Promise<{ success: boolean; data: Planta }> {
+    try {
+      console.log('📤 Enviando nueva planta al backend...', data);
+      
+      const response = await fetch(`${API_URL}/api/plantas`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al crear planta');
+      }
+      
+      const result = await response.json();
+      console.log('✅ Planta creada exitosamente:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ Error al crear planta:', error);
+      throw error;
     }
   }
 
