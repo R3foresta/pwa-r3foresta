@@ -2,6 +2,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://backend-r3foresta.onren
 // const API_URL = 'https://backend-r3foresta.onrender.com';
 
 // ===== TIPOS =====
+// TODO: Revisar si la estrcutura de las interfaces coincide con el backend y en especial con la estrctura de la base de datos.
 export interface CreateRecoleccionDto {
   fecha: string; // YYYY-MM-DD
   cantidad: number;
@@ -225,6 +226,7 @@ export class RecoleccionService {
       }
       
       // 3. Si ES especie nueva, enviar datos de nueva planta
+      // TODO: ¿Acá la planta esta validada? Hay que asegurarse de que venga completa
       if (data.especie_nueva && data.nueva_planta) {
         formData.append('nueva_planta[especie]', data.nueva_planta.especie);
         formData.append('nueva_planta[nombre_cientifico]', data.nueva_planta.nombre_cientifico);
