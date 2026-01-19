@@ -127,7 +127,7 @@ export interface CreatePlantaDto {
   especie: string;
   nombre_cientifico: string;
   tipo_planta: string;
-  fuente: 'SEMILLA' | 'ESQUEJE';
+  fuente?: 'SEMILLA' | 'ESQUEJE';
   nombres_comunes: string;
   imagen_url?: string;
 }

@@ -48,26 +48,16 @@ function NewCollectionForm() {
   const [loadingPlantas, setLoadingPlantas] = useState(false);
   const [selectedPlanta, setSelectedPlanta] = useState<Planta | null>(null);
   
-  // Filtrar plantas según el tipo seleccionado (fuente) y término de búsqueda
+  // Filtrar plantas según el término de búsqueda
   const filteredPlantas = useMemo(() => {
-    // Primero filtrar por tipo (fuente: SEMILLA o ESQUEJE)
-    const plantasPorTipo = plantas.filter(planta => {
-      if (type === 'seed') {
-        return planta.fuente === 'SEMILLA';
-      } else if (type === 'cutting') {
-        return planta.fuente === 'ESQUEJE';
-      }
-      return true;
-    });
-    
-    // Luego filtrar por término de búsqueda
-    if (!searchTerm.trim()) return plantasPorTipo;
+    // Filtrar por término de búsqueda
+    if (!searchTerm.trim()) return plantas;
     const term = searchTerm.toLowerCase();
-    return plantasPorTipo.filter(planta => 
+    return plantas.filter(planta => 
       (planta.especie?.toLowerCase().includes(term)) ||
       (planta.nombre_cientifico?.toLowerCase().includes(term))
     );
-  }, [plantas, searchTerm, type]);
+  }, [plantas, searchTerm]);
   
   const [errors, setErrors] = useState({
     date: false,
@@ -239,7 +229,6 @@ function NewCollectionForm() {
           especie: '',
           nombre_cientifico: '',
           tipo_planta: '',
-          fuente_planta: '',
           nombres_comunes: '',
           imagen_url: '',
         });
@@ -759,13 +748,11 @@ function NewCollectionForm() {
                           {planta.nombre_cientifico}
                         </p>
                       </div>
-                      <div className={`rounded-xl border px-3 py-1.5 text-xs font-bold ${
-                        type === 'seed' 
-                          ? 'border-brand-500 bg-brand-50 text-brand-600'
-                          : 'border-orange-500 bg-orange-50 text-orange-600'
-                      }`}>
-                        {type === 'seed' ? 'Semilla' : 'Esqueje'}
-                      </div>
+                      {planta.tipo_planta && (
+                        <div className="rounded-xl border border-brand-500 bg-brand-50 text-brand-600 px-3 py-1.5 text-xs font-bold">
+                          {planta.tipo_planta}
+                        </div>
+                      )}
                     </button>
                   ))
                 )}
