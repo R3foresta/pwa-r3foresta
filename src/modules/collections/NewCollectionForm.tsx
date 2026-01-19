@@ -29,7 +29,6 @@ function NewCollectionForm() {
     especie: '',
     nombre_cientifico: '',
     tipo_planta: '',
-    fuente_planta: '',
     nombres_comunes: '',
     imagen_url: '',
   });
@@ -41,7 +40,6 @@ function NewCollectionForm() {
     especie: false,
     nombre_cientifico: false,
     tipo_planta: false,
-    fuente_planta: false,
     nombres_comunes: false,
   });
   
@@ -200,7 +198,6 @@ function NewCollectionForm() {
       especie: !newPlantData.especie.trim(),
       nombre_cientifico: !newPlantData.nombre_cientifico.trim(),
       tipo_planta: !newPlantData.tipo_planta,
-      fuente_planta: !newPlantData.fuente_planta,
       nombres_comunes: !newPlantData.nombres_comunes.trim(),
     };
 
@@ -217,7 +214,6 @@ function NewCollectionForm() {
         especie: newPlantData.especie.trim(),
         nombre_cientifico: newPlantData.nombre_cientifico.trim(),
         tipo_planta: newPlantData.tipo_planta,
-        fuente: newPlantData.fuente_planta as 'SEMILLA' | 'ESQUEJE',
         nombres_comunes: newPlantData.nombres_comunes.trim(),
         imagen_url: newPlantData.imagen_url || undefined,
       };
@@ -252,7 +248,6 @@ function NewCollectionForm() {
           especie: false,
           nombre_cientifico: false,
           tipo_planta: false,
-          fuente_planta: false,
           nombres_comunes: false,
         });
         
@@ -821,7 +816,6 @@ function NewCollectionForm() {
                     especie: '',
                     nombre_cientifico: '',
                     tipo_planta: '',
-                    fuente_planta: '',
                     nombres_comunes: '',
                     imagen_url: '',
                   });
@@ -830,7 +824,6 @@ function NewCollectionForm() {
                     especie: false,
                     nombre_cientifico: false,
                     tipo_planta: false,
-                    fuente_planta: false,
                     nombres_comunes: false,
                   });
                 }}
@@ -954,52 +947,9 @@ function NewCollectionForm() {
                     <option value="Trepadora">Trepadora</option>
                     <option value="Enredadera">Enredadera</option>
                   </select>
-                  <Icon name="chevron-down" className="h-4 w-4 text-slate-400" />
                 </div>
                 {newPlantErrors.tipo_planta && (
                   <p className="text-xs font-semibold text-red-500">* Debes seleccionar el tipo de planta</p>
-                )}
-              </div>
-
-              {/* Fuente (Semilla o Esqueje) */}
-              <div className="space-y-2">
-                <p className="text-base font-extrabold text-brand-700">
-                  Fuente <span className="text-red-500">*</span>
-                </p>
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setNewPlantData(prev => ({ ...prev, fuente_planta: 'SEMILLA' }));
-                      setNewPlantErrors(prev => ({ ...prev, fuente_planta: false }));
-                    }}
-                    disabled={submittingNewPlant}
-                    className={`flex-1 rounded-2xl border px-4 py-3 text-center text-base font-extrabold shadow-soft transition ${
-                      newPlantData.fuente_planta === 'SEMILLA'
-                        ? "border-brand-500 bg-emerald-50 text-brand-600 ring-2 ring-emerald-100"
-                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
-                    } ${submittingNewPlant ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  >
-                    Semilla
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setNewPlantData(prev => ({ ...prev, fuente_planta: 'ESQUEJE' }));
-                      setNewPlantErrors(prev => ({ ...prev, fuente_planta: false }));
-                    }}
-                    disabled={submittingNewPlant}
-                    className={`flex-1 rounded-2xl border px-4 py-3 text-center text-base font-extrabold shadow-soft transition ${
-                      newPlantData.fuente_planta === 'ESQUEJE'
-                        ? "border-orange-500 bg-orange-50 text-orange-600 ring-2 ring-orange-100"
-                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
-                    } ${submittingNewPlant ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  >
-                    Esqueje
-                  </button>
-                </div>
-                {newPlantErrors.fuente_planta && (
-                  <p className="text-xs font-semibold text-red-500">* Debes seleccionar la fuente</p>
                 )}
               </div>
 
