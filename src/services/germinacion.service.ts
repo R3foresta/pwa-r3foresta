@@ -106,4 +106,17 @@ export class GerminacionService {
 
     return response.json()
   }
+
+  static async getById(id: number): Promise<{ success: boolean; data: LoteFaseVivero }> {
+    const response = await fetch(`${API_URL}/api/lotes-fase-vivero/${id}`, {
+      headers: this.getAuthHeaders(),
+    })
+
+    if (!response.ok) {
+      const message = await response.text()
+      throw new Error(message || 'Error al obtener lote de vivero')
+    }
+
+    return response.json()
+  }
 }

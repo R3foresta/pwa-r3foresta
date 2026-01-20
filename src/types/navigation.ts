@@ -5,7 +5,7 @@ export type Screen =
   | 'collectionForm'
   | 'collectionFormStep2'
   | 'collectionFormStep3'
-  | 'germination'
+  | 'vivero'
   | 'scan'
   | 'report'
   | 'profile'

@@ -30,7 +30,7 @@ const getRecoleccionLabel = (item: Recoleccion) => {
   )
 }
 
-function GerminationNewScreen() {
+function ViveroNewScreen() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const [lotId, setLotId] = useState(createLotId)
@@ -169,7 +169,7 @@ function GerminationNewScreen() {
       fotos: photos.map((photo) => photo.file),
     }
     console.log('Nueva germinacion creada:', payload)
-    navigate('/app/germination')
+    navigate('/app/vivero')
   }
 
   return (
@@ -182,7 +182,7 @@ function GerminationNewScreen() {
           <button
             type="button"
             aria-label="Volver"
-            onClick={() => navigate('/app/germination')}
+            onClick={() => navigate('/app/vivero')}
             className="mt-1 flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-brand-700 shadow-soft transition hover:bg-white"
           >
             <Icon name="arrow-left" className="h-5 w-5" />
@@ -472,4 +472,4 @@ function GerminationNewScreen() {
   )
 }
 
-export default GerminationNewScreen
+export default ViveroNewScreen

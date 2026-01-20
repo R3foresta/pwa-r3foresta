@@ -15,9 +15,9 @@ import LoginScreen from './modules/auth/LoginScreen'
 import RegisterScreen from './modules/auth/RegisterScreen'
 import RecoverScreen from './modules/auth/RecoverScreen'
 import { useAuth } from './contexts/AuthContext'
-import GerminationScreen from './modules/germination/GerminationScreen'
-import GerminationDetailScreen from './modules/germination/GerminationDetailScreen'
-import GerminationNewScreen from './modules/germination/GerminationNewScreen'
+import ViveroScreen from './modules/vivero/ViveroScreen'
+import ViveroDetailScreen from './modules/vivero/ViveroDetailScreen'
+import ViveroNewScreen from './modules/vivero/ViveroNewScreen'
 import MapScreen from './modules/map/MapScreen'
 
 function RootRedirect() {
@@ -53,10 +53,10 @@ function App() {
               <Route path="summary" element={<SummaryForm />} />
             </Route>
           </Route>
-          <Route path="germination">
-            <Route index element={<GerminationScreen />} />
-            <Route path="new" element={<GerminationNewScreen />} />
-            <Route path=":id" element={<GerminationDetailScreen />} />
+          <Route path="vivero">
+            <Route index element={<ViveroScreen />} />
+            <Route path="new" element={<ViveroNewScreen />} />
+            <Route path=":id" element={<ViveroDetailScreen />} />
             <Route
               path=":id/event/new"
               element={<PlaceholderScreen title="Registrar evento de germinación" />}
@@ -66,7 +66,7 @@ function App() {
               element={<PlaceholderScreen title="Actualizar fase de germinación" />}
             />
           </Route>
-          <Route path="nursery" element={<Navigate to="/app/germination" replace />} />
+          <Route path="nursery" element={<Navigate to="/app/vivero" replace />} />
           <Route path="planting" element={<PlaceholderScreen title="Plantación" />} />
           <Route path="co2" element={<PlaceholderScreen title="CO₂" />} />
           <Route path="map" element={<MapScreen />} />

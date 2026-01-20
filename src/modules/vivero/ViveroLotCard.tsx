@@ -1,11 +1,11 @@
-import type { GerminationPhase } from './data'
+import type { ViveroPhase } from './data'
 
-export type GerminationLotCardData = {
+export type ViveroLotCardData = {
   id: string
   codigo: string
   especie: string
   fuente: 'SEMILLA' | 'ESQUEJE'
-  estado: GerminationPhase
+  estado: ViveroPhase
   fechaInicio?: string
   diasDesdeInicio: number
   cantidadInicial: number
@@ -14,7 +14,7 @@ export type GerminationLotCardData = {
   vivero: string
 }
 
-const estadoLabel: Record<GerminationPhase, string> = {
+const estadoLabel: Record<ViveroPhase, string> = {
   INICIO: 'Germinación',
   EMBOLSADO: 'Embolsado',
   SOMBRA: 'Sombra',
@@ -22,7 +22,7 @@ const estadoLabel: Record<GerminationPhase, string> = {
   SALIDA_VIVERO: 'Salida vivero',
 }
 
-const estadoBadgeStyle: Record<GerminationPhase, { bg: string; text: string; border: string }> = {
+const estadoBadgeStyle: Record<ViveroPhase, { bg: string; text: string; border: string }> = {
   INICIO: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
   EMBOLSADO: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
   SOMBRA: { bg: 'bg-sky-50', text: 'text-sky-700', border: 'border-sky-200' },
@@ -37,11 +37,11 @@ function formatDate(value?: string) {
 }
 
 type Props = {
-  lot: GerminationLotCardData
+  lot: ViveroLotCardData
   onClick?: () => void
 }
 
-function GerminationLotCard({ lot, onClick }: Props) {
+function ViveroLotCard({ lot, onClick }: Props) {
   const supervivencia = Math.max(
     0,
     Math.round(((lot.cantidadInicial - lot.muertas) / lot.cantidadInicial) * 100),
@@ -129,4 +129,4 @@ function GerminationLotCard({ lot, onClick }: Props) {
   return <div className={wrapperClassName}>{content}</div>
 }
 
-export default GerminationLotCard
+export default ViveroLotCard

@@ -1,9 +1,12 @@
-export type GerminationPhase = 'INICIO' | 'EMBOLSADO' | 'SOMBRA' | 'LISTA_PLANTAR' | 'SALIDA_VIVERO'
+export type ViveroPhase = 'INICIO' | 'EMBOLSADO' | 'SOMBRA' | 'LISTA_PLANTAR' | 'SALIDA_VIVERO'
+/* debería ser 
+  'GERMINACIÓN' | 'EMBOLSADO' | 'SOMBRA' | 'LISTO_PARA_PLANTAR' | 'SALIDA_VIVERO'
+*/
 
-export type GerminationEvent = {
+export type ViveroEvent = {
   id: string
   fecha: string
-  fase: GerminationPhase
+  fase: ViveroPhase
   accion: 'INICIO' | 'EMBOLSADO' | 'SOMBRA' | 'LISTA_PLANTAR' | 'SALIDA' | 'AJUSTE'
   responsable: string
   notas?: string
@@ -13,7 +16,7 @@ export type GerminationEvent = {
   alturaPromCm?: number
 }
 
-export type GerminationLot = {
+export type ViveroLot = {
   id: string
   codigo: string
   planta: {
@@ -38,18 +41,18 @@ export type GerminationLot = {
     }
   }
   responsable: string
-  estado: GerminationPhase
-  fechas: Partial<Record<GerminationPhase, string>>
+  estado: ViveroPhase
+  fechas: Partial<Record<ViveroPhase, string>>
   cantidadInicio: number
   germinadas: number
   muertas: number
   alturaPromSombraCm?: number
   alturaPromSalidaCm?: number
   blockchainHash?: string
-  eventos: GerminationEvent[]
+  eventos: ViveroEvent[]
 }
 
-export const germinationLots: GerminationLot[] = [
+export const viveroLots: ViveroLot[] = [
   {
     id: 'lot-1',
     codigo: 'GER-2025-001',
@@ -199,6 +202,6 @@ export const germinationLots: GerminationLot[] = [
   },
 ]
 
-export const germinationLotsById = Object.fromEntries(
-  germinationLots.map((lot) => [lot.id, lot]),
+export const viveroLotsById = Object.fromEntries(
+  viveroLots.map((lot) => [lot.id, lot]),
 )

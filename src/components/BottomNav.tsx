@@ -10,7 +10,7 @@ function BottomNav() {
 
   const quickActions = [
     { label: 'Registrar recolección', icon: 'package', to: '/app/collections/new' },
-    { label: 'Nuevo germinación', icon: 'germination', to: '/app/germination/new' },
+    { label: 'Nuevo germinación', icon: 'vivero', to: '/app/vivero/new' },
     { label: 'Registrar plantación', icon: 'leaf', to: '/app/planting' },
     { label: 'Actualizar CO₂', icon: 'balance', to: '/app/co2' },
   ]

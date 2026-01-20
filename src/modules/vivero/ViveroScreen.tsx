@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Icon from '../../components/Icon'
-import GerminationLotCard, { type GerminationLotCardData } from './GerminationLotCard'
+import ViveroLotCard, { type ViveroLotCardData } from './ViveroLotCard'
 import { GerminacionService, type LoteFaseVivero } from '../../services/germinacion.service'
 
-type ListLot = GerminationLotCardData & { comunidad: string }
+type ListLot = ViveroLotCardData & { comunidad: string }
 
-function GerminationScreen() {
+function ViveroScreen() {
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [lots, setLots] = useState<LoteFaseVivero[]>([])
@@ -47,7 +47,7 @@ function GerminationScreen() {
     const withDerived: ListLot[] = lots.map((lot) => {
       const fechaInicio = lot.fecha_inicio ?? ''
       const cantidadInicio = lot.cantidad_inicio ?? 0
-      const fuente: GerminationLotCardData['fuente'] =
+      const fuente: ViveroLotCardData['fuente'] =
         lot.tipo_material === 'ESQUEJE' ? 'ESQUEJE' : 'SEMILLA'
 
       const cantidadActual = (() => {
@@ -143,7 +143,7 @@ function GerminationScreen() {
 
           <button
             type="button"
-            onClick={() => navigate('/app/germination/new')}
+            onClick={() => navigate('/app/vivero/new')}
             className="flex items-start gap-3 rounded-2xl border-2 border-dashed border-emerald-200 bg-emerald-50 px-4 py-4 text-left text-emerald-800 shadow-soft transition hover:border-emerald-300 hover:bg-emerald-100"
           >
             <div className="mt-1 flex h-10 w-10 items-center justify-center rounded-full bg-white text-emerald-700 ring-1 ring-emerald-200">
@@ -173,10 +173,10 @@ function GerminationScreen() {
             {!loadingLots &&
               !errorLots &&
               filteredLots.map((lot) => (
-                <GerminationLotCard
+                <ViveroLotCard
                   key={lot.id}
                   lot={lot}
-                  onClick={() => navigate(`/app/germination/${lot.id}`)}
+                  onClick={() => navigate(`/app/vivero/${lot.id}`)}
                 />
               ))}
 
@@ -192,4 +192,4 @@ function GerminationScreen() {
   )
 }
 
-export default GerminationScreen
+export default ViveroScreen

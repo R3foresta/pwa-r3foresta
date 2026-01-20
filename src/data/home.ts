@@ -40,7 +40,7 @@ export const sections: {
   },
   {
     label: 'Germinación',
-    target: 'germination',
+    target: 'vivero',
     image: germinacionImg,
     stat: '120 plántulas',
     detail: '78% con riego hoy',
