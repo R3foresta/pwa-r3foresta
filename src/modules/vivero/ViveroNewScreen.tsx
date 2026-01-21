@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import Icon from '../../components/Icon'
 import { useAuth } from '../../contexts/AuthContext'
 import { useViveros } from '../../hooks/useViveros'
+import { GerminacionService } from '../../services/germinacion.service'
 import { RecoleccionService } from '../../services/recoleccion.service'
 import type { Recoleccion } from '../../services/recoleccion.service'
 
@@ -48,6 +49,8 @@ function ViveroNewScreen() {
   const [observaciones, setObservaciones] = useState('')
   const [photos, setPhotos] = useState<{ file: File; previewUrl: string }[]>([])
   const [showErrors, setShowErrors] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!selectedViveroId) {
@@ -150,26 +153,55 @@ function ViveroNewScreen() {
     selectedRecolecciones.length > 0 &&
     cantidadValue > 0 &&
     Boolean(fechaInicio) &&
-    Boolean(responsable.trim())
+    Boolean(responsable.trim()) &&
+    !submitting
 
-  const handleSubmit = (event?: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event?: React.FormEvent<HTMLFormElement>) => {
     event?.preventDefault()
+    if (submitting) return
     if (!canSubmit) {
       setShowErrors(true)
       return
     }
+
+    const selectedPlantaIds = selectedRecolecciones
+      .map((recoleccionId) => recolecciones.find((item) => item.id === recoleccionId)?.planta?.id)
+      .filter((plantaId): plantaId is number => typeof plantaId === 'number')
+    const uniquePlantaIds = Array.from(new Set(selectedPlantaIds))
+    if (uniquePlantaIds.length === 0) {
+      setSubmitError('Las recolecciones seleccionadas no tienen planta asignada.')
+      return
+    }
+    if (uniquePlantaIds.length > 1) {
+      setSubmitError('Las recolecciones seleccionadas deben ser de la misma planta.')
+      return
+    }
+
+    const responsableId = user?.id ? Number(user.id) : undefined
     const payload = {
-      loteId: lotId,
-      viveroId: selectedViveroId,
+      codigo_trazabilidad: lotId,
+      vivero_id: selectedViveroId as number,
+      planta_id: uniquePlantaIds[0],
+      responsable_id: Number.isFinite(responsableId) ? responsableId : undefined,
+      fecha_inicio: fechaInicio,
+      cantidad_inicio: cantidadValue,
+      estado: 'INICIO' as const,
+      tipo_material: 'SEMILLA' as const,
       recolecciones: selectedRecolecciones,
-      cantidadInicio: cantidadValue,
-      fechaInicio,
-      encargado: responsable.trim(),
-      observaciones: observaciones.trim(),
+      observaciones: observaciones.trim() || undefined,
       fotos: photos.map((photo) => photo.file),
     }
-    console.log('Nueva germinacion creada:', payload)
-    navigate('/app/vivero')
+
+    try {
+      setSubmitting(true)
+      setSubmitError(null)
+      await GerminacionService.create(payload)
+      navigate('/app/vivero')
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'Error al registrar el lote')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -454,6 +486,7 @@ function ViveroNewScreen() {
             <button
               type="submit"
               aria-disabled={!canSubmit}
+              disabled={!canSubmit}
               className={`flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-base font-extrabold text-white shadow-soft transition ${
                 canSubmit
                   ? 'bg-emerald-600 hover:bg-emerald-700'
@@ -461,12 +494,13 @@ function ViveroNewScreen() {
               }`}
             >
             <Icon name="check" className="h-4 w-4" />
-              Registrar germinacion
+              {submitting ? 'Enviando...' : 'Registrar germinacion'}
             </button>
           </div>
+          {submitError && (
+            <p className="text-center text-xs font-semibold text-red-500">{submitError}</p>
+          )}
         </div>
-
-       
       </form>
     </div>
   )
