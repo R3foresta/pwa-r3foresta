@@ -1,6 +1,8 @@
-const API_URL = import.meta.env.VITE_API_URL || 'https://backend-r3foresta.onrender.com';
+const API_URL = import.meta.env.VITE_API_URL || 'https://backend-r3foresta.onrender.com'
+// const API_URL = 'https://backend-r3foresta.onrender.com';
 
 // ===== TIPOS =====
+// TODO: Revisar si la estrcutura de las interfaces coincide con el backend y en especial con la estrctura de la base de datos.
 export interface CreateRecoleccionDto {
   fecha: string; // YYYY-MM-DD
   cantidad: number;
@@ -44,6 +46,7 @@ export interface Recoleccion {
   estado: string;
   especie_nueva: boolean;
   observaciones?: string;
+  codigo_trazabilidad: string;
   usuario: {
     id: number;
     nombre: string;
@@ -116,6 +119,17 @@ export interface Planta {
   variedad: string;
   tipo_planta?: string;
   fuente: string;
+  imagen_url?: string;
+  nombres_comunes?: string;
+}
+
+export interface CreatePlantaDto {
+  especie: string;
+  nombre_cientifico: string;
+  tipo_planta: string;
+  fuente: 'SEMILLA' | 'ESQUEJE';
+  nombres_comunes: string;
+  imagen_url?: string;
 }
 
 export interface RecoleccionFilters {
@@ -212,6 +226,7 @@ export class RecoleccionService {
       }
       
       // 3. Si ES especie nueva, enviar datos de nueva planta
+      // TODO: ¿Acá la planta esta validada? Hay que asegurarse de que venga completa
       if (data.especie_nueva && data.nueva_planta) {
         formData.append('nueva_planta[especie]', data.nueva_planta.especie);
         formData.append('nueva_planta[nombre_cientifico]', data.nueva_planta.nombre_cientifico);
@@ -271,20 +286,51 @@ export class RecoleccionService {
       
       console.log('📨 Headers que se enviarán:', headers);
       
-      const response = await fetch(`${API_URL}/api/recolecciones`, {
-        method: 'POST',
-        headers: headers,
-        body: formData,
-      });
+      let response: Response | undefined;
       
-      const result = await this.handleResponse(response);
-      return result;
+      try {
+        response = await fetch(`${API_URL}/api/recolecciones`, {
+          method: 'POST',
+          headers: headers,
+          body: formData,
+        });
+        
+        console.log('📥 Response status:', response.status);
+        console.log('📥 Response ok:', response.ok);
+        
+        const result = await this.handleResponse(response);
+        return result;
+        
+      } catch (fetchError) {
+        console.error('❌ Error completo en fetch:', fetchError);
+        console.error('📊 Status de respuesta:', response?.status);
+        console.error('📊 Status text:', response?.statusText);
+        
+        if (response) {
+          try {
+            const errorText = await response.text();
+            console.error('📄 Contenido de la respuesta:', errorText);
+          } catch (textError) {
+            console.error('❌ No se pudo leer el texto de la respuesta:', textError);
+          }
+        }
+        
+        throw fetchError;
+      }
       
     } catch (error) {
-      console.error('❌ Error completo:', error);
+      console.error('❌ Error completo en create:', error);
+      console.error('📊 Tipo de error:', error instanceof Error ? error.constructor.name : typeof error);
+      console.error('📊 Mensaje:', error instanceof Error ? error.message : String(error));
+      
       if (error instanceof TypeError && error.message.includes('fetch')) {
         throw new Error('No se puede conectar con el servidor. Verifica que el backend esté corriendo y que CORS esté configurado correctamente.');
       }
+      
+      if (error instanceof Error && error.message.includes('timeout')) {
+        throw new Error('La solicitud tardó demasiado. El servidor puede estar procesando las imágenes en Pinata/Blockchain. Intenta nuevamente en unos momentos.');
+      }
+      
       throw error;
     }
   }
@@ -505,6 +551,35 @@ export class RecoleccionService {
     } catch (error) {
       console.error('❌ Error al obtener plantas:', error);
       return [];
+    }
+  }
+
+  /**
+   * Crear nueva planta
+   */
+  static async createPlanta(data: CreatePlantaDto): Promise<{ success: boolean; data: Planta }> {
+    try {
+      console.log('📤 Enviando nueva planta al backend...', data);
+      
+      const response = await fetch(`${API_URL}/api/plantas`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al crear planta');
+      }
+      
+      const result = await response.json();
+      console.log('✅ Planta creada exitosamente:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ Error al crear planta:', error);
+      throw error;
     }
   }
 

@@ -1,11 +1,13 @@
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Icon from "../../components/Icon";
+import { useViveros } from "../../hooks/useViveros";
 import { useCollectionForm } from "./CollectionFormContext";
 
 function LocationForm() {
   const navigate = useNavigate();
   const { formData, updateForm } = useCollectionForm();
+  const { viveros, loading: viveroLoading, error: viveroError } = useViveros();
   const [direccion, setDireccion] = useState(formData?.direccion || "");
   const [latitud, setLatitud] = useState(formData?.latitud || "");
   const [longitud, setLongitud] = useState(formData?.longitud || "");
@@ -13,11 +15,15 @@ function LocationForm() {
   const [depto, setDepto] = useState(formData?.depto || "La Paz");
   const [provincia, setProvincia] = useState(formData?.provincia || "Bolivia");
   const [comunidad, setComunidad] = useState(formData?.comunidad || "La Paz");
-  const [almacenamiento, setAlmacenamiento] = useState(formData?.almacenamiento || "Vivero Mallasa");
+  const [selectedViveroId, setSelectedViveroId] = useState<number | null>(
+    formData?.vivero_id ?? null
+  );
+  const hasSyncedVivero = useRef(false);
   const [loadingLocation, setLoadingLocation] = useState(false);
   const [errors, setErrors] = useState({
     direccion: false,
     coordinates: false,
+    vivero: false,
   });
 
   const getLocation = () => {
@@ -36,7 +42,7 @@ function LocationForm() {
         
         setLatitud(lat);
         setLongitud(lng);
-        setErrors({ direccion: false, coordinates: false });
+        setErrors((prev) => ({ ...prev, direccion: false, coordinates: false }));
 
         // Obtener dirección usando Nominatim (OpenStreetMap)
         try {
@@ -90,6 +96,26 @@ function LocationForm() {
       return () => clearTimeout(timer);
     }
   }, []); // Se ejecuta solo una vez al montar el componente
+
+  useEffect(() => {
+    if (hasSyncedVivero.current || viveros.length === 0) {
+      return;
+    }
+
+    if (selectedViveroId !== null) {
+      hasSyncedVivero.current = true;
+      return;
+    }
+
+    if (formData?.almacenamiento) {
+      const match = viveros.find((vivero) => vivero.nombre === formData.almacenamiento);
+      if (match) {
+        setSelectedViveroId(match.id);
+      }
+    }
+
+    hasSyncedVivero.current = true;
+  }, [formData?.almacenamiento, selectedViveroId, viveros]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#f6f7f3] to-[#eef1eb] text-brand-700">
@@ -282,18 +308,49 @@ function LocationForm() {
               </div>
               <div className="space-y-2">
                 <p className="text-sm font-semibold text-brand-700">Alamacenamiento:</p>
-                <div className="flex items-center rounded-2xl border border-slate-200 bg-white px-4 shadow-soft focus-within:border-brand-400 focus-within:ring-2 focus-within:ring-brand-200">
-                  <select
-                    value={almacenamiento}
-                    onChange={(event) => setAlmacenamiento(event.target.value)}
-                    className="w-full bg-transparent py-3 text-sm font-semibold text-slate-700 outline-none"
-                  >
-                    <option value="Vivero Mallasa">Vivero Mallasa</option>
-                    <option value="Vivero Central">Vivero Central</option>
-                    <option value="Vivero Norte">Vivero Norte</option>
-                  </select>
-                  <Icon name="chevron-down" className="h-4 w-4 text-slate-400" />
-                </div>
+                {viveroLoading ? (
+                  <div className="rounded-2xl bg-brand-50 px-4 py-3 text-sm font-semibold text-brand-600 shadow-soft">
+                    Cargando viveros...
+                  </div>
+                ) : (
+                  <>
+                    <div className={`flex items-center rounded-2xl border px-4 shadow-soft focus-within:ring-2 ${
+                      errors.vivero
+                        ? 'border-red-400 bg-red-50 focus-within:border-red-400 focus-within:ring-red-200'
+                        : 'border-slate-200 bg-white focus-within:border-brand-400 focus-within:ring-brand-200'
+                    }`}>
+                      <select
+                        value={selectedViveroId ?? ""}
+                        onChange={(event) => {
+                          const nextId = event.target.value
+                            ? Number(event.target.value)
+                            : null;
+                          setSelectedViveroId(nextId);
+                          if (nextId !== null) {
+                            setErrors((prev) => ({ ...prev, vivero: false }));
+                          }
+                        }}
+                        className="w-full bg-transparent py-3 text-sm font-semibold text-slate-700 outline-none"
+                      >
+                        <option value="">Selecciona un vivero</option>
+                        {viveros.map((vivero) => (
+                          <option key={vivero.id} value={vivero.id}>
+                            {vivero.nombre} ({vivero.codigo})
+                          </option>
+                        ))}
+                      </select>
+                      <Icon name="chevron-down" className="h-4 w-4 text-slate-400" />
+                    </div>
+                    {viveroError && (
+                      <p className="text-xs font-semibold text-red-500">{viveroError}</p>
+                    )}
+                    {errors.vivero && (
+                      <p className="text-xs font-semibold text-red-500">
+                        * El vivero (almacenamiento) es obligatorio. Selecciona uno para continuar.
+                      </p>
+                    )}
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -304,6 +361,7 @@ function LocationForm() {
               const newErrors = {
                 direccion: !direccion.trim(),
                 coordinates: !latitud.trim() || !longitud.trim(),
+                vivero: selectedViveroId === null,
               };
               
               setErrors(newErrors);
@@ -311,6 +369,10 @@ function LocationForm() {
               if (Object.values(newErrors).some(error => error)) {
                 return;
               }
+
+              const selectedVivero = viveros.find((vivero) => vivero.id === selectedViveroId);
+              const almacenamientoValue = selectedVivero?.nombre ?? formData.almacenamiento;
+              const viveroIdValue = selectedVivero?.id ?? formData.vivero_id;
 
               updateForm({
                 direccion,
@@ -320,7 +382,8 @@ function LocationForm() {
                 depto,
                 provincia,
                 comunidad,
-                almacenamiento,
+                almacenamiento: almacenamientoValue,
+                vivero_id: viveroIdValue,
               });
               navigate('/app/collections/new/summary');
             }}

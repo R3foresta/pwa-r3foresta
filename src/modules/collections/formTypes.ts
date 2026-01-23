@@ -49,5 +49,5 @@ export const initialFormData: CollectionFormData = {
   depto: "La Paz",
   provincia: "Bolivia",
   comunidad: "La Paz",
-  almacenamiento: "Vivero Mallasa",
+  almacenamiento: "",
 };

@@ -2,8 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Icon from '../../components/Icon'
 import { useAuth } from '../../contexts/AuthContext'
+import { useViveros } from '../../hooks/useViveros'
+import { GerminacionService } from '../../services/germinacion.service'
 import { RecoleccionService } from '../../services/recoleccion.service'
-import type { Recoleccion, Vivero } from '../../services/recoleccion.service'
+import type { Recoleccion } from '../../services/recoleccion.service'
 
 const createLotId = () => {
   const year = new Date().getFullYear()
@@ -29,14 +31,12 @@ const getRecoleccionLabel = (item: Recoleccion) => {
   )
 }
 
-function GerminationNewScreen() {
+function ViveroNewScreen() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const [lotId, setLotId] = useState(createLotId)
 
-  const [viveros, setViveros] = useState<Vivero[]>([])
-  const [viveroLoading, setViveroLoading] = useState(true)
-  const [viveroError, setViveroError] = useState<string | null>(null)
+  const { viveros, loading: viveroLoading, error: viveroError } = useViveros()
   const [selectedViveroId, setSelectedViveroId] = useState<number | null>(null)
 
   const [recolecciones, setRecolecciones] = useState<Recoleccion[]>([])
@@ -49,33 +49,8 @@ function GerminationNewScreen() {
   const [observaciones, setObservaciones] = useState('')
   const [photos, setPhotos] = useState<{ file: File; previewUrl: string }[]>([])
   const [showErrors, setShowErrors] = useState(false)
-
-  useEffect(() => {
-    let isMounted = true
-    const loadViveros = async () => {
-      try {
-        setViveroLoading(true)
-        setViveroError(null)
-        const response = await RecoleccionService.getViveros()
-        if (isMounted) {
-          setViveros(response.data || [])
-        }
-      } catch (error) {
-        if (isMounted) {
-          setViveroError(error instanceof Error ? error.message : 'Error al cargar viveros')
-        }
-      } finally {
-        if (isMounted) {
-          setViveroLoading(false)
-        }
-      }
-    }
-
-    loadViveros()
-    return () => {
-      isMounted = false
-    }
-  }, [])
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!selectedViveroId) {
@@ -178,26 +153,55 @@ function GerminationNewScreen() {
     selectedRecolecciones.length > 0 &&
     cantidadValue > 0 &&
     Boolean(fechaInicio) &&
-    Boolean(responsable.trim())
+    Boolean(responsable.trim()) &&
+    !submitting
 
-  const handleSubmit = (event?: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event?: React.FormEvent<HTMLFormElement>) => {
     event?.preventDefault()
+    if (submitting) return
     if (!canSubmit) {
       setShowErrors(true)
       return
     }
+
+    const selectedPlantaIds = selectedRecolecciones
+      .map((recoleccionId) => recolecciones.find((item) => item.id === recoleccionId)?.planta?.id)
+      .filter((plantaId): plantaId is number => typeof plantaId === 'number')
+    const uniquePlantaIds = Array.from(new Set(selectedPlantaIds))
+    if (uniquePlantaIds.length === 0) {
+      setSubmitError('Las recolecciones seleccionadas no tienen planta asignada.')
+      return
+    }
+    if (uniquePlantaIds.length > 1) {
+      setSubmitError('Las recolecciones seleccionadas deben ser de la misma planta.')
+      return
+    }
+
+    const responsableId = user?.id ? Number(user.id) : undefined
     const payload = {
-      loteId: lotId,
-      viveroId: selectedViveroId,
+      codigo_trazabilidad: lotId,
+      vivero_id: selectedViveroId as number,
+      planta_id: uniquePlantaIds[0],
+      responsable_id: Number.isFinite(responsableId) ? responsableId : undefined,
+      fecha_inicio: fechaInicio,
+      cantidad_inicio: cantidadValue,
+      estado: 'INICIO' as const,
+      tipo_material: 'SEMILLA' as const,
       recolecciones: selectedRecolecciones,
-      cantidadInicio: cantidadValue,
-      fechaInicio,
-      encargado: responsable.trim(),
-      observaciones: observaciones.trim(),
+      observaciones: observaciones.trim() || undefined,
       fotos: photos.map((photo) => photo.file),
     }
-    console.log('Nueva germinacion creada:', payload)
-    navigate('/app/germination')
+
+    try {
+      setSubmitting(true)
+      setSubmitError(null)
+      await GerminacionService.create(payload)
+      navigate('/app/vivero')
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'Error al registrar el lote')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -210,7 +214,7 @@ function GerminationNewScreen() {
           <button
             type="button"
             aria-label="Volver"
-            onClick={() => navigate('/app/germination')}
+            onClick={() => navigate('/app/vivero')}
             className="mt-1 flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-brand-700 shadow-soft transition hover:bg-white"
           >
             <Icon name="arrow-left" className="h-5 w-5" />
@@ -360,7 +364,7 @@ function GerminationNewScreen() {
                       <div className="flex items-center justify-between gap-2">
                         <p className="text-sm font-extrabold">{getRecoleccionLabel(item)}</p>
                         <span className="rounded-full bg-white px-2 py-1 text-[11px] font-semibold text-brand-600 ring-1 ring-brand-100">
-                          #{item.id}
+                          #{item.codigo_trazabilidad}
                         </span>
                       </div>
                       <p className="text-xs font-semibold text-brand-500">
@@ -478,26 +482,28 @@ function GerminationNewScreen() {
               </div>
             </div>
           )}
-          <div className=" bottom-24 left-0 right-0 z-50 mx-auto w-full max-w-md px-5">
-          <button
-            type="submit"
-            aria-disabled={!canSubmit}
-            className={`flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-base font-extrabold text-white shadow-soft transition ${
-              canSubmit
-                ? 'bg-emerald-600 hover:bg-emerald-700'
-                : 'bg-slate-300 text-slate-600 cursor-not-allowed'
-            }`}
-          >
-              <Icon name="check" className="h-4 w-4" />
-              Registrar germinacion
+          <div className="bottom-24 left-0 right-0 z-50 mx-0 w-full max-w-md ">
+            <button
+              type="submit"
+              aria-disabled={!canSubmit}
+              disabled={!canSubmit}
+              className={`flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-base font-extrabold text-white shadow-soft transition ${
+                canSubmit
+                  ? 'bg-emerald-600 hover:bg-emerald-700'
+                  : 'bg-slate-300 text-slate-600 cursor-not-allowed'
+              }`}
+            >
+            <Icon name="check" className="h-4 w-4" />
+              {submitting ? 'Enviando...' : 'Registrar germinacion'}
             </button>
           </div>
+          {submitError && (
+            <p className="text-center text-xs font-semibold text-red-500">{submitError}</p>
+          )}
         </div>
-
-       
       </form>
     </div>
   )
 }
 
-export default GerminationNewScreen
+export default ViveroNewScreen

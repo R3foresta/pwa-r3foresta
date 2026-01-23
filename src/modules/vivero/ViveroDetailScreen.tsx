@@ -1,12 +1,11 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Icon from '../../components/Icon'
-import PlaceholderScreen from '../PlaceholderScreen'
-import GerminationLotCard, { type GerminationLotCardData } from './GerminationLotCard'
-import { germinationLotsById } from './data'
-import type { GerminationPhase } from './data'
+import ViveroLotCard, { type ViveroLotCardData } from './ViveroLotCard'
+import { GerminacionService, type LoteFaseVivero } from '../../services/germinacion.service'
+import type { ViveroEvent, ViveroLot, ViveroPhase } from './data'
 
-const phases: { key: GerminationPhase; label: string }[] = [
+const phases: { key: ViveroPhase; label: string }[] = [
   { key: 'INICIO', label: 'Inicio' },
   { key: 'EMBOLSADO', label: 'Embolsado' },
   { key: 'SOMBRA', label: 'Sombra' },
@@ -14,12 +13,117 @@ const phases: { key: GerminationPhase; label: string }[] = [
   { key: 'SALIDA_VIVERO', label: 'Salida vivero' },
 ]
 
-const phaseOrder: Record<GerminationPhase, number> = {
+const phaseOrder: Record<ViveroPhase, number> = {
   INICIO: 0,
   EMBOLSADO: 1,
   SOMBRA: 2,
   LISTA_PLANTAR: 3,
   SALIDA_VIVERO: 4,
+}
+
+const phaseToAction: Record<ViveroPhase, ViveroEvent['accion']> = {
+  INICIO: 'INICIO',
+  EMBOLSADO: 'EMBOLSADO',
+  SOMBRA: 'SOMBRA',
+  LISTA_PLANTAR: 'LISTA_PLANTAR',
+  SALIDA_VIVERO: 'SALIDA',
+}
+
+const formatResponsable = (responsable?: LoteFaseVivero['responsable']) => {
+  if (!responsable) return 'Sin responsable'
+  if (responsable.nombre && responsable.username) {
+    return `${responsable.nombre} (@${responsable.username})`
+  }
+  return responsable.nombre || responsable.username || 'Sin responsable'
+}
+
+const buildFechas = (lot: LoteFaseVivero): Partial<Record<ViveroPhase, string>> => {
+  const fechas: Partial<Record<ViveroPhase, string>> = {}
+  if (lot.fecha_inicio) fechas.INICIO = lot.fecha_inicio
+  if (lot.fecha_embolsado) fechas.EMBOLSADO = lot.fecha_embolsado
+  if (lot.fecha_sombra) fechas.SOMBRA = lot.fecha_sombra
+  if (lot.fecha_salida) fechas.SALIDA_VIVERO = lot.fecha_salida
+  return fechas
+}
+
+const buildEventos = (
+  id: number,
+  fechas: Partial<Record<ViveroPhase, string>>,
+  responsable: string,
+): ViveroEvent[] => {
+  return Object.entries(fechas)
+    .filter(([, fecha]) => Boolean(fecha))
+    .map(([fase, fecha]) => {
+      const phase = fase as ViveroPhase
+      return {
+        id: `auto-${id}-${phase}`,
+        fecha: fecha as string,
+        fase: phase,
+        accion: phaseToAction[phase],
+        responsable,
+      }
+    })
+}
+
+const mapLoteToViveroLot = (lot: LoteFaseVivero): ViveroLot => {
+  const cantidadInicio = lot.cantidad_inicio ?? 0
+  const cantidadActual = (() => {
+    switch (lot.estado) {
+      case 'EMBOLSADO':
+        return lot.cantidad_embolsadas ?? cantidadInicio
+      case 'SOMBRA':
+        return lot.cantidad_sombra ?? lot.cantidad_embolsadas ?? cantidadInicio
+      case 'LISTA_PLANTAR':
+      case 'SALIDA_VIVERO':
+        return (
+          lot.cantidad_lista_plantar ??
+          lot.cantidad_sombra ??
+          lot.cantidad_embolsadas ??
+          cantidadInicio
+        )
+      case 'INICIO':
+      default:
+        return cantidadInicio
+    }
+  })()
+  const germinadas = Math.max(cantidadActual, 0)
+  const muertas = Math.max(cantidadInicio - germinadas, 0)
+  const responsable = formatResponsable(lot.responsable)
+  const fechas = buildFechas(lot)
+
+  return {
+    id: String(lot.id),
+    codigo: lot.codigo_trazabilidad || `LFV-${lot.id}`,
+    planta: {
+      especie: lot.planta?.especie || 'Sin especie',
+      nombreCientifico: lot.planta?.nombre_cientifico || 'Sin nombre científico',
+      variedad: lot.planta?.variedad ?? undefined,
+      tipoPlanta: 'N/D',
+      fuente: lot.tipo_material === 'ESQUEJE' ? 'ESQUEJE' : 'SEMILLA',
+    },
+    vivero: {
+      codigo: lot.vivero?.codigo || 'N/D',
+      nombre: lot.vivero?.nombre || 'Sin vivero',
+      ubicacion: {
+        pais: 'N/D',
+        departamento: lot.vivero?.ubicacion?.departamento || 'Sin departamento',
+        provincia: 'N/D',
+        comunidad: lot.vivero?.ubicacion?.comunidad || 'Sin comunidad',
+        zona: 'N/D',
+        latitud: 0,
+        longitud: 0,
+      },
+    },
+    responsable,
+    estado: lot.estado,
+    fechas,
+    cantidadInicio,
+    germinadas,
+    muertas,
+    alturaPromSombraCm: lot.altura_prom_sombra ?? undefined,
+    alturaPromSalidaCm: lot.altura_prom_salida ?? undefined,
+    eventos: buildEventos(lot.id, fechas, responsable),
+  }
 }
 
 function daysBetween(start?: string, end: Date = new Date()) {
@@ -34,10 +138,53 @@ function formatDate(value?: string) {
   return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-function GerminationDetailScreen() {
+function ViveroDetailScreen() {
   const navigate = useNavigate()
   const { id } = useParams()
-  const lot = id ? germinationLotsById[id] : undefined
+  const [lot, setLot] = useState<ViveroLot | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!id) {
+      setError('Lote de vivero no encontrado')
+      setLoading(false)
+      return
+    }
+
+    const lotId = Number(id)
+    if (Number.isNaN(lotId)) {
+      setError('Lote de vivero no encontrado')
+      setLoading(false)
+      return
+    }
+
+    let isMounted = true
+    const loadLot = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        setLot(null)
+        const response = await GerminacionService.getById(lotId)
+        if (isMounted) {
+          setLot(mapLoteToViveroLot(response.data))
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(err instanceof Error ? err.message : 'Error al cargar el lote')
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false)
+        }
+      }
+    }
+
+    loadLot()
+    return () => {
+      isMounted = false
+    }
+  }, [id])
 
   const derived = useMemo(() => {
     if (!lot) return null
@@ -59,15 +206,33 @@ function GerminationDetailScreen() {
     }
   }, [lot])
 
+  if (loading) {
+    return (
+      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center px-6 pb-28 text-center text-brand-700">
+        <div className="rounded-3xl bg-white px-6 py-6 shadow-soft ring-1 ring-black/5">
+          <p className="text-sm font-semibold text-brand-600">Cargando lote...</p>
+        </div>
+      </div>
+    )
+  }
+
   if (!lot || !derived) {
-    return <PlaceholderScreen title="Lote de germinación no encontrado" />
+    return (
+      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center px-6 pb-28 text-center text-brand-700">
+        <div className="rounded-3xl bg-white px-6 py-6 shadow-soft ring-1 ring-black/5">
+          <p className="text-sm font-semibold text-red-500">
+            {error ?? 'Lote de vivero no encontrado'}
+          </p>
+        </div>
+      </div>
+    )
   }
 
   const currentPhaseIndex = phaseOrder[lot.estado]
   const explorerUrl = lot.blockchainHash
     ? `https://etherscan.io/tx/${lot.blockchainHash}`
     : undefined
-  const summaryLot: GerminationLotCardData = {
+  const summaryLot: ViveroLotCardData = {
     id: lot.id,
     codigo: lot.codigo,
     especie: lot.planta.especie,
@@ -80,6 +245,16 @@ function GerminationDetailScreen() {
     muertas: lot.muertas,
     vivero: lot.vivero.nombre,
   }
+  const { ubicacion } = lot.vivero
+  const latitud = ubicacion.latitud
+  const longitud = ubicacion.longitud
+  const hasCoords =
+    Number.isFinite(latitud) &&
+    Number.isFinite(longitud) &&
+    !(latitud === 0 && longitud === 0)
+  const coordsLabel = hasCoords
+    ? `${latitud.toFixed(4)}, ${longitud.toFixed(4)}`
+    : 'Sin coordenadas'
 
   return (
     <div className="relative min-h-screen bg-[#eef2ed] text-brand-700">
@@ -105,7 +280,7 @@ function GerminationDetailScreen() {
         </header>
 
         <div className="mt-6 space-y-5 px-5">
-          <GerminationLotCard lot={summaryLot} />
+          <ViveroLotCard lot={summaryLot} />
 
           <div className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
             <div className="flex items-center justify-between gap-2">
@@ -168,7 +343,7 @@ function GerminationDetailScreen() {
                 <div className="grid grid-cols-1 gap-2">
                   <button
                     type="button"
-                    onClick={() => navigate(`/app/germination/${lot.id}/event/new`)}
+                    onClick={() => navigate(`/app/vivero/${lot.id}/event/new`)}
                     className="flex items-center justify-center gap-2 rounded-2xl bg-white px-3 py-3 text-sm font-semibold text-brand-700 shadow-soft ring-1 ring-brand-200 transition hover:ring-brand-300 active:scale-[0.99]"
                   >
                     <Icon name="plus" className="h-4 w-4" />
@@ -176,7 +351,7 @@ function GerminationDetailScreen() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => navigate(`/app/germination/${lot.id}/update`)}
+                    onClick={() => navigate(`/app/vivero/${lot.id}/update`)}
                     className="flex items-center justify-center gap-2 rounded-2xl bg-white px-3 py-3 text-sm font-semibold text-brand-700 shadow-soft ring-1 ring-brand-200 transition hover:ring-brand-300 active:scale-[0.99]"
                   >
                     <Icon name="photo" className="h-4 w-4" />
@@ -217,7 +392,7 @@ function GerminationDetailScreen() {
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
-                onClick={() => navigate(`/app/germination/${lot.id}/update`)}
+                onClick={() => navigate(`/app/vivero/${lot.id}/update`)}
                 className="flex items-center justify-center gap-2 rounded-2xl bg-white px-3 py-3 text-sm font-semibold text-brand-700 shadow-soft ring-1 ring-brand-200 transition hover:ring-brand-300 active:scale-[0.99]"
               >
                 <Icon name="balance" className="h-4 w-4" />
@@ -243,20 +418,20 @@ function GerminationDetailScreen() {
             <div className="space-y-2 text-sm font-semibold text-brand-600">
               <p>
                 <span className="text-brand-500">Comunidad: </span>
-                {lot.vivero.ubicacion.comunidad} ({lot.vivero.ubicacion.zona})
+                {ubicacion.comunidad || 'Sin comunidad'} ({ubicacion.zona || 'Sin zona'})
               </p>
               <p>
                 <span className="text-brand-500">Ubicación: </span>
-                {lot.vivero.ubicacion.provincia}, {lot.vivero.ubicacion.departamento},{' '}
-                {lot.vivero.ubicacion.pais}
+                {ubicacion.provincia || 'Sin provincia'},{' '}
+                {ubicacion.departamento || 'Sin departamento'}, {ubicacion.pais || 'Sin país'}
               </p>
               <p>
                 <span className="text-brand-500">Coordenadas: </span>
-                {lot.vivero.ubicacion.latitud.toFixed(4)}, {lot.vivero.ubicacion.longitud.toFixed(4)}
+                {coordsLabel}
               </p>
               <p>
                 <span className="text-brand-500">Vivero: </span>
-                {lot.vivero.nombre} ({lot.vivero.codigo})
+                {lot.vivero.nombre} ({lot.vivero.codigo || 'N/D'})
               </p>
               <p>
                 <span className="text-brand-500">Responsable: </span>
@@ -290,46 +465,52 @@ function GerminationDetailScreen() {
           <div className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5 space-y-3">
             <p className="text-sm font-semibold text-brand-700">Historial de eventos</p>
             <div className="space-y-3">
-              {lot.eventos
-                .slice()
-                .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
-                .map((event) => (
-                  <div
-                    key={event.id}
-                    className="rounded-2xl border border-brand-100 bg-brand-50 px-3 py-3 shadow-sm"
-                  >
-                    <div className="flex items-center justify-between text-xs font-semibold text-brand-600">
-                      <span>{formatDate(event.fecha)}</span>
-                      <span className="rounded-full bg-white px-2 py-1 text-[10px] uppercase tracking-wide text-brand-700 shadow-sm ring-1 ring-brand-100">
-                        {event.fase}
-                      </span>
+              {lot.eventos.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-brand-100 bg-brand-50 px-3 py-3 text-sm font-semibold text-brand-600">
+                  Sin eventos registrados.
+                </div>
+              ) : (
+                lot.eventos
+                  .slice()
+                  .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
+                  .map((event) => (
+                    <div
+                      key={event.id}
+                      className="rounded-2xl border border-brand-100 bg-brand-50 px-3 py-3 shadow-sm"
+                    >
+                      <div className="flex items-center justify-between text-xs font-semibold text-brand-600">
+                        <span>{formatDate(event.fecha)}</span>
+                        <span className="rounded-full bg-white px-2 py-1 text-[10px] uppercase tracking-wide text-brand-700 shadow-sm ring-1 ring-brand-100">
+                          {event.fase}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-sm font-semibold text-brand-700">{event.accion}</p>
+                      {event.notas && (
+                        <p className="text-xs font-medium text-brand-500">{event.notas}</p>
+                      )}
+                      <div className="mt-2 flex flex-wrap gap-2 text-[11px] font-semibold text-brand-700">
+                        {event.vivas !== undefined && (
+                          <span className="rounded-full bg-white px-2 py-1 ring-1 ring-brand-100">
+                            Vivas: {event.vivas}
+                          </span>
+                        )}
+                        {event.muertas !== undefined && (
+                          <span className="rounded-full bg-white px-2 py-1 ring-1 ring-brand-100">
+                            Muertas: {event.muertas}
+                          </span>
+                        )}
+                        {event.alturaPromCm !== undefined && (
+                          <span className="rounded-full bg-white px-2 py-1 ring-1 ring-brand-100">
+                            Altura prom: {event.alturaPromCm} cm
+                          </span>
+                        )}
+                        <span className="rounded-full bg-white px-2 py-1 ring-1 ring-brand-100">
+                          Responsable: {event.responsable}
+                        </span>
+                      </div>
                     </div>
-                    <p className="mt-1 text-sm font-semibold text-brand-700">{event.accion}</p>
-                    {event.notas && (
-                      <p className="text-xs font-medium text-brand-500">{event.notas}</p>
-                    )}
-                    <div className="mt-2 flex flex-wrap gap-2 text-[11px] font-semibold text-brand-700">
-                      {event.vivas !== undefined && (
-                        <span className="rounded-full bg-white px-2 py-1 ring-1 ring-brand-100">
-                          Vivas: {event.vivas}
-                        </span>
-                      )}
-                      {event.muertas !== undefined && (
-                        <span className="rounded-full bg-white px-2 py-1 ring-1 ring-brand-100">
-                          Muertas: {event.muertas}
-                        </span>
-                      )}
-                      {event.alturaPromCm !== undefined && (
-                        <span className="rounded-full bg-white px-2 py-1 ring-1 ring-brand-100">
-                          Altura prom: {event.alturaPromCm} cm
-                        </span>
-                      )}
-                      <span className="rounded-full bg-white px-2 py-1 ring-1 ring-brand-100">
-                        Responsable: {event.responsable}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  ))
+              )}
             </div>
           </div>
         </div>
@@ -338,4 +519,4 @@ function GerminationDetailScreen() {
   )
 }
 
-export default GerminationDetailScreen
+export default ViveroDetailScreen

@@ -13,8 +13,6 @@ function NewCollectionForm() {
   const [date, setDate] = useState(() => formData?.date || new Date().toISOString().slice(0, 10));
   const [type, setType] = useState<MaterialType>(formData?.type || "seed");
   const [species, setSpecies] = useState(formData?.species || "");
-  const [customSpecies, setCustomSpecies] = useState("");
-  const [showCustomSpecies, setShowCustomSpecies] = useState(false);
   const [method, setMethod] = useState(formData?.method || "");
   const [quantity, setQuantity] = useState(formData?.quantity || "0");
   const [unit, setUnit] = useState<Unit>(formData?.unit || "kg");
@@ -24,16 +22,54 @@ function NewCollectionForm() {
   const [totalPhotos, setTotalPhotos] = useState<string[]>(formData?.totalPhotos || []);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [modalType, setModalType] = useState<'place' | 'total'>('place');
+  const [showSpeciesModal, setShowSpeciesModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showNewPlantForm, setShowNewPlantForm] = useState(false);
+  const [newPlantData, setNewPlantData] = useState({
+    especie: '',
+    nombre_cientifico: '',
+    tipo_planta: '',
+    fuente_planta: '',
+    nombres_comunes: '',
+    imagen_url: '',
+  });
+  const [newPlantImagePreview, setNewPlantImagePreview] = useState<string>('');
+  const [submittingNewPlant, setSubmittingNewPlant] = useState(false);
+  const [showPlantSuccessModal, setShowPlantSuccessModal] = useState(false);
+  const [createdPlantName, setCreatedPlantName] = useState('');
+  const [newPlantErrors, setNewPlantErrors] = useState({
+    especie: false,
+    nombre_cientifico: false,
+    tipo_planta: false,
+    fuente_planta: false,
+    nombres_comunes: false,
+  });
   
   // Plantas desde el backend
   const [plantas, setPlantas] = useState<Planta[]>([]);
   const [loadingPlantas, setLoadingPlantas] = useState(false);
   const [selectedPlanta, setSelectedPlanta] = useState<Planta | null>(null);
   
-  // Generar opciones de especies desde las plantas del backend
-  const speciesOptions = useMemo(() => {
-    return plantas.map(planta => planta.especie || planta.nombre_cientifico);
-  }, [plantas]);
+  // Filtrar plantas según el tipo seleccionado (fuente) y término de búsqueda
+  const filteredPlantas = useMemo(() => {
+    // Primero filtrar por tipo (fuente: SEMILLA o ESQUEJE)
+    const plantasPorTipo = plantas.filter(planta => {
+      if (type === 'seed') {
+        return planta.fuente === 'SEMILLA';
+      } else if (type === 'cutting') {
+        return planta.fuente === 'ESQUEJE';
+      }
+      return true;
+    });
+    
+    // Luego filtrar por término de búsqueda
+    if (!searchTerm.trim()) return plantasPorTipo;
+    const term = searchTerm.toLowerCase();
+    return plantasPorTipo.filter(planta => 
+      (planta.especie?.toLowerCase().includes(term)) ||
+      (planta.nombre_cientifico?.toLowerCase().includes(term))
+    );
+  }, [plantas, searchTerm, type]);
   
   const [errors, setErrors] = useState({
     date: false,
@@ -142,6 +178,100 @@ function NewCollectionForm() {
       setPlacePhotos(prev => prev.filter((_, i) => i !== index));
     } else {
       setTotalPhotos(prev => prev.filter((_, i) => i !== index));
+    }
+  };
+
+  const handleNewPlantImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      setNewPlantImagePreview(base64String);
+      setNewPlantData(prev => ({ ...prev, imagen_url: base64String }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCreateNewPlant = async () => {
+    // Validar campos obligatorios
+    const errors = {
+      especie: !newPlantData.especie.trim(),
+      nombre_cientifico: !newPlantData.nombre_cientifico.trim(),
+      tipo_planta: !newPlantData.tipo_planta,
+      fuente_planta: !newPlantData.fuente_planta,
+      nombres_comunes: !newPlantData.nombres_comunes.trim(),
+    };
+
+    setNewPlantErrors(errors);
+
+    if (Object.values(errors).some(error => error)) {
+      return;
+    }
+
+    setSubmittingNewPlant(true);
+
+    try {
+      const plantaData = {
+        especie: newPlantData.especie.trim(),
+        nombre_cientifico: newPlantData.nombre_cientifico.trim(),
+        tipo_planta: newPlantData.tipo_planta,
+        fuente: newPlantData.fuente_planta as 'SEMILLA' | 'ESQUEJE',
+        nombres_comunes: newPlantData.nombres_comunes.trim(),
+        imagen_url: newPlantData.imagen_url || undefined,
+      };
+
+      console.log('📤 Creando nueva planta:', plantaData);
+      const response = await RecoleccionService.createPlanta(plantaData);
+      
+      if (response.success && response.data) {
+        // Actualizar lista de plantas
+        setPlantas(prev => [...prev, response.data]);
+        
+        // Seleccionar la nueva planta
+        const nombreEspecie = response.data.especie || response.data.nombre_cientifico;
+        setSpecies(nombreEspecie);
+        setSelectedPlanta(response.data);
+        setCreatedPlantName(nombreEspecie);
+        
+        // Cerrar modal de formulario
+        setShowNewPlantForm(false);
+        
+        // Limpiar formulario
+        setNewPlantData({
+          especie: '',
+          nombre_cientifico: '',
+          tipo_planta: '',
+          fuente_planta: '',
+          nombres_comunes: '',
+          imagen_url: '',
+        });
+        setNewPlantImagePreview('');
+        setNewPlantErrors({
+          especie: false,
+          nombre_cientifico: false,
+          tipo_planta: false,
+          fuente_planta: false,
+          nombres_comunes: false,
+        });
+        
+        // Mostrar modal de éxito
+        setShowPlantSuccessModal(true);
+        
+        // Cerrar automáticamente después de 2 segundos
+        setTimeout(() => {
+          setShowPlantSuccessModal(false);
+          setShowSpeciesModal(false);
+        }, 2000);
+        
+        console.log('✅ Planta creada y seleccionada:', response.data);
+      }
+    } catch (error) {
+      console.error('❌ Error al crear planta:', error);
+      alert('Error al crear la planta. Por favor, intenta de nuevo.');
+    } finally {
+      setSubmittingNewPlant(false);
     }
   };
 
@@ -285,109 +415,34 @@ function NewCollectionForm() {
 
           <div className="space-y-2">
             <p className="text-base font-extrabold text-brand-700">
-              Especie de planta
+              Especie de la semilla:
             </p>
-            {!showCustomSpecies ? (
-              <div className="flex gap-2">
-                {species ? (
-                  <div className="flex flex-1 items-center justify-between rounded-2xl border border-brand-400 bg-brand-50 px-4 py-3 shadow-soft">
-                    <span className="text-base font-semibold text-brand-700">
-                      {species}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setSpecies("")}
-                      className="flex h-6 w-6 items-center justify-center rounded-full text-slate-500 transition hover:bg-white hover:text-red-500"
-                      title="Cambiar especie"
-                    >
-                      <Icon name="x" className="h-4 w-4" />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex flex-1 items-center rounded-2xl border border-slate-200 bg-white px-4 shadow-soft focus-within:border-brand-400 focus-within:ring-2 focus-within:ring-brand-200">
-                    <select
-                      value={species}
-                      onChange={(event) => {
-                        const selectedValue = event.target.value;
-                        setSpecies(selectedValue);
-                        
-                        // Encontrar y guardar la planta seleccionada
-                        if (selectedValue && !isNewFind) {
-                          const planta = plantas.find(
-                            p => (p.especie || p.nombre_cientifico) === selectedValue
-                          );
-                          if (planta) {
-                            setSelectedPlanta(planta);
-                            console.log('🌱 Planta seleccionada:', {
-                              id: planta.id,
-                              especie: planta.especie,
-                              nombre_cientifico: planta.nombre_cientifico
-                            });
-                          }
-                        } else {
-                          setSelectedPlanta(null);
-                        }
-                      }}
-                      className="w-full bg-transparent py-3 text-base font-semibold text-slate-700 outline-none"
-                      disabled={loadingPlantas}
-                    >
-                      <option value="">
-                        {loadingPlantas ? 'Cargando especies...' : 'Seleccionar especie'}
-                      </option>
-                      {speciesOptions.map((option) => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
+            {species ? (
+              <div className="flex flex-1 items-center justify-between rounded-2xl border border-brand-400 bg-brand-50 px-4 py-3 shadow-soft">
+                <span className="text-base font-semibold text-brand-700">
+                  {species}
+                </span>
                 <button
                   type="button"
-                  onClick={() => setShowCustomSpecies(true)}
-                  className="flex h-[52px] w-12 items-center justify-center rounded-2xl border border-brand-300 bg-brand-50 text-brand-600 shadow-soft transition hover:bg-brand-100"
-                  title="Agregar nueva especie"
+                  onClick={() => {
+                    setSpecies("");
+                    setSelectedPlanta(null);
+                  }}
+                  className="flex h-6 w-6 items-center justify-center rounded-full text-slate-500 transition hover:bg-white hover:text-red-500"
+                  title="Cambiar especie"
                 >
-                  <Icon name="plus" className="h-5 w-5" />
+                  <Icon name="x" className="h-4 w-4" />
                 </button>
               </div>
             ) : (
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={customSpecies}
-                  onChange={(event) => setCustomSpecies(event.target.value)}
-                  placeholder="Nueva especie..."
-                  autoFocus
-                  className="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base font-semibold text-slate-700 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (customSpecies.trim()) {
-                      setSpecies(customSpecies.trim());
-                      setCustomSpecies("");
-                      setShowCustomSpecies(false);
-                    }
-                  }}
-                  disabled={!customSpecies.trim()}
-                  className="flex h-[52px] w-12 items-center justify-center rounded-2xl bg-brand-500 text-white shadow-soft transition hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Confirmar"
-                >
-                  <Icon name="check" className="h-5 w-5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowCustomSpecies(false);
-                    setCustomSpecies("");
-                  }}
-                  className="flex h-[52px] w-12 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-soft transition hover:bg-slate-50"
-                  title="Cancelar"
-                >
-                  <Icon name="x" className="h-5 w-5" />
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => setShowSpeciesModal(true)}
+                disabled={loadingPlantas}
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left text-base font-semibold text-slate-500 shadow-soft transition hover:border-brand-300 hover:bg-brand-50 disabled:opacity-50"
+              >
+                {loadingPlantas ? 'Cargando especies...' : 'Seleccionar especie'}
+              </button>
             )}
           </div>
 
@@ -631,6 +686,366 @@ function NewCollectionForm() {
         </div>
       </div>
 
+      {showSpeciesModal && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50">
+          <div className="w-full max-w-md rounded-t-3xl bg-white pb-8 max-h-[85vh] flex flex-col">
+            <div className="rounded-3xl sticky top-0 flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4">
+              <h2 className="text-lg font-extrabold text-brand-700">
+                Escoger una planta
+              </h2>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSpeciesModal(false);
+                  setSearchTerm("");
+                }}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200 active:scale-95"
+              >
+                <Icon name="x" className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="px-5 py-4 space-y-3 flex-1 overflow-y-auto">
+              <div className="relative">
+                <Icon name="search" className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Buscar"
+                  className="w-full rounded-2xl border border-slate-200 bg-white pl-12 pr-4 py-3 text-base font-semibold text-slate-700 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
+                />
+              </div>
+
+              <div className="space-y-3">
+                {filteredPlantas.length === 0 ? (
+                  <div className="py-8 text-center">
+                    <p className="text-sm font-semibold text-slate-500">
+                      No se encontraron plantas
+                    </p>
+                  </div>
+                ) : (
+                  filteredPlantas.map((planta) => (
+                    <button
+                      key={planta.id}
+                      type="button"
+                      onClick={() => {
+                        const nombreEspecie = planta.especie || planta.nombre_cientifico;
+                        setSpecies(nombreEspecie);
+                        setSelectedPlanta(planta);
+                        setShowSpeciesModal(false);
+                        setSearchTerm("");
+                        console.log('🌱 Planta seleccionada:', {
+                          id: planta.id,
+                          especie: planta.especie,
+                          nombre_cientifico: planta.nombre_cientifico
+                        });
+                      }}
+                      className="w-full flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-soft transition hover:border-brand-300 hover:bg-brand-50 active:scale-[0.99]"
+                    >
+                      <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-slate-100">
+                        {planta.imagen_url ? (
+                          <img
+                            src={planta.imagen_url}
+                            alt={planta.especie || planta.nombre_cientifico}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center">
+                            <Icon name="photo" className="h-8 w-8 text-slate-300" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 text-left">
+                        <p className="text-base font-extrabold text-brand-700">
+                          {planta.especie || 'Sin nombre común'}
+                        </p>
+                        <p className="text-sm font-semibold text-slate-500">
+                          {planta.nombre_cientifico}
+                        </p>
+                      </div>
+                      <div className={`rounded-xl border px-3 py-1.5 text-xs font-bold ${
+                        type === 'seed' 
+                          ? 'border-brand-500 bg-brand-50 text-brand-600'
+                          : 'border-orange-500 bg-orange-50 text-orange-600'
+                      }`}>
+                        {type === 'seed' ? 'Semilla' : 'Esqueje'}
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSpeciesModal(false);
+                  setSearchTerm("");
+                  setShowNewPlantForm(true);
+                }}
+                className="w-full flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-brand-300 bg-brand-50/50 py-4 text-brand-600 transition hover:bg-brand-50 active:scale-[0.99]"
+              >
+                <Icon name="plus" className="h-5 w-5" />
+                <span className="text-base font-extrabold">Añadir planta</span>
+              </button>
+            </div>
+
+            <div className="px-5 pt-4 border-t border-slate-200">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSpeciesModal(false);
+                  setSearchTerm("");
+                }}
+                className="w-full rounded-2xl bg-brand-500 py-3 text-center text-base font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99]"
+              >
+                Continuar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showNewPlantForm && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50">
+          <div className="w-full max-w-md rounded-t-3xl bg-white pb-8 max-h-[90vh] flex flex-col">
+            <div className="rounded-3xl sticky top-0 flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4">
+              <h2 className="text-lg font-extrabold text-brand-700">
+                Añadir nueva planta
+              </h2>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowNewPlantForm(false);
+                  setNewPlantData({
+                    especie: '',
+                    nombre_cientifico: '',
+                    tipo_planta: '',
+                    fuente_planta: '',
+                    nombres_comunes: '',
+                    imagen_url: '',
+                  });
+                  setNewPlantImagePreview('');
+                  setNewPlantErrors({
+                    especie: false,
+                    nombre_cientifico: false,
+                    tipo_planta: false,
+                    fuente_planta: false,
+                    nombres_comunes: false,
+                  });
+                }}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200 active:scale-95"
+                disabled={submittingNewPlant}
+              >
+                <Icon name="x" className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="px-5 py-4 space-y-4 flex-1 overflow-y-auto">
+              {/* Imagen de la planta */}
+              <div className="space-y-2">
+                <p className="text-base font-extrabold text-brand-700">
+                  Imagen de la planta <span className="text-red-500">*</span>
+                </p>
+                <label className="flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-slate-200 bg-white px-4 py-6 cursor-pointer transition hover:border-brand-300 hover:bg-brand-50">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleNewPlantImageUpload}
+                    className="hidden"
+                    disabled={submittingNewPlant}
+                  />
+                  {newPlantImagePreview ? (
+                    <img
+                      src={newPlantImagePreview}
+                      alt="Preview"
+                      className="h-32 w-32 rounded-xl object-cover shadow-md"
+                    />
+                  ) : (
+                    <>
+                      <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-brand-50">
+                        <Icon name="photo" className="h-10 w-10 text-brand-600" />
+                      </div>
+                      <p className="text-sm font-semibold text-slate-500 text-center">
+                        Toca para agregar imagen
+                      </p>
+                    </>
+                  )}
+                </label>
+              </div>
+
+              {/* Nombre de la planta (especie) */}
+              <div className="space-y-2">
+                <p className="text-base font-extrabold text-brand-700">
+                  Nombre de la planta <span className="text-red-500">*</span>
+                </p>
+                <input
+                  type="text"
+                  value={newPlantData.especie}
+                  onChange={(e) => {
+                    setNewPlantData(prev => ({ ...prev, especie: e.target.value }));
+                    setNewPlantErrors(prev => ({ ...prev, especie: false }));
+                  }}
+                  placeholder="Ej: Caoba, Roble, Pino"
+                  className={`w-full rounded-2xl border px-4 py-3 text-base font-semibold text-slate-700 shadow-soft outline-none transition focus:ring-2 ${
+                    newPlantErrors.especie
+                      ? 'border-red-400 focus:border-red-400 focus:ring-red-200'
+                      : 'border-slate-200 bg-white focus:border-brand-400 focus:ring-brand-200'
+                  }`}
+                  disabled={submittingNewPlant}
+                />
+                {newPlantErrors.especie && (
+                  <p className="text-xs font-semibold text-red-500">* El nombre de la planta es obligatorio</p>
+                )}
+              </div>
+
+              {/* Nombre científico */}
+              <div className="space-y-2">
+                <p className="text-base font-extrabold text-brand-700">
+                  Nombre científico <span className="text-red-500">*</span>
+                </p>
+                <input
+                  type="text"
+                  value={newPlantData.nombre_cientifico}
+                  onChange={(e) => {
+                    setNewPlantData(prev => ({ ...prev, nombre_cientifico: e.target.value }));
+                    setNewPlantErrors(prev => ({ ...prev, nombre_cientifico: false }));
+                  }}
+                  placeholder="Ej: Swietenia macrophylla"
+                  className={`w-full rounded-2xl border px-4 py-3 text-base font-semibold text-slate-700 shadow-soft outline-none transition focus:ring-2 ${
+                    newPlantErrors.nombre_cientifico
+                      ? 'border-red-400 focus:border-red-400 focus:ring-red-200'
+                      : 'border-slate-200 bg-white focus:border-brand-400 focus:ring-brand-200'
+                  }`}
+                  disabled={submittingNewPlant}
+                />
+                {newPlantErrors.nombre_cientifico && (
+                  <p className="text-xs font-semibold text-red-500">* El nombre científico es obligatorio</p>
+                )}
+              </div>
+
+              {/* Tipo de planta */}
+              <div className="space-y-2">
+                <p className="text-base font-extrabold text-brand-700">
+                  Tipo de planta <span className="text-red-500">*</span>
+                </p>
+                <div className={`flex items-center rounded-2xl border px-4 shadow-soft ${
+                  newPlantErrors.tipo_planta
+                    ? 'border-red-400 bg-red-50'
+                    : 'border-slate-200 bg-white focus-within:border-brand-400 focus-within:ring-2 focus-within:ring-brand-200'
+                }`}>
+                  <select
+                    value={newPlantData.tipo_planta}
+                    onChange={(e) => {
+                      setNewPlantData(prev => ({ ...prev, tipo_planta: e.target.value }));
+                      setNewPlantErrors(prev => ({ ...prev, tipo_planta: false }));
+                    }}
+                    className="w-full bg-transparent py-3 text-base font-semibold text-slate-700 outline-none"
+                    disabled={submittingNewPlant}
+                  >
+                    <option value="">Seleccionar tipo</option>
+                    <option value="Árbol">Árbol</option>
+                    <option value="Arbusto">Arbusto</option>
+                    <option value="Hierba">Hierba</option>
+                    <option value="Palmera">Palmera</option>
+                    <option value="Helecho">Helecho</option>
+                    <option value="Cactus">Cactus</option>
+                    <option value="Suculenta">Suculenta</option>
+                    <option value="Trepadora">Trepadora</option>
+                    <option value="Enredadera">Enredadera</option>
+                  </select>
+                  <Icon name="chevron-down" className="h-4 w-4 text-slate-400" />
+                </div>
+                {newPlantErrors.tipo_planta && (
+                  <p className="text-xs font-semibold text-red-500">* Debes seleccionar el tipo de planta</p>
+                )}
+              </div>
+
+              {/* Fuente (Semilla o Esqueje) */}
+              <div className="space-y-2">
+                <p className="text-base font-extrabold text-brand-700">
+                  Fuente <span className="text-red-500">*</span>
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewPlantData(prev => ({ ...prev, fuente_planta: 'SEMILLA' }));
+                      setNewPlantErrors(prev => ({ ...prev, fuente_planta: false }));
+                    }}
+                    disabled={submittingNewPlant}
+                    className={`flex-1 rounded-2xl border px-4 py-3 text-center text-base font-extrabold shadow-soft transition ${
+                      newPlantData.fuente_planta === 'SEMILLA'
+                        ? "border-brand-500 bg-emerald-50 text-brand-600 ring-2 ring-emerald-100"
+                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                    } ${submittingNewPlant ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    Semilla
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewPlantData(prev => ({ ...prev, fuente_planta: 'ESQUEJE' }));
+                      setNewPlantErrors(prev => ({ ...prev, fuente_planta: false }));
+                    }}
+                    disabled={submittingNewPlant}
+                    className={`flex-1 rounded-2xl border px-4 py-3 text-center text-base font-extrabold shadow-soft transition ${
+                      newPlantData.fuente_planta === 'ESQUEJE'
+                        ? "border-orange-500 bg-orange-50 text-orange-600 ring-2 ring-orange-100"
+                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                    } ${submittingNewPlant ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    Esqueje
+                  </button>
+                </div>
+                {newPlantErrors.fuente_planta && (
+                  <p className="text-xs font-semibold text-red-500">* Debes seleccionar la fuente</p>
+                )}
+              </div>
+
+              {/* Nombres comunes */}
+              <div className="space-y-2">
+                <p className="text-base font-extrabold text-brand-700">
+                  Nombres comunes <span className="text-red-500">*</span>
+                </p>
+                <input
+                  type="text"
+                  value={newPlantData.nombres_comunes}
+                  onChange={(e) => {
+                    setNewPlantData(prev => ({ ...prev, nombres_comunes: e.target.value }));
+                    setNewPlantErrors(prev => ({ ...prev, nombres_comunes: false }));
+                  }}
+                  placeholder="Ej: Caoba, Aguano, Araputanga"
+                  className={`w-full rounded-2xl border px-4 py-3 text-base font-semibold text-slate-700 shadow-soft outline-none transition focus:ring-2 ${
+                    newPlantErrors.nombres_comunes
+                      ? 'border-red-400 focus:border-red-400 focus:ring-red-200'
+                      : 'border-slate-200 bg-white focus:border-brand-400 focus:ring-brand-200'
+                  }`}
+                  disabled={submittingNewPlant}
+                />
+                <p className="text-xs font-semibold text-slate-500">
+                  Separa múltiples nombres con comas
+                </p>
+                {newPlantErrors.nombres_comunes && (
+                  <p className="text-xs font-semibold text-red-500">* Los nombres comunes son obligatorios</p>
+                )}
+              </div>
+            </div>
+
+            <div className="px-5 pt-4 border-t border-slate-200">
+              <button
+                type="button"
+                onClick={handleCreateNewPlant}
+                disabled={submittingNewPlant}
+                className="w-full rounded-2xl bg-brand-500 py-3 text-center text-base font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {submittingNewPlant ? 'Creando planta...' : 'Crear planta'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showPhotoModal && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50">
           <div className="w-full max-w-md rounded-t-3xl bg-white pb-8">
@@ -723,6 +1138,42 @@ function NewCollectionForm() {
               >
                 <span>Continuar</span>
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de éxito al crear planta */}
+      {showPlantSuccessModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50">
+          <div className="w-full max-w-sm mx-4 rounded-3xl bg-white p-8 shadow-2xl transform animate-in fade-in zoom-in duration-300">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
+                <svg
+                  className="h-10 w-10 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </div>
+              <div className="text-center space-y-2">
+                <h3 className="text-xl font-extrabold text-brand-700">
+                  ¡Planta creada exitosamente!
+                </h3>
+                <p className="text-base font-semibold text-slate-600">
+                  {createdPlantName}
+                </p>
+                <p className="text-sm font-semibold text-brand-500">
+                  Se ha agregado al catálogo
+                </p>
+              </div>
             </div>
           </div>
         </div>

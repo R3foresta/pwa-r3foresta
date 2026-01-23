@@ -10,7 +10,7 @@ function BottomNav() {
 
   const quickActions = [
     { label: 'Registrar recolección', icon: 'package', to: '/app/collections/new' },
-    { label: 'Nuevo germinación', icon: 'germination', to: '/app/germination/new' },
+    { label: 'Nuevo germinación', icon: 'vivero', to: '/app/vivero/new' },
     { label: 'Registrar plantación', icon: 'leaf', to: '/app/planting' },
     { label: 'Actualizar CO₂', icon: 'balance', to: '/app/co2' },
   ]
@@ -19,6 +19,9 @@ function BottomNav() {
     setOpen(false)
     navigate(to)
   }
+
+  // Verificar si estamos en alguna ruta de acciones rápidas
+  const isInQuickActionRoute = quickActions.some(action => pathname === action.to)
 
   return (
     <>
@@ -53,16 +56,18 @@ function BottomNav() {
             )
           })}
 
-          <button
-            type="button"
-            onClick={() => setOpen((v) => !v)}
-            className="absolute -top-5 left-1/2 flex h-14 w-14 -translate-x-1/2 items-center justify-center rounded-full bg-white text-brand-700 shadow-2xl transition hover:scale-105 active:scale-95"
-            aria-label="Abrir acciones rápidas"
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-500 text-white shadow-soft">
-              <Icon name={open ? 'minus' : 'plus'} className="h-6 w-6" />
-            </div>
-          </button>
+          {!isInQuickActionRoute && (
+            <button
+              type="button"
+              onClick={() => setOpen((v) => !v)}
+              className="fixed bottom-32 right-1/2 flex h-14 w-14 translate-x-[calc(min(50vw,24rem)-2.5rem)] items-center justify-center rounded-full bg-brand-500 text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.98] ring-4 ring-white"
+              aria-label="Abrir acciones rápidas"
+            >
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-500 text-white shadow-soft">
+                <Icon name={open ? 'minus' : 'plus'} className="h-6 w-6" />
+              </div>
+            </button>
+          )}
         </nav>
       </div>
 
