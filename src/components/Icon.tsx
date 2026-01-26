@@ -7,7 +7,7 @@ export type IconName =
   | 'user'
   | 'search'
   | 'leaf'
-  | 'germination'
+  | 'vivero'
   | 'cutting'
   | 'plus'
   | 'minus'
@@ -170,7 +170,7 @@ function Icon({ name, className }: Props) {
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 13.5 8 11" />
         </svg>
       )
-    case 'germination':
+    case 'vivero':
       return (
         <svg
           className={`${common} ${className ?? ''}`}

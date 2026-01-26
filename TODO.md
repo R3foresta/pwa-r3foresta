@@ -41,7 +41,7 @@ This is the most significant issue in the codebase.
 The following issues were identified by the linter and manual review. They are not as critical as the architectural flaws but should be addressed to improve code quality and prevent bugs.
 
 *   **React Hook and Component Purity:**
-    *   **`react-hooks/purity` error:** `Date.now()` is called directly in the render function of `GerminationScreen.tsx`. This makes the component impure and can lead to unpredictable behavior.
+    *   **`react-hooks/purity` error:** `Date.now()` is called directly in the render function of `ViveroScreen.tsx`. This makes the component impure and can lead to unpredictable behavior.
     *   **`react-hooks/exhaustive-deps` warnings:** Multiple `useEffect` hooks are missing dependencies. This will lead to stale data and bugs where effects don't re-run when they should.
     *   **`react-hooks/immutability` error:** A function is called before it is declared in `MapScreen.tsx`, which will cause a runtime error.
 

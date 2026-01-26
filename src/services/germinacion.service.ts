@@ -66,6 +66,20 @@ export interface LoteFaseViveroPagination {
   hasPrevPage: boolean
 }
 
+export interface CreateLoteFaseViveroDto {
+  codigo_trazabilidad: string
+  planta_id?: number | null
+  vivero_id: number
+  responsable_id?: number | null
+  fecha_inicio: string
+  cantidad_inicio: number
+  estado?: LoteFaseViveroEstado
+  tipo_material?: 'SEMILLA' | 'ESQUEJE'
+  recolecciones?: number[]
+  observaciones?: string
+  fotos?: File[]
+}
+
 export class GerminacionService {
   private static getAuthHeaders(): HeadersInit {
     const token = localStorage.getItem('authToken')
@@ -102,6 +116,68 @@ export class GerminacionService {
     if (!response.ok) {
       const message = await response.text()
       throw new Error(message || 'Error al obtener lotes de germinacion')
+    }
+
+    return response.json()
+  }
+
+  static async getById(id: number): Promise<{ success: boolean; data: LoteFaseVivero }> {
+    const response = await fetch(`${API_URL}/api/lotes-fase-vivero/${id}`, {
+      headers: this.getAuthHeaders(),
+    })
+
+    if (!response.ok) {
+      const message = await response.text()
+      throw new Error(message || 'Error al obtener lote de vivero')
+    }
+
+    return response.json()
+  }
+
+  static async create(
+    data: CreateLoteFaseViveroDto,
+  ): Promise<{ success: boolean; data: LoteFaseVivero }> {
+    const formData = new FormData()
+
+    formData.append('codigo_trazabilidad', data.codigo_trazabilidad)
+    formData.append('vivero_id', String(data.vivero_id))
+    formData.append('fecha_inicio', data.fecha_inicio)
+    formData.append('cantidad_inicio', String(data.cantidad_inicio))
+    formData.append('estado', data.estado ?? 'INICIO')
+
+    if (data.planta_id) {
+      formData.append('planta_id', String(data.planta_id))
+    }
+
+    if (data.responsable_id) {
+      formData.append('responsable_id', String(data.responsable_id))
+    }
+
+    if (data.tipo_material) {
+      formData.append('tipo_material', data.tipo_material)
+    }
+
+    if (data.observaciones) {
+      formData.append('observaciones', data.observaciones)
+    }
+
+    if (data.recolecciones?.length) {
+      data.recolecciones.forEach((id) => formData.append('recolecciones', String(id)))
+    }
+
+    if (data.fotos?.length) {
+      data.fotos.forEach((file) => formData.append('fotos', file))
+    }
+
+    const response = await fetch(`${API_URL}/api/lotes-fase-vivero`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: formData,
+    })
+
+    if (!response.ok) {
+      const message = await response.text()
+      throw new Error(message || 'Error al crear lote de vivero')
     }
 
     return response.json()
