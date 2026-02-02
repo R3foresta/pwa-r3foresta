@@ -1,5 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'https://backend-r3foresta.onrender.com'
-// const API_URL = 'https://backend-r3foresta.onrender.com';
+const API_URL = import.meta.env.VITE_API_URL
 
 // ===== TIPOS =====
 // TODO: Revisar si la estrcutura de las interfaces coincide con el backend y en especial con la estrctura de la base de datos.
