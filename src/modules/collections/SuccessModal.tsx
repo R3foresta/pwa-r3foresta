@@ -1,20 +1,46 @@
+// ============================================================================
+// SuccessModal.tsx
+// ============================================================================
+// Modal de confirmación que se muestra después de crear exitosamente una recolección
+// Ofrece opciones para ver el registro en blockchain o volver al menú principal
+// ============================================================================
+
+// ============================================================================
+// SuccessModal.tsx
+// ============================================================================
+// Modal de confirmación que se muestra después de crear exitosamente una recolección
+// Ofrece opciones para ver el registro en blockchain o volver al menú principal
+// ============================================================================
+
+/**
+ * Props del modal de éxito
+ */
 type Props = {
-  onViewBlockchain: () => void;
-  onBackToMenu: () => void;
-  summaryText?: string;
+  onViewBlockchain: () => void;    // Handler para ver registro en blockchain
+  onBackToMenu: () => void;        // Handler para volver al menú principal
+  summaryText?: string;            // Texto resumen de lo recolectado (ej: "5 kg de Mara")
 };
 
+/**
+ * Modal de confirmación de registro exitoso
+ * Se muestra después de que la recolección se guarda correctamente en el backend
+ * 
+ * @param {Props} props - Handlers y texto resumen
+ */
 function SuccessModal({ onViewBlockchain, onBackToMenu, summaryText }: Props) {
   return (
+    // Overlay oscuro que cubre toda la pantalla
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+      {/* Contenedor del modal */}
       <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl">
         <div className="flex flex-col items-center space-y-6">
-          {/* Título */}
+          
+          {/* Título del modal */}
           <h2 className="text-center text-2xl font-extrabold text-slate-800">
             Registro Exitoso
           </h2>
 
-          {/* Icono de éxito */}
+          {/* Ícono de check animado en círculo verde */}
           <div className="flex h-32 w-32 items-center justify-center rounded-full bg-emerald-100">
             <svg
               className="h-20 w-20 text-emerald-500"
@@ -23,6 +49,7 @@ function SuccessModal({ onViewBlockchain, onBackToMenu, summaryText }: Props) {
               stroke="currentColor"
               strokeWidth="2.5"
             >
+              {/* Símbolo de check (✓) */}
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -31,18 +58,20 @@ function SuccessModal({ onViewBlockchain, onBackToMenu, summaryText }: Props) {
             </svg>
           </div>
 
-          {/* Mensaje */}
+          {/* Mensaje de confirmación con resumen */}
           <div className="text-center">
             <p className="text-base font-semibold text-slate-700">
               Se recolecto:
             </p>
+            {/* Muestra el resumen (ej: "5 kg de Mara") o texto por defecto */}
             <p className="mt-1 text-lg font-extrabold text-slate-800">
               {summaryText ?? 'Registro listo para subir'}
             </p>
           </div>
 
-          {/* Botones */}
+          {/* Botones de acción */}
           <div className="w-full space-y-3">
+            {/* Botón primario: Ver en blockchain */}
             <button
               type="button"
               onClick={onViewBlockchain}
@@ -50,6 +79,8 @@ function SuccessModal({ onViewBlockchain, onBackToMenu, summaryText }: Props) {
             >
               Ver registro en cadena de bloques
             </button>
+            
+            {/* Botón secundario: Volver al menú */}
             <button
               type="button"
               onClick={onBackToMenu}

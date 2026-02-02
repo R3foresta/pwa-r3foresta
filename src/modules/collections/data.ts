@@ -1,3 +1,11 @@
+// ============================================================================
+// data.ts
+// ============================================================================
+// Datos mock y configuraciones estáticas para el módulo de recolecciones
+// Usado principalmente para desarrollo y testing
+// En producción, estos datos vienen del backend
+// ============================================================================
+
 import type {
   CollectionMethod,
   CollectionRecord,
@@ -7,11 +15,17 @@ import type {
   User,
 } from './types'
 
+// ============================================================================
+// Usuarios de prueba
+// ============================================================================
 export const users: User[] = [
   { id: 'usr_1', fullName: 'María Quispe', email: 'maria@gmail.com' },
   { id: 'usr_2', fullName: 'Juan Mamani', email: 'juan@gmail.com' },
 ]
 
+// ============================================================================
+// Ubicaciones geográficas de prueba
+// ============================================================================
 export const locations: Location[] = [
   {
     id: 'loc_1',
@@ -38,23 +52,35 @@ export const locations: Location[] = [
   },
 ]
 
+// ============================================================================
+// Viveros (almacenes de material forestal)
+// ============================================================================
 export const nurseries: Nursery[] = [
   { id: 'nur_1', code: 'VIV-SJ', name: 'San Juan Nursery', locationId: 'loc_3' },
   { id: 'nur_2', code: 'VIV-SAM', name: 'Samaipata Nursery', locationId: 'loc_2' },
 ]
 
+// ============================================================================
+// Catálogo de plantas
+// ============================================================================
 export const plants: Plant[] = [
   { id: 'pl_1', scientificName: 'Cedrela sp.', commonName: 'Cedro' },
   { id: 'pl_2', scientificName: 'Quercus sp.' },
   { id: 'pl_3', scientificName: 'Pinus sp.' },
 ]
 
+// ============================================================================
+// Métodos de recolección disponibles
+// ============================================================================
 export const methods: CollectionMethod[] = [
   { id: 'm_1', name: 'Manual collection' },
   { id: 'm_2', name: 'Post-harvest' },
   { id: 'm_3', name: 'Sampling' },
 ]
 
+// ============================================================================
+// Registros de recolección de ejemplo (mock data)
+// ============================================================================
 export const collectionRecords: CollectionRecord[] = [
   {
     id: 'rec_14',
@@ -121,24 +147,48 @@ export const collectionRecords: CollectionRecord[] = [
   },
 ]
 
+// ============================================================================
+// Funciones auxiliares para indexación
+// ============================================================================
+
+/**
+ * Convierte un array de items en un objeto indexado por ID
+ * Facilita búsquedas O(1) por ID en lugar de O(n) con array.find()
+ * 
+ * @param {T[]} items - Array de items con propiedad 'id'
+ * @returns {Record<string, T>} Objeto con IDs como keys
+ */
 const indexById = <T extends { id: string }>(items: T[]) =>
   items.reduce<Record<string, T>>((acc, item) => {
     acc[item.id] = item
     return acc
   }, {})
 
+// ============================================================================
+// Índices por ID para búsquedas rápidas
+// ============================================================================
 export const usersById = indexById(users)
 export const locationsById = indexById(locations)
 export const nurseriesById = indexById(nurseries)
 export const plantsById = indexById(plants)
 export const methodsById = indexById(methods)
 
+// ============================================================================
+// Opciones para selects y filtros
+// ============================================================================
+
+// Array de nombres de especies para autocomplete/select
 export const speciesOptions = plants.map(
   (plant) => plant.commonName ?? plant.scientificName,
 )
 
+// Array de nombres de métodos de recolección
 export const methodOptions = methods.map((method) => method.name)
 
+/**
+ * Opciones de filtro para tipos de material
+ * Se usa en CollectionsScreen para filtrar la lista
+ */
 export const materialFilterOptions = [
   { key: 'all', label: 'Todos' },
   { key: 'seed', label: 'Semilla' },
