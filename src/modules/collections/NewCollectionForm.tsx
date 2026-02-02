@@ -50,13 +50,19 @@ function NewCollectionForm() {
   
   // Filtrar plantas según el término de búsqueda
   const filteredPlantas = useMemo(() => {
+    console.log('🔄 Filtrando plantas. Total:', plantas.length, 'Término:', searchTerm);
     // Filtrar por término de búsqueda
-    if (!searchTerm.trim()) return plantas;
+    if (!searchTerm.trim()) {
+      console.log('📋 Sin filtro, mostrando todas:', plantas.length);
+      return plantas;
+    }
     const term = searchTerm.toLowerCase();
-    return plantas.filter(planta => 
+    const filtered = plantas.filter(planta => 
       (planta.especie?.toLowerCase().includes(term)) ||
       (planta.nombre_cientifico?.toLowerCase().includes(term))
     );
+    console.log('📋 Filtradas:', filtered.length);
+    return filtered;
   }, [plantas, searchTerm]);
   
   const [errors, setErrors] = useState({
@@ -74,6 +80,8 @@ function NewCollectionForm() {
         const plantasBackend = await RecoleccionService.getPlantas();
         setPlantas(plantasBackend);
         console.log('✅ Plantas cargadas desde backend:', plantasBackend);
+        console.log('📊 Total de plantas:', plantasBackend.length);
+        console.log('🔍 Primeras 5 plantas:', plantasBackend.slice(0, 5));
         
         // Si hay una planta guardada previamente, restaurarla
         if (formData?.planta_id) {

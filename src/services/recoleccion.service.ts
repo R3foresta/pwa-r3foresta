@@ -546,7 +546,14 @@ export class RecoleccionService {
       }
       
       const result = await response.json();
-      return result.data || result;
+      const plantas = result.data || result;
+      
+      console.log('📡 Respuesta del backend /api/plantas:');
+      console.log('- Total recibido:', plantas.length);
+      console.log('- Estructura completa:', result);
+      console.log('- Primeras 3 plantas:', plantas.slice(0, 3));
+      
+      return plantas;
     } catch (error) {
       console.error('❌ Error al obtener plantas:', error);
       return [];
