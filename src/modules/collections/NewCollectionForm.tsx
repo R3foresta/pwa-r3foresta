@@ -29,7 +29,6 @@ function NewCollectionForm() {
     especie: '',
     nombre_cientifico: '',
     tipo_planta: '',
-    fuente_planta: '',
     nombres_comunes: '',
     imagen_url: '',
   });
@@ -41,7 +40,6 @@ function NewCollectionForm() {
     especie: false,
     nombre_cientifico: false,
     tipo_planta: false,
-    fuente_planta: false,
     nombres_comunes: false,
   });
   
@@ -50,26 +48,22 @@ function NewCollectionForm() {
   const [loadingPlantas, setLoadingPlantas] = useState(false);
   const [selectedPlanta, setSelectedPlanta] = useState<Planta | null>(null);
   
-  // Filtrar plantas según el tipo seleccionado (fuente) y término de búsqueda
+  // Filtrar plantas según el término de búsqueda
   const filteredPlantas = useMemo(() => {
-    // Primero filtrar por tipo (fuente: SEMILLA o ESQUEJE)
-    const plantasPorTipo = plantas.filter(planta => {
-      if (type === 'seed') {
-        return planta.fuente === 'SEMILLA';
-      } else if (type === 'cutting') {
-        return planta.fuente === 'ESQUEJE';
-      }
-      return true;
-    });
-    
-    // Luego filtrar por término de búsqueda
-    if (!searchTerm.trim()) return plantasPorTipo;
+    console.log('🔄 Filtrando plantas. Total:', plantas.length, 'Término:', searchTerm);
+    // Filtrar por término de búsqueda
+    if (!searchTerm.trim()) {
+      console.log('📋 Sin filtro, mostrando todas:', plantas.length);
+      return plantas;
+    }
     const term = searchTerm.toLowerCase();
-    return plantasPorTipo.filter(planta => 
+    const filtered = plantas.filter(planta => 
       (planta.especie?.toLowerCase().includes(term)) ||
       (planta.nombre_cientifico?.toLowerCase().includes(term))
     );
-  }, [plantas, searchTerm, type]);
+    console.log('📋 Filtradas:', filtered.length);
+    return filtered;
+  }, [plantas, searchTerm]);
   
   const [errors, setErrors] = useState({
     date: false,
@@ -86,6 +80,8 @@ function NewCollectionForm() {
         const plantasBackend = await RecoleccionService.getPlantas();
         setPlantas(plantasBackend);
         console.log('✅ Plantas cargadas desde backend:', plantasBackend);
+        console.log('📊 Total de plantas:', plantasBackend.length);
+        console.log('🔍 Primeras 5 plantas:', plantasBackend.slice(0, 5));
         
         // Si hay una planta guardada previamente, restaurarla
         if (formData?.planta_id) {
@@ -200,7 +196,6 @@ function NewCollectionForm() {
       especie: !newPlantData.especie.trim(),
       nombre_cientifico: !newPlantData.nombre_cientifico.trim(),
       tipo_planta: !newPlantData.tipo_planta,
-      fuente_planta: !newPlantData.fuente_planta,
       nombres_comunes: !newPlantData.nombres_comunes.trim(),
     };
 
@@ -217,7 +212,6 @@ function NewCollectionForm() {
         especie: newPlantData.especie.trim(),
         nombre_cientifico: newPlantData.nombre_cientifico.trim(),
         tipo_planta: newPlantData.tipo_planta,
-        fuente: newPlantData.fuente_planta as 'SEMILLA' | 'ESQUEJE',
         nombres_comunes: newPlantData.nombres_comunes.trim(),
         imagen_url: newPlantData.imagen_url || undefined,
       };
@@ -243,7 +237,6 @@ function NewCollectionForm() {
           especie: '',
           nombre_cientifico: '',
           tipo_planta: '',
-          fuente_planta: '',
           nombres_comunes: '',
           imagen_url: '',
         });
@@ -252,7 +245,6 @@ function NewCollectionForm() {
           especie: false,
           nombre_cientifico: false,
           tipo_planta: false,
-          fuente_planta: false,
           nombres_comunes: false,
         });
         
@@ -764,13 +756,11 @@ function NewCollectionForm() {
                           {planta.nombre_cientifico}
                         </p>
                       </div>
-                      <div className={`rounded-xl border px-3 py-1.5 text-xs font-bold ${
-                        type === 'seed' 
-                          ? 'border-brand-500 bg-brand-50 text-brand-600'
-                          : 'border-orange-500 bg-orange-50 text-orange-600'
-                      }`}>
-                        {type === 'seed' ? 'Semilla' : 'Esqueje'}
-                      </div>
+                      {planta.tipo_planta && (
+                        <div className="rounded-xl border border-brand-500 bg-brand-50 text-brand-600 px-3 py-1.5 text-xs font-bold">
+                          {planta.tipo_planta}
+                        </div>
+                      )}
                     </button>
                   ))
                 )}
@@ -821,7 +811,6 @@ function NewCollectionForm() {
                     especie: '',
                     nombre_cientifico: '',
                     tipo_planta: '',
-                    fuente_planta: '',
                     nombres_comunes: '',
                     imagen_url: '',
                   });
@@ -830,7 +819,6 @@ function NewCollectionForm() {
                     especie: false,
                     nombre_cientifico: false,
                     tipo_planta: false,
-                    fuente_planta: false,
                     nombres_comunes: false,
                   });
                 }}
@@ -954,52 +942,9 @@ function NewCollectionForm() {
                     <option value="Trepadora">Trepadora</option>
                     <option value="Enredadera">Enredadera</option>
                   </select>
-                  <Icon name="chevron-down" className="h-4 w-4 text-slate-400" />
                 </div>
                 {newPlantErrors.tipo_planta && (
                   <p className="text-xs font-semibold text-red-500">* Debes seleccionar el tipo de planta</p>
-                )}
-              </div>
-
-              {/* Fuente (Semilla o Esqueje) */}
-              <div className="space-y-2">
-                <p className="text-base font-extrabold text-brand-700">
-                  Fuente <span className="text-red-500">*</span>
-                </p>
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setNewPlantData(prev => ({ ...prev, fuente_planta: 'SEMILLA' }));
-                      setNewPlantErrors(prev => ({ ...prev, fuente_planta: false }));
-                    }}
-                    disabled={submittingNewPlant}
-                    className={`flex-1 rounded-2xl border px-4 py-3 text-center text-base font-extrabold shadow-soft transition ${
-                      newPlantData.fuente_planta === 'SEMILLA'
-                        ? "border-brand-500 bg-emerald-50 text-brand-600 ring-2 ring-emerald-100"
-                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
-                    } ${submittingNewPlant ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  >
-                    Semilla
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setNewPlantData(prev => ({ ...prev, fuente_planta: 'ESQUEJE' }));
-                      setNewPlantErrors(prev => ({ ...prev, fuente_planta: false }));
-                    }}
-                    disabled={submittingNewPlant}
-                    className={`flex-1 rounded-2xl border px-4 py-3 text-center text-base font-extrabold shadow-soft transition ${
-                      newPlantData.fuente_planta === 'ESQUEJE'
-                        ? "border-orange-500 bg-orange-50 text-orange-600 ring-2 ring-orange-100"
-                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
-                    } ${submittingNewPlant ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  >
-                    Esqueje
-                  </button>
-                </div>
-                {newPlantErrors.fuente_planta && (
-                  <p className="text-xs font-semibold text-red-500">* Debes seleccionar la fuente</p>
                 )}
               </div>
 

@@ -1,10 +1,20 @@
-export type UUID = string
-export type ISODate = `${number}-${number}-${number}`
-export type ISODateTime = string
+// ============================================================================
+// types.ts
+// ============================================================================
+// Tipos del dominio para el módulo de recolecciones
+// Define las estructuras de datos principales (legacy)
+// Nota: Algunos tipos no se usan activamente, se mantienen para compatibilidad
+// ============================================================================
 
-export type MaterialType = 'seed' | 'cutting'
-export type RecordStatus = 'stored' | 'used' | 'discarded'
-export type Unit = 'kg' | 'units'
+// Tipos base
+export type UUID = string                                    // Identificador único (string)
+export type ISODate = `${number}-${number}-${number}`       // Fecha formato ISO: YYYY-MM-DD
+export type ISODateTime = string                             // Fecha y hora completa ISO
+
+// Enums y tipos específicos del dominio
+export type MaterialType = 'seed' | 'cutting'                 // Tipo de material: semilla o esqueje
+export type RecordStatus = 'stored' | 'used' | 'discarded'    // Estado del registro
+export type Unit = 'kg' | 'units'                             // Unidades de medida
 
 export type Quantity = {
   value: number

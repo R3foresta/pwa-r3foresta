@@ -1,7 +1,27 @@
+// ============================================================================
+// CollectionCard.tsx
+// ============================================================================
+// Componente de tarjeta para mostrar un resumen visual de una recolección
+// Se usa en la lista principal de recolecciones (CollectionsScreen)
+// ============================================================================
+
 import Icon from "../../components/Icon";
 import type { Recoleccion } from "../../services/recoleccion.service";
 
+/**
+ * Componente tarjeta de recolección
+ * Muestra información resumida de una recolección con estilo visual atractivo
+ * 
+ * @param {Recoleccion} recoleccion - Objeto completo de la recolección
+ */
 function CollectionCard({ recoleccion }: { recoleccion: Recoleccion }) {
+  /**
+   * Retorna clases de Tailwind CSS según el tipo de material
+   * Define colores distintivos para cada tipo: Semilla, Esqueje, Plántula, Injerto
+   * 
+   * @param {string} type - Tipo de material ('SEMILLA', 'ESTACA', 'PLANTULA', 'INJERTO')
+   * @returns {string} Clases CSS de Tailwind para fondo, texto y borde
+   */
   const getTypeStyles = (type: string) => {
     switch (type) {
       case 'SEMILLA':
@@ -17,6 +37,14 @@ function CollectionCard({ recoleccion }: { recoleccion: Recoleccion }) {
     }
   };
 
+  /**
+   * Retorna clases CSS según el estado de la recolección
+   * Estados posibles: ALMACENADO (verde), EN_PROCESO (amarillo), 
+   * UTILIZADO (azul), DESCARTADO (rojo)
+   * 
+   * @param {string} status - Estado actual de la recolección
+   * @returns {string} Clases CSS para colorear el badge de estado
+   */
   const getStatusStyles = (status: string) => {
     switch (status) {
       case 'ALMACENADO':
@@ -32,6 +60,13 @@ function CollectionCard({ recoleccion }: { recoleccion: Recoleccion }) {
     }
   };
 
+  /**
+   * Traduce el tipo de material de código interno a texto legible en español
+   * Convierte: SEMILLA → Semilla, ESTACA → Esqueje, etc.
+   * 
+   * @param {string} tipo - Código del tipo de material
+   * @returns {string} Etiqueta en español para mostrar al usuario
+   */
   const getTipoMaterialLabel = (tipo: string) => {
     switch (tipo) {
       case 'SEMILLA': return 'Semilla';
@@ -42,6 +77,13 @@ function CollectionCard({ recoleccion }: { recoleccion: Recoleccion }) {
     }
   };
 
+  /**
+   * Traduce el estado de la recolección a texto legible
+   * Convierte códigos internos a etiquetas en español
+   * 
+   * @param {string} estado - Código del estado
+   * @returns {string} Etiqueta del estado en español
+   */
   const getEstadoLabel = (estado: string) => {
     switch (estado) {
       case 'ALMACENADO': return 'Almacenado';
@@ -52,6 +94,12 @@ function CollectionCard({ recoleccion }: { recoleccion: Recoleccion }) {
     }
   };
 
+  /**
+   * Formatea una fecha ISO a formato boliviano legible: DD/MM/YYYY
+   * 
+   * @param {string} fecha - Fecha en formato ISO (YYYY-MM-DD)
+   * @returns {string} Fecha formateada (ej: "15/01/2025")
+   */
   const formatFecha = (fecha: string) => {
     return new Date(fecha).toLocaleDateString('es-BO', {
       day: '2-digit',
@@ -60,37 +108,64 @@ function CollectionCard({ recoleccion }: { recoleccion: Recoleccion }) {
     });
   };
 
+  // ============================================================================
+  // Preparación de datos para mostrar
+  // ============================================================================
+  
+  // Obtiene el nombre común de la planta (prioriza: especie > nombre_comercial > fallback)
   const nombrePlanta = recoleccion.planta?.especie || recoleccion.nombre_comercial || 'Sin especie';
+  
+  // Obtiene el nombre científico de la planta en latín
   const nombreCientifico = recoleccion.planta?.nombre_cientifico || recoleccion.nombre_cientifico;
+  
+  // Obtiene la URL de la primera foto para mostrar como imagen principal
   const mainPhoto = recoleccion.fotos[0]?.url;
 
+  // ============================================================================
+  // Renderizado del componente
+  // ============================================================================
   return (
+    // Contenedor principal de la tarjeta con sombra y hover effect
     <article className="relative rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5 transition hover:shadow-md">
+      {/* Layout principal: información a la izquierda, foto a la derecha */}
       <div className="flex items-start justify-between gap-3">
+        {/* Sección izquierda: Información textual */}
         <div className="flex-1 space-y-1">
+          {/* Nombre común de la planta */}
           <h3 className="text-lg font-extrabold tracking-tight text-slate-800">
             {nombrePlanta}
           </h3>
+          
+          {/* Nombre científico (en latín) - Solo se muestra si existe */}
           {nombreCientifico && (
             <p className="text-sm font-medium italic text-slate-600">
               {nombreCientifico}
             </p>
           )}
+          
+          {/* Lista de detalles con iconos */}
           <div className="mt-2 space-y-1.5">
+            {/* Cantidad recolectada (ej: "5 kg" o "30 unidades") */}
             <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-600">
               <Icon name="package" className="h-4 w-4 text-brand-500" />
               <span>{recoleccion.cantidad} {recoleccion.unidad}</span>
             </div>
+            
+            {/* Ubicación (prioriza: comunidad > provincia > departamento) */}
             <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-600">
               <Icon name="pin" className="h-4 w-4 text-brand-500" />
               <span>
                 {recoleccion.ubicacion.comunidad || recoleccion.ubicacion.provincia || recoleccion.ubicacion.departamento || 'Sin ubicación'}
               </span>
             </div>
+            
+            {/* Fecha de recolección formateada */}
             <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-600">
               <Icon name="date" className="h-4 w-4 text-brand-500" />
               <span>{formatFecha(recoleccion.fecha)}</span>
             </div>
+            
+            {/* Vivero de almacenamiento (opcional) */}
             {recoleccion.vivero && (
               <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-600">
                 <Icon name="pin" className="h-4 w-4 text-brand-500" />
@@ -99,15 +174,19 @@ function CollectionCard({ recoleccion }: { recoleccion: Recoleccion }) {
             )}
           </div>
         </div>
+        
+        {/* Sección derecha: Foto de la recolección */}
         <div className="flex-shrink-0">
           <div className="h-24 w-24 overflow-hidden rounded-2xl bg-slate-100">
             {mainPhoto ? (
+              // Muestra la primera foto si existe
               <img
                 src={mainPhoto}
                 alt={nombrePlanta}
                 className="h-full w-full object-cover"
               />
             ) : (
+              // Ícono placeholder si no hay foto
               <div className="flex h-full w-full items-center justify-center">
                 <Icon name="photo" className="h-8 w-8 text-slate-400" />
               </div>
@@ -115,22 +194,31 @@ function CollectionCard({ recoleccion }: { recoleccion: Recoleccion }) {
           </div>
         </div>
       </div>
+      
+      {/* Sección inferior: Badges informativos */}
       <div className="mt-3 flex flex-wrap gap-2">
+        {/* Badge: Tipo de material (Semilla, Esqueje, etc.) con color específico */}
         <span
           className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${getTypeStyles(recoleccion.tipo_material)}`}
         >
           {getTipoMaterialLabel(recoleccion.tipo_material)}
         </span>
+        
+        {/* Badge: Estado actual (Almacenado, En proceso, etc.) con color según estado */}
         <span
           className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${getStatusStyles(recoleccion.estado)}`}
         >
           {getEstadoLabel(recoleccion.estado)}
         </span>
+        
+        {/* Badge: Contador de fotos (solo si hay más de 1) */}
         {recoleccion.fotos.length > 1 && (
           <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
             📸 {recoleccion.fotos.length}
           </span>
         )}
+        
+        {/* Badge especial: Nuevo hallazgo (aparece solo si es especie nueva) */}
         {recoleccion.especie_nueva && (
           <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 ring-1 ring-amber-200">
             ✨ Nuevo hallazgo
