@@ -709,6 +709,19 @@ function NewCollectionForm() {
                 />
               </div>
 
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSpeciesModal(false);
+                  setSearchTerm("");
+                  setShowNewPlantForm(true);
+                }}
+                className="w-full flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-brand-300 bg-brand-50/50 py-4 text-brand-600 transition hover:bg-brand-50 active:scale-[0.99]"
+              >
+                <Icon name="plus" className="h-5 w-5" />
+                <span className="text-base font-extrabold">Añadir planta</span>
+              </button>
+              
               <div className="space-y-3">
                 {filteredPlantas.length === 0 ? (
                   <div className="py-8 text-center">
@@ -765,19 +778,6 @@ function NewCollectionForm() {
                   ))
                 )}
               </div>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setShowSpeciesModal(false);
-                  setSearchTerm("");
-                  setShowNewPlantForm(true);
-                }}
-                className="w-full flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-brand-300 bg-brand-50/50 py-4 text-brand-600 transition hover:bg-brand-50 active:scale-[0.99]"
-              >
-                <Icon name="plus" className="h-5 w-5" />
-                <span className="text-base font-extrabold">Añadir planta</span>
-              </button>
             </div>
 
             <div className="px-5 pt-4 border-t border-slate-200">
