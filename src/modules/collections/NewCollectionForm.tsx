@@ -5,7 +5,7 @@ import { methodOptions } from "./data";
 import type { MaterialType, Unit } from "./types";
 import { useCollectionForm } from "./CollectionFormContext";
 import { RecoleccionService } from "../../services/recoleccion.service";
-import type { Planta } from "../../services/recoleccion.service";
+import type { Planta, TipoPlanta } from "../../services/recoleccion.service";
 
 function NewCollectionForm() {
   const navigate = useNavigate();
@@ -29,8 +29,7 @@ function NewCollectionForm() {
     especie: '',
     nombre_cientifico: '',
     variedad: '',
-    tipo_planta: '',
-    tipo_planta_otro: '',
+    tipo_planta_id: 0,
     nombre_comun_principal: '',
     nombres_comunes: '',
     imagen_url: '',
@@ -40,15 +39,22 @@ function NewCollectionForm() {
   const [submittingNewPlant, setSubmittingNewPlant] = useState(false);
   const [showPlantSuccessModal, setShowPlantSuccessModal] = useState(false);
   const [createdPlantName, setCreatedPlantName] = useState('');
+  const [showPlantErrorModal, setShowPlantErrorModal] = useState(false);
+  const [plantErrorMessage, setPlantErrorMessage] = useState('');
   const [newPlantErrors, setNewPlantErrors] = useState({
     especie: false,
     nombre_cientifico: false,
-    variedad: false,
     imagen_url: false,
-    tipo_planta: false,
-    tipo_planta_otro: false,
+    tipo_planta_id: false,
     nombre_comun_principal: false,
   });
+  
+  // Tipos de planta desde el backend
+  const [tiposPlantas, setTiposPlantas] = useState<TipoPlanta[]>([]);
+  const [loadingTiposPlantas, setLoadingTiposPlantas] = useState(false);
+  const [showNewTipoInput, setShowNewTipoInput] = useState(false);
+  const [newTipoNombre, setNewTipoNombre] = useState('');
+  const [creatingTipo, setCreatingTipo] = useState(false);
   
   // Plantas desde el backend
   const [plantas, setPlantas] = useState<Planta[]>([]);
@@ -105,6 +111,24 @@ function NewCollectionForm() {
     };
     
     cargarPlantas();
+  }, []);
+
+  // Cargar tipos de planta desde el backend
+  useEffect(() => {
+    const cargarTiposPlantas = async () => {
+      setLoadingTiposPlantas(true);
+      try {
+        const tipos = await RecoleccionService.getTiposPlantas();
+        setTiposPlantas(tipos);
+        console.log('✅ Tipos de planta cargados:', tipos);
+      } catch (error) {
+        console.error('❌ Error al cargar tipos de planta:', error);
+      } finally {
+        setLoadingTiposPlantas(false);
+      }
+    };
+    
+    cargarTiposPlantas();
   }, []);
 
   // Cambiar unidad automáticamente cuando cambia el tipo
@@ -197,40 +221,103 @@ function NewCollectionForm() {
     reader.readAsDataURL(file);
   };
 
+  const handleCreateNewTipo = async () => {
+    if (!newTipoNombre.trim()) {
+      alert('Por favor, ingresa el nombre del nuevo tipo de planta');
+      return;
+    }
+
+    setCreatingTipo(true);
+    try {
+      console.log('📤 Creando nuevo tipo de planta:', newTipoNombre);
+      const result = await RecoleccionService.createTipoPlanta(newTipoNombre.trim());
+      
+      if (result.success && result.data) {
+        // Agregar el nuevo tipo a la lista
+        setTiposPlantas(prev => [...prev, result.data]);
+        
+        // Seleccionarlo automáticamente
+        setNewPlantData(prev => ({ ...prev, tipo_planta_id: result.data.id }));
+        
+        // Limpiar y ocultar input
+        setNewTipoNombre('');
+        setShowNewTipoInput(false);
+        
+        console.log('✅ Nuevo tipo creado y seleccionado:', result.data);
+      }
+    } catch (error: any) {
+      console.error('❌ Error al crear tipo de planta:', error);
+      
+      // Si el tipo ya existe (409), buscarlo en la lista y seleccionarlo
+      if (error.response?.status === 409) {
+        const tipoExistente = tiposPlantas.find(
+          t => t.nombre.toLowerCase() === newTipoNombre.trim().toLowerCase()
+        );
+        
+        if (tipoExistente) {
+          setNewPlantData(prev => ({ ...prev, tipo_planta_id: tipoExistente.id }));
+          setNewTipoNombre('');
+          setShowNewTipoInput(false);
+          console.log('ℹ️ Tipo ya existente seleccionado:', tipoExistente);
+        } else {
+          alert(`El tipo "${newTipoNombre}" ya existe. Por favor, selecciónalo de la lista.`);
+        }
+      } else {
+        alert('Error al crear el tipo de planta. Por favor, intenta de nuevo.');
+      }
+    } finally {
+      setCreatingTipo(false);
+    }
+  };
+
   const handleCreateNewPlant = async () => {
     // Validar campos obligatorios
     const errors = {
       especie: !newPlantData.especie.trim(),
       nombre_cientifico: !newPlantData.nombre_cientifico.trim(),
-      variedad: !newPlantData.variedad.trim(),
       imagen_url: !newPlantData.imagen_url,
-      tipo_planta: !newPlantData.tipo_planta,
-      tipo_planta_otro: newPlantData.tipo_planta === 'Otro' && !newPlantData.tipo_planta_otro.trim(),
+      tipo_planta_id: !newPlantData.tipo_planta_id || newPlantData.tipo_planta_id === 0,
       nombre_comun_principal: !newPlantData.nombre_comun_principal.trim(),
     };
 
     setNewPlantErrors(errors);
 
     if (Object.values(errors).some(error => error)) {
+      console.log('⚠️ Errores de validación:', errors);
       return;
     }
 
     setSubmittingNewPlant(true);
 
     try {
-      // Determinar el valor final de tipo_planta
-      const tipoPlantaFinal = newPlantData.tipo_planta === 'Otro' 
-        ? newPlantData.tipo_planta_otro.trim() 
-        : newPlantData.tipo_planta;
+      // 1. Validar si ya existe una planta con la misma especie
+      console.log('🔍 Validando si existe planta con especie:', newPlantData.especie);
+      const plantasExistentes = await RecoleccionService.buscarPlantasPorEspecie(newPlantData.especie.trim());
+      
+      if (plantasExistentes.length > 0) {
+        // Verificar si alguna tiene la misma especie exacta (case-insensitive)
+        const especieDuplicada = plantasExistentes.find(
+          p => p.especie.toLowerCase() === newPlantData.especie.trim().toLowerCase()
+        );
+        
+        if (especieDuplicada) {
+          setPlantErrorMessage(`Ya existe una planta con el nombre "${especieDuplicada.especie}".\n\nPor favor, verifica si es la planta que buscas o usa un nombre diferente.`);
+          setShowPlantErrorModal(true);
+          console.log('⚠️ Planta duplicada encontrada:', especieDuplicada);
+          setSubmittingNewPlant(false);
+          return;
+        }
+      }
 
-      const plantaData: any = {
+      // 2. Crear la planta con el nuevo sistema de tipo_planta_id
+      const plantaData = {
         especie: newPlantData.especie.trim(),
         nombre_cientifico: newPlantData.nombre_cientifico.trim(),
-        variedad: newPlantData.variedad.trim(),
-        tipo_planta: tipoPlantaFinal,
+        variedad: newPlantData.variedad?.trim() || undefined,
+        tipo_planta_id: newPlantData.tipo_planta_id,
         nombre_comun_principal: newPlantData.nombre_comun_principal.trim(),
-        imagen_url: newPlantData.imagen_url,
         nombres_comunes: newPlantData.nombres_comunes.trim() || undefined,
+        imagen_url: newPlantData.imagen_url,
         notas: newPlantData.notas.trim() || undefined,
       };
 
@@ -255,8 +342,7 @@ function NewCollectionForm() {
           especie: '',
           nombre_cientifico: '',
           variedad: '',
-          tipo_planta: '',
-          tipo_planta_otro: '',
+          tipo_planta_id: 0,
           nombre_comun_principal: '',
           nombres_comunes: '',
           imagen_url: '',
@@ -266,10 +352,8 @@ function NewCollectionForm() {
         setNewPlantErrors({
           especie: false,
           nombre_cientifico: false,
-          variedad: false,
           imagen_url: false,
-          tipo_planta: false,
-          tipo_planta_otro: false,
+          tipo_planta_id: false,
           nombre_comun_principal: false,
         });
         
@@ -289,11 +373,14 @@ function NewCollectionForm() {
       
       // Manejar error de planta duplicada (409)
       if (error.response?.status === 409) {
-        alert(`Ya existe una planta con ese nombre científico y variedad.\n\nPor favor verifica si la planta ya está registrada o cambia la variedad.`);
+        setPlantErrorMessage('Ya existe una planta con ese nombre científico y variedad.\n\nPor favor verifica si la planta ya está registrada o cambia la variedad.');
+        setShowPlantErrorModal(true);
       } else if (error.response?.status === 400) {
-        alert('Error de validación. Por favor revisa los datos ingresados.');
+        setPlantErrorMessage('Error de validación. Por favor verifica los datos ingresados.');
+        setShowPlantErrorModal(true);
       } else {
-        alert('Error al crear la planta. Por favor, intenta de nuevo.');
+        setPlantErrorMessage('Error al crear la planta. Por favor, intenta de nuevo.');
+        setShowPlantErrorModal(true);
       }
     } finally {
       setSubmittingNewPlant(false);
@@ -752,8 +839,7 @@ function NewCollectionForm() {
                     especie: '',
                     nombre_cientifico: '',
                     variedad: '',
-                    tipo_planta: '',
-                    tipo_planta_otro: '',
+                    tipo_planta_id: 0,
                     nombre_comun_principal: '',
                     nombres_comunes: '',
                     imagen_url: '',
@@ -763,12 +849,12 @@ function NewCollectionForm() {
                   setNewPlantErrors({
                     especie: false,
                     nombre_cientifico: false,
-                    variedad: false,
                     imagen_url: false,
-                    tipo_planta: false,
-                    tipo_planta_otro: false,
+                    tipo_planta_id: false,
                     nombre_comun_principal: false,
                   });
+                  setShowNewTipoInput(false);
+                  setNewTipoNombre('');
                   setShowNewPlantForm(true);
                 }}
                 className="w-full flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-brand-300 bg-brand-50/50 py-4 text-brand-600 transition hover:bg-brand-50 active:scale-[0.99]"
@@ -866,8 +952,7 @@ function NewCollectionForm() {
                     especie: '',
                     nombre_cientifico: '',
                     variedad: '',
-                    tipo_planta: '',
-                    tipo_planta_otro: '',
+                    tipo_planta_id: 0,
                     nombre_comun_principal: '',
                     nombres_comunes: '',
                     imagen_url: '',
@@ -877,12 +962,12 @@ function NewCollectionForm() {
                   setNewPlantErrors({
                     especie: false,
                     nombre_cientifico: false,
-                    variedad: false,
                     imagen_url: false,
-                    tipo_planta: false,
-                    tipo_planta_otro: false,
+                    tipo_planta_id: false,
                     nombre_comun_principal: false,
                   });
+                  setShowNewTipoInput(false);
+                  setNewTipoNombre('');
                 }}
                 className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200 active:scale-95"
                 disabled={submittingNewPlant}
@@ -993,29 +1078,21 @@ function NewCollectionForm() {
               {/* Variedad */}
               <div className="space-y-2">
                 <p className="text-base font-extrabold text-brand-700">
-                  Variedad <span className="text-red-500">*</span>
+                  Variedad <span className="text-slate-400 font-semibold">(Opcional)</span>
                 </p>
                 <input
                   type="text"
                   value={newPlantData.variedad}
                   onChange={(e) => {
                     setNewPlantData(prev => ({ ...prev, variedad: e.target.value }));
-                    setNewPlantErrors(prev => ({ ...prev, variedad: false }));
                   }}
                   placeholder="Ej: Hondureña, Común, Nativa"
-                  className={`w-full rounded-2xl border px-4 py-3 text-base font-semibold text-slate-700 shadow-soft outline-none transition focus:ring-2 ${
-                    newPlantErrors.variedad
-                      ? 'border-red-400 focus:border-red-400 focus:ring-red-200'
-                      : 'border-slate-200 bg-white focus:border-brand-400 focus:ring-brand-200'
-                  }`}
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base font-semibold text-slate-700 shadow-soft outline-none transition focus:ring-2 focus:border-brand-400 focus:ring-brand-200"
                   disabled={submittingNewPlant}
                 />
                 <p className="text-xs font-semibold text-slate-500">
                   Variedad específica de la planta
                 </p>
-                {newPlantErrors.variedad && (
-                  <p className="text-xs font-semibold text-red-500">* La variedad es obligatoria</p>
-                )}
               </div>
 
               {/* Tipo de planta */}
@@ -1024,60 +1101,83 @@ function NewCollectionForm() {
                   Tipo de planta <span className="text-red-500">*</span>
                 </p>
                 <div className={`flex items-center rounded-2xl border px-4 shadow-soft ${
-                  newPlantErrors.tipo_planta
+                  newPlantErrors.tipo_planta_id
                     ? 'border-red-400 bg-red-50'
                     : 'border-slate-200 bg-white focus-within:border-brand-400 focus-within:ring-2 focus-within:ring-brand-200'
                 }`}>
                   <select
-                    value={newPlantData.tipo_planta}
+                    value={newPlantData.tipo_planta_id}
                     onChange={(e) => {
-                      setNewPlantData(prev => ({ ...prev, tipo_planta: e.target.value, tipo_planta_otro: '' }));
-                      setNewPlantErrors(prev => ({ ...prev, tipo_planta: false, tipo_planta_otro: false }));
+                      const value = parseInt(e.target.value);
+                      setNewPlantData(prev => ({ ...prev, tipo_planta_id: value }));
+                      setNewPlantErrors(prev => ({ ...prev, tipo_planta_id: false }));
+                      
+                      // Mostrar input si selecciona "Otro" (valor -1)
+                      if (value === -1) {
+                        setShowNewTipoInput(true);
+                        setNewPlantData(prev => ({ ...prev, tipo_planta_id: 0 }));
+                      } else {
+                        setShowNewTipoInput(false);
+                        setNewTipoNombre('');
+                      }
                     }}
                     className="w-full bg-transparent py-3 text-base font-semibold text-slate-700 outline-none"
-                    disabled={submittingNewPlant}
+                    disabled={submittingNewPlant || loadingTiposPlantas}
                   >
-                    <option value="">Seleccionar tipo</option>
-                    <option value="Árbol">Árbol</option>
-                    <option value="Arbusto">Arbusto</option>
-                    <option value="Hierba">Hierba</option>
-                    <option value="Palma">Palma</option>
-                    <option value="Enredadera">Enredadera</option>
-                    <option value="Otro">Otro</option>
+                    <option value={0}>Seleccionar tipo</option>
+                    {tiposPlantas.map((tipo) => (
+                      <option key={tipo.id} value={tipo.id}>
+                        {tipo.nombre}
+                      </option>
+                    ))}
+                    <option value={-1}>Otro (crear nuevo)</option>
                   </select>
                 </div>
                 <p className="text-xs font-semibold text-slate-500">
                   Clasificación morfológica de la planta
                 </p>
-                {newPlantErrors.tipo_planta && (
+                {newPlantErrors.tipo_planta_id && (
                   <p className="text-xs font-semibold text-red-500">* Debes seleccionar el tipo de planta</p>
                 )}
               </div>
 
-              {/* Especificar tipo (si es Otro) */}
-              {newPlantData.tipo_planta === 'Otro' && (
+              {/* Input para crear nuevo tipo */}
+              {showNewTipoInput && (
                 <div className="space-y-2">
                   <p className="text-base font-extrabold text-brand-700">
-                    Especificar tipo <span className="text-red-500">*</span>
+                    Nuevo tipo de planta <span className="text-red-500">*</span>
                   </p>
-                  <input
-                    type="text"
-                    value={newPlantData.tipo_planta_otro}
-                    onChange={(e) => {
-                      setNewPlantData(prev => ({ ...prev, tipo_planta_otro: e.target.value }));
-                      setNewPlantErrors(prev => ({ ...prev, tipo_planta_otro: false }));
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newTipoNombre}
+                      onChange={(e) => setNewTipoNombre(e.target.value)}
+                      placeholder="Ej: Liana, Cactus, Suculenta"
+                      className="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base font-semibold text-slate-700 shadow-soft outline-none transition focus:ring-2 focus:border-brand-400 focus:ring-brand-200"
+                      disabled={creatingTipo}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleCreateNewTipo}
+                      disabled={creatingTipo || !newTipoNombre.trim()}
+                      className="rounded-2xl bg-brand-500 px-6 py-3 text-base font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {creatingTipo ? 'Creando...' : 'Crear'}
+                    </button>
+                  </div>
+                  <p className="text-xs font-semibold text-slate-500">
+                    Especifica el nuevo tipo de planta que deseas agregar
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowNewTipoInput(false);
+                      setNewTipoNombre('');
                     }}
-                    placeholder="Especifica el tipo de planta"
-                    className={`w-full rounded-2xl border px-4 py-3 text-base font-semibold text-slate-700 shadow-soft outline-none transition focus:ring-2 ${
-                      newPlantErrors.tipo_planta_otro
-                        ? 'border-red-400 focus:border-red-400 focus:ring-red-200'
-                        : 'border-slate-200 bg-white focus:border-brand-400 focus:ring-brand-200'
-                    }`}
-                    disabled={submittingNewPlant}
-                  />
-                  {newPlantErrors.tipo_planta_otro && (
-                    <p className="text-xs font-semibold text-red-500">* Debes especificar el tipo de planta</p>
-                  )}
+                    className="text-sm font-semibold text-slate-500 hover:text-brand-600 transition"
+                  >
+                    ← Volver a seleccionar de la lista
+                  </button>
                 </div>
               )}
 
@@ -1292,6 +1392,46 @@ function NewCollectionForm() {
                   Se ha agregado al catálogo
                 </p>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de error al crear planta */}
+      {showPlantErrorModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50">
+          <div className="w-full max-w-sm mx-4 rounded-3xl bg-white p-8 shadow-2xl transform animate-in fade-in zoom-in duration-300">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-red-100">
+                <svg
+                  className="h-10 w-10 text-red-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </div>
+              <div className="text-center space-y-2">
+                <h3 className="text-xl font-extrabold text-red-700">
+                  Esta planta ya existe
+                </h3>
+                <p className="text-base font-semibold text-slate-600 whitespace-pre-line">
+                  {plantErrorMessage}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPlantErrorModal(false)}
+                className="w-full rounded-2xl bg-red-500 py-3 text-center text-base font-extrabold text-white shadow-soft transition hover:bg-red-600 active:scale-[0.99]"
+              >
+                Intentar nuevamente
+              </button>
             </div>
           </div>
         </div>

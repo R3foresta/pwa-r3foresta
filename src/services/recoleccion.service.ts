@@ -160,12 +160,19 @@ export interface MetodoRecoleccion {
  * Planta/Especie
  * Retornado por GET /api/plantas
  */
+export interface TipoPlanta {
+  id: number;                              // ID único del tipo de planta
+  nombre: string;                          // Nombre del tipo (ej: "Árbol", "Arbusto", "Hierba")
+  created_at: string;                      // Fecha de creación
+}
+
 export interface Planta {
   id: number;                              // ID único de la planta
   especie: string;                         // Nombre común (ej: "Mara")
   nombre_cientifico: string;               // Nombre científico en latín
   variedad: string;                        // Variedad específica
-  tipo_planta?: string;                    // Tipo: "Árbol", "Arbusto", "Herbácea"
+  tipo_planta?: string;                    // Tipo: "Árbol", "Arbusto", "Herbácea" (deprecado)
+  tipo_planta_id?: number;                 // ID del tipo de planta (foreign key)
   fuente: string;                          // Fuente: "NATIVA", "INTRODUCIDA", "ENDÉMICA"
   imagen_url?: string;                     // URL de imagen de la planta
   nombres_comunes?: string;                // Otros nombres comunes de la planta
@@ -177,12 +184,14 @@ export interface Planta {
  * Usado cuando el usuario registra una especie nueva
  */
 export interface CreatePlantaDto {
-  especie: string;                         // Nombre común de la especie
-  nombre_cientifico: string;               // Nombre científico en latín
-  tipo_planta: string;                     // Tipo: "Árbol", "Arbusto", etc.
-  fuente?: 'SEMILLA' | 'ESQUEJE';         // Tipo de propagación
-  nombres_comunes: string;                 // Otros nombres comunes
-  imagen_url?: string;                     // URL de imagen de la planta
+  especie: string;                         // Nombre común de la especie (requerido)
+  nombre_cientifico: string;               // Nombre científico en latín (requerido)
+  variedad?: string;                       // Variedad específica (opcional)
+  tipo_planta_id: number;                  // ID del tipo de planta - foreign key (requerido)
+  nombre_comun_principal: string;          // Nombre común principal (requerido)
+  nombres_comunes?: string;                // Otros nombres comunes (opcional)
+  imagen_url: string;                      // URL de imagen de la planta - base64 o URL (requerido)
+  notas?: string;                          // Notas adicionales sobre la planta (opcional)
 }
 
 /**
@@ -884,5 +893,140 @@ export class RecoleccionService {
       u8arr[n] = bstr.charCodeAt(n);
     }
     return new File([u8arr], filename, { type: mime });
+  }
+
+  // ==========================================================================
+  // MÉTODOS PÚBLICOS - TIPOS DE PLANTA
+  // ==========================================================================
+
+  /**
+   * Obtiene la lista de tipos de planta disponibles
+   * 
+   * Endpoint: GET /api/plantas/tipos-planta
+   * 
+   * Retorna todos los tipos de planta registrados en el sistema
+   * (Árbol, Arbusto, Hierba, Palma, Enredadera, etc.)
+   * 
+   * @returns {Promise<TipoPlanta[]>} Array de tipos de planta
+   * 
+   * @example
+   * const tipos = await RecoleccionService.getTiposPlantas();
+   * console.log('Tipos disponibles:', tipos);
+   */
+  static async getTiposPlantas(): Promise<TipoPlanta[]> {
+    try {
+      console.log('📡 Obteniendo tipos de planta...');
+      
+      const response = await fetch(`${API_URL}/api/plantas/tipos-planta`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Error al obtener tipos de planta');
+      }
+      
+      const result = await response.json();
+      console.log('✅ Tipos de planta obtenidos:', result.data);
+      return result.data;
+    } catch (error) {
+      console.error('❌ Error al obtener tipos de planta:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Crea un nuevo tipo de planta
+   * 
+   * Endpoint: POST /api/plantas/tipos-planta
+   * 
+   * Permite agregar un nuevo tipo de planta al catálogo cuando
+   * el usuario necesita un tipo que no existe en el sistema
+   * 
+   * @param {string} nombre - Nombre del nuevo tipo (ej: "Liana", "Cactus")
+   * @returns {Promise<{ success: boolean; data: TipoPlanta }>} Tipo creado
+   * 
+   * @throws {Error} 409 - Si ya existe un tipo con ese nombre
+   * @throws {Error} 400 - Si hay error de validación
+   * 
+   * @example
+   * try {
+   *   const result = await RecoleccionService.createTipoPlanta('Liana');
+   *   console.log('Nuevo tipo ID:', result.data.id);
+   * } catch (error) {
+   *   if (error.response.status === 409) {
+   *     console.log('El tipo ya existe');
+   *   }
+   * }
+   */
+  static async createTipoPlanta(nombre: string): Promise<{ success: boolean; data: TipoPlanta }> {
+    try {
+      console.log('📤 Creando nuevo tipo de planta:', nombre);
+      
+      const response = await fetch(`${API_URL}/api/plantas/tipos-planta`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ nombre }),
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        const error: any = new Error(result.message || 'Error al crear tipo de planta');
+        error.response = { status: response.status, data: result };
+        throw error;
+      }
+      
+      console.log('✅ Tipo de planta creado exitosamente:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ Error al crear tipo de planta:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Busca plantas por especie
+   * 
+   * Endpoint: GET /api/plantas?q={especie}
+   * 
+   * Permite validar si ya existe una planta con una especie específica
+   * antes de crear una nueva, evitando duplicados
+   * 
+   * @param {string} especie - Nombre de la especie a buscar
+   * @returns {Promise<Planta[]>} Array de plantas que coinciden
+   * 
+   * @example
+   * const existentes = await RecoleccionService.buscarPlantasPorEspecie('Caoba');
+   * if (existentes.length > 0) {
+   *   console.log('Ya existe esta especie');
+   * }
+   */
+  static async buscarPlantasPorEspecie(especie: string): Promise<Planta[]> {
+    try {
+      console.log('🔍 Buscando plantas por especie:', especie);
+      
+      const response = await fetch(`${API_URL}/api/plantas?q=${encodeURIComponent(especie)}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Error al buscar plantas');
+      }
+      
+      const result = await response.json();
+      console.log('✅ Plantas encontradas:', result.data);
+      return result.data;
+    } catch (error) {
+      console.error('❌ Error al buscar plantas:', error);
+      throw error;
+    }
   }
 }
