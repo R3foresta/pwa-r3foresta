@@ -19,11 +19,41 @@ import ViveroScreen from './modules/vivero/ViveroScreen'
 import ViveroDetailScreen from './modules/vivero/ViveroDetailScreen'
 import ViveroNewScreen from './modules/vivero/ViveroNewScreen'
 import MapScreen from './modules/map/MapScreen'
+import { CompleteProfileScreen } from './modules/user_profile'
 
 function RootRedirect() {
-  const { isAuthenticated, hydrated } = useAuth()
+  const { isAuthenticated, isProfileComplete, hydrated } = useAuth()
+  
   if (!hydrated) return null
-  return <Navigate to={isAuthenticated ? '/app/home' : '/auth/login'} replace />
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/auth/login" replace />
+  }
+  
+  if (isAuthenticated && !isProfileComplete) {
+    return <Navigate to="/complete-profile" replace />
+  }
+  
+  return <Navigate to="/app/home" replace />
+}
+
+// Guard para la ruta de completar perfil: requiere auth pero NO perfil completo
+function CompleteProfileRoute() {
+  const { isAuthenticated, isProfileComplete, hydrated } = useAuth()
+  
+  if (!hydrated) return null
+  
+  // Si no está autenticado, redirigir a login
+  if (!isAuthenticated) {
+    return <Navigate to="/auth/login" replace />
+  }
+  
+  // Si ya tiene perfil completo, redirigir a home
+  if (isProfileComplete) {
+    return <Navigate to="/app/home" replace />
+  }
+  
+  return <CompleteProfileScreen />
 }
 
 function App() {
@@ -39,6 +69,9 @@ function App() {
           <Route path="recover" element={<RecoverScreen />} />
         </Route>
       </Route>
+
+      {/* Ruta especial para completar perfil - requiere autenticación pero no perfil completo */}
+      <Route path="/complete-profile" element={<CompleteProfileRoute />} />
 
       <Route element={<ProtectedRoute />}>
         <Route path="/app" element={<AppLayout />}>

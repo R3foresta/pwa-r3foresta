@@ -2,10 +2,14 @@ import { Navigate, Outlet } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
 function GuestRoute() {
-  const { isAuthenticated, hydrated } = useAuth()
+  const { isAuthenticated, isProfileComplete, hydrated } = useAuth()
 
   if (!hydrated) {
     return null
+  }
+
+  if (isAuthenticated && !isProfileComplete) {
+    return <Navigate to="/complete-profile" replace />
   }
 
   if (isAuthenticated) {
