@@ -72,36 +72,110 @@ export function CompleteProfileScreen() {
   }, [user, navigate])
 
   const handleInputChange = (field: keyof ProfileFormData, value: string) => {
+    let processedValue = value
+    let fieldError = ''
+
+    // Validaciones específicas por campo
+    switch (field) {
+      case 'nombre':
+        // Solo letras y espacios, máximo 20 caracteres
+        if (value.length > 20) {
+          fieldError = 'Sobrepasó el límite de 20 caracteres'
+          processedValue = value.substring(0, 20)
+        } else if (!/^[a-zA-ZÀ-ÿ\s]*$/.test(value)) {
+          fieldError = 'Solo se permiten letras'
+          processedValue = value.replace(/[^a-zA-ZÀ-ÿ\s]/g, '')
+        }
+        break
+
+      case 'apellido':
+        // Solo letras y espacios, máximo 20 caracteres
+        if (value.length > 20) {
+          fieldError = 'Sobrepasó el límite de 20 caracteres'
+          processedValue = value.substring(0, 20)
+        } else if (!/^[a-zA-ZÀ-ÿ\s]*$/.test(value)) {
+          fieldError = 'Solo se permiten letras'
+          processedValue = value.replace(/[^a-zA-ZÀ-ÿ\s]/g, '')
+        }
+        break
+
+      case 'doc_identidad':
+        // Solo números, exactamente 8 caracteres
+        if (!/^[0-9]*$/.test(value)) {
+          fieldError = 'Solo se permiten números'
+          processedValue = value.replace(/[^0-9]/g, '')
+        }
+        if (processedValue.length > 8) {
+          fieldError = 'Debe tener exactamente 8 caracteres'
+          processedValue = processedValue.substring(0, 8)
+        }
+        break
+
+      case 'wallet_address':
+        // Formato wallet Ethereum (42 caracteres, empieza con 0x)
+        if (value.length > 42) {
+          fieldError = 'Sobrepasó el límite de 42 caracteres'
+          processedValue = value.substring(0, 42)
+        } else if (value && !value.startsWith('0x')) {
+          fieldError = 'Debe comenzar con 0x'
+        } else if (value && !/^0x[a-fA-F0-9]*$/.test(value)) {
+          fieldError = 'Formato de wallet inválido'
+          // Mantener solo caracteres válidos
+          if (value.startsWith('0x')) {
+            processedValue = '0x' + value.substring(2).replace(/[^a-fA-F0-9]/g, '')
+          }
+        }
+        break
+
+      case 'organizacion':
+        // Máximo 25 caracteres para organización
+        if (value.length > 25) {
+          fieldError = 'Sobrepasó el límite de 25 caracteres'
+          processedValue = value.substring(0, 25)
+        }
+        break
+    }
+
     setFormData(prev => ({
       ...prev,
-      [field]: value
+      [field]: processedValue
     }))
 
-    // Limpiar error del campo cuando el usuario empiece a escribir
-    if (errors[field as keyof ProfileValidationErrors]) {
-      setErrors(prev => ({
-        ...prev,
-        [field]: undefined
-      }))
-    }
+    // Actualizar errores
+    setErrors(prev => ({
+      ...prev,
+      [field]: fieldError || undefined
+    }))
   }
 
   const handlePhoneChange = (value: string) => {
-    setPhoneNumber(value)
+    let processedValue = value
+    let phoneError = ''
+
+    // Solo números, máximo 10 dígitos
+    if (!/^[0-9]*$/.test(value)) {
+      phoneError = 'Solo se permiten números'
+      processedValue = value.replace(/[^0-9]/g, '')
+    }
+    if (processedValue.length > 10) {
+      phoneError = 'Sobrepasó el límite de 10 números'
+      processedValue = processedValue.substring(0, 10)
+    }
+
+    setPhoneNumber(processedValue)
+    
     // Actualizar el contacto completo en formData
-    const fullContact = value.trim() ? `${selectedCountry.code}${value}` : ''
+    const fullContact = processedValue.trim() ? `${selectedCountry.code}${processedValue}` : ''
     setFormData(prev => ({
       ...prev,
       contacto: fullContact
     }))
     
-    // Limpiar error si existe
-    if (errors.contacto) {
-      setErrors(prev => ({
-        ...prev,
-        contacto: undefined
-      }))
-    }
+    // Actualizar errores
+    setErrors(prev => ({
+      ...prev,
+      contacto: phoneError || undefined
+    }))
   }
 
   const handleCountryChange = (country: typeof countries[0]) => {
@@ -187,7 +261,19 @@ export function CompleteProfileScreen() {
       <div className="w-full max-w-md">
         <div className="overflow-hidden rounded-[28px] bg-white shadow-soft">
           {/* Header */}
-          <div className="bg-gradient-to-r from-brand-600 to-brand-700 px-6 py-6">
+          <div className="relative bg-gradient-to-r from-brand-600 to-brand-700 px-6 py-6">
+            {/* Botón de cerrar */}
+            <button
+              onClick={() => navigate('/app/home', { replace: true })}
+              className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+              type="button"
+              title="Ir al inicio"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            
             <p className="text-[11px] uppercase tracking-[0.22em] text-white/80">Paso final</p>
             <h1 className="mt-1 text-xl font-semibold text-white">Completa tu perfil</h1>
             <p className="mt-1 text-sm text-white/70">
@@ -206,14 +292,18 @@ export function CompleteProfileScreen() {
                 type="text"
                 value={formData.nombre}
                 onChange={(e) => handleInputChange('nombre', e.target.value)}
+                maxLength={20}
                 className={`w-full rounded-2xl border bg-white/80 px-4 py-3 text-base font-semibold text-slate-800 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200 ${
                   errors.nombre ? 'border-red-400' : 'border-slate-200'
                 }`}
-                placeholder="Tu nombre"
+                placeholder="Tu nombre (máx. 20 letras)"
                 disabled={isSubmitting}
               />
               {errors.nombre && (
                 <p className="text-xs font-medium text-red-500">{errors.nombre}</p>
+              )}
+              {formData.nombre && (
+                <p className="text-xs text-slate-500">{formData.nombre.length}/20 caracteres</p>
               )}
             </div>
 
@@ -227,15 +317,18 @@ export function CompleteProfileScreen() {
                 type="text"
                 value={formData.apellido}
                 onChange={(e) => handleInputChange('apellido', e.target.value)}
-                maxLength={30}
+                maxLength={20}
                 className={`w-full rounded-2xl border bg-white/80 px-4 py-3 text-base font-semibold text-slate-800 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200 ${
                   errors.apellido ? 'border-red-400' : 'border-slate-200'
                 }`}
-                placeholder="Tu apellido"
+                placeholder="Tu apellido (máx. 20 letras)"
                 disabled={isSubmitting}
               />
               {errors.apellido && (
                 <p className="text-xs font-medium text-red-500">{errors.apellido}</p>
+              )}
+              {formData.apellido && (
+                <p className="text-xs text-slate-500">{formData.apellido.length}/20 caracteres</p>
               )}
             </div>
 
@@ -249,14 +342,23 @@ export function CompleteProfileScreen() {
                 type="text"
                 value={formData.doc_identidad}
                 onChange={(e) => handleInputChange('doc_identidad', e.target.value)}
+                maxLength={8}
                 className={`w-full rounded-2xl border bg-white/80 px-4 py-3 text-base font-semibold text-slate-800 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200 ${
                   errors.doc_identidad ? 'border-red-400' : 'border-slate-200'
                 }`}
-                placeholder="DNI, Cédula, etc."
+                placeholder="DNI, Cédula, etc. (8 dígitos)"
                 disabled={isSubmitting}
               />
               {errors.doc_identidad && (
                 <p className="text-xs font-medium text-red-500">{errors.doc_identidad}</p>
+              )}
+              {formData.doc_identidad && (
+                <p className="text-xs text-slate-500">
+                  {formData.doc_identidad.length}/8 caracteres
+                  {formData.doc_identidad.length === 8 && (
+                    <span className="ml-1 text-green-600">✓</span>
+                  )}
+                </p>
               )}
             </div>
 
@@ -270,10 +372,14 @@ export function CompleteProfileScreen() {
                 type="text"
                 value={formData.organizacion}
                 onChange={(e) => handleInputChange('organizacion', e.target.value)}
+                maxLength={25}
                 className="w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-base font-semibold text-slate-800 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
-                placeholder="Opcional"
+                placeholder="Opcional (máx. 25 caracteres)"
                 disabled={isSubmitting}
               />
+              {formData.organizacion && (
+                <p className="text-xs text-slate-500">{formData.organizacion.length}/25 caracteres</p>
+              )}
             </div>
 
             {/* Wallet Address */}
@@ -286,14 +392,18 @@ export function CompleteProfileScreen() {
                 type="text"
                 value={formData.wallet_address}
                 onChange={(e) => handleInputChange('wallet_address', e.target.value)}
+                maxLength={42}
                 className={`w-full rounded-2xl border bg-white/80 px-4 py-3 text-base font-semibold text-slate-800 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200 ${
                   errors.wallet_address ? 'border-red-400' : 'border-slate-200'
                 }`}
-                placeholder="0x... (opcional)"
+                placeholder="0x... (42 caracteres)"
                 disabled={isSubmitting}
               />
               {errors.wallet_address && (
                 <p className="text-xs font-medium text-red-500">{errors.wallet_address}</p>
+              )}
+              {formData.wallet_address && (
+                <p className="text-xs text-slate-500">{formData.wallet_address.length}/42 caracteres</p>
               )}
             </div>
 
@@ -333,19 +443,23 @@ export function CompleteProfileScreen() {
                   type="tel"
                   value={phoneNumber}
                   onChange={(e) => handlePhoneChange(e.target.value)}
+                  maxLength={10}
                   className={`flex-1 rounded-2xl border bg-white/80 px-4 py-3 text-base font-semibold text-slate-800 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200 ${
                     errors.contacto ? 'border-red-400' : 'border-slate-200'
                   }`}
                   placeholder={
-                    selectedCountry.code === '+591' ? '12345678 (8 dígitos)' :
-                    selectedCountry.code === '+51' ? '87654321 (8-9 dígitos)' :
-                    '5512345678 (10 dígitos)'
+                    selectedCountry.code === '+591' ? '12345678 (máx. 10 díg.)' :
+                    selectedCountry.code === '+51' ? '87654321 (máx. 10 díg.)' :
+                    '5512345678 (máx. 10 díg.)'
                   }
                   disabled={isSubmitting}
                 />
               </div>
               {errors.contacto && (
                 <p className="text-xs font-medium text-red-500">{errors.contacto}</p>
+              )}
+              {phoneNumber && (
+                <p className="text-xs text-slate-500">{phoneNumber.length}/10 números</p>
               )}
             </div>
 

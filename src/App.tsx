@@ -22,16 +22,12 @@ import MapScreen from './modules/map/MapScreen'
 import { CompleteProfileScreen } from './modules/user_profile'
 
 function RootRedirect() {
-  const { isAuthenticated, isProfileComplete, hydrated } = useAuth()
+  const { isAuthenticated, hydrated } = useAuth()
   
   if (!hydrated) return null
   
   if (!isAuthenticated) {
     return <Navigate to="/auth/login" replace />
-  }
-  
-  if (isAuthenticated && !isProfileComplete) {
-    return <Navigate to="/complete-profile" replace />
   }
   
   return <Navigate to="/app/home" replace />

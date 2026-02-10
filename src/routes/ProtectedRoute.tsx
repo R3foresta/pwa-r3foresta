@@ -2,7 +2,7 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
 function ProtectedRoute() {
-  const { isAuthenticated, isProfileComplete, hydrated } = useAuth()
+  const { isAuthenticated, hydrated } = useAuth()
   const location = useLocation()
 
   if (!hydrated) {
@@ -13,10 +13,8 @@ function ProtectedRoute() {
     return <Navigate to="/auth/login" replace state={{ from: location.pathname }} />
   }
 
-  if (!isProfileComplete) {
-    return <Navigate to="/complete-profile" replace />
-  }
-
+  // Ya no redirigimos automáticamente al formulario de perfil
+  // El usuario verá el banner en el home y decidirá cuándo completarlo
   return <Outlet />
 }
 
