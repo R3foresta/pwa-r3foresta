@@ -19,7 +19,7 @@ import ViveroScreen from './modules/vivero/ViveroScreen'
 import ViveroDetailScreen from './modules/vivero/ViveroDetailScreen'
 import ViveroNewScreen from './modules/vivero/ViveroNewScreen'
 import MapScreen from './modules/map/MapScreen'
-import { CompleteProfileScreen } from './modules/user_profile'
+import { CompleteProfileScreen, PerfilScreen } from './modules/user_profile'
 
 function RootRedirect() {
   const { isAuthenticated, hydrated } = useAuth()
@@ -101,7 +101,7 @@ function App() {
           <Route path="map" element={<MapScreen />} />
           <Route path="scan" element={<PlaceholderScreen title="Escanear" />} />
           <Route path="report" element={<MapScreen />} />
-          <Route path="profile" element={<PlaceholderScreen title="Perfil" />} />
+          <Route path="profile" element={<PerfilScreen />} />
           <Route path="*" element={<PlaceholderScreen title="Próximamente" />} />
         </Route>
       </Route>

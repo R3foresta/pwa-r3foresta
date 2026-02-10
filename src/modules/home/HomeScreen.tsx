@@ -31,13 +31,28 @@ function HomeScreen() {
             R3foresta
           </div>
         </div>
-        <button
-          type="button"
-          className="rounded-full bg-white/90 p-2 shadow-sm transition hover:shadow-soft"
-          aria-label="Notificaciones"
-        >
-          <Icon name="bell" className="h-5 w-5 text-brand-700" />
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            className="rounded-full bg-white/90 p-2 shadow-sm transition hover:shadow-soft"
+            aria-label="Notificaciones"
+          >
+            <Icon name="bell" className="h-5 w-5 text-brand-700" />
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/app/profile')}
+            className="relative rounded-full bg-white/90 p-2 shadow-sm transition hover:shadow-soft"
+            aria-label="Perfil"
+          >
+            <Icon name="user" className="h-5 w-5 text-brand-700" />
+            {!isProfileComplete && (
+              <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-amber-500 border-2 border-white shadow-sm">
+                <span className="sr-only">Perfil incompleto</span>
+              </span>
+            )}
+          </button>
+        </div>
       </header>
 
       <section className="mt-4">
