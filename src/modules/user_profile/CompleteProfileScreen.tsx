@@ -118,6 +118,8 @@ export function CompleteProfileScreen() {
           processedValue = value.substring(0, 42)
         } else if (value && !value.startsWith('0x')) {
           fieldError = 'Debe comenzar con 0x'
+        } else if (value && value.toLowerCase() === '0x0000000000000000000000000000000000000000') {
+          fieldError = 'Esta wallet no es válida'
         } else if (value && !/^0x[a-fA-F0-9]*$/.test(value)) {
           fieldError = 'Formato de wallet inválido'
           // Mantener solo caracteres válidos

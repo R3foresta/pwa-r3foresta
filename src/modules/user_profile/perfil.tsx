@@ -11,6 +11,11 @@ function PerfilScreen() {
     navigate('/auth/login', { replace: true })
   }
 
+  const truncateWallet = (wallet: string) => {
+    if (wallet.length <= 13) return wallet
+    return `${wallet.slice(0, 8)}......${wallet.slice(-5)}`
+  }
+
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-32 pt-6">
       {/* Header */}
@@ -84,6 +89,15 @@ function PerfilScreen() {
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-brand-600">Organización</span>
                 <span className="text-sm text-brand-700">{user.organizacion}</span>
+              </div>
+            </div>
+          )}
+
+          {user?.wallet_address && (
+            <div className="rounded-2xl bg-white px-4 py-3 shadow-soft">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-brand-600">Wallet</span>
+                <span className="text-sm text-brand-700 font-mono">{truncateWallet(user.wallet_address)}</span>
               </div>
             </div>
           )}

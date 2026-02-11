@@ -122,6 +122,8 @@ export class ProfileService {
     if (data.wallet_address && data.wallet_address.length > 0) {
       if (!/^0x[0-9a-fA-F]{40}$/.test(data.wallet_address)) {
         errors.wallet_address = 'El wallet_address debe tener formato Ethereum (0x seguido de 40 carácteres hex)'
+      } else if (data.wallet_address.toLowerCase() === '0x0000000000000000000000000000000000000000') {
+        errors.wallet_address = 'Esta wallet no es válida'
       }
     }
 

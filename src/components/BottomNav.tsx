@@ -2,11 +2,15 @@ import { useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import Icon from './Icon'
 import { NAV_ITEMS } from '../data/navigation'
+import { useAuth } from '../contexts/AuthContext'
+import { ProfileService } from '../modules/user_profile'
 
 function BottomNav() {
   const navigate = useNavigate()
   const { pathname } = useLocation()
+  const { user } = useAuth()
   const [open, setOpen] = useState(false)
+  const [showProfileWarning, setShowProfileWarning] = useState(false)
 
   const quickActions = [
     { label: 'Registrar recolección', icon: 'package', to: '/app/collections/new' },
@@ -16,8 +20,26 @@ function BottomNav() {
   ]
 
   const handleQuickNav = (to: string) => {
+    // Validar si el usuario tiene el perfil completo antes de permitir ciertas acciones
+    const requiresCompleteProfile = ['/app/collections/new', '/app/vivero/new', '/app/planting', '/app/co2']
+    
+    if (requiresCompleteProfile.includes(to)) {
+      const isComplete = ProfileService.isProfileComplete(user)
+      
+      if (!isComplete) {
+        setOpen(false)
+        setShowProfileWarning(true)
+        return
+      }
+    }
+    
     setOpen(false)
     navigate(to)
+  }
+
+  const handleCompleteProfile = () => {
+    setShowProfileWarning(false)
+    navigate('/complete-profile')
   }
 
   // Verificar si estamos en alguna ruta de acciones rápidas
@@ -101,6 +123,48 @@ function BottomNav() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal de advertencia de perfil incompleto */}
+      {showProfileWarning && (
+        <>
+          <div
+            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowProfileWarning(false)}
+          />
+          <div className="fixed inset-x-0 top-1/2 z-50 -translate-y-1/2 px-6">
+            <div className="mx-auto w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl">
+              <div className="mb-4 flex justify-center">
+                {/* <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-100">
+                  <Icon name="alert-triangle" className="h-8 w-8 text-amber-600" />
+                </div> */}
+              </div>
+              
+              <h3 className="mb-2 text-center text-lg font-semibold text-brand-700">
+                Perfil incompleto
+              </h3>
+              
+              <p className="mb-6 text-center text-sm text-brand-600">
+                Necesitas completar tu perfil para acceder a todas las funcionalidades de la aplicación.
+              </p>
+              
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={handleCompleteProfile}
+                  className="w-full rounded-xl bg-brand-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
+                >
+                  Completar perfil
+                </button>
+                <button
+                  onClick={() => setShowProfileWarning(false)}
+                  className="w-full rounded-xl px-4 py-3 text-sm font-semibold text-brand-600 transition hover:bg-slate-50"
+                >
+                  Continuar sin completar
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
       )}
     </>
   )
