@@ -4,6 +4,14 @@ export interface User {
   email?: string;
   createdAt?: Date;
   auth_id: string; // Obligatorio, viene del backend
+  // Campos adicionales del perfil
+  nombre?: string;
+  apellido?: string;
+  doc_identidad?: string;
+  wallet_address?: string;
+  organizacion?: string;
+  contacto?: string;
+  rol?: string;
 }
 
 export interface AuthResponse {

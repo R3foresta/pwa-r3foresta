@@ -1,10 +1,12 @@
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../../contexts/AuthContext'
 import Icon from '../../components/Icon'
 import { hero, syncNotice, metrics, sections, recent } from '../../data/home'
 import type { Screen } from '../../types/navigation'
 
 function HomeScreen() {
   const navigate = useNavigate()
+  const { user, isProfileComplete } = useAuth()
   const targetPath: Record<Screen, string> = {
     home: '/app/home',
     collections: '/app/collections',
@@ -29,13 +31,28 @@ function HomeScreen() {
             R3foresta
           </div>
         </div>
-        <button
-          type="button"
-          className="rounded-full bg-white/90 p-2 shadow-sm transition hover:shadow-soft"
-          aria-label="Notificaciones"
-        >
-          <Icon name="bell" className="h-5 w-5 text-brand-700" />
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            className="rounded-full bg-white/90 p-2 shadow-sm transition hover:shadow-soft"
+            aria-label="Notificaciones"
+          >
+            <Icon name="bell" className="h-5 w-5 text-brand-700" />
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/app/profile')}
+            className="relative rounded-full bg-white/90 p-2 shadow-sm transition hover:shadow-soft"
+            aria-label="Perfil"
+          >
+            <Icon name="user" className="h-5 w-5 text-brand-700" />
+            {!isProfileComplete && (
+              <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-amber-500 border-2 border-white shadow-sm">
+                <span className="sr-only">Perfil incompleto</span>
+              </span>
+            )}
+          </button>
+        </div>
       </header>
 
       <section className="mt-4">
@@ -59,11 +76,39 @@ function HomeScreen() {
         </div>
       </section>
 
+      {/* Banner de perfil incompleto */}
+      {user && !isProfileComplete && (
+        <section className="mt-4">
+          <button
+            onClick={() => navigate('/complete-profile', { replace: true })}
+            className="w-full flex items-start gap-3 rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm font-medium text-amber-800 shadow-soft hover:bg-amber-100 transition-colors"
+          >
+            <span className="mt-1 inline-flex h-7 w-7 items-center justify-center rounded-full bg-amber-200 text-amber-700">
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.732 15.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </span>
+            
+            <div className="flex flex-col text-left">
+              <span className="font-semibold">Perfil incompleto</span>
+              <span className="text-xs font-normal text-amber-600">Necesitas completar tu perfil para acceder a todas las funcionalidades de la aplicación.</span>
+            </div>
+            
+            <span className="ml-auto mt-1">
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </span>
+          </button>
+        </section>
+      )}
+
       <section className="mt-4">
         <div className="flex items-start gap-3 rounded-2xl bg-white px-4 py-3 text-sm font-medium text-brand-700 shadow-soft">
           <span className="mt-1 inline-flex h-7 w-7 items-center justify-center rounded-full bg-brand-100 text-brand-700">
             <Icon name="dot" className="h-3 w-3 text-brand-600" />
           </span>
+
           <div className="flex flex-col">
             <span>{syncNotice.label}</span>
             <span className="text-xs font-normal text-brand-500">{syncNotice.detail}</span>

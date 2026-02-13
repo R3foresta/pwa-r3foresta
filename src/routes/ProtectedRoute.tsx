@@ -13,6 +13,8 @@ function ProtectedRoute() {
     return <Navigate to="/auth/login" replace state={{ from: location.pathname }} />
   }
 
+  // Ya no redirigimos automáticamente al formulario de perfil
+  // El usuario verá el banner en el home y decidirá cuándo completarlo
   return <Outlet />
 }
 

@@ -1,14 +1,12 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useWebAuthn } from '../../hooks/useWebAuthn'
 import { useAuth } from '../../contexts/AuthContext'
 import Icon from '../../components/Icon'
 import heroCanopy from '../../assets/home/hero-canopy.jpg'
 
 function LoginScreen() {
-  const navigate = useNavigate()
   const { login: loginWebAuthn, register: registerWebAuthn, loading, error } = useWebAuthn()
-  const { login: loginAuth } = useAuth()
+  const { setUser, updateUserFromBackend } = useAuth()
   const [isRegistering, setIsRegistering] = useState(false)
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
@@ -19,17 +17,17 @@ function LoginScreen() {
       const result = await loginWebAuthn()
       console.log('✅ LoginScreen: Login exitoso', result)
       
-      // Actualizar el AuthContext con los datos del usuario del backend
+      // Obtener los datos completos del usuario desde el backend
       if (result.success && result.user) {
-        const userData = {
-          id: result.user.id,
-          username: result.user.username,
-          email: result.user.email,
+        try {
+          console.log('📥 Obteniendo datos completos del perfil...')
+          const fullUserData = await updateUserFromBackend()
+          console.log('✅ LoginScreen: Usuario con datos completos:', fullUserData)
+        } catch (error) {
+          console.error('❌ Error al obtener datos del perfil, usando datos básicos:', error)
+          // Si falla, usar los datos básicos del login
+          setUser(result.user)
         }
-        localStorage.setItem('r3foresta:user', JSON.stringify(userData))
-        await loginAuth(result.user.email || result.user.username)
-        console.log('✅ LoginScreen: Navegando a home...')
-        navigate('/app/home', { replace: true })
       }
     } catch (error) {
       console.error('❌ LoginScreen: Error en login:', error)
@@ -48,17 +46,17 @@ function LoginScreen() {
       const result = await registerWebAuthn(username, email || undefined)
       console.log('✅ LoginScreen: Registro exitoso', result)
       
-      // Actualizar el AuthContext con los datos del usuario del backend
+      // Para registro nuevo, probablemente no tenga perfil completo aún
       if (result.success && result.user) {
-        const userData = {
-          id: result.user.id,
-          username: result.user.username,
-          email: result.user.email,
+        try {
+          console.log('📥 Obteniendo datos del perfil después del registro...')
+          const fullUserData = await updateUserFromBackend()
+          console.log('✅ LoginScreen: Usuario registrado con datos:', fullUserData)
+        } catch (error) {
+          console.error('❌ Error al obtener datos del perfil, usando datos básicos:', error)
+          // Si falla, usar los datos básicos del registro
+          setUser(result.user)
         }
-        localStorage.setItem('r3foresta:user', JSON.stringify(userData))
-        await loginAuth(result.user.email || result.user.username)
-        console.log('✅ LoginScreen: Navegando a home...')
-        navigate('/app/home', { replace: true })
       }
     } catch (error) {
       console.error('❌ LoginScreen: Error en registro:', error)
