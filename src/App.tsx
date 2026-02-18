@@ -102,6 +102,7 @@ function App() {
           <Route path="scan" element={<PlaceholderScreen title="Escanear" />} />
           <Route path="report" element={<MapScreen />} />
           <Route path="profile" element={<PerfilScreen />} />
+          <Route path="edit-profile" element={<CompleteProfileScreen />} />
           <Route path="*" element={<PlaceholderScreen title="Próximamente" />} />
         </Route>
       </Route>

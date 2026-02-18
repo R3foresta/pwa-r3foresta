@@ -2,11 +2,15 @@ import React, { useState, useEffect } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { ProfileService } from './profile.service'
 import type { ProfileFormData, ProfileValidationErrors } from './types'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 
 export function CompleteProfileScreen() {
   const { user, updateUserFromBackend } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+  
+  // Detectar si estamos en modo edición
+  const isEditing = location.pathname === '/app/edit-profile'
   
   // Países disponibles con sus códigos y banderas
   const countries = [
@@ -47,8 +51,11 @@ export function CompleteProfileScreen() {
     }
   }, [user?.contacto])
 
-  // Verificar si el usuario ya tiene perfil completo
+  // Verificar si el usuario ya tiene perfil completo (solo si NO estamos editando)
   useEffect(() => {
+    // Si estamos en modo edición, no hacer esta verificación
+    if (isEditing) return
+    
     console.log('🔍 CompleteProfileScreen - Verificando usuario:', user)
     
     if (user) {
@@ -69,7 +76,7 @@ export function CompleteProfileScreen() {
     } else {
       console.log('⚠️ No hay usuario en el contexto')
     }
-  }, [user, navigate])
+  }, [user, navigate, isEditing])
 
   const handleInputChange = (field: keyof ProfileFormData, value: string) => {
     let processedValue = value
@@ -227,8 +234,8 @@ export function CompleteProfileScreen() {
       console.log('✅ Perfil completado. ¿Está completo?', isComplete)
       
       if (isComplete) {
-        console.log('🏠 Navegando al home...')
-        navigate('/app/home', { replace: true })
+        console.log('🏠 Navegando al destino correcto...')
+        navigate(isEditing ? '/app/profile' : '/app/home', { replace: true })
       } else {
         console.error('⚠️ El perfil aún no está completo después de actualizar')
         setErrors({
@@ -266,20 +273,24 @@ export function CompleteProfileScreen() {
           <div className="relative bg-gradient-to-r from-brand-600 to-brand-700 px-6 py-6">
             {/* Botón de cerrar */}
             <button
-              onClick={() => navigate('/app/home', { replace: true })}
+              onClick={() => navigate(isEditing ? '/app/profile' : '/app/home', { replace: true })}
               className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
               type="button"
-              title="Ir al inicio"
+              title={isEditing ? "Volver al perfil" : "Ir al inicio"}
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
             
-            <p className="text-[11px] uppercase tracking-[0.22em] text-white/80">Paso final</p>
-            <h1 className="mt-1 text-xl font-semibold text-white">Completa tu perfil</h1>
+            <p className="text-[11px] uppercase tracking-[0.22em] text-white/80">
+              {isEditing ? 'Editar datos' : 'Paso final'}
+            </p>
+            <h1 className="mt-1 text-xl font-semibold text-white">
+              {isEditing ? 'Actualizar perfil' : 'Completa tu perfil'}
+            </h1>
             <p className="mt-1 text-sm text-white/70">
-              Necesitamos algunos datos para continuar
+              {isEditing ? 'Modifica tus datos personales' : 'Necesitamos algunos datos para continuar'}
             </p>
           </div>
 
@@ -478,11 +489,15 @@ export function CompleteProfileScreen() {
               disabled={isSubmitting}
               className="w-full rounded-2xl bg-gradient-to-r from-brand-500 to-brand-600 py-3.5 text-center text-lg font-extrabold text-white shadow-soft transition hover:shadow-lg active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isSubmitting ? 'Guardando...' : 'Completar perfil'}
+              {isSubmitting 
+                ? (isEditing ? 'Guardando...' : 'Guardando...') 
+                : (isEditing ? 'Actualizar perfil' : 'Completar perfil')
+              }
             </button>
 
             <p className="text-center text-[11px] text-slate-400">
               Los campos con <span className="text-red-500">*</span> son obligatorios
+              {isEditing && <span className="block mt-1">Campos vacíos mantendrán su valor actual</span>}
             </p>
           </form>
         </div>

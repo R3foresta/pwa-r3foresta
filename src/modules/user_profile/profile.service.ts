@@ -1,5 +1,7 @@
 import type { ProfileFormData, ProfileFormResponse } from './types'
 
+const API_URL = import.meta.env.VITE_API_URL
+
 export class ProfileService {
   /**
    * Obtiene el perfil completo del usuario desde el backend
@@ -12,7 +14,7 @@ export class ProfileService {
       }
 
       console.log('📤 Obteniendo perfil del usuario desde el backend...')
-      const response = await fetch(`http://localhost:3000/api/users/profile`, {
+      const response = await fetch(`${API_URL}/api/users/profile`, {
         method: 'GET',
         headers: {
           'x-auth-id': authId,
@@ -47,7 +49,7 @@ export class ProfileService {
         throw new Error('No se encontró auth_id')
       }
 
-      const response = await fetch(`http://localhost:3000/api/users/register-form`, {
+      const response = await fetch(`${API_URL}/api/users/register-form`, {
         method: 'POST',
         headers: {
           'x-auth-id': authId,
