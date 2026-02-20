@@ -1,11 +1,10 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import Icon from "../../components/Icon";
-import { methodOptions } from "./data";
 import type { MaterialType, Unit } from "./types";
 import { useCollectionForm } from "./CollectionFormContext";
 import { RecoleccionService } from "../../services/recoleccion.service";
-import type { Planta, TipoPlanta } from "../../services/recoleccion.service";
+import type { MetodoRecoleccion, Planta, TipoPlanta } from "../../services/recoleccion.service";
 
 function NewCollectionForm() {
   const navigate = useNavigate();
@@ -14,6 +13,7 @@ function NewCollectionForm() {
   const [type, setType] = useState<MaterialType>(formData?.type || "seed");
   const [species, setSpecies] = useState(formData?.species || "");
   const [method, setMethod] = useState(formData?.method || "");
+  const [metodoId, setMetodoId] = useState<number | undefined>(formData?.metodo_id);
   const [quantity, setQuantity] = useState(formData?.quantity || "0");
   const [unit, setUnit] = useState<Unit>(formData?.unit || "kg");
   const [notes, setNotes] = useState(formData?.notes || "");
@@ -50,6 +50,8 @@ function NewCollectionForm() {
   });
   
   // Tipos de planta desde el backend
+  const [metodos, setMetodos] = useState<MetodoRecoleccion[]>([]);
+  const [loadingMetodos, setLoadingMetodos] = useState(false);
   const [tiposPlantas, setTiposPlantas] = useState<TipoPlanta[]>([]);
   const [loadingTiposPlantas, setLoadingTiposPlantas] = useState(false);
   const [showNewTipoInput, setShowNewTipoInput] = useState(false);
@@ -84,6 +86,37 @@ function NewCollectionForm() {
     photos: false,
     method: false,
   });
+
+  useEffect(() => {
+    const cargarMetodos = async () => {
+      setLoadingMetodos(true);
+      try {
+        const response = await RecoleccionService.getMetodos();
+        const metodosBackend = response.data || [];
+        setMetodos(metodosBackend);
+
+        if (formData?.metodo_id) {
+          const metodoGuardado = metodosBackend.find((metodo) => metodo.id === formData.metodo_id);
+          if (metodoGuardado) {
+            setMetodoId(metodoGuardado.id);
+            setMethod(metodoGuardado.nombre);
+          }
+        } else if (formData?.method) {
+          const metodoPorNombre = metodosBackend.find((metodo) => metodo.nombre === formData.method);
+          if (metodoPorNombre) {
+            setMetodoId(metodoPorNombre.id);
+            setMethod(metodoPorNombre.nombre);
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error al cargar métodos:', error);
+      } finally {
+        setLoadingMetodos(false);
+      }
+    };
+
+    cargarMetodos();
+  }, []);
 
   // Cargar plantas desde el backend
   useEffect(() => {
@@ -245,11 +278,15 @@ function NewCollectionForm() {
         
         console.log('✅ Nuevo tipo creado y seleccionado:', result.data);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Error al crear tipo de planta:', error);
+      const status =
+        typeof error === 'object' && error !== null && 'response' in error
+          ? (error as { response?: { status?: number } }).response?.status
+          : undefined;
       
       // Si el tipo ya existe (409), buscarlo en la lista y seleccionarlo
-      if (error.response?.status === 409) {
+      if (status === 409) {
         const tipoExistente = tiposPlantas.find(
           t => t.nombre.toLowerCase() === newTipoNombre.trim().toLowerCase()
         );
@@ -368,14 +405,18 @@ function NewCollectionForm() {
         
         console.log('✅ Planta creada y seleccionada:', response.data);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Error al crear planta:', error);
+      const status =
+        typeof error === 'object' && error !== null && 'response' in error
+          ? (error as { response?: { status?: number } }).response?.status
+          : undefined;
       
       // Manejar error de planta duplicada (409)
-      if (error.response?.status === 409) {
+      if (status === 409) {
         setPlantErrorMessage('Ya existe una planta con ese nombre científico y variedad.\n\nPor favor verifica si la planta ya está registrada o cambia la variedad.');
         setShowPlantErrorModal(true);
-      } else if (error.response?.status === 400) {
+      } else if (status === 400) {
         setPlantErrorMessage('Error de validación. Por favor verifica los datos ingresados.');
         setShowPlantErrorModal(true);
       } else {
@@ -392,7 +433,7 @@ function NewCollectionForm() {
       date: !date,
       quantity: parseFloat(quantity) <= 0,
       photos: placePhotos.length === 0 || totalPhotos.length === 0,
-      method: !method,
+      method: !metodoId,
     }
 
     setErrors(newErrors)
@@ -429,6 +470,7 @@ function NewCollectionForm() {
       isNewFind,
       placePhotos,
       totalPhotos,
+      metodo_id: metodoId,
       planta_id,
       nombre_cientifico: nombre_cientifico || species,
       nombre_comercial: nombre_comercial || species,
@@ -640,17 +682,21 @@ function NewCollectionForm() {
                 : 'border-slate-200 bg-white focus-within:border-brand-400 focus-within:ring-2 focus-within:ring-brand-200'
             }`}>
               <select
-                value={method}
+                value={metodoId ? String(metodoId) : ""}
                 onChange={(event) => {
-                  setMethod(event.target.value);
+                  const selectedId = Number(event.target.value);
+                  const selectedMetodo = metodos.find((metodo) => metodo.id === selectedId);
+                  setMetodoId(Number.isFinite(selectedId) ? selectedId : undefined);
+                  setMethod(selectedMetodo?.nombre || "");
                   setErrors(prev => ({ ...prev, method: false }));
                 }}
+                disabled={loadingMetodos}
                 className="w-full bg-transparent py-3 text-base font-semibold text-slate-700 outline-none"
               >
-                <option value="">Seleccionar método</option>
-                {methodOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
+                <option value="">{loadingMetodos ? "Cargando métodos..." : "Seleccionar método"}</option>
+                {metodos.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.nombre}
                   </option>
                 ))}
               </select>

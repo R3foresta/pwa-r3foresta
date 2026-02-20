@@ -15,6 +15,8 @@
 // - GET    /api/metodos-recoleccion     - Listar métodos
 // ============================================================================
 
+import type { UbicacionApi, UbicacionCreateInput } from '../types/ubicacion'
+
 // URL base del backend desde variables de entorno
 const API_URL = import.meta.env.VITE_API_URL
 
@@ -42,15 +44,7 @@ export interface CreateRecoleccionDto {
   estado?: 'ALMACENADO' | 'EN_PROCESO' | 'UTILIZADO' | 'DESCARTADO'; // Estado actual
   especie_nueva: boolean;                  // Si es una especie no registrada
   observaciones?: string;                  // Notas adicionales del recolector
-  ubicacion: {                             // Ubicación geográfica de la recolección
-    pais?: string;                         // País (opcional)
-    departamento?: string;                 // Departamento (opcional)
-    provincia?: string;                    // Provincia (opcional)
-    comunidad?: string;                    // Comunidad (opcional)
-    zona?: string;                         // Zona específica (opcional)
-    latitud: number;                       // Coordenada latitud (GPS)
-    longitud: number;                      // Coordenada longitud (GPS)
-  };
+  ubicacion: UbicacionCreateInput;
   vivero_id?: number;                      // ID del vivero donde se almacena (opcional)
   metodo_id: number;                       // ID del método de recolección usado
   planta_id?: number;                      // ID de la planta (si existe en catálogo)
@@ -88,24 +82,12 @@ export interface Recoleccion {
     nombre: string;
     username: string;
   };
-  ubicacion: {                             // Ubicación geográfica completa
-    id: number;
-    pais?: string;
-    departamento?: string;
-    provincia?: string;
-    comunidad?: string;
-    zona?: string;
-    latitud: number;
-    longitud: number;
-  };
+  ubicacion: UbicacionApi | null;
   vivero?: {                               // Vivero de almacenamiento (opcional)
     id: number;
     codigo: string;
     nombre: string;
-    ubicacion?: {
-      departamento?: string;
-      comunidad?: string;
-    };
+    ubicacion?: UbicacionApi | null;
   };
   metodo: {                                // Método de recolección usado
     id: number;
@@ -140,10 +122,7 @@ export interface Vivero {
   id: number;                              // ID único del vivero
   codigo: string;                          // Código alfanumérico (ej: "VIV-001")
   nombre: string;                          // Nombre del vivero
-  ubicacion?: {                            // Ubicación opcional
-    departamento?: string;
-    comunidad?: string;
-  };
+  ubicacion?: UbicacionApi | null;
 }
 
 /**
@@ -205,6 +184,8 @@ export interface RecoleccionFilters {
   estado?: string;                         // Filtrar por estado
   vivero_id?: number;                      // Filtrar por vivero
   tipo_material?: string;                  // Filtrar por tipo de material
+  search?: string;
+  q?: string;
   page?: number;                           // Número de página
   limit?: number;                          // Items por página para paginación
 }
@@ -234,40 +215,23 @@ export class RecoleccionService {
    * @example
    * const headers = this.getAuthHeaders(); // Con Content-Type
    * const headers = this.getAuthHeaders(false); // Sin Content-Type (para FormData)
-   */
+  */
   private static getAuthHeaders(includeContentType = true): HeadersInit {
-    const token = localStorage.getItem('authToken');
-    const authId = localStorage.getItem('auth_id');
-    
-    console.log('🔍 Verificando auth_id en localStorage...');
-    console.log('🔑 Token presente:', !!token);
-    console.log('🔑 Auth ID:', authId);
-    console.log('📦 localStorage completo:', {
-      authToken: token ? 'Presente' : 'No encontrado',
-      auth_id: authId || 'No encontrado',
-      allKeys: Object.keys(localStorage),
-    });
-    
-    if (!authId) {
-      console.error('⚠️ ADVERTENCIA: auth_id no está en localStorage!');
-      console.error('📋 Keys disponibles en localStorage:', Object.keys(localStorage));
+    const token = localStorage.getItem('authToken')
+    const authId = localStorage.getItem('auth_id')
+    const headers: HeadersInit = {}
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`
     }
-    
-    const headers: HeadersInit = {
-      'Authorization': token ? `Bearer ${token}` : '',
-    };
-    
-    // Solo agregar x-auth-id si existe
     if (authId) {
-      headers['x-auth-id'] = authId;
+      headers['x-auth-id'] = authId
     }
-    
     if (includeContentType) {
-      headers['Content-Type'] = 'application/json';
+      headers['Content-Type'] = 'application/json'
     }
-    
-    console.log('📨 Headers que se enviarán:', headers);
-    return headers;
+
+    return headers
   }
 
   /**
@@ -279,25 +243,20 @@ export class RecoleccionService {
    * @throws {Error} Si la respuesta no es OK o hay error de parseo
    * 
    * PRIVADO: Solo usado internamente por otros métodos del servicio
-   */
+  */
   private static async handleResponse(response: Response): Promise<{ success: boolean; data: Recoleccion }> {
-    console.log('📥 Response status:', response.status);
-    
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ Error response:', errorText);
+      const errorText = await response.text()
       
       try {
-        const errorJson = JSON.parse(errorText);
-        throw new Error(errorJson.message || `Error ${response.status}: ${response.statusText}`);
+        const errorJson = JSON.parse(errorText)
+        throw new Error(errorJson.message || `Error ${response.status}: ${response.statusText}`)
       } catch {
-        throw new Error(`Error ${response.status}: ${errorText || response.statusText}`);
+        throw new Error(`Error ${response.status}: ${errorText || response.statusText}`)
       }
     }
     
-    const result = await response.json();
-    console.log('✅ Recolección creada exitosamente', result);
-    return result;
+    return response.json()
   }
 
   // ==========================================================================
@@ -382,23 +341,30 @@ export class RecoleccionService {
         }
       }
       
-      // 4. Ubicación (usando notación de corchetes)
+      // 4. Ubicación V2 (sin campos legacy)
       formData.append('ubicacion[latitud]', String(data.ubicacion.latitud));
       formData.append('ubicacion[longitud]', String(data.ubicacion.longitud));
-      if (data.ubicacion.pais) {
-        formData.append('ubicacion[pais]', data.ubicacion.pais);
+      if (data.ubicacion.pais_id !== undefined) {
+        formData.append('ubicacion[pais_id]', String(data.ubicacion.pais_id));
       }
-      if (data.ubicacion.departamento) {
-        formData.append('ubicacion[departamento]', data.ubicacion.departamento);
+      if (data.ubicacion.division_id !== undefined) {
+        formData.append('ubicacion[division_id]', String(data.ubicacion.division_id));
       }
-      if (data.ubicacion.provincia) {
-        formData.append('ubicacion[provincia]', data.ubicacion.provincia);
+      if (data.ubicacion.nombre) {
+        formData.append('ubicacion[nombre]', data.ubicacion.nombre);
       }
-      if (data.ubicacion.comunidad) {
-        formData.append('ubicacion[comunidad]', data.ubicacion.comunidad);
+      if (data.ubicacion.referencia) {
+        formData.append('ubicacion[referencia]', data.ubicacion.referencia);
       }
-      if (data.ubicacion.zona) {
-        formData.append('ubicacion[zona]', data.ubicacion.zona);
+      if (
+        data.ubicacion.precision_m !== undefined &&
+        Number.isFinite(data.ubicacion.precision_m) &&
+        data.ubicacion.precision_m > 0
+      ) {
+        formData.append('ubicacion[precision_m]', String(data.ubicacion.precision_m));
+      }
+      if (data.ubicacion.fuente) {
+        formData.append('ubicacion[fuente]', data.ubicacion.fuente);
       }
       
       // 5. Fotos (máximo 5)
@@ -410,26 +376,17 @@ export class RecoleccionService {
         console.log(`📸 ${maxFotos} fotos agregadas al FormData`);
       }
       
-      console.log('📡 Haciendo POST con FormData a:', `${API_URL}/api/recolecciones`);
-      
       const authId = localStorage.getItem('auth_id');
-      console.log('🔍 Verificando auth_id antes de enviar...');
-      console.log('🔑 Auth ID:', authId);
-      console.log('📦 localStorage completo:', Object.keys(localStorage));
       
       if (!authId) {
-        console.error('⚠️ ERROR CRÍTICO: No hay auth_id en localStorage!');
-        console.error('📋 Keys disponibles:', Object.keys(localStorage));
         throw new Error('No se encontró auth_id. Por favor, cierra sesión e inicia sesión nuevamente.');
       }
       
       // Construir headers para FormData (NO incluir Content-Type)
-      const headers: HeadersInit = {
-        'Authorization': token ? `Bearer ${token}` : '',
-        'x-auth-id': authId,
-      };
-      
-      console.log('📨 Headers que se enviarán:', headers);
+      const headers: HeadersInit = { 'x-auth-id': authId };
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
       
       let response: Response | undefined;
       
@@ -559,7 +516,8 @@ export class RecoleccionService {
       }
       
       const authId = localStorage.getItem('auth_id');
-      const url = `${API_URL}/api/recolecciones?${params}`;
+      const query = params.toString();
+      const url = `${API_URL}/api/recolecciones${query ? `?${query}` : ''}`;
       
       console.log('📋 Listando recolecciones...');
       console.log('🔗 URL:', url);
@@ -976,7 +934,9 @@ export class RecoleccionService {
       const result = await response.json();
       
       if (!response.ok) {
-        const error: any = new Error(result.message || 'Error al crear tipo de planta');
+        const error = new Error(result.message || 'Error al crear tipo de planta') as Error & {
+          response?: { status: number; data: unknown }
+        };
         error.response = { status: response.status, data: result };
         throw error;
       }

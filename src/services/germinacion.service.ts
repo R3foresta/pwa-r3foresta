@@ -1,3 +1,5 @@
+import type { UbicacionApi } from '../types/ubicacion'
+
 const API_URL = import.meta.env.VITE_API_URL
 
 export type LoteFaseViveroEstado =
@@ -35,10 +37,7 @@ export interface LoteFaseVivero {
     id: number
     codigo?: string | null
     nombre?: string | null
-    ubicacion?: {
-      departamento?: string | null
-      comunidad?: string | null
-    } | null
+    ubicacion?: UbicacionApi | null
   }
   responsable?: {
     id: number

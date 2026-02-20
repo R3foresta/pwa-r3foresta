@@ -31,43 +31,36 @@ function SummaryForm() {
     setError(null);
     
     try {
-      console.log('📤 Preparando datos para enviar al backend...');
-      console.log('📋 formData completo:', formData);
-      
-      // Convertir fotos base64 a File
       const fotos: File[] = [];
-      
-      // Fotos del lugar
+
       formData.placePhotos.forEach((base64, index) => {
         const file = RecoleccionService.base64ToFile(base64, `lugar_${index + 1}.jpg`);
         fotos.push(file);
       });
-      
-      // Fotos del total
+
       formData.totalPhotos.forEach((base64, index) => {
         const file = RecoleccionService.base64ToFile(base64, `total_${index + 1}.jpg`);
         fotos.push(file);
       });
-      
-      console.log('🖼️ Total de fotos:', fotos.length);
-      
-      // Mapear tipo de material
+
       let tipo_material: 'SEMILLA' | 'ESTACA' | 'PLANTULA' | 'INJERTO';
       if (formData.type === 'seed') {
         tipo_material = 'SEMILLA';
       } else if (formData.type === 'cutting') {
         tipo_material = 'ESTACA';
       } else {
-        tipo_material = 'SEMILLA'; // Default
+        tipo_material = 'SEMILLA';
       }
-      
-      console.log('🌱 tipo_material:', tipo_material);
-      console.log('📊 cantidad (string):', formData.quantity);
-      console.log('📊 cantidad (parseado):', parseFloat(formData.quantity));
-      console.log('✅ especie_nueva:', formData.isNewFind, 'tipo:', typeof formData.isNewFind);
-      console.log('🎯 metodo_id:', formData.metodo_id, 'tipo:', typeof formData.metodo_id);
-      
-      // Construir DTO para el backend
+
+      const metodoId = formData.metodo_id;
+      if (!metodoId) {
+        throw new Error('Debes seleccionar un método de recolección válido.');
+      }
+
+      const paisId = formData.paisId ? Number(formData.paisId) : undefined;
+      const divisionId = formData.divisionId ? Number(formData.divisionId) : undefined;
+      const precisionM = formData.precisionM ? Number(formData.precisionM) : undefined;
+
       const dto: CreateRecoleccionDto = {
         fecha: formData.date,
         cantidad: parseFloat(formData.quantity) || 0,
@@ -77,59 +70,39 @@ function SummaryForm() {
         especie_nueva: Boolean(formData.isNewFind),
         observaciones: formData.notes || undefined,
         ubicacion: {
-          pais: formData.pais || undefined,
-          departamento: formData.depto || undefined,
-          provincia: formData.provincia || undefined,
-          comunidad: formData.comunidad || undefined,
-          zona: formData.direccion || undefined,
+          nombre: formData.ubicacionNombre || undefined,
+          referencia: formData.referencia || undefined,
           latitud: parseFloat(formData.latitud) || 0,
           longitud: parseFloat(formData.longitud) || 0,
+          pais_id: Number.isFinite(paisId) ? paisId : undefined,
+          division_id: Number.isFinite(divisionId) ? divisionId : undefined,
+          precision_m: Number.isFinite(precisionM) ? precisionM : undefined,
+          fuente: formData.fuenteUbicacion,
         },
-        metodo_id: parseInt(String(formData.metodo_id)) || 1,
+        metodo_id: metodoId,
         vivero_id: formData.vivero_id ? parseInt(String(formData.vivero_id)) : undefined,
         fotos: fotos.length > 0 ? fotos : undefined,
       };
-      
-      console.log('📦 DTO construido:', dto);
-      console.log('📦 DTO.cantidad tipo:', typeof dto.cantidad, 'valor:', dto.cantidad);
-      console.log('📦 DTO.especie_nueva tipo:', typeof dto.especie_nueva, 'valor:', dto.especie_nueva);
-      console.log('📦 DTO.metodo_id tipo:', typeof dto.metodo_id, 'valor:', dto.metodo_id);
-      console.log('📦 DTO.ubicacion tipo:', typeof dto.ubicacion, 'valor:', dto.ubicacion);
-      
-      // Si NO es especie nueva, enviar planta existente
+
       if (!formData.isNewFind && formData.planta_id) {
         dto.planta_id = parseInt(String(formData.planta_id));
         dto.nombre_cientifico = formData.nombre_cientifico;
         dto.nombre_comercial = formData.species;
-        console.log('🌱 Planta existente:', {
-          planta_id: dto.planta_id,
-          nombre_cientifico: dto.nombre_cientifico,
-          nombre_comercial: dto.nombre_comercial
-        });
       } else if (!formData.isNewFind) {
-        console.error('❌ ERROR: especie_nueva=false pero planta_id no está disponible');
-        console.log('formData.planta_id:', formData.planta_id);
-        console.log('formData.isNewFind:', formData.isNewFind);
+        throw new Error('Debes seleccionar una especie existente o marcarla como nuevo hallazgo.');
       }
-      
-      // Si ES especie nueva, enviar datos de nueva planta
+
       if (formData.isNewFind && formData.species) {
         dto.nueva_planta = {
           especie: formData.species,
           nombre_cientifico: formData.nombre_cientifico || formData.species,
-          variedad: 'Común', // Puedes agregar campo en el formulario
-          fuente: 'NATIVA', // Puedes agregar campo en el formulario
+          variedad: 'Común',
+          fuente: 'NATIVA',
         };
-        console.log('🌿 Nueva planta:', dto.nueva_planta);
       }
-      
-      console.log('📦 DTO preparado:', dto);
-      
-      // Enviar al backend
+
       const response = await RecoleccionService.create(dto);
-      
-      console.log('✅ Respuesta del backend:', response);
-      
+
       if (response.success) {
         setShowSuccess(true);
       } else {
@@ -284,38 +257,46 @@ function SummaryForm() {
                 </h3>
               </div>
               <div className="space-y-2">
-                {formData.direccion && (
+                {formData.ubicacionNombre && (
                   <div className="flex justify-between text-sm">
-                    <span className="font-semibold text-slate-600">Dirección:</span>
-                    <span className="font-bold text-slate-800 text-right ml-4">{formData.direccion}</span>
+                    <span className="font-semibold text-slate-600">Nombre:</span>
+                    <span className="ml-4 text-right font-bold text-slate-800">{formData.ubicacionNombre}</span>
                   </div>
                 )}
-                <div className="flex justify-between text-sm">
-                  <span className="font-semibold text-slate-600">País:</span>
-                  <span className="font-bold text-slate-800">{formData.pais}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="font-semibold text-slate-600">Depto:</span>
-                  <span className="font-bold text-slate-800">{formData.depto}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="font-semibold text-slate-600">Provincia:</span>
-                  <span className="font-bold text-slate-800">{formData.provincia}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="font-semibold text-slate-600">Comunidad:</span>
-                  <span className="font-bold text-slate-800">{formData.comunidad}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="font-semibold text-slate-600">Elevacion:</span>
-                  <span className="font-bold text-slate-800">3640m</span>
-                </div>
+                {formData.referencia && (
+                  <div className="flex justify-between text-sm">
+                    <span className="font-semibold text-slate-600">Referencia:</span>
+                    <span className="ml-4 text-right font-bold text-slate-800">{formData.referencia}</span>
+                  </div>
+                )}
                 {(formData.latitud && formData.longitud) && (
                   <div className="flex justify-between text-sm">
                     <span className="font-semibold text-slate-600">Coordenadas:</span>
                     <span className="font-bold text-slate-800">{formData.latitud}, {formData.longitud}</span>
                   </div>
                 )}
+                {formData.paisId && (
+                  <div className="flex justify-between text-sm">
+                    <span className="font-semibold text-slate-600">País ID:</span>
+                    <span className="font-bold text-slate-800">{formData.paisId}</span>
+                  </div>
+                )}
+                {formData.divisionId && (
+                  <div className="flex justify-between text-sm">
+                    <span className="font-semibold text-slate-600">División ID:</span>
+                    <span className="font-bold text-slate-800">{formData.divisionId}</span>
+                  </div>
+                )}
+                {formData.precisionM && (
+                  <div className="flex justify-between text-sm">
+                    <span className="font-semibold text-slate-600">Precisión:</span>
+                    <span className="font-bold text-slate-800">{formData.precisionM} m</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-sm">
+                  <span className="font-semibold text-slate-600">Fuente:</span>
+                  <span className="font-bold text-slate-800">{formData.fuenteUbicacion}</span>
+                </div>
                 <div className="flex justify-between text-sm">
                   <span className="font-semibold text-slate-600">Almacenamiento:</span>
                   <span className="font-bold text-slate-800">{formData.almacenamiento}</span>

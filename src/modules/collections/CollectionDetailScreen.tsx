@@ -3,6 +3,12 @@ import { useNavigate, useParams } from 'react-router-dom'
 import Icon from '../../components/Icon'
 import { RecoleccionService } from '../../services/recoleccion.service'
 import type { Recoleccion } from '../../services/recoleccion.service'
+import {
+  getUbicacionCoords,
+  getUbicacionDisplay,
+  getUbicacionDivision,
+  getUbicacionTitulo,
+} from '../../utils/ubicacion'
 
 function CollectionDetailScreen() {
   const { id } = useParams()
@@ -105,6 +111,10 @@ function CollectionDetailScreen() {
 
   const nombrePlanta = recoleccion.planta?.especie || recoleccion.nombre_comercial || 'Sin especie'
   const nombreCientifico = recoleccion.planta?.nombre_cientifico || recoleccion.nombre_cientifico
+  const ubicacionTitulo = getUbicacionTitulo(recoleccion.ubicacion)
+  const ubicacionDivision = getUbicacionDivision(recoleccion.ubicacion)
+  const ubicacionCoords = getUbicacionCoords(recoleccion.ubicacion)
+  const viveroUbicacion = getUbicacionDisplay(recoleccion.vivero?.ubicacion ?? null)
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#f6f7f3] to-[#eef1eb] text-brand-700">
@@ -202,20 +212,12 @@ function CollectionDetailScreen() {
             <div className="mt-3 space-y-3 text-sm font-semibold text-slate-700">
               <div>
                 <p className="text-xs uppercase tracking-wide text-slate-500">Recolección</p>
-                <p className="mt-1">
-                  {[
-                    recoleccion.ubicacion.comunidad,
-                    recoleccion.ubicacion.provincia,
-                    recoleccion.ubicacion.departamento,
-                    recoleccion.ubicacion.pais
-                  ].filter(Boolean).join(', ')}
-                </p>
-                {recoleccion.ubicacion.zona && (
-                  <p className="text-slate-600">Zona: {recoleccion.ubicacion.zona}</p>
+                {ubicacionTitulo && <p className="mt-1">{ubicacionTitulo}</p>}
+                {ubicacionDivision && <p className="text-slate-600">{ubicacionDivision}</p>}
+                {ubicacionCoords && <p className="mt-1 text-xs text-slate-500">📍 {ubicacionCoords}</p>}
+                {!ubicacionTitulo && !ubicacionDivision && !ubicacionCoords && (
+                  <p className="mt-1 text-slate-600">Sin ubicación</p>
                 )}
-                <p className="mt-1 text-xs text-slate-500">
-                  📍 {recoleccion.ubicacion.latitud.toFixed(6)}, {recoleccion.ubicacion.longitud.toFixed(6)}
-                </p>
               </div>
               {recoleccion.vivero && (
                 <div className="border-t border-slate-100 pt-3">
@@ -223,9 +225,7 @@ function CollectionDetailScreen() {
                   <p className="mt-1">{recoleccion.vivero.nombre}</p>
                   <p className="text-xs text-slate-600">Código: {recoleccion.vivero.codigo}</p>
                   {recoleccion.vivero.ubicacion && (
-                    <p className="text-sm text-slate-600">
-                      {recoleccion.vivero.ubicacion.comunidad}, {recoleccion.vivero.ubicacion.departamento}
-                    </p>
+                    <p className="text-sm text-slate-600">{viveroUbicacion}</p>
                   )}
                 </div>
               )}

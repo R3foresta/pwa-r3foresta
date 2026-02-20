@@ -6,6 +6,7 @@ import { useViveros } from '../../hooks/useViveros'
 import { GerminacionService } from '../../services/germinacion.service'
 import { RecoleccionService } from '../../services/recoleccion.service'
 import type { Recoleccion } from '../../services/recoleccion.service'
+import { getUbicacionDisplay } from '../../utils/ubicacion'
 
 const createLotId = () => {
   const year = new Date().getFullYear()
@@ -301,8 +302,7 @@ function ViveroNewScreen() {
                 <span>Ubicacion del vivero</span>
               </div>
               <p className="text-sm font-semibold text-brand-600">
-                {viveroSeleccionado.ubicacion?.comunidad ?? 'Sin comunidad'} ·{' '}
-                {viveroSeleccionado.ubicacion?.departamento ?? 'Sin departamento'}
+                {getUbicacionDisplay(viveroSeleccionado.ubicacion)}
               </p>
             </div>
           )}
