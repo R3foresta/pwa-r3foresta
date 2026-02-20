@@ -35,7 +35,11 @@ export interface CollectionFormData {
   latitud: string;                 // Latitud (como string para input)
   longitud: string;                // Longitud (como string para input)
   paisId: string;                  // ID de país (opcional)
+  paisNombre: string;              // Nombre de país seleccionado
   divisionId: string;              // ID de división administrativa (opcional)
+  divisionPathIds: number[];       // IDs de la ruta administrativa seleccionada
+  divisionRuta: string[];          // Ruta administrativa seleccionada
+  comunidadNombre: string;         // Nombre de comunidad/localidad (editable)
   precisionM: string;              // Precisión en metros (opcional)
   fuenteUbicacion: FuenteUbicacion;// Fuente de ubicación
   almacenamiento: string;          // Nombre del vivero seleccionado
@@ -71,7 +75,11 @@ export const initialFormData: CollectionFormData = {
   latitud: "",
   longitud: "",
   paisId: "",
+  paisNombre: "",
   divisionId: "",
+  divisionPathIds: [],
+  divisionRuta: [],
+  comunidadNombre: "",
   precisionM: "",
   fuenteUbicacion: "GPS_MOVIL",
   almacenamiento: "",

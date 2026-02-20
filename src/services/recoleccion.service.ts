@@ -125,6 +125,22 @@ export interface Vivero {
   ubicacion?: UbicacionApi | null;
 }
 
+export interface PaisCatalogo {
+  id: number;
+  nombre: string;
+  codigo_iso2: string | null;
+}
+
+export interface DivisionCatalogo {
+  id: number;
+  pais_id: number;
+  parent_id: number | null;
+  tipo_id: number;
+  tipo_nombre: string | null;
+  tipo_orden: number | null;
+  nombre: string;
+}
+
 /**
  * Método de recolección
  * Retornado por GET /api/metodos-recoleccion
@@ -676,6 +692,85 @@ export class RecoleccionService {
       return response.json();
     } catch (error) {
       console.error('❌ Error al obtener viveros:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Lista países disponibles para el selector de ubicación administrativa.
+   *
+   * ENDPOINT: GET /api/ubicaciones/paises
+   */
+  static async getPaises(): Promise<{ success: boolean; data: PaisCatalogo[] }> {
+    try {
+      const response = await fetch(`${API_URL}/api/ubicaciones/paises`);
+
+      if (!response.ok) {
+        throw new Error('Error al obtener países');
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error('❌ Error al obtener países:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Lista divisiones administrativas hijas por país + parent.
+   *
+   * ENDPOINT: GET /api/ubicaciones/divisiones?pais_id={id}[&parent_id={id}]
+   */
+  static async getDivisiones(
+    paisId: number,
+    parentId?: number,
+  ): Promise<{ success: boolean; data: DivisionCatalogo[] }> {
+    try {
+      const params = new URLSearchParams({ pais_id: String(paisId) });
+      if (parentId !== undefined) {
+        params.append('parent_id', String(parentId));
+      }
+
+      const response = await fetch(
+        `${API_URL}/api/ubicaciones/divisiones?${params.toString()}`,
+      );
+
+      if (!response.ok) {
+        throw new Error('Error al obtener divisiones administrativas');
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error('❌ Error al obtener divisiones administrativas:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Crea (o reutiliza si ya existe) una división flexible bajo un parent.
+   *
+   * ENDPOINT: POST /api/ubicaciones/divisiones/flexible
+   */
+  static async ensureFlexibleDivision(payload: {
+    pais_id: number;
+    parent_id: number;
+    nombre: string;
+  }): Promise<{ success: boolean; data: DivisionCatalogo; created: boolean }> {
+    try {
+      const response = await fetch(`${API_URL}/api/ubicaciones/divisiones/flexible`, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Error al crear división flexible');
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error('❌ Error al crear división flexible:', error);
       throw error;
     }
   }

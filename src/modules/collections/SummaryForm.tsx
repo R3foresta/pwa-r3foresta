@@ -77,7 +77,7 @@ function SummaryForm() {
           pais_id: Number.isFinite(paisId) ? paisId : undefined,
           division_id: Number.isFinite(divisionId) ? divisionId : undefined,
           precision_m: Number.isFinite(precisionM) ? precisionM : undefined,
-          fuente: formData.fuenteUbicacion,
+          fuente: 'GPS_MOVIL',
         },
         metodo_id: metodoId,
         vivero_id: formData.vivero_id ? parseInt(String(formData.vivero_id)) : undefined,
@@ -275,27 +275,29 @@ function SummaryForm() {
                     <span className="font-bold text-slate-800">{formData.latitud}, {formData.longitud}</span>
                   </div>
                 )}
-                {formData.paisId && (
+                {formData.paisNombre && (
                   <div className="flex justify-between text-sm">
-                    <span className="font-semibold text-slate-600">País ID:</span>
-                    <span className="font-bold text-slate-800">{formData.paisId}</span>
+                    <span className="font-semibold text-slate-600">País:</span>
+                    <span className="font-bold text-slate-800">{formData.paisNombre}</span>
                   </div>
                 )}
-                {formData.divisionId && (
+                {formData.divisionRuta.length > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span className="font-semibold text-slate-600">División ID:</span>
-                    <span className="font-bold text-slate-800">{formData.divisionId}</span>
+                    <span className="font-semibold text-slate-600">Ruta administrativa:</span>
+                    <span className="ml-4 text-right font-bold text-slate-800">
+                      {formData.divisionRuta.join(' > ')}
+                    </span>
                   </div>
                 )}
                 {formData.precisionM && (
                   <div className="flex justify-between text-sm">
-                    <span className="font-semibold text-slate-600">Precisión:</span>
+                    <span className="font-semibold text-slate-600">Precisión GPS:</span>
                     <span className="font-bold text-slate-800">{formData.precisionM} m</span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm">
                   <span className="font-semibold text-slate-600">Fuente:</span>
-                  <span className="font-bold text-slate-800">{formData.fuenteUbicacion}</span>
+                  <span className="font-bold text-slate-800">GPS_MOVIL</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="font-semibold text-slate-600">Almacenamiento:</span>
