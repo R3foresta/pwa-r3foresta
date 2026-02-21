@@ -7,6 +7,9 @@ import { useCollectionForm } from "./CollectionFormContext";
 import { RecoleccionService } from "../../services/recoleccion.service";
 import type { Planta, TipoPlanta } from "../../services/recoleccion.service";
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB en bytes
+const ALLOWED_FORMATS = ['image/jpeg', 'image/png', 'image/jpg'];
+
 function NewCollectionForm() {
   const navigate = useNavigate();
   const { formData, updateForm } = useCollectionForm();
@@ -172,13 +175,23 @@ function NewCollectionForm() {
     const files = event.target.files;
     if (files) {
       Array.from(files).forEach(file => {
+        // --- BLOQUE DE VALIDACIÓN  ---
+        if (!ALLOWED_FORMATS.includes(file.type)) {
+          alert(`El archivo ${file.name} no es JPG o PNG.`);
+          return; 
+        }
+        if (file.size > MAX_FILE_SIZE) {
+          alert(`La imagen ${file.name} supera los 5MB.`);
+          return; 
+        }
+        // ---------------------------------------
+
         const reader = new FileReader();
         reader.onloadend = () => {
           const result = reader.result as string;
           if (type === 'place') {
             setPlacePhotos(prev => {
               const newPhotos = [...prev, result];
-              // Limpiar error si ahora hay fotos en ambos tipos
               if (newPhotos.length > 0 && totalPhotos.length > 0) {
                 setErrors(prevErrors => ({ ...prevErrors, photos: false }));
               }
@@ -187,7 +200,6 @@ function NewCollectionForm() {
           } else {
             setTotalPhotos(prev => {
               const newPhotos = [...prev, result];
-              // Limpiar error si ahora hay fotos en ambos tipos
               if (newPhotos.length > 0 && placePhotos.length > 0) {
                 setErrors(prevErrors => ({ ...prevErrors, photos: false }));
               }
@@ -211,6 +223,17 @@ function NewCollectionForm() {
   const handleNewPlantImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    // --- BLOQUE DE VALIDACIÓN  ---
+    if (!ALLOWED_FORMATS.includes(file.type)) {
+      alert("Formato no permitido. Solo JPG o PNG.");
+      return;
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      alert("La imagen de la planta no debe superar los 5MB.");
+      return;
+    }
+    // ---------------------------------------
 
     const reader = new FileReader();
     reader.onloadend = () => {
