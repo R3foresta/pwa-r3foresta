@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { listarComunidades } from '../../api/comunidades.api'
 import Icon from '../../components/Icon'
@@ -68,54 +68,120 @@ function ComunidadCardItem({ comunidad, onEdit }: CardProps) {
 
 function ComunidadesScreen() {
   const navigate = useNavigate()
+  const sentinelRef = useRef<HTMLDivElement | null>(null)
+  const requestCounterRef = useRef(0)
+
   const [q, setQ] = useState('')
   const [qDebounced, setQDebounced] = useState('')
-  const [page, setPage] = useState(1)
   const [items, setItems] = useState<ComunidadCard[]>([])
   const [pagination, setPagination] =
     useState<ApiListComunidades['pagination']>(DEFAULT_PAGINATION)
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [loadMoreError, setLoadMoreError] = useState<string | null>(null)
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       setQDebounced(q.trim())
-      setPage(1)
     }, 300)
 
     return () => clearTimeout(timeoutId)
   }, [q])
 
-  const cargarComunidades = useCallback(async () => {
-    try {
-      setLoading(true)
-      setError(null)
+  const cargarComunidades = useCallback(
+    async (pageToLoad: number, mode: 'replace' | 'append') => {
+      const requestId = ++requestCounterRef.current
 
-      const response = await listarComunidades({
-        paisId: 'BO',
-        q: qDebounced || undefined,
-        page,
-        limit: DEFAULT_LIMIT,
-        incluirInactivas: false,
-      })
+      if (mode === 'replace') {
+        setLoading(true)
+        setError(null)
+        setLoadMoreError(null)
+      } else {
+        setLoadingMore(true)
+        setLoadMoreError(null)
+      }
 
-      setItems(response.data ?? [])
-      setPagination(response.pagination ?? DEFAULT_PAGINATION)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al cargar comunidades.')
-      setItems([])
-      setPagination(DEFAULT_PAGINATION)
-    } finally {
-      setLoading(false)
-    }
-  }, [page, qDebounced])
+      try {
+        const response = await listarComunidades({
+          paisId: 'BO',
+          q: qDebounced || undefined,
+          page: pageToLoad,
+          limit: DEFAULT_LIMIT,
+          incluirInactivas: false,
+        })
+
+        if (requestId !== requestCounterRef.current) {
+          return
+        }
+
+        const incoming = response.data ?? []
+        const nextPagination = response.pagination ?? DEFAULT_PAGINATION
+
+        setPagination(nextPagination)
+        setItems((prev) => {
+          if (mode === 'replace') {
+            return incoming
+          }
+
+          const map = new Map<number, ComunidadCard>()
+          prev.forEach((item) => map.set(item.id, item))
+          incoming.forEach((item) => map.set(item.id, item))
+          return Array.from(map.values())
+        })
+      } catch (err) {
+        if (requestId !== requestCounterRef.current) {
+          return
+        }
+
+        const message =
+          err instanceof Error ? err.message : 'Error al cargar comunidades.'
+
+        if (mode === 'replace') {
+          setError(message)
+          setItems([])
+          setPagination(DEFAULT_PAGINATION)
+        } else {
+          setLoadMoreError(message)
+        }
+      } finally {
+        if (requestId !== requestCounterRef.current) {
+          return
+        }
+
+        if (mode === 'replace') {
+          setLoading(false)
+        } else {
+          setLoadingMore(false)
+        }
+      }
+    },
+    [qDebounced],
+  )
 
   useEffect(() => {
-    void cargarComunidades()
+    void cargarComunidades(1, 'replace')
   }, [cargarComunidades])
 
-  const canPrev = !loading && pagination.hasPrevPage
-  const canNext = !loading && pagination.hasNextPage
+  useEffect(() => {
+    const node = sentinelRef.current
+    if (!node || loading || loadingMore || Boolean(error) || !pagination.hasNextPage) {
+      return
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const first = entries[0]
+        if (first?.isIntersecting) {
+          void cargarComunidades(pagination.page + 1, 'append')
+        }
+      },
+      { root: null, rootMargin: '160px 0px', threshold: 0.1 },
+    )
+
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [cargarComunidades, error, loading, loadingMore, pagination.hasNextPage, pagination.page])
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-28 pt-6 text-brand-700">
@@ -170,7 +236,7 @@ function ComunidadesScreen() {
           <p className="text-sm font-semibold text-red-700">{error}</p>
           <button
             type="button"
-            onClick={() => void cargarComunidades()}
+            onClick={() => void cargarComunidades(1, 'replace')}
             className="mt-3 rounded-xl bg-red-100 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-200"
           >
             Reintentar
@@ -184,6 +250,7 @@ function ComunidadesScreen() {
         </section>
       )}
 
+
       {!loading && !error && items.length > 0 && (
         <>
           <section className="space-y-3">
@@ -196,39 +263,10 @@ function ComunidadesScreen() {
             ))}
           </section>
 
-          <section className="mt-4 rounded-2xl bg-white px-4 py-3 shadow-soft ring-1 ring-black/5">
-            <div className="mb-3 text-center text-xs font-semibold text-brand-600">
-              Página {pagination.page} de {Math.max(pagination.totalPages, 1)}
-            </div>
-            <div className="flex items-center justify-between gap-3">
-              <button
-                type="button"
-                onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-                disabled={!canPrev}
-                className={`rounded-xl px-4 py-2 text-xs font-semibold transition ${
-                  canPrev
-                    ? 'bg-brand-50 text-brand-700 ring-1 ring-brand-100 hover:bg-brand-100'
-                    : 'cursor-not-allowed bg-slate-100 text-slate-400'
-                }`}
-              >
-                Anterior
-              </button>
-              <button
-                type="button"
-                onClick={() => setPage((prev) => prev + 1)}
-                disabled={!canNext}
-                className={`rounded-xl px-4 py-2 text-xs font-semibold transition ${
-                  canNext
-                    ? 'bg-brand-50 text-brand-700 ring-1 ring-brand-100 hover:bg-brand-100'
-                    : 'cursor-not-allowed bg-slate-100 text-slate-400'
-                }`}
-              >
-                Siguiente
-              </button>
-            </div>
-          </section>
+          <div ref={sentinelRef} className="h-1 w-full" aria-hidden />
         </>
-      )}
+      )} 
+   
     </div>
   )
 }
