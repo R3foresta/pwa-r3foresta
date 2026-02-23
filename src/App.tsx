@@ -20,6 +20,10 @@ import ViveroDetailScreen from './modules/vivero/ViveroDetailScreen'
 import ViveroNewScreen from './modules/vivero/ViveroNewScreen'
 import MapScreen from './modules/map/MapScreen'
 import { CompleteProfileScreen, PerfilScreen } from './modules/user_profile'
+import ComunidadesScreen from './modules/comunidades/ComunidadesScreen'
+import PlantasScreen from './modules/plantas/PlantasScreen'
+import NuevaComunidadScreen from './modules/comunidades/NuevaComunidadScreen'
+import EditarComunidadScreen from './modules/comunidades/EditarComunidadScreen'
 
 function RootRedirect() {
   const { isAuthenticated, hydrated } = useAuth()
@@ -99,6 +103,10 @@ function App() {
           <Route path="planting" element={<PlaceholderScreen title="Plantación" />} />
           <Route path="co2" element={<PlaceholderScreen title="CO₂" />} />
           <Route path="map" element={<MapScreen />} />
+          <Route path="comunidades" element={<ComunidadesScreen />} />
+          <Route path="comunidades/nueva" element={<NuevaComunidadScreen />} />
+          <Route path="comunidades/:id/editar" element={<EditarComunidadScreen />} />
+          <Route path="plantas" element={<PlantasScreen />} />
           <Route path="scan" element={<PlaceholderScreen title="Escanear" />} />
           <Route path="report" element={<MapScreen />} />
           <Route path="profile" element={<PerfilScreen />} />

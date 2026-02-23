@@ -7,6 +7,7 @@
 
 import Icon from "../../components/Icon";
 import type { Recoleccion } from "../../services/recoleccion.service";
+import { getUbicacionDisplay } from "../../utils/ubicacion";
 
 /**
  * Componente tarjeta de recolección
@@ -151,11 +152,11 @@ function CollectionCard({ recoleccion }: { recoleccion: Recoleccion }) {
               <span>{recoleccion.cantidad} {recoleccion.unidad}</span>
             </div>
             
-            {/* Ubicación (prioriza: comunidad > provincia > departamento) */}
+            {/* Ubicación */}
             <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-600">
               <Icon name="pin" className="h-4 w-4 text-brand-500" />
               <span>
-                {recoleccion.ubicacion.comunidad || recoleccion.ubicacion.provincia || recoleccion.ubicacion.departamento || 'Sin ubicación'}
+                {getUbicacionDisplay(recoleccion.ubicacion)}
               </span>
             </div>
             

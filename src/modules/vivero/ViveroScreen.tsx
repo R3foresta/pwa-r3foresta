@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import Icon from '../../components/Icon'
 import ViveroLotCard, { type ViveroLotCardData } from './ViveroLotCard'
 import { GerminacionService, type LoteFaseVivero } from '../../services/germinacion.service'
+import { getUbicacionDisplay } from '../../utils/ubicacion'
 
-type ListLot = ViveroLotCardData & { comunidad: string }
+type ListLot = ViveroLotCardData & { ubicacionTexto: string }
 
 function ViveroScreen() {
   const navigate = useNavigate()
@@ -92,7 +93,7 @@ function ViveroScreen() {
         germinadas,
         muertas,
         vivero: lot.vivero?.nombre || 'Sin vivero',
-        comunidad: lot.vivero?.ubicacion?.comunidad || 'Sin comunidad',
+        ubicacionTexto: getUbicacionDisplay(lot.vivero?.ubicacion),
       }
     })
 
@@ -100,7 +101,7 @@ function ViveroScreen() {
     if (!normalized) return withDerived
 
     return withDerived.filter((lot) =>
-      [lot.codigo, lot.especie, lot.comunidad, lot.vivero].some((field) =>
+      [lot.codigo, lot.especie, lot.ubicacionTexto, lot.vivero].some((field) =>
         field.toLowerCase().includes(normalized),
       ),
     )
@@ -135,7 +136,7 @@ function ViveroScreen() {
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Buscar por ID, especie o comunidad..."
+              placeholder="Buscar por ID, especie o ubicación..."
               className="w-full border-none bg-transparent text-base font-semibold text-slate-700 outline-none placeholder:font-medium placeholder:text-slate-400"
               type="search"
             />
