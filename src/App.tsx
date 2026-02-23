@@ -22,6 +22,7 @@ import MapScreen from './modules/map/MapScreen'
 import { CompleteProfileScreen, PerfilScreen } from './modules/user_profile'
 import ComunidadesScreen from './modules/comunidades/ComunidadesScreen'
 import PlantasScreen from './modules/plantas/PlantasScreen'
+import NuevaComunidadScreen from './modules/comunidades/NuevaComunidadScreen'
 
 function RootRedirect() {
   const { isAuthenticated, hydrated } = useAuth()
@@ -102,7 +103,7 @@ function App() {
           <Route path="co2" element={<PlaceholderScreen title="CO₂" />} />
           <Route path="map" element={<MapScreen />} />
           <Route path="comunidades" element={<ComunidadesScreen />} />
-          <Route path="comunidades/nueva" element={<PlaceholderScreen title="Nueva comunidad" />} />
+          <Route path="comunidades/nueva" element={<NuevaComunidadScreen />} />
           <Route
             path="comunidades/:id/editar"
             element={<PlaceholderScreen title="Editar comunidad" />}
