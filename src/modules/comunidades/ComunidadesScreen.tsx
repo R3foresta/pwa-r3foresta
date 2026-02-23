@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { listarComunidades } from '../../api/comunidades.api'
 import Icon from '../../components/Icon'
 import type { ApiListComunidades, ComunidadCard } from '../../tipos/comunidades'
@@ -29,6 +29,10 @@ function buildRuta(comunidad: ComunidadCard): string {
 type CardProps = {
   comunidad: ComunidadCard
   onEdit: (id: number) => void
+}
+
+type ComunidadesLocationState = {
+  successMessage?: string
 }
 
 function ComunidadCardItem({ comunidad, onEdit }: CardProps) {
@@ -68,6 +72,7 @@ function ComunidadCardItem({ comunidad, onEdit }: CardProps) {
 
 function ComunidadesScreen() {
   const navigate = useNavigate()
+  const location = useLocation()
   const sentinelRef = useRef<HTMLDivElement | null>(null)
   const requestCounterRef = useRef(0)
 
@@ -80,6 +85,29 @@ function ComunidadesScreen() {
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loadMoreError, setLoadMoreError] = useState<string | null>(null)
+  const [flashMessage, setFlashMessage] = useState<string | null>(null)
+
+  useEffect(() => {
+    const state = location.state as ComunidadesLocationState | null
+    if (!state?.successMessage) {
+      return
+    }
+
+    setFlashMessage(state.successMessage)
+    navigate(location.pathname, { replace: true, state: null })
+  }, [location.pathname, location.state, navigate])
+
+  useEffect(() => {
+    if (!flashMessage) {
+      return
+    }
+
+    const timer = setTimeout(() => {
+      setFlashMessage(null)
+    }, 4000)
+
+    return () => clearTimeout(timer)
+  }, [flashMessage])
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -203,6 +231,12 @@ function ComunidadesScreen() {
         </div>
       </header>
 
+      {flashMessage && (
+        <section className="mb-4 rounded-2xl bg-emerald-50 px-4 py-3 shadow-soft ring-1 ring-emerald-200">
+          <p className="text-sm font-semibold text-emerald-700">{flashMessage}</p>
+        </section>
+      )}
+
       <div className="mb-4 space-y-3">
         <button
           type="button"
@@ -263,10 +297,28 @@ function ComunidadesScreen() {
             ))}
           </section>
 
+          {loadingMore && (
+            <p className="py-4 text-center text-xs font-semibold text-brand-500">
+              Cargando mas comunidades...
+            </p>
+          )}
+
+          {loadMoreError && (
+            <section className="mt-3 rounded-2xl bg-red-50 px-4 py-3 text-center shadow-soft ring-1 ring-red-200">
+              <p className="text-xs font-semibold text-red-700">{loadMoreError}</p>
+              <button
+                type="button"
+                onClick={() => void cargarComunidades(pagination.page + 1, 'append')}
+                className="mt-2 rounded-xl bg-red-100 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-200"
+              >
+                Reintentar carga
+              </button>
+            </section>
+          )}
+
           <div ref={sentinelRef} className="h-1 w-full" aria-hidden />
         </>
-      )} 
-   
+      )}
     </div>
   )
 }
