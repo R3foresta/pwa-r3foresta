@@ -102,6 +102,11 @@ function App() {
           <Route path="co2" element={<PlaceholderScreen title="CO₂" />} />
           <Route path="map" element={<MapScreen />} />
           <Route path="comunidades" element={<ComunidadesScreen />} />
+          <Route path="comunidades/nueva" element={<PlaceholderScreen title="Nueva comunidad" />} />
+          <Route
+            path="comunidades/:id/editar"
+            element={<PlaceholderScreen title="Editar comunidad" />}
+          />
           <Route path="plantas" element={<PlantasScreen />} />
           <Route path="scan" element={<PlaceholderScreen title="Escanear" />} />
           <Route path="report" element={<MapScreen />} />
