@@ -1,16 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { obtenerComunidad } from '../../api/comunidades.api'
 import Icon from '../../components/Icon'
+import SelectorComunidad from '../comunidades/SelectorComunidad'
 import { useViveros } from '../../hooks/useViveros'
-import { RecoleccionService, type DivisionCatalogo, type PaisCatalogo } from '../../services/recoleccion.service'
+import {
+  RecoleccionService,
+  type PaisCatalogo,
+} from '../../services/recoleccion.service'
+import type { ComunidadCard } from '../../tipos/comunidades'
 import { useCollectionForm } from './CollectionFormContext'
-
-type DivisionLevel = {
-  parentId: number | null
-  label: string
-  options: DivisionCatalogo[]
-  selectedId: number | null
-}
 
 function LocationForm() {
   const navigate = useNavigate()
@@ -19,7 +18,6 @@ function LocationForm() {
 
   const [ubicacionNombre, setUbicacionNombre] = useState(formData?.ubicacionNombre || '')
   const [referencia, setReferencia] = useState(formData?.referencia || '')
-  const [comunidadNombre, setComunidadNombre] = useState(formData?.comunidadNombre || '')
   const [latitud, setLatitud] = useState(formData?.latitud || '')
   const [longitud, setLongitud] = useState(formData?.longitud || '')
   const [precisionM, setPrecisionM] = useState(formData?.precisionM || '')
@@ -27,11 +25,12 @@ function LocationForm() {
     formData?.paisId ? Number(formData.paisId) : null,
   )
   const [selectedPaisNombre, setSelectedPaisNombre] = useState(formData?.paisNombre || '')
-  const [divisionLevels, setDivisionLevels] = useState<DivisionLevel[]>([])
+  const [selectedComunidad, setSelectedComunidad] = useState<ComunidadCard | null>(null)
   const [paises, setPaises] = useState<PaisCatalogo[]>([])
   const [loadingPaises, setLoadingPaises] = useState(false)
-  const [loadingDivisiones, setLoadingDivisiones] = useState(false)
-  const [savingCommunity, setSavingCommunity] = useState(false)
+  const [loadingComunidad, setLoadingComunidad] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [didHydrateSavedComunidad, setDidHydrateSavedComunidad] = useState(false)
   const [catalogoError, setCatalogoError] = useState<string | null>(null)
   const [selectedViveroId, setSelectedViveroId] = useState<number | null>(formData?.vivero_id ?? null)
   const [loadingLocation, setLoadingLocation] = useState(false)
@@ -43,33 +42,45 @@ function LocationForm() {
     division: false,
   })
 
-  const selectedPath = useMemo(() => {
-    const path: DivisionCatalogo[] = []
-
-    for (const level of divisionLevels) {
-      if (level.selectedId === null) {
-        break
-      }
-      const selected = level.options.find((option) => option.id === level.selectedId)
-      if (!selected) {
-        break
-      }
-      path.push(selected)
+  const selectedDivisionRuta = useMemo(() => {
+    if (!selectedComunidad) {
+      return []
     }
 
-    return path
-  }, [divisionLevels])
+    return [
+      selectedComunidad.nivel1?.nombre,
+      selectedComunidad.nivel2?.nombre,
+      selectedComunidad.nivel3?.nombre,
+      selectedComunidad.nivel4?.nombre || selectedComunidad.nombre,
+    ].filter((value): value is string => Boolean(value))
+  }, [selectedComunidad])
 
-  const deepestDivision = selectedPath.length > 0 ? selectedPath[selectedPath.length - 1] : null
-  const hasMissingDivisionSelection = divisionLevels.some(
-    (level) => level.options.length > 0 && level.selectedId === null,
-  )
-  const isMunicipioLeaf = Boolean(
-    deepestDivision &&
-      !hasMissingDivisionSelection &&
-      selectedPath.length === divisionLevels.length &&
-      deepestDivision.tipo_nombre?.toLocaleLowerCase('es').includes('municip'),
-  )
+  const selectedComunidadRuta = useMemo(() => {
+    if (!selectedComunidad) {
+      return []
+    }
+
+    return [
+      selectedComunidad.pais?.nombre,
+      selectedComunidad.nivel1?.nombre,
+      selectedComunidad.nivel2?.nombre,
+      selectedComunidad.nivel3?.nombre,
+      selectedComunidad.nivel4?.nombre || selectedComunidad.nombre,
+    ].filter((value): value is string => Boolean(value))
+  }, [selectedComunidad])
+
+  const selectedDivisionPathIds = useMemo(() => {
+    if (!selectedComunidad) {
+      return []
+    }
+
+    return [
+      selectedComunidad.nivel1?.id,
+      selectedComunidad.nivel2?.id,
+      selectedComunidad.nivel3?.id,
+      selectedComunidad.nivel4?.id ?? selectedComunidad.id,
+    ].filter((value): value is number => typeof value === 'number')
+  }, [selectedComunidad])
 
   const selectedViveroFromName =
     selectedViveroId === null && formData?.almacenamiento
@@ -92,105 +103,18 @@ function LocationForm() {
         }
       }
     } catch (error) {
-      console.error('❌ Error cargando países:', error)
-      setCatalogoError('No se pudo cargar el catálogo de países.')
+      console.error('Error cargando paises:', error)
+      setCatalogoError('No se pudo cargar el catalogo de paises.')
     } finally {
       setLoadingPaises(false)
     }
-  }
-
-  const loadDivisionesByPath = async (paisId: number, pathIds: number[] = []) => {
-    try {
-      setLoadingDivisiones(true)
-      setCatalogoError(null)
-
-      const rootResponse = await RecoleccionService.getDivisiones(paisId)
-      const rootOptions = rootResponse.data || []
-
-      if (rootOptions.length === 0) {
-        setDivisionLevels([])
-        return
-      }
-
-      const levels: DivisionLevel[] = [
-        {
-          parentId: null,
-          label: rootOptions[0]?.tipo_nombre || 'Nivel 1',
-          options: rootOptions,
-          selectedId: null,
-        },
-      ]
-
-      for (const divisionId of pathIds) {
-        const currentLevel = levels[levels.length - 1]
-        const match = currentLevel.options.find((item) => item.id === divisionId)
-
-        if (!match) {
-          break
-        }
-
-        currentLevel.selectedId = divisionId
-        const childrenResponse = await RecoleccionService.getDivisiones(paisId, divisionId)
-        const children = childrenResponse.data || []
-
-        if (children.length === 0) {
-          break
-        }
-
-        levels.push({
-          parentId: divisionId,
-          label: children[0]?.tipo_nombre || `Nivel ${levels.length + 1}`,
-          options: children,
-          selectedId: null,
-        })
-      }
-
-      setDivisionLevels(levels)
-    } catch (error) {
-      console.error('❌ Error cargando divisiones:', error)
-      setCatalogoError('No se pudo cargar el catálogo de divisiones administrativas.')
-      setDivisionLevels([])
-    } finally {
-      setLoadingDivisiones(false)
-    }
-  }
-
-  const extractCommunityLabel = (geoData: any): string => {
-    const address = geoData?.address || {}
-    const candidates = [
-      address.hamlet,
-      address.village,
-      address.suburb,
-      address.neighbourhood,
-      address.quarter,
-      address.city_district,
-      address.town,
-      address.city,
-    ]
-
-    const firstValid = candidates.find(
-      (value) => typeof value === 'string' && value.trim().length > 0,
-    )
-
-    if (firstValid) {
-      return firstValid.trim()
-    }
-
-    if (typeof geoData?.display_name === 'string') {
-      const firstChunk = geoData.display_name.split(',')[0]?.trim()
-      if (firstChunk) {
-        return firstChunk
-      }
-    }
-
-    return ''
   }
 
   const getLocation = () => {
     setLoadingLocation(true)
 
     if (!navigator.geolocation) {
-      alert('La geolocalización no está disponible en tu navegador')
+      alert('La geolocalizacion no esta disponible en tu navegador')
       setLoadingLocation(false)
       return
     }
@@ -215,11 +139,6 @@ function LocationForm() {
           if (data.display_name) {
             setReferencia(data.display_name)
           }
-
-          const community = extractCommunityLabel(data)
-          if (community && !comunidadNombre.trim()) {
-            setComunidadNombre(community)
-          }
         } catch (error) {
           console.error('Error al obtener la referencia:', error)
         }
@@ -227,8 +146,8 @@ function LocationForm() {
         setLoadingLocation(false)
       },
       (error) => {
-        console.error('Error al obtener ubicación:', error)
-        alert('No se pudo obtener tu ubicación. Verifica los permisos.')
+        console.error('Error al obtener ubicacion:', error)
+        alert('No se pudo obtener tu ubicacion. Verifica los permisos.')
         setLoadingLocation(false)
       },
       {
@@ -242,57 +161,16 @@ function LocationForm() {
   const handlePaisChange = (paisIdRaw: string) => {
     const nextPaisId = paisIdRaw ? Number(paisIdRaw) : null
     setSelectedPaisId(nextPaisId)
+    setSelectedComunidad(null)
     setErrors((prev) => ({ ...prev, pais: false, division: false }))
 
     if (!nextPaisId) {
       setSelectedPaisNombre('')
-      setDivisionLevels([])
       return
     }
 
     const selectedPais = paises.find((pais) => pais.id === nextPaisId)
     setSelectedPaisNombre(selectedPais?.nombre || '')
-  }
-
-  const handleDivisionSelect = async (levelIndex: number, selectedIdRaw: string) => {
-    const selectedId = selectedIdRaw ? Number(selectedIdRaw) : null
-    const nextLevels = divisionLevels
-      .slice(0, levelIndex + 1)
-      .map((level, index) =>
-        index === levelIndex ? { ...level, selectedId } : level,
-      )
-
-    setDivisionLevels(nextLevels)
-    setErrors((prev) => ({ ...prev, division: false }))
-
-    if (!selectedPaisId || selectedId === null) {
-      return
-    }
-
-    try {
-      setLoadingDivisiones(true)
-      const response = await RecoleccionService.getDivisiones(selectedPaisId, selectedId)
-      const children = response.data || []
-
-      if (children.length === 0) {
-        return
-      }
-
-      setDivisionLevels([
-        ...nextLevels,
-        {
-          parentId: selectedId,
-          label: children[0]?.tipo_nombre || `Nivel ${nextLevels.length + 1}`,
-          options: children,
-          selectedId: null,
-        },
-      ])
-    } catch (error) {
-      console.error('❌ Error cargando sub-divisiones:', error)
-      setCatalogoError('No se pudieron cargar los niveles administrativos siguientes.')
-    } finally {
-      setLoadingDivisiones(false)
-    }
   }
 
   const handleContinue = async () => {
@@ -308,10 +186,7 @@ function LocationForm() {
       parsedLon >= -180 &&
       parsedLon <= 180
 
-    const divisionSelectionIsValid =
-      selectedPath.length > 0 &&
-      !hasMissingDivisionSelection &&
-      selectedPath.length === divisionLevels.length
+    const divisionSelectionIsValid = selectedComunidad !== null
 
     const newErrors = {
       coordinates: !hasCoords,
@@ -326,41 +201,26 @@ function LocationForm() {
       return
     }
 
-    if (!selectedPaisId || !deepestDivision) {
+    if (!selectedPaisId || !selectedComunidad) {
       return
     }
 
     const selectedVivero = viveros.find((vivero) => vivero.id === resolvedSelectedViveroId)
-    let finalDivisionId = deepestDivision.id
-    let finalDivisionPath = selectedPath.map((item) => item.nombre)
-    let finalDivisionPathIds = selectedPath.map((item) => item.id)
 
     try {
-      setSavingCommunity(true)
-
-      if (isMunicipioLeaf && comunidadNombre.trim().length > 0) {
-        const flexibleDivision = await RecoleccionService.ensureFlexibleDivision({
-          pais_id: selectedPaisId,
-          parent_id: deepestDivision.id,
-          nombre: comunidadNombre.trim(),
-        })
-
-        finalDivisionId = flexibleDivision.data.id
-        finalDivisionPath = [...finalDivisionPath, flexibleDivision.data.nombre]
-        finalDivisionPathIds = [...finalDivisionPathIds, flexibleDivision.data.id]
-      }
+      setSubmitting(true)
 
       updateForm({
         ubicacionNombre,
         referencia,
-        comunidadNombre,
+        comunidadNombre: selectedComunidad.nombre,
         latitud,
         longitud,
         paisId: String(selectedPaisId),
         paisNombre: selectedPaisNombre,
-        divisionId: String(finalDivisionId),
-        divisionPathIds: finalDivisionPathIds,
-        divisionRuta: finalDivisionPath,
+        divisionId: String(selectedComunidad.id),
+        divisionPathIds: selectedDivisionPathIds,
+        divisionRuta: selectedDivisionRuta,
         precisionM,
         fuenteUbicacion: 'GPS_MOVIL',
         almacenamiento: selectedVivero?.nombre ?? formData.almacenamiento,
@@ -368,16 +228,13 @@ function LocationForm() {
       })
 
       navigate('/app/collections/new/summary')
-    } catch (error) {
-      console.error('❌ Error resolviendo división comunitaria:', error)
-      alert('No se pudo guardar la comunidad/localidad. Intenta nuevamente.')
     } finally {
-      setSavingCommunity(false)
+      setSubmitting(false)
     }
   }
 
   useEffect(() => {
-    loadPaises()
+    void loadPaises()
   }, [])
 
   useEffect(() => {
@@ -390,20 +247,58 @@ function LocationForm() {
   }, [])
 
   useEffect(() => {
-    if (!selectedPaisId) {
-      setDivisionLevels([])
+    const savedDivisionId = formData?.divisionId ? Number(formData.divisionId) : null
+    if (
+      didHydrateSavedComunidad ||
+      !savedDivisionId ||
+      !selectedPaisId ||
+      selectedComunidad?.id === savedDivisionId
+    ) {
       return
     }
 
-    const savedPath =
-      formData?.paisId &&
-      Number(formData.paisId) === selectedPaisId &&
-      Array.isArray(formData.divisionPathIds)
-        ? formData.divisionPathIds
-        : []
+    let isActive = true
+    const loadSavedComunidad = async () => {
+      try {
+        setLoadingComunidad(true)
+        const response = await obtenerComunidad(savedDivisionId)
+        if (!isActive) {
+          return
+        }
 
-    void loadDivisionesByPath(selectedPaisId, savedPath)
-  }, [selectedPaisId])
+        if (!response.data) {
+          setDidHydrateSavedComunidad(true)
+          return
+        }
+
+        if (response.data.pais?.id !== selectedPaisId) {
+          setDidHydrateSavedComunidad(true)
+          return
+        }
+
+        setSelectedComunidad(response.data)
+      } catch (error) {
+        if (isActive) {
+          console.error('Error cargando comunidad guardada:', error)
+        }
+      } finally {
+        if (isActive) {
+          setLoadingComunidad(false)
+          setDidHydrateSavedComunidad(true)
+        }
+      }
+    }
+
+    void loadSavedComunidad()
+    return () => {
+      isActive = false
+    }
+  }, [
+    didHydrateSavedComunidad,
+    formData?.divisionId,
+    selectedComunidad?.id,
+    selectedPaisId,
+  ])
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#f6f7f3] to-[#eef1eb] text-brand-700">
@@ -420,14 +315,14 @@ function LocationForm() {
           <div className="text-center">
             <h1 className="text-xl font-extrabold tracking-tight text-brand-700">Recoleccion</h1>
             <p className="text-sm font-semibold text-brand-500">
-              Paso 2 de 3 · <span className="text-slate-500">Ubicación y almacén</span>
+              Paso 2 de 3 · <span className="text-slate-500">Ubicacion y almacen</span>
             </p>
           </div>
         </header>
 
         <div className="flex-1 space-y-5 px-5 pb-7">
           <div>
-            <h2 className="mb-3 text-lg font-extrabold text-brand-700">Registrar ubicación</h2>
+            <h2 className="mb-3 text-lg font-extrabold text-brand-700">Registrar ubicacion</h2>
 
             <div className="space-y-4">
               <div className="space-y-2">
@@ -443,14 +338,14 @@ function LocationForm() {
 
               <div className="space-y-2">
                 <p className="text-sm font-semibold text-brand-700">
-                  Referencia GPS (automática)
+                  Referencia GPS (automatica)
                 </p>
                 <div className="flex gap-2">
                   <textarea
                     value={referencia}
                     readOnly
                     rows={2}
-                    placeholder="Se llenará al capturar GPS..."
+                    placeholder="Se llenara al capturar GPS..."
                     className="flex-1 resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 shadow-soft outline-none"
                   />
                   <button
@@ -488,7 +383,7 @@ function LocationForm() {
                   </button>
                 </div>
                 <p className="text-xs font-semibold text-slate-500">
-                  Fuente: GPS_MOVIL{precisionM ? ` · Precisión aproximada: ${precisionM} m` : ''}
+                  Fuente: GPS_MOVIL{precisionM ? ` · Precision aproximada: ${precisionM} m` : ''}
                 </p>
               </div>
 
@@ -539,14 +434,14 @@ function LocationForm() {
               )}
               {errors.coordinateRange && (
                 <p className="text-xs font-semibold text-red-500">
-                  * Coordenadas inválidas. Latitud debe estar entre -90 y 90, longitud entre -180 y
+                  * Coordenadas invalidas. Latitud debe estar entre -90 y 90, longitud entre -180 y
                   180.
                 </p>
               )}
 
               <div className="space-y-2">
                 <p className="text-sm font-semibold text-brand-700">
-                  País <span className="text-red-500">*</span>
+                  Pais <span className="text-red-500">*</span>
                 </p>
                 <div
                   className={`flex items-center rounded-2xl border px-4 shadow-soft focus-within:ring-2 ${
@@ -562,7 +457,7 @@ function LocationForm() {
                     disabled={loadingPaises}
                   >
                     <option value="">
-                      {loadingPaises ? 'Cargando países...' : 'Selecciona un país'}
+                      {loadingPaises ? 'Cargando paises...' : 'Selecciona un pais'}
                     </option>
                     {paises.map((pais) => (
                       <option key={pais.id} value={pais.id}>
@@ -574,66 +469,46 @@ function LocationForm() {
                 </div>
                 {errors.pais && (
                   <p className="text-xs font-semibold text-red-500">
-                    * Selecciona un país.
+                    * Selecciona un pais.
                   </p>
                 )}
               </div>
 
-              {divisionLevels.map((level, index) => (
-                <div key={`${level.parentId ?? 'root'}-${index}`} className="space-y-2">
-                  <p className="text-sm font-semibold text-brand-700">
-                    {level.label || `Nivel ${index + 1}`}
-                    {index === 0 ? <span className="text-red-500"> *</span> : null}
-                  </p>
-                  <div
-                    className={`flex items-center rounded-2xl border px-4 shadow-soft focus-within:ring-2 ${
-                      errors.division
-                        ? 'border-red-400 bg-red-50 focus-within:border-red-400 focus-within:ring-red-200'
-                        : 'border-slate-200 bg-white focus-within:border-brand-400 focus-within:ring-brand-200'
-                    }`}
-                  >
-                    <select
-                      value={level.selectedId ?? ''}
-                      onChange={(event) => {
-                        void handleDivisionSelect(index, event.target.value)
-                      }}
-                      className="w-full bg-transparent py-3 text-sm font-semibold text-slate-700 outline-none"
-                      disabled={loadingDivisiones}
-                    >
-                      <option value="">
-                        {loadingDivisiones ? 'Cargando...' : `Selecciona ${level.label || 'nivel'}`}
-                      </option>
-                      {level.options.map((division) => (
-                        <option key={division.id} value={division.id}>
-                          {division.nombre}
-                        </option>
-                      ))}
-                    </select>
-                    <Icon name="chevron-down" className="h-4 w-4 text-slate-400" />
-                  </div>
-                </div>
-              ))}
+              {selectedPaisId !== null && (
+                <>
+                  <SelectorComunidad
+                    paisId={selectedPaisId}
+                    valueId={selectedComunidad?.id}
+                    onChange={(comunidad) => {
+                      setSelectedComunidad(comunidad)
+                      setErrors((prev) => ({ ...prev, division: false }))
+                    }}
+                    disabled={loadingComunidad}
+                    error={errors.division}
+                    placeholder="Selecciona una comunidad o localidad..."
+                  />
+
+                  {loadingComunidad && (
+                    <p className="text-xs font-semibold text-brand-500">
+                      Cargando comunidad seleccionada...
+                    </p>
+                  )}
+                </>
+              )}
+
               {errors.division && (
                 <p className="text-xs font-semibold text-red-500">
-                  * Completa la ruta administrativa seleccionando los niveles disponibles.
+                  * Selecciona una comunidad existente para continuar.
                 </p>
               )}
 
-              {isMunicipioLeaf && (
+              {selectedComunidadRuta.length > 0 && (
                 <div className="space-y-2 rounded-2xl border border-brand-200 bg-brand-50 p-4">
                   <p className="text-sm font-semibold text-brand-700">
-                    Comunidad/Localidad (flexible)
+                    Ruta seleccionada
                   </p>
-                  <input
-                    type="text"
-                    value={comunidadNombre}
-                    onChange={(event) => setComunidadNombre(event.target.value)}
-                    placeholder="Se sugiere desde GPS, puedes corregir el nombre"
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
-                  />
                   <p className="text-xs font-semibold text-brand-600">
-                    Si escribes un nombre, se guardará automáticamente como nueva división bajo el
-                    municipio seleccionado.
+                    {selectedComunidadRuta.join(' / ')}
                   </p>
                 </div>
               )}
@@ -691,13 +566,13 @@ function LocationForm() {
 
           <button
             type="button"
-            disabled={savingCommunity}
+            disabled={submitting}
             onClick={() => {
               void handleContinue()
             }}
             className="mb-8 w-full rounded-2xl bg-brand-500 py-4 text-center text-lg font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
           >
-            {savingCommunity ? 'Guardando comunidad...' : 'Continuar'}
+            {submitting ? 'Guardando ubicacion...' : 'Continuar'}
           </button>
         </div>
       </div>
@@ -706,4 +581,3 @@ function LocationForm() {
 }
 
 export default LocationForm
-
