@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import type { LatLngExpression } from 'leaflet'
 import L from 'leaflet'
 import { RecoleccionService, type Recoleccion } from '../../services/recoleccion.service'
+import { getUbicacionDisplay, getUbicacionDivision } from '../../utils/ubicacion'
 
 // Importar estilos de Leaflet
 import 'leaflet/dist/leaflet.css'
@@ -250,6 +251,16 @@ function MapScreen() {
   const [userLocation, setUserLocation] = useState<LatLngExpression | null>(null)
   const [recolecciones, setRecolecciones] = useState<Recoleccion[]>([])
 
+  async function loadRecolecciones() {
+    try {
+      const response = await RecoleccionService.list()
+      setRecolecciones(response.data || [])
+      console.log('✅ Recolecciones cargadas:', response.data?.length)
+    } catch (error) {
+      console.error('❌ Error cargando recolecciones:', error)
+    }
+  }
+
   useEffect(() => {
     // Obtener ubicación del usuario
     if ('geolocation' in navigator) {
@@ -264,19 +275,12 @@ function MapScreen() {
       )
     }
 
-    // Cargar recolecciones
-    loadRecolecciones()
-  }, [])
+    const timer = setTimeout(() => {
+      void loadRecolecciones()
+    }, 0)
 
-  const loadRecolecciones = async () => {
-    try {
-      const response = await RecoleccionService.list()
-      setRecolecciones(response.data || [])
-      console.log('✅ Recolecciones cargadas:', response.data?.length)
-    } catch (error) {
-      console.error('❌ Error cargando recolecciones:', error)
-    }
-  }
+    return () => clearTimeout(timer)
+  }, [])
 
   const getIconForType = (tipoMaterial: string) => {
     switch (tipoMaterial) {
@@ -345,12 +349,20 @@ function MapScreen() {
             
             {/* Marcadores de recolecciones */}
             {recolecciones.map((recoleccion) => {
+              const lat = recoleccion.ubicacion?.coordenadas?.lat
+              const lon = recoleccion.ubicacion?.coordenadas?.lon
+              if (lat === null || lon === null || lat === undefined || lon === undefined) {
+                return null
+              }
+
               const position: LatLngExpression = [
-                recoleccion.ubicacion.latitud,
-                recoleccion.ubicacion.longitud,
+                lat,
+                lon,
               ]
               
               const fotosUrls = recoleccion.fotos.map((foto) => foto.url)
+              const ubicacionTexto = getUbicacionDisplay(recoleccion.ubicacion)
+              const divisionTexto = getUbicacionDivision(recoleccion.ubicacion)
               
               return (
                 <Marker
@@ -374,9 +386,15 @@ function MapScreen() {
                         <strong>Cantidad:</strong> {recoleccion.cantidad} {recoleccion.unidad}
                       </div>
                       
-                      {recoleccion.ubicacion.zona && (
+                      {ubicacionTexto && (
                         <div style={{ fontSize: '12px', color: '#666' }}>
-                          <strong>Zona:</strong> {recoleccion.ubicacion.zona}
+                          <strong>Ubicación:</strong> {ubicacionTexto}
+                        </div>
+                      )}
+
+                      {divisionTexto && (
+                        <div style={{ fontSize: '12px', color: '#666' }}>
+                          <strong>División:</strong> {divisionTexto}
                         </div>
                       )}
                       

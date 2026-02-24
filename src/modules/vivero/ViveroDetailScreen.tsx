@@ -4,6 +4,7 @@ import Icon from '../../components/Icon'
 import ViveroLotCard, { type ViveroLotCardData } from './ViveroLotCard'
 import { GerminacionService, type LoteFaseVivero } from '../../services/germinacion.service'
 import type { ViveroEvent, ViveroLot, ViveroPhase } from './data'
+import { getUbicacionCoords, getUbicacionDisplay, getUbicacionDivision } from '../../utils/ubicacion'
 
 const phases: { key: ViveroPhase; label: string }[] = [
   { key: 'INICIO', label: 'Inicio' },
@@ -104,15 +105,7 @@ const mapLoteToViveroLot = (lot: LoteFaseVivero): ViveroLot => {
     vivero: {
       codigo: lot.vivero?.codigo || 'N/D',
       nombre: lot.vivero?.nombre || 'Sin vivero',
-      ubicacion: {
-        pais: 'N/D',
-        departamento: lot.vivero?.ubicacion?.departamento || 'Sin departamento',
-        provincia: 'N/D',
-        comunidad: lot.vivero?.ubicacion?.comunidad || 'Sin comunidad',
-        zona: 'N/D',
-        latitud: 0,
-        longitud: 0,
-      },
+      ubicacion: lot.vivero?.ubicacion ?? null,
     },
     responsable,
     estado: lot.estado,
@@ -246,15 +239,9 @@ function ViveroDetailScreen() {
     vivero: lot.vivero.nombre,
   }
   const { ubicacion } = lot.vivero
-  const latitud = ubicacion.latitud
-  const longitud = ubicacion.longitud
-  const hasCoords =
-    Number.isFinite(latitud) &&
-    Number.isFinite(longitud) &&
-    !(latitud === 0 && longitud === 0)
-  const coordsLabel = hasCoords
-    ? `${latitud.toFixed(4)}, ${longitud.toFixed(4)}`
-    : 'Sin coordenadas'
+  const coordsLabel = getUbicacionCoords(ubicacion, 4) || 'Sin coordenadas'
+  const ubicacionTexto = getUbicacionDisplay(ubicacion)
+  const divisionTexto = getUbicacionDivision(ubicacion)
 
   return (
     <div className="relative min-h-screen bg-[#eef2ed] text-brand-700">
@@ -417,14 +404,15 @@ function ViveroDetailScreen() {
             </div>
             <div className="space-y-2 text-sm font-semibold text-brand-600">
               <p>
-                <span className="text-brand-500">Comunidad: </span>
-                {ubicacion.comunidad || 'Sin comunidad'} ({ubicacion.zona || 'Sin zona'})
-              </p>
-              <p>
                 <span className="text-brand-500">Ubicación: </span>
-                {ubicacion.provincia || 'Sin provincia'},{' '}
-                {ubicacion.departamento || 'Sin departamento'}, {ubicacion.pais || 'Sin país'}
+                {ubicacionTexto}
               </p>
+              {divisionTexto && (
+                <p>
+                  <span className="text-brand-500">División: </span>
+                  {divisionTexto}
+                </p>
+              )}
               <p>
                 <span className="text-brand-500">Coordenadas: </span>
                 {coordsLabel}

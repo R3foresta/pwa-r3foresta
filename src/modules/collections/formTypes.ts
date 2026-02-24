@@ -6,6 +6,7 @@
 // ============================================================================
 
 import type { MaterialType, Unit } from "./types";
+import type { FuenteUbicacion } from "../../types/ubicacion";
 
 /**
  * Interfaz completa del estado del formulario de recolección
@@ -29,13 +30,18 @@ export interface CollectionFormData {
   // ============================================================================
   // PASO 2: Ubicación geográfica y almacenamiento
   // ============================================================================
-  direccion: string;               // Dirección textual obtenida por geocodificación
+  ubicacionNombre: string;         // Nombre corto del punto de recolección
+  referencia: string;              // Referencia textual obtenida por geocodificación
   latitud: string;                 // Latitud (como string para input)
   longitud: string;                // Longitud (como string para input)
-  pais: string;                    // País seleccionado
-  depto: string;                   // Departamento
-  provincia: string;               // Provincia
-  comunidad: string;               // Comunidad
+  paisId: string;                  // ID de país (opcional)
+  paisNombre: string;              // Nombre de país seleccionado
+  divisionId: string;              // ID de división administrativa (opcional)
+  divisionPathIds: number[];       // IDs de la ruta administrativa seleccionada
+  divisionRuta: string[];          // Ruta administrativa seleccionada
+  comunidadNombre: string;         // Nombre de comunidad/localidad (editable)
+  precisionM: string;              // Precisión en metros (opcional)
+  fuenteUbicacion: FuenteUbicacion;// Fuente de ubicación
   almacenamiento: string;          // Nombre del vivero seleccionado
   
   // ============================================================================
@@ -64,12 +70,17 @@ export const initialFormData: CollectionFormData = {
   isNewFind: false,
   placePhotos: [],
   totalPhotos: [],
-  direccion: "",
+  ubicacionNombre: "",
+  referencia: "",
   latitud: "",
   longitud: "",
-  pais: "Bolivia",
-  depto: "La Paz",
-  provincia: "Bolivia",
-  comunidad: "La Paz",
+  paisId: "",
+  paisNombre: "",
+  divisionId: "",
+  divisionPathIds: [],
+  divisionRuta: [],
+  comunidadNombre: "",
+  precisionM: "",
+  fuenteUbicacion: "GPS_MOVIL",
   almacenamiento: "",
 };

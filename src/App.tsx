@@ -20,35 +20,37 @@ import ViveroDetailScreen from './modules/vivero/ViveroDetailScreen'
 import ViveroNewScreen from './modules/vivero/ViveroNewScreen'
 import MapScreen from './modules/map/MapScreen'
 import { CompleteProfileScreen, PerfilScreen } from './modules/user_profile'
+import ComunidadesScreen from './modules/comunidades/ComunidadesScreen'
+import PlantasScreen from './modules/plantas/PlantasScreen'
+import NuevaComunidadScreen from './modules/comunidades/NuevaComunidadScreen'
+import EditarComunidadScreen from './modules/comunidades/EditarComunidadScreen'
 
 function RootRedirect() {
   const { isAuthenticated, hydrated } = useAuth()
-  
+
   if (!hydrated) return null
-  
+
   if (!isAuthenticated) {
     return <Navigate to="/auth/login" replace />
   }
-  
+
   return <Navigate to="/app/home" replace />
 }
 
-// Guard para la ruta de completar perfil: requiere auth pero NO perfil completo
+// Guard para la ruta de completar perfil: requiere auth
 function CompleteProfileRoute() {
-  const { isAuthenticated, isProfileComplete, hydrated } = useAuth()
-  
+  const { isAuthenticated, hydrated } = useAuth()
+
   if (!hydrated) return null
-  
+
   // Si no está autenticado, redirigir a login
   if (!isAuthenticated) {
     return <Navigate to="/auth/login" replace />
   }
-  
-  // Si ya tiene perfil completo, redirigir a home
-  if (isProfileComplete) {
-    return <Navigate to="/app/home" replace />
-  }
-  
+
+  // La redirección si el perfil está completo se maneja en CompleteProfileScreen
+  // para permitir que se muestre el modal de éxito.
+
   return <CompleteProfileScreen />
 }
 
@@ -99,9 +101,14 @@ function App() {
           <Route path="planting" element={<PlaceholderScreen title="Plantación" />} />
           <Route path="co2" element={<PlaceholderScreen title="CO₂" />} />
           <Route path="map" element={<MapScreen />} />
+          <Route path="comunidades" element={<ComunidadesScreen />} />
+          <Route path="comunidades/nueva" element={<NuevaComunidadScreen />} />
+          <Route path="comunidades/:id/editar" element={<EditarComunidadScreen />} />
+          <Route path="plantas" element={<PlantasScreen />} />
           <Route path="scan" element={<PlaceholderScreen title="Escanear" />} />
           <Route path="report" element={<MapScreen />} />
           <Route path="profile" element={<PerfilScreen />} />
+          <Route path="edit-profile" element={<CompleteProfileScreen />} />
           <Route path="*" element={<PlaceholderScreen title="Próximamente" />} />
         </Route>
       </Route>

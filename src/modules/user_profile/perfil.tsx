@@ -118,7 +118,7 @@ function PerfilScreen() {
         <h3 className="mb-3 text-base font-semibold text-brand-700 text-center">Acciones</h3>
         <div className="flex flex-col items-center space-y-3">
           <button
-            onClick={() => navigate('/complete-profile')}
+            onClick={() => navigate('/app/edit-profile')}
             className="w-full max-w-xs flex items-center justify-center gap-3 rounded-2xl bg-white px-6 py-4 text-center shadow-soft transition hover:bg-gray-50"
           >
             <Icon name="user" className="h-5 w-5 text-brand-600" />

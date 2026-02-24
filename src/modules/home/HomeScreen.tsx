@@ -1,12 +1,15 @@
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import Icon from '../../components/Icon'
+import MenuLateral from '../../components/MenuLateral'
 import { hero, syncNotice, metrics, sections, recent } from '../../data/home'
 import type { Screen } from '../../types/navigation'
 
 function HomeScreen() {
   const navigate = useNavigate()
   const { user, isProfileComplete } = useAuth()
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
   const targetPath: Record<Screen, string> = {
     home: '/app/home',
     collections: '/app/collections',
@@ -22,13 +25,43 @@ function HomeScreen() {
     co2: '/app/co2',
   }
 
+  useEffect(() => {
+    if (!isMenuOpen) return
+    const { overflow } = document.body.style
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = overflow
+    }
+  }, [isMenuOpen])
+
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-32 pt-6">
+      <MenuLateral isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
       <header className="flex items-center justify-between">
-        <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-brand-500">Panel</p>
-          <div className="text-2xl font-semibold tracking-tight text-brand-700">
-            R3foresta
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            className="rounded-full bg-white/90 p-2 shadow-sm transition hover:shadow-soft"
+            aria-label="Abrir menú lateral"
+            onClick={() => setIsMenuOpen(true)}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              className="h-5 w-5 text-brand-700"
+            >
+              <path strokeLinecap="round" d="M4 7h16" />
+              <path strokeLinecap="round" d="M4 12h16" />
+              <path strokeLinecap="round" d="M4 17h16" />
+            </svg>
+          </button>
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-brand-500">Panel</p>
+            <div className="text-2xl font-semibold tracking-tight text-brand-700">
+              R3foresta
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -55,6 +88,7 @@ function HomeScreen() {
         </div>
       </header>
 
+      {/* Este es el banner principal hero para mostrar info relevante o novedades */}
       <section className="mt-4">
         <div className="relative overflow-hidden rounded-3xl bg-brand-700 text-white shadow-soft">
           <img

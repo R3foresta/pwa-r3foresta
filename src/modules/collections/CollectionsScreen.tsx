@@ -31,6 +31,7 @@ function CollectionsScreen() {
         page,
         limit: 20,
         tipo_material,
+        q: query.trim() || undefined,
       })
       
       console.log('✅ Recolecciones recibidas:', response.data.length);
@@ -86,7 +87,7 @@ function CollectionsScreen() {
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Buscar por ID, especie o comunidad..."
+              placeholder="Buscar por ID, especie o ubicación..."
               className="w-full border-none bg-transparent text-base font-semibold text-slate-700 outline-none placeholder:font-medium placeholder:text-slate-400"
               type="search"
             />
