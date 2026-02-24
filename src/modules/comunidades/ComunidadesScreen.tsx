@@ -217,7 +217,7 @@ function ComunidadesScreen() {
         <button
           type="button"
           aria-label="Volver"
-          onClick={() => navigate(-1)}
+          onClick={() => navigate('/app')}
           className="left-0 top-0 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-brand-700 shadow-soft transition hover:bg-white"
         >
           <Icon name="arrow-left" className="h-5 w-5" />
