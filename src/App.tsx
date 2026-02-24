@@ -27,32 +27,30 @@ import EditarComunidadScreen from './modules/comunidades/EditarComunidadScreen'
 
 function RootRedirect() {
   const { isAuthenticated, hydrated } = useAuth()
-  
+
   if (!hydrated) return null
-  
+
   if (!isAuthenticated) {
     return <Navigate to="/auth/login" replace />
   }
-  
+
   return <Navigate to="/app/home" replace />
 }
 
-// Guard para la ruta de completar perfil: requiere auth pero NO perfil completo
+// Guard para la ruta de completar perfil: requiere auth
 function CompleteProfileRoute() {
-  const { isAuthenticated, isProfileComplete, hydrated } = useAuth()
-  
+  const { isAuthenticated, hydrated } = useAuth()
+
   if (!hydrated) return null
-  
+
   // Si no está autenticado, redirigir a login
   if (!isAuthenticated) {
     return <Navigate to="/auth/login" replace />
   }
-  
-  // Si ya tiene perfil completo, redirigir a home
-  if (isProfileComplete) {
-    return <Navigate to="/app/home" replace />
-  }
-  
+
+  // La redirección si el perfil está completo se maneja en CompleteProfileScreen
+  // para permitir que se muestre el modal de éxito.
+
   return <CompleteProfileScreen />
 }
 
