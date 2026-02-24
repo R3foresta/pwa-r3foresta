@@ -147,4 +147,37 @@ export class ProfileService {
       errors
     }
   }
+
+  /**
+   * Sube la foto de perfil al servidor
+   */
+  static async updateProfilePhoto(file: File): Promise<any> {
+    try {
+      const authId = localStorage.getItem('auth_id')
+      if (!authId) throw new Error('No se encontró auth_id')
+
+      const formData = new FormData()
+      formData.append('file', file) // 'file' debe coincidir con el Interceptor del Backend
+
+      console.log('📤 Subiendo imagen de perfil...')
+      const response = await fetch(`http://localhost:3000/api/users/profile/photo`, {
+        method: 'PATCH',
+        headers: {
+          'x-auth-id': authId,
+          // Nota: No poner 'Content-Type', el navegador lo pone con el boundary de FormData
+        },
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Error al subir la imagen')
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('❌ Error en updateProfilePhoto:', error)
+      throw error
+    }
+  }
 }
