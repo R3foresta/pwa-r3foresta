@@ -217,14 +217,14 @@ function ComunidadesScreen() {
         <button
           type="button"
           aria-label="Volver"
-          onClick={() => navigate(-1)}
+          onClick={() => navigate('/app')}
           className="left-0 top-0 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-brand-700 shadow-soft transition hover:bg-white"
         >
           <Icon name="arrow-left" className="h-5 w-5" />
         </button>
         <div className="flex flex-col">
           <p className="text-xs uppercase tracking-[0.2em] text-brand-500">Sección</p>
-          <div className="text-2xl font-semibold tracking-tight text-brand-700">Comunidades</div>
+          <div className="text-2xl font-semibold tracking-tight text-brand-700">Comunidades/Localidades</div>
           <p className="text-xs font-medium text-brand-500">
             Listado de comunidades/localidades registradas
           </p>
@@ -244,7 +244,7 @@ function ComunidadesScreen() {
           className="flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-500 px-4 py-3 text-sm font-semibold text-white shadow-soft transition hover:bg-brand-600"
         >
           <Icon name="plus" className="h-4 w-4" />
-          Nueva comunidad
+          Nueva comunidades/localidades
         </button>
 
         <label className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-soft ring-1 ring-black/5">
@@ -253,7 +253,7 @@ function ComunidadesScreen() {
             type="search"
             value={q}
             onChange={(event) => setQ(event.target.value)}
-            placeholder="Buscar comunidad..."
+            placeholder="Buscar comunidades/localidades..."
             className="w-full border-none bg-transparent text-sm font-semibold text-slate-700 outline-none placeholder:font-medium placeholder:text-slate-400"
           />
         </label>
@@ -261,7 +261,7 @@ function ComunidadesScreen() {
 
       {loading && (
         <section className="rounded-2xl bg-white px-4 py-6 text-center text-sm font-semibold text-brand-600 shadow-soft ring-1 ring-black/5">
-          Cargando comunidades...
+          Cargando comunidades/localidades...
         </section>
       )}
 

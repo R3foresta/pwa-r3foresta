@@ -22,7 +22,7 @@ function LocationForm() {
   const [longitud, setLongitud] = useState(formData?.longitud || '')
   const [precisionM, setPrecisionM] = useState(formData?.precisionM || '')
   const [selectedPaisId, setSelectedPaisId] = useState<number | null>(
-    formData?.paisId ? Number(formData.paisId) : null,
+    formData?.paisId ? Number(formData.paisId) : 1,
   )
   const [selectedPaisNombre, setSelectedPaisNombre] = useState(formData?.paisNombre || '')
   const [selectedComunidad, setSelectedComunidad] = useState<ComunidadCard | null>(null)

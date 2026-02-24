@@ -54,8 +54,8 @@ export function CompleteProfileScreen() {
 
   // Verificar si el usuario ya tiene perfil completo (solo si NO estamos editando)
   useEffect(() => {
-    // Si estamos en modo edición, no hacer esta verificación
-    if (isEditing) return
+    // Si estamos en modo edición, o guardando/mostrando éxito, no hacer esta verificación
+    if (isEditing || isSubmitting || showSuccessModal) return
 
     console.log('🔍 CompleteProfileScreen - Verificando usuario:', user)
 
@@ -77,7 +77,7 @@ export function CompleteProfileScreen() {
     } else {
       console.log('⚠️ No hay usuario en el contexto')
     }
-  }, [user, navigate, isEditing])
+  }, [user, navigate, isEditing, isSubmitting, showSuccessModal])
 
   const handleInputChange = (field: keyof ProfileFormData, value: string) => {
     let processedValue = value
