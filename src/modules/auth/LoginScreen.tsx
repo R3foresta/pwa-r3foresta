@@ -10,13 +10,14 @@ function LoginScreen() {
   const [isRegistering, setIsRegistering] = useState(false)
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
+  const [emailError, setEmailError] = useState('')
 
   const handleLogin = async () => {
     try {
       console.log('🔵 LoginScreen: Iniciando login...')
       const result = await loginWebAuthn()
       console.log('✅ LoginScreen: Login exitoso', result)
-      
+
       // Obtener los datos completos del usuario desde el backend
       if (result.success && result.user) {
         try {
@@ -37,15 +38,23 @@ function LoginScreen() {
 
   const handleRegister = async (event: React.FormEvent) => {
     event.preventDefault()
-    if (!username.trim()) {
+
+    if (emailError) setEmailError('')
+
+    if (!username.trim() || !email.trim()) {
       return
     }
-    
+
+    if (!email.includes('@')) {
+      setEmailError('Ejemplo: pepe@gmail.com')
+      return
+    }
+
     try {
       console.log('🔵 LoginScreen: Iniciando registro...')
       const result = await registerWebAuthn(username, email || undefined)
       console.log('✅ LoginScreen: Registro exitoso', result)
-      
+
       // Para registro nuevo, probablemente no tenga perfil completo aún
       if (result.success && result.user) {
         try {
@@ -102,17 +111,15 @@ function LoginScreen() {
 
           <div className="relative rounded-full border border-white/60 bg-slate-100/90 p-1 shadow-soft backdrop-blur">
             <div
-              className={`absolute top-1 h-[calc(100%-8px)] w-[48%] rounded-full bg-gradient-to-r from-brand-600 to-brand-700 shadow-soft transition-all duration-300 ${
-                isRegistering ? 'translate-x-[104%]' : 'translate-x-[4%]'
-              }`}
+              className={`absolute top-1 h-[calc(100%-8px)] w-[48%] rounded-full bg-gradient-to-r from-brand-600 to-brand-700 shadow-soft transition-all duration-300 ${isRegistering ? 'translate-x-[104%]' : 'translate-x-[4%]'
+                }`}
             />
             <div className="relative z-10 grid grid-cols-2 text-[13px] font-extrabold">
               <button
                 type="button"
                 onClick={() => setIsRegistering(false)}
-                className={`flex items-center justify-center gap-1 rounded-full px-4 py-2 transition ${
-                  !isRegistering ? 'text-white mix-blend-difference' : 'text-slate-600'
-                }`}
+                className={`flex items-center justify-center gap-1 rounded-full px-4 py-2 transition ${!isRegistering ? 'text-white mix-blend-difference' : 'text-slate-600'
+                  }`}
               >
                 <span>Iniciar</span>
                 <span className="hidden text-[11px] font-semibold md:inline">sesión</span>
@@ -120,9 +127,8 @@ function LoginScreen() {
               <button
                 type="button"
                 onClick={() => setIsRegistering(true)}
-                className={`flex items-center justify-center gap-1 rounded-full px-4 py-2 transition ${
-                  isRegistering ? 'text-white mix-blend-difference' : 'text-slate-600'
-                }`}
+                className={`flex items-center justify-center gap-1 rounded-full px-4 py-2 transition ${isRegistering ? 'text-white mix-blend-difference' : 'text-slate-600'
+                  }`}
               >
                 <span>Crear</span>
                 <span className="hidden text-[11px] font-semibold md:inline">cuenta</span>
@@ -196,21 +202,33 @@ function LoginScreen() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-brand-700">
-                  Correo electrónico (opcional)
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-semibold text-brand-700">
+                    Correo electrónico <span className="text-red-500">*</span>
+                  </label>
+                  {emailError && (
+                    <span className="text-xs font-semibold text-red-500">{emailError}</span>
+                  )}
+                </div>
                 <input
                   type="email"
+                  required
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-base font-semibold text-slate-800 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
+                  onChange={(e) => {
+                    setEmail(e.target.value)
+                    if (emailError) setEmailError('')
+                  }}
+                  className={`w-full rounded-2xl border bg-white/80 px-4 py-3 text-base font-semibold text-slate-800 shadow-soft outline-none transition focus:ring-2 ${emailError
+                      ? 'border-red-400 focus:border-red-500 focus:ring-red-200'
+                      : 'border-slate-200 focus:border-brand-400 focus:ring-brand-200'
+                    }`}
                   placeholder="tu@correo.com"
                 />
               </div>
 
               <button
                 type="submit"
-                disabled={loading || !username.trim()}
+                disabled={loading || !username.trim() || !email.trim()}
                 className="flex w-full items-center justify-center gap-3 rounded-2xl bg-brand-600 px-4 py-4 text-center text-lg font-extrabold text-white shadow-soft transition hover:bg-brand-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? (
