@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { ProfileService } from './profile.service'
 import type { ProfileFormData, ProfileValidationErrors } from './types'
+import { AvatarUpload } from './components/AvatarUpload'
 import { useNavigate, useLocation } from 'react-router-dom'
 
 export function CompleteProfileScreen() {
@@ -302,6 +303,15 @@ export function CompleteProfileScreen() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4 px-6 pb-6 pt-5">
+
+            {/* AVATAR */}
+            <div className="mb-6 flex justify-center">
+              <AvatarUpload 
+                currentPhotoUrl={user?.foto_perfil_url} 
+                onUploadSuccess={() => updateUserFromBackend()} 
+              />
+            </div>
+
             {/* Nombre */}
             <div className="space-y-1">
               <label htmlFor="nombre" className="text-sm font-semibold text-brand-700">
