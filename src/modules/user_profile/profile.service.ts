@@ -162,7 +162,7 @@ export class ProfileService {
       formData.append('file', file) // 'file' debe coincidir con el Interceptor del Backend
 
       console.log('📤 Subiendo imagen de perfil...')
-      const response = await fetch(`http://localhost:3000/api/users/profile/photo`, {
+      const response = await fetch(`${API_URL}/api/users/profile/photo`, {
         method: 'PATCH',
         headers: {
           'x-auth-id': authId,
