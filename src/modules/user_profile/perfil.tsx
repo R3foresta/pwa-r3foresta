@@ -1,10 +1,11 @@
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import Icon from '../../components/Icon'
+import { AvatarUpload } from './components/AvatarUpload'
 
 function PerfilScreen() {
   const navigate = useNavigate()
-  const { user, logout } = useAuth()
+  const { user, logout, updateUserFromBackend } = useAuth()
 
   const handleLogout = () => {
     logout()
@@ -35,9 +36,10 @@ function PerfilScreen() {
       <section className="mt-6">
         <div className="rounded-2xl bg-white px-5 py-6 shadow-soft">
           <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-100 text-brand-700">
-              <Icon name="user" className="h-8 w-8" />
-            </div>
+            <AvatarUpload 
+              currentPhotoUrl={user?.foto_perfil_url} 
+              onUploadSuccess={() => updateUserFromBackend()} 
+            />
             <div className="flex-1">
               <h2 className="text-lg font-semibold text-brand-700">
                 {user?.nombre ? `${user.nombre} ${user.apellido || ''}` : user?.username || 'Usuario'}
