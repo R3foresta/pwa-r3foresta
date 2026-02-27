@@ -14,22 +14,20 @@ function SummaryForm() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [traceabilityCode] = useState(() => 
-    `REC-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`
-  );
+  const [traceabilityCode, setTraceabilityCode] = useState<string | null>(null);
   const typeLabel = formData.type === 'seed' ? 'Semilla' : 'Esqueje';
   const unitLabel = formData.unit === 'kg' ? 'kg' : 'unidades';
   const summaryText = `${formData.quantity} ${unitLabel} de ${formData.species || typeLabel}`;
-  
+
   const finalize = () => {
     resetForm();
     navigate('/app/collections');
   };
-  
+
   const handleSubmit = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const fotos: File[] = [];
 
@@ -104,11 +102,12 @@ function SummaryForm() {
       const response = await RecoleccionService.create(dto);
 
       if (response.success) {
+        setTraceabilityCode(response.data.codigo_trazabilidad);
         setShowSuccess(true);
       } else {
         throw new Error('Error al crear recolección');
       }
-      
+
     } catch (err) {
       console.error('❌ Error al enviar recolección:', err);
       setError(err instanceof Error ? err.message : 'Error desconocido al crear recolección');
@@ -116,7 +115,7 @@ function SummaryForm() {
       setLoading(false);
     }
   };
-  
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-100 to-slate-200">
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-24">
@@ -154,7 +153,7 @@ function SummaryForm() {
 
           <div className="space-y-4">
             <h2 className="text-lg font-extrabold text-slate-800">Revisar y confirmar</h2>
-            
+
             <div className="rounded-2xl bg-white px-4 py-4 shadow-soft">
               <p className="text-center text-sm font-medium text-slate-600">
                 Por favor revise toda la información antes de confirmar
@@ -176,7 +175,7 @@ function SummaryForm() {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="font-semibold text-slate-600">Recolector:</span>
-                  <span className="font-bold text-slate-800">{user?.username || user?.email || 'Usuario'}</span>
+                  <span className="font-bold text-slate-800">{user?.nombre && user?.apellido ? `${user.nombre} ${user.apellido}` : user?.nombre || user?.username || user?.email || 'Usuario'}</span>
                 </div>
               </div>
             </div>
@@ -229,7 +228,7 @@ function SummaryForm() {
               <div className="grid grid-cols-2 gap-3">
                 {formData.placePhotos.slice(0, 2).map((photo, index) => (
                   <div key={index} className="aspect-square overflow-hidden rounded-xl bg-slate-100">
-                    <img 
+                    <img
                       src={photo}
                       alt={`Lugar ${index + 1}`}
                       className="h-full w-full object-cover"
@@ -238,7 +237,7 @@ function SummaryForm() {
                 ))}
                 {formData.totalPhotos.slice(0, 2).map((photo, index) => (
                   <div key={index} className="aspect-square overflow-hidden rounded-xl bg-slate-100">
-                    <img 
+                    <img
                       src={photo}
                       alt={`Total ${index + 1}`}
                       className="h-full w-full object-cover"
@@ -316,14 +315,17 @@ function SummaryForm() {
               </div>
               <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
                 <span className="font-bold text-slate-800">
-                  {traceabilityCode}
+                  {traceabilityCode || 'Se generará al confirmar'}
                 </span>
                 <button
                   type="button"
                   onClick={() => {
-                    navigator.clipboard.writeText(traceabilityCode);
-                    alert('Código copiado al portapapeles');
+                    if (traceabilityCode) {
+                      navigator.clipboard.writeText(traceabilityCode);
+                      alert('Código copiado al portapapeles');
+                    }
                   }}
+                  disabled={!traceabilityCode}
                   className="text-xs font-semibold text-slate-400 underline hover:text-slate-600"
                 >
                   Copiar
