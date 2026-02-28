@@ -8,6 +8,7 @@ interface AvatarUploadProps {
 
 export function AvatarUpload({ currentPhotoUrl, onUploadSuccess }: AvatarUploadProps) {
   const [isUploading, setIsUploading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -15,11 +16,13 @@ export function AvatarUpload({ currentPhotoUrl, onUploadSuccess }: AvatarUploadP
     if (!file) return
 
     try {
+      setError(null) // Limpiar error previo
       setIsUploading(true)
       const response = await ProfileService.updateProfilePhoto(file)
       onUploadSuccess(response.foto_perfil_url)
     } catch (error: any) {
-      alert(error.message || 'Error al subir la foto')
+      // En lugar de alert, guarda el error en un estado para mostrarlo en un <span>
+      setError(error.message || 'Error al subir la foto');
     } finally {
       setIsUploading(false)
     }
@@ -55,6 +58,8 @@ export function AvatarUpload({ currentPhotoUrl, onUploadSuccess }: AvatarUploadP
       >
         {currentPhotoUrl ? 'Cambiar foto' : 'Subir foto de perfil'}
       </button>
+
+      {error && <span className="text-xs font-semibold text-red-500 mt-2">{error}</span>}
 
       <input
         type="file"

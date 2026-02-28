@@ -3,6 +3,15 @@ import type { ProfileFormData, ProfileFormResponse } from './types'
 const API_URL = import.meta.env.VITE_API_URL
 
 export class ProfileService {
+
+
+  // Helper para headers (Límpio y reutilizable)
+  static authHeaders(extra: Record<string, string> = {}) {
+    const authId = localStorage.getItem('auth_id');
+    if (!authId) throw new Error('No se encontró auth_id');
+    return { 'x-auth-id': authId, ...extra };
+  }
+
   /**
    * Obtiene el perfil completo del usuario desde el backend
    */
@@ -13,7 +22,7 @@ export class ProfileService {
         throw new Error('No se encontró auth_id')
       }
 
-      console.log('📤 Obteniendo perfil del usuario desde el backend...')
+      
       const response = await fetch(`${API_URL}/api/users/profile`, {
         method: 'GET',
         headers: {
@@ -27,11 +36,10 @@ export class ProfileService {
       }
 
       const userData = await response.json()
-      console.log('📥 Datos del perfil obtenidos:', userData)
       
       return userData
     } catch (error) {
-      console.error('❌ Error al obtener perfil:', error)
+      
       throw error
     }
   }
@@ -41,9 +49,6 @@ export class ProfileService {
    */
   static async completeProfile(data: ProfileFormData): Promise<ProfileFormResponse> {
     try {
-      console.log('📤 Enviando datos de perfil al backend...')
-      console.log('📦 Datos:', data)
-
       const authId = localStorage.getItem('auth_id')
       if (!authId) {
         throw new Error('No se encontró auth_id')
@@ -59,19 +64,16 @@ export class ProfileService {
       })
 
       const result = await response.json()
-      console.log('📥 Response data:', result)
+      
 
       if (!response.ok) {
-        console.error('❌ Error del backend:', response.status, result.message)
         const error = new Error(result.message || 'Error al completar el perfil')
         ;(error as any).status = response.status
         throw error
       }
 
-      console.log('✅ Perfil completado exitosamente')
       return result
     } catch (error) {
-      console.error('❌ Error en completeProfile:', error)
       throw error
     }
   }
@@ -88,13 +90,14 @@ export class ProfileService {
       user.apellido &&
       user.nombre
 
+      /*
     console.log('🔍 Verificando perfil completo:', {
       user_id: user.id,
       doc_identidad: !!user.doc_identidad,
       apellido: !!user.apellido,
       nombre: !!user.nombre,
       isComplete: hasRequiredFields
-    })
+    })*/
 
     return hasRequiredFields
   }
@@ -153,33 +156,21 @@ export class ProfileService {
   /**
    * Sube la foto de perfil al servidor
    */
-  static async updateProfilePhoto(file: File): Promise<any> {
+  static async updateProfilePhoto(file: File): Promise<{ foto_perfil_url: string }> {
     try {
-      const authId = localStorage.getItem('auth_id')
-      if (!authId) throw new Error('No se encontró auth_id')
+      const formData = new FormData();
+      formData.append('file', file);
 
-      const formData = new FormData()
-      formData.append('file', file) // 'file' debe coincidir con el Interceptor del Backend
-
-      console.log('📤 Subiendo imagen de perfil...')
       const response = await fetch(`${API_URL}/api/users/profile/photo`, {
         method: 'PATCH',
-        headers: {
-          'x-auth-id': authId,
-          // Nota: No poner 'Content-Type', el navegador lo pone con el boundary de FormData
-        },
+        headers: this.authHeaders(), // Uso del helper
         body: formData,
-      })
+      });
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || 'Error al subir la imagen')
-      }
-
-      return await response.json()
+      if (!response.ok) throw new Error('Error al subir la imagen');
+      return await response.json();
     } catch (error) {
-      console.error('❌ Error en updateProfilePhoto:', error)
-      throw error
+      throw error;
     }
   }
 }

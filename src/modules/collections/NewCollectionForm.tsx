@@ -68,10 +68,10 @@ function NewCollectionForm() {
   
   // Filtrar plantas según el término de búsqueda
   const filteredPlantas = useMemo(() => {
-    console.log('🔄 Filtrando plantas. Total:', plantas.length, 'Término:', searchTerm);
+    //console.log('🔄 Filtrando plantas. Total:', plantas.length, 'Término:', searchTerm);
     // Filtrar por término de búsqueda
     if (!searchTerm.trim()) {
-      console.log('📋 Sin filtro, mostrando todas:', plantas.length);
+      //console.log('📋 Sin filtro, mostrando todas:', plantas.length);
       return plantas;
     }
     const term = searchTerm.toLowerCase();
@@ -79,7 +79,7 @@ function NewCollectionForm() {
       (planta.especie?.toLowerCase().includes(term)) ||
       (planta.nombre_cientifico?.toLowerCase().includes(term))
     );
-    console.log('📋 Filtradas:', filtered.length);
+    //console.log('📋 Filtradas:', filtered.length);
     return filtered;
   }, [plantas, searchTerm]);
   
@@ -115,7 +115,7 @@ function NewCollectionForm() {
           }
         }
       } catch (error) {
-        console.error('❌ Error al cargar métodos:', error);
+        //console.error('❌ Error al cargar métodos:', error);
       } finally {
         setLoadingMetodos(false);
       }
@@ -131,10 +131,6 @@ function NewCollectionForm() {
       try {
         const plantasBackend = await RecoleccionService.getPlantas();
         setPlantas(plantasBackend);
-        console.log('✅ Plantas cargadas desde backend:', plantasBackend);
-        console.log('📊 Total de plantas:', plantasBackend.length);
-        console.log('🔍 Primeras 5 plantas:', plantasBackend.slice(0, 5));
-        
         // Si hay una planta guardada previamente, restaurarla
         if (formData?.planta_id) {
           const plantaGuardada = plantasBackend.find(p => p.id === formData.planta_id);
@@ -143,7 +139,7 @@ function NewCollectionForm() {
           }
         }
       } catch (error) {
-        console.error('❌ Error al cargar plantas:', error);
+        //console.error('❌ Error al cargar plantas:', error);
       } finally {
         setLoadingPlantas(false);
       }
@@ -159,9 +155,8 @@ function NewCollectionForm() {
       try {
         const tipos = await RecoleccionService.getTiposPlantas();
         setTiposPlantas(tipos);
-        console.log('✅ Tipos de planta cargados:', tipos);
       } catch (error) {
-        console.error('❌ Error al cargar tipos de planta:', error);
+        //console.error('❌ Error al cargar tipos de planta:', error);
       } finally {
         setLoadingTiposPlantas(false);
       }
@@ -288,7 +283,6 @@ function NewCollectionForm() {
 
     setCreatingTipo(true);
     try {
-      console.log('📤 Creando nuevo tipo de planta:', newTipoNombre);
       const result = await RecoleccionService.createTipoPlanta(newTipoNombre.trim());
       
       if (result.success && result.data) {
@@ -302,10 +296,10 @@ function NewCollectionForm() {
         setNewTipoNombre('');
         setShowNewTipoInput(false);
         
-        console.log('✅ Nuevo tipo creado y seleccionado:', result.data);
+        
       }
     } catch (error: unknown) {
-      console.error('❌ Error al crear tipo de planta:', error);
+      //console.error('❌ Error al crear tipo de planta:', error);
       const status =
         typeof error === 'object' && error !== null && 'response' in error
           ? (error as { response?: { status?: number } }).response?.status
@@ -321,7 +315,7 @@ function NewCollectionForm() {
           setNewPlantData(prev => ({ ...prev, tipo_planta_id: tipoExistente.id }));
           setNewTipoNombre('');
           setShowNewTipoInput(false);
-          console.log('ℹ️ Tipo ya existente seleccionado:', tipoExistente);
+          //console.log('ℹ️ Tipo ya existente seleccionado:', tipoExistente);
         } else {
           alert(`El tipo "${newTipoNombre}" ya existe. Por favor, selecciónalo de la lista.`);
         }
@@ -346,7 +340,7 @@ function NewCollectionForm() {
     setNewPlantErrors(errors);
 
     if (Object.values(errors).some(error => error)) {
-      console.log('⚠️ Errores de validación:', errors);
+      //console.log('⚠️ Errores de validación:', errors);
       return;
     }
 
@@ -354,7 +348,7 @@ function NewCollectionForm() {
 
     try {
       // 1. Validar si ya existe una planta con la misma especie
-      console.log('🔍 Validando si existe planta con especie:', newPlantData.especie);
+      //console.log('🔍 Validando si existe planta con especie:', newPlantData.especie);
       const plantasExistentes = await RecoleccionService.buscarPlantasPorEspecie(newPlantData.especie.trim());
       
       if (plantasExistentes.length > 0) {
@@ -366,7 +360,7 @@ function NewCollectionForm() {
         if (especieDuplicada) {
           setPlantErrorMessage(`Ya existe una planta con el nombre "${especieDuplicada.especie}".\n\nPor favor, verifica si es la planta que buscas o usa un nombre diferente.`);
           setShowPlantErrorModal(true);
-          console.log('⚠️ Planta duplicada encontrada:', especieDuplicada);
+          //console.log('⚠️ Planta duplicada encontrada:', especieDuplicada);
           setSubmittingNewPlant(false);
           return;
         }
@@ -384,7 +378,7 @@ function NewCollectionForm() {
         notas: newPlantData.notas.trim() || undefined,
       };
 
-      console.log('📤 Creando nueva planta:', plantaData);
+      //console.log('📤 Creando nueva planta:', plantaData);
       const response = await RecoleccionService.createPlanta(plantaData);
       
       if (response.success && response.data) {
@@ -429,10 +423,10 @@ function NewCollectionForm() {
           setShowSpeciesModal(false);
         }, 2000);
         
-        console.log('✅ Planta creada y seleccionada:', response.data);
+        //console.log('✅ Planta creada y seleccionada:', response.data);
       }
     } catch (error: unknown) {
-      console.error('❌ Error al crear planta:', error);
+      //console.error('❌ Error al crear planta:', error);
       const status =
         typeof error === 'object' && error !== null && 'response' in error
           ? (error as { response?: { status?: number } }).response?.status
@@ -456,24 +450,20 @@ function NewCollectionForm() {
 
   // Insercion de la funcion de validacion de fecha:
   const validateDate = (selectedDate: string) => {
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0); 
+    const hoyStr = new Date().toISOString().split('T')[0]; // "2026-02-27"
     
-    const fechaSeleccionada = new Date(selectedDate);
-    // Ajuste para evitar problemas de zona horaria al comparar
-    const fechaAjustada = new Date(fechaSeleccionada.getTime() + fechaSeleccionada.getTimezoneOffset() * 60000);
-    fechaAjustada.setHours(0, 0, 0, 0);
+    // Definimos el límite pasado (ejemplo: 30 días atrás o inicio de año según RF-REC-01)
+    const fechaMinima = new Date();
+    fechaMinima.setDate(fechaMinima.getDate() - 30); 
+    const minStr = fechaMinima.toISOString().split('T')[0];
 
-    if (fechaAjustada > hoy) {
+    if (selectedDate > hoyStr) {
       setDateErrorMessage("La fecha no puede ser futura");
       return false;
     } 
     
-    // Validación de fecha mínima (opcional, ej: 1 año atrás)
-    const unAnioAtras = new Date();
-    unAnioAtras.setFullYear(unAnioAtras.getFullYear() - 1);
-    if (fechaAjustada < unAnioAtras) {
-      setDateErrorMessage("La fecha es demasiado antigua");
+    if (selectedDate < minStr) {
+      setDateErrorMessage("La fecha es demasiado antigua (máximo 30 días)");
       return false;
     }
 
@@ -507,9 +497,9 @@ function NewCollectionForm() {
         planta_id = selectedPlanta.id;
         nombre_cientifico = selectedPlanta.nombre_cientifico;
         nombre_comercial = selectedPlanta.especie;
-        console.log('✅ Planta seleccionada:', { planta_id, nombre_cientifico, nombre_comercial });
+        //console.log('✅ Planta seleccionada:', { planta_id, nombre_cientifico, nombre_comercial });
       } else {
-        console.warn('⚠️ No se seleccionó una planta cuando especie_nueva = false');
+        //console.warn('⚠️ No se seleccionó una planta cuando especie_nueva = false');
       }
     }
 
@@ -529,12 +519,12 @@ function NewCollectionForm() {
       nombre_cientifico: nombre_cientifico || species,
       nombre_comercial: nombre_comercial || species,
     })
-    
+    /*
     console.log('📤 Datos guardados en formulario:', {
       planta_id,
       nombre_cientifico,
       especie_nueva: isNewFind
-    });
+    });*/
     
     navigate('/app/collections/new/location')
   }
@@ -579,6 +569,7 @@ function NewCollectionForm() {
               type="date"
               value={date}
               max={new Date().toISOString().split("T")[0]} //  Evita seleccionar días futuros
+              min={new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]} // Límite pasado
               onChange={(event) => {
                 setDate(event.target.value);
                 validateDate(event.target.value);
@@ -879,7 +870,7 @@ function NewCollectionForm() {
                 // Si marca como nuevo hallazgo, limpiar la planta seleccionada
                 if (checked) {
                   setSelectedPlanta(null);
-                  console.log('⚠️ Nuevo hallazgo marcado, planta_id limpiado');
+                  //console.log('⚠️ Nuevo hallazgo marcado, planta_id limpiado');
                 }
               }}
               className="mt-1 h-5 w-5 accent-brand-600"
@@ -986,11 +977,12 @@ function NewCollectionForm() {
                         setSelectedPlanta(planta);
                         setShowSpeciesModal(false);
                         setSearchTerm("");
+                        /*
                         console.log('🌱 Planta seleccionada:', {
                           id: planta.id,
                           especie: planta.especie,
                           nombre_cientifico: planta.nombre_cientifico
-                        });
+                        });*/
                       }}
                       className="w-full flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-soft transition hover:border-brand-300 hover:bg-brand-50 active:scale-[0.99]"
                     >
