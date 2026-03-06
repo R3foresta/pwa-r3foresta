@@ -25,6 +25,21 @@ function materialBadgeClass(tipoMaterial: string) {
   }
 }
 
+function estadoRegistroBadgeClass(estadoRegistro: string | null | undefined) {
+  //ver si estamos reciviendo el estado de los registros:
+  console.log('Estado de registro:', estadoRegistro)
+  
+  switch (estadoRegistro) {
+    case 'BORRADOR':
+      return 'bg-amber-50 text-amber-700 ring-amber-200'
+    case 'VALIDADO':
+      return 'bg-emerald-50 text-emerald-700 ring-emerald-200'
+    default:
+      return 'bg-slate-100 text-slate-700 ring-slate-200'
+  }
+}
+
+
 function RecoleccionV2Card({ recoleccion }: Props) {
   const nombreComercial =
     recoleccion.planta?.nombre_comun_principal ||
@@ -81,7 +96,7 @@ function RecoleccionV2Card({ recoleccion }: Props) {
           {recoleccion.tipo_material}
         </span>
         {recoleccion.estado_registro && (
-          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
+          <span className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${estadoRegistroBadgeClass(recoleccion.estado_registro)}`}>
             {recoleccion.estado_registro}
           </span>
         )}

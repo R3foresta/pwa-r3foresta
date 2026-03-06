@@ -27,6 +27,17 @@ function formatDateTime(value: string | null | undefined) {
   })
 }
 
+function estadoRegistroBadgeClass(estadoRegistro: string | null | undefined) {
+  switch (estadoRegistro) {
+    case 'BORRADOR':
+      return 'bg-amber-50 text-amber-700 ring-amber-200'
+    case 'VALIDADO':
+      return 'bg-emerald-50 text-emerald-700 ring-emerald-200'
+    default:
+      return 'bg-slate-100 text-slate-700 ring-slate-200'
+  }
+}
+
 function RecoleccionV2DetailScreen() {
   const navigate = useNavigate()
   const { id } = useParams()
@@ -172,7 +183,13 @@ function RecoleccionV2DetailScreen() {
               </p>
               <p className="flex items-center justify-between gap-4">
                 <span className="text-slate-500">Estado registro</span>
-                <span>{recoleccion.estado_registro || 'No disponible'}</span>
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${estadoRegistroBadgeClass(
+                    recoleccion.estado_registro,
+                  )}`}
+                >
+                  {recoleccion.estado_registro || 'No disponible'}
+                </span>
               </p>
               <p className="flex items-center justify-between gap-4">
                 <span className="text-slate-500">Estado operativo</span>
