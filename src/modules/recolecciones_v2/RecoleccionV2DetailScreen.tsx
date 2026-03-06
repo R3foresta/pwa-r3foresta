@@ -7,6 +7,12 @@ import {
   type RecoleccionV2,
 } from '../../services/recolecciones-v2.service'
 import { getUbicacionCoords, getUbicacionDisplay, getUbicacionDivision } from '../../utils/ubicacion'
+import {
+  estadoOperativoBadgeClass,
+  estadoRegistroBadgeClass,
+  resolveEstadoOperativo,
+  resolveEstadoRegistro,
+} from './recoleccion-status'
 
 function formatDate(value: string) {
   return new Date(value).toLocaleDateString('es-BO', {
@@ -25,17 +31,6 @@ function formatDateTime(value: string | null | undefined) {
     dateStyle: 'medium',
     timeStyle: 'short',
   })
-}
-
-function estadoRegistroBadgeClass(estadoRegistro: string | null | undefined) {
-  switch (estadoRegistro) {
-    case 'BORRADOR':
-      return 'bg-amber-50 text-amber-700 ring-amber-200'
-    case 'VALIDADO':
-      return 'bg-emerald-50 text-emerald-700 ring-emerald-200'
-    default:
-      return 'bg-slate-100 text-slate-700 ring-slate-200'
-  }
 }
 
 function RecoleccionV2DetailScreen() {
@@ -130,6 +125,7 @@ function RecoleccionV2DetailScreen() {
 
   const plantaNombre =
     recoleccion.planta?.nombre_comun_principal ||
+    recoleccion.nombre_comun_principal ||
     recoleccion.planta?.especie ||
     recoleccion.nombre_comercial ||
     'Sin nombre comercial'
@@ -138,6 +134,8 @@ function RecoleccionV2DetailScreen() {
   const ubicacionDisplay = getUbicacionDisplay(recoleccion.ubicacion)
   const ubicacionDivision = getUbicacionDivision(recoleccion.ubicacion)
   const ubicacionCoords = getUbicacionCoords(recoleccion.ubicacion)
+  const estadoRegistro = resolveEstadoRegistro(recoleccion)
+  const estadoOperativo = resolveEstadoOperativo(recoleccion.cantidad)
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#f6f7f3] to-[#eef1eb] text-brand-700">
@@ -185,15 +183,21 @@ function RecoleccionV2DetailScreen() {
                 <span className="text-slate-500">Estado registro</span>
                 <span
                   className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${estadoRegistroBadgeClass(
-                    recoleccion.estado_registro,
+                    estadoRegistro,
                   )}`}
                 >
-                  {recoleccion.estado_registro || 'No disponible'}
+                  {estadoRegistro}
                 </span>
               </p>
               <p className="flex items-center justify-between gap-4">
                 <span className="text-slate-500">Estado operativo</span>
-                <span>{recoleccion.estado || 'No disponible'}</span>
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${estadoOperativoBadgeClass(
+                    estadoOperativo,
+                  )}`}
+                >
+                  {estadoOperativo}
+                </span>
               </p>
               <p className="flex items-center justify-between gap-4">
                 <span className="text-slate-500">Método</span>

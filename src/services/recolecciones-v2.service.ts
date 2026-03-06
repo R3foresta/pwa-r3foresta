@@ -104,18 +104,32 @@ export interface EvidenciaTrazabilidad {
   public_url?: string | null
 }
 
+export interface FotoRecoleccionResumen {
+  id: number
+  url: string
+  es_principal: boolean
+  orden: number
+  titulo?: string | null
+  descripcion?: string | null
+  mime_type?: string | null
+  tamano_bytes?: number | null
+}
+
 export interface RecoleccionV2 {
   id: number
   fecha: string
   nombre_cientifico: string | null
   nombre_comercial: string | null
+  nombre_comun_principal?: string | null
   cantidad: number
   unidad: string
   tipo_material: string
-  estado: string | null
+  estado?: string | null
+  estado_detalle?: string | null
   especie_nueva: boolean
   observaciones: string | null
   usuario_id: number
+  ubicacion_id?: number | null
   vivero_id: number | null
   metodo_id: number
   planta_id: number | null
@@ -136,12 +150,15 @@ export interface RecoleccionV2 {
   planta?: PlantaCatalogo | null
   ubicacion?: UbicacionApi | null
   evidencias?: EvidenciaTrazabilidad[]
+  fotos?: FotoRecoleccionResumen[]
 }
 
 export interface RecoleccionV2Filters {
   page?: number
   limit?: number
+  usuario_id?: number
   q?: string
+  search?: string
   tipo_material?: TipoMaterialCanonico
   planta_id?: number
   vivero_id?: number

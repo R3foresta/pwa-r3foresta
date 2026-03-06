@@ -1,9 +1,20 @@
 import Icon from '../../components/Icon'
 import type { RecoleccionV2 } from '../../services/recolecciones-v2.service'
 import { getUbicacionDisplay } from '../../utils/ubicacion'
+import {
+  estadoOperativoBadgeClass,
+  estadoRegistroBadgeClass,
+  resolveEstadoOperativo,
+  resolveEstadoRegistro,
+} from './recoleccion-status'
 
 type Props = {
   recoleccion: RecoleccionV2
+}
+
+type RecoleccionV2Compat = RecoleccionV2 & {
+  estadoRegistro?: string | null
+  estadoRegistroRecoleccion?: string | null
 }
 
 function formatDate(value: string) {
@@ -25,24 +36,12 @@ function materialBadgeClass(tipoMaterial: string) {
   }
 }
 
-function estadoRegistroBadgeClass(estadoRegistro: string | null | undefined) {
-  //ver si estamos reciviendo el estado de los registros:
-  console.log('Estado de registro:', estadoRegistro)
-  
-  switch (estadoRegistro) {
-    case 'BORRADOR':
-      return 'bg-amber-50 text-amber-700 ring-amber-200'
-    case 'VALIDADO':
-      return 'bg-emerald-50 text-emerald-700 ring-emerald-200'
-    default:
-      return 'bg-slate-100 text-slate-700 ring-slate-200'
-  }
-}
-
 
 function RecoleccionV2Card({ recoleccion }: Props) {
+  const recoleccionCompat = recoleccion as RecoleccionV2Compat
   const nombreComercial =
     recoleccion.planta?.nombre_comun_principal ||
+    recoleccion.nombre_comun_principal ||
     recoleccion.planta?.especie ||
     recoleccion.nombre_comercial ||
     'Sin nombre comercial'
@@ -51,8 +50,14 @@ function RecoleccionV2Card({ recoleccion }: Props) {
 
   const evidenciaPrincipal = recoleccion.evidencias?.find((item) => item.es_principal)
   const fallbackEvidencia = recoleccion.evidencias?.[0]
+  const fotoPrincipal = recoleccion.fotos?.find((item) => item.es_principal)
+  const fallbackFoto = recoleccion.fotos?.[0]
   const evidencia = evidenciaPrincipal || fallbackEvidencia
-  const imageUrl = evidencia?.public_url ?? null
+  const foto = fotoPrincipal || fallbackFoto
+  const imageUrl = evidencia?.public_url ?? foto?.url ?? null
+  const estadoRegistro = resolveEstadoRegistro(recoleccionCompat)
+  const estadoOperativo = resolveEstadoOperativo(recoleccion.cantidad)
+  const evidenciasCount = recoleccion.evidencias?.length ?? recoleccion.fotos?.length ?? 0
 
   return (
     <article className="rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5 transition hover:shadow-md">
@@ -95,13 +100,14 @@ function RecoleccionV2Card({ recoleccion }: Props) {
         <span className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${materialBadgeClass(recoleccion.tipo_material)}`}>
           {recoleccion.tipo_material}
         </span>
-        {recoleccion.estado_registro && (
-          <span className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${estadoRegistroBadgeClass(recoleccion.estado_registro)}`}>
-            {recoleccion.estado_registro}
-          </span>
-        )}
+        <span className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${estadoRegistroBadgeClass(estadoRegistro)}`}>
+          {estadoRegistro}
+        </span>
+        <span className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${estadoOperativoBadgeClass(estadoOperativo)}`}>
+          {estadoOperativo}
+        </span>
         <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
-          Evidencias: {recoleccion.evidencias?.length ?? 0}
+          Evidencias: {evidenciasCount}
         </span>
       </div>
     </article>
