@@ -64,7 +64,7 @@ export const initialFormData: CollectionFormData = {
   type: "seed",
   species: "",
   method: "",
-  quantity: "0",
+  quantity: "",
   unit: "kg",
   notes: "",
   isNewFind: false,

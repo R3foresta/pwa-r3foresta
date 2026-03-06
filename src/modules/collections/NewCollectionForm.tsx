@@ -454,7 +454,7 @@ function NewCollectionForm() {
     
     // Definimos el límite pasado (ejemplo: 30 días atrás o inicio de año según RF-REC-01)
     const fechaMinima = new Date();
-    fechaMinima.setDate(fechaMinima.getDate() - 30); 
+    fechaMinima.setDate(fechaMinima.getDate() - 45); 
     const minStr = fechaMinima.toISOString().split('T')[0];
 
     if (selectedDate > hoyStr) {
@@ -463,7 +463,7 @@ function NewCollectionForm() {
     } 
     
     if (selectedDate < minStr) {
-      setDateErrorMessage("La fecha es demasiado antigua (máximo 30 días)");
+      setDateErrorMessage("La fecha es demasiado antigua (máximo 45 días)");
       return false;
     }
 
@@ -505,7 +505,9 @@ function NewCollectionForm() {
 
     updateForm({
       date,
-      type,
+      // Mapeamos el valor interno del componente ('seed'/'cutting') 
+      // al valor que espera la Base de Datos ('SEMILLA'/'ESQUEJE')
+      type: type === 'seed' ? 'SEMILLA' : 'ESQUEJE' as any, 
       species,
       method,
       quantity,

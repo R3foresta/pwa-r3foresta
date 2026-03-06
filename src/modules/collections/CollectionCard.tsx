@@ -6,7 +6,7 @@
 // ============================================================================
 
 import Icon from "../../components/Icon";
-import type { Recoleccion } from "../../services/recoleccion.service";
+import type { Recoleccion } from "./types"; //  Apunta al archivo que sí tiene los cambios
 import { getUbicacionDisplay } from "../../utils/ubicacion";
 
 /**
@@ -120,11 +120,20 @@ function CollectionCard({ recoleccion }: { recoleccion: Recoleccion }) {
   const nombreCientifico = recoleccion.planta?.nombre_cientifico || recoleccion.nombre_cientifico;
   
   // Obtiene la URL de la primera foto para mostrar como imagen principal
-  const mainPhoto = recoleccion.fotos[0]?.url;
+  const mainPhoto = recoleccion.evidencias?.[0]?.ruta_archivo || recoleccion.fotos?.[0]?.url;
 
   // ============================================================================
   // Renderizado del componente
   // ============================================================================
+
+
+
+  const getRegistroStyles = (estado: string) => {
+    return estado === 'VALIDADO' 
+      ? 'bg-blue-600 text-white ring-blue-700' 
+      : 'bg-slate-200 text-slate-600 ring-slate-300';
+  };
+
   return (
     // Contenedor principal de la tarjeta con sombra y hover effect
     <article className="relative rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5 transition hover:shadow-md">
@@ -132,12 +141,19 @@ function CollectionCard({ recoleccion }: { recoleccion: Recoleccion }) {
       <div className="flex items-start justify-between gap-3">
         {/* Sección izquierda: Información textual */}
         <div className="flex-1 space-y-1">
+          {/* Código de Trazabilidad - NUEVO (Sistema Jhamil) */}
+          <div className="mb-1">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-brand-600 bg-brand-50 px-1.5 py-0.5 rounded">
+              {recoleccion.codigo_trazabilidad || `ID: ${recoleccion.id}`}
+            </span>
+          </div>
+
           {/* Nombre común de la planta */}
-          <h3 className="text-lg font-extrabold tracking-tight text-slate-800">
+          <h3 className="text-lg font-extrabold tracking-tight text-slate-800 leading-tight">
             {nombrePlanta}
           </h3>
           
-          {/* Nombre científico (en latín) - Solo se muestra si existe */}
+          {/* Nombre científico (en latín) */}
           {nombreCientifico && (
             <p className="text-sm font-medium italic text-slate-600">
               {nombreCientifico}
@@ -146,27 +162,29 @@ function CollectionCard({ recoleccion }: { recoleccion: Recoleccion }) {
           
           {/* Lista de detalles con iconos */}
           <div className="mt-2 space-y-1.5">
-            {/* Cantidad recolectada (ej: "5 kg" o "30 unidades") */}
+            {/* Stock y Saldo Disponible - ACTUALIZADO (Lógica Pablo) */}
             <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-600">
               <Icon name="package" className="h-4 w-4 text-brand-500" />
-              <span>{recoleccion.cantidad} {recoleccion.unidad}</span>
+              <span>
+                Stock: <span className="text-slate-900">{recoleccion.saldo_disponible ?? recoleccion.cantidad}</span> {recoleccion.unidad_canonica || recoleccion.unidad}
+              </span>
             </div>
             
             {/* Ubicación */}
             <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-600">
               <Icon name="pin" className="h-4 w-4 text-brand-500" />
-              <span>
+              <span className="truncate max-w-[150px]">
                 {getUbicacionDisplay(recoleccion.ubicacion)}
               </span>
             </div>
             
-            {/* Fecha de recolección formateada */}
+            {/* Fecha de recolección */}
             <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-600">
               <Icon name="date" className="h-4 w-4 text-brand-500" />
               <span>{formatFecha(recoleccion.fecha)}</span>
             </div>
             
-            {/* Vivero de almacenamiento (opcional) */}
+            {/* Vivero de almacenamiento */}
             {recoleccion.vivero && (
               <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-600">
                 <Icon name="pin" className="h-4 w-4 text-brand-500" />
@@ -213,18 +231,25 @@ function CollectionCard({ recoleccion }: { recoleccion: Recoleccion }) {
         </span>
         
         {/* Badge: Contador de fotos (solo si hay más de 1) */}
-        {recoleccion.fotos.length > 1 && (
+        {(recoleccion.evidencias?.length || recoleccion.fotos?.length) > 1 && (
           <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
-            📸 {recoleccion.fotos.length}
+            📸 {recoleccion.evidencias?.length || recoleccion.fotos?.length}
           </span>
         )}
         
         {/* Badge especial: Nuevo hallazgo (aparece solo si es especie nueva) */}
-        {recoleccion.especie_nueva && (
-          <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 ring-1 ring-amber-200">
-            ✨ Nuevo hallazgo
+        {recoleccion.fotos?.length > 1 && (
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
+            📸 {recoleccion.fotos.length}
           </span>
         )}
+
+        {/* Badge de Validación de Pablo/Jhamil */}
+        <span
+          className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider ring-1 ${getRegistroStyles(recoleccion.estado_registro)}`}
+        >
+          {recoleccion.estado_registro || 'PENDIENTE'}
+        </span>
       </div>
     </article>
   );
