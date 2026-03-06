@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Icon from '../../components/Icon'
-import CollectionsModeSwitchButton from '../../components/CollectionsModeSwitchButton'
 import { materialFilterOptions } from './data'
 import CollectionCard from './CollectionCard'
 import { RecoleccionService } from '../../services/recoleccion.service'
@@ -80,7 +79,6 @@ function CollectionsScreen() {
               Registro de material forestal
             </p>
           </div>
-          <CollectionsModeSwitchButton className="ml-auto self-start rounded-xl bg-white/15 px-3 py-2 text-xs font-bold text-white transition hover:bg-white/25" />
         </div>
 
         <div className="-mt-10 space-y-4 px-5">

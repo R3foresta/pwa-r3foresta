@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Icon from '../../components/Icon'
-import CollectionsModeSwitchButton from '../../components/CollectionsModeSwitchButton'
 import {
   RecoleccionesV2Service,
   type RecoleccionV2,
@@ -78,7 +77,6 @@ function RecoleccionesV2Screen() {
             <h1 className="text-3xl font-extrabold leading-tight">Recolecciones</h1>
             <p className="text-sm font-medium text-white/90">{subtitle}</p>
           </div>
-          <CollectionsModeSwitchButton className="ml-auto self-start rounded-xl bg-white/15 px-3 py-2 text-xs font-bold text-white transition hover:bg-white/25" />
         </header>
 
         <div className="-mt-10 space-y-4 px-5">

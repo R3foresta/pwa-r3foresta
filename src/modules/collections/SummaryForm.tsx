@@ -4,13 +4,22 @@ import Icon from "../../components/Icon";
 import SuccessModal from "./SuccessModal";
 import { useCollectionForm } from "./CollectionFormContext";
 import { useAuth } from "../../contexts/AuthContext";
-import { RecoleccionService } from "../../services/recoleccion.service";
-import type { CreateRecoleccionDto } from "../../services/recoleccion.service";
-import { getCollectionsUiMode } from "../../config/collectionsUiMode";
 import {
   RecoleccionesV2Service,
   type CreateRecoleccionV2Dto,
 } from "../../services/recolecciones-v2.service";
+
+function base64ToFile(base64: string, filename: string): File {
+  const arr = base64.split(',');
+  const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new File([u8arr], filename, { type: mime });
+}
 
 function SummaryForm() {
   const navigate = useNavigate();
@@ -36,147 +45,78 @@ function SummaryForm() {
     setError(null);
     
     try {
-      const mode = getCollectionsUiMode();
       const fotos: File[] = [];
 
       formData.placePhotos.forEach((base64, index) => {
-        const file = RecoleccionService.base64ToFile(base64, `lugar_${index + 1}.jpg`);
+        const file = base64ToFile(base64, `lugar_${index + 1}.jpg`);
         fotos.push(file);
       });
 
       formData.totalPhotos.forEach((base64, index) => {
-        const file = RecoleccionService.base64ToFile(base64, `total_${index + 1}.jpg`);
+        const file = base64ToFile(base64, `total_${index + 1}.jpg`);
         fotos.push(file);
       });
 
-      if (mode === 'v2') {
-        if (fotos.length < 2 || fotos.length > 5) {
-          throw new Error('Debes agregar entre 2 y 5 fotos para registrar la recolección.');
-        }
-
-        const cantidad = parseFloat(formData.quantity) || 0;
-        if (cantidad <= 0) {
-          throw new Error('La cantidad debe ser mayor a 0.');
-        }
-
-        if (formData.type === 'cutting' && !Number.isInteger(cantidad)) {
-          throw new Error('Para ESQUEJE la cantidad debe ser un número entero.');
-        }
-
-        const latitud = parseFloat(formData.latitud);
-        const longitud = parseFloat(formData.longitud);
-        if (!Number.isFinite(latitud) || !Number.isFinite(longitud)) {
-          throw new Error('Debes completar una ubicación válida.');
-        }
-
-        const paisId = Number(formData.paisId);
-        const divisionId = Number(formData.divisionId);
-        const precisionM = formData.precisionM ? Number(formData.precisionM) : undefined;
-        const plantaId = formData.planta_id ? Number(formData.planta_id) : 1;
-        const metodoId = formData.metodo_id ? Number(formData.metodo_id) : 1;
-        const viveroId = formData.vivero_id ? Number(formData.vivero_id) : 1;
-
-        const dtoV2: CreateRecoleccionV2Dto = {
-          fecha: formData.date,
-          cantidad,
-          unidad:
-            formData.type === 'cutting'
-              ? 'UNIDAD'
-              : formData.unit === 'kg'
-                ? 'KG'
-                : 'UNIDAD',
-          tipo_material: formData.type === 'seed' ? 'SEMILLA' : 'ESQUEJE',
-          planta_id: Number.isFinite(plantaId) && plantaId > 0 ? plantaId : 1,
-          metodo_id: Number.isFinite(metodoId) && metodoId > 0 ? metodoId : 1,
-          vivero_id: Number.isFinite(viveroId) && viveroId > 0 ? viveroId : 1,
-          observaciones: formData.notes || undefined,
-          ubicacion: {
-            nombre: formData.ubicacionNombre || undefined,
-            referencia: formData.referencia || undefined,
-            latitud,
-            longitud,
-            pais_id: Number.isFinite(paisId) && paisId > 0 ? paisId : 1,
-            division_id: Number.isFinite(divisionId) && divisionId > 0 ? divisionId : 1,
-            precision_m:
-              precisionM !== undefined && Number.isFinite(precisionM) ? precisionM : undefined,
-            fuente: 'GPS_MOVIL',
-          },
-          fotos,
-        };
-
-        const response = await RecoleccionesV2Service.create(dtoV2);
-        if (!response.success) {
-          throw new Error('No se pudo crear la recolección con el backend canónico.');
-        }
-
-        setShowSuccess(true);
-      } else {
-        let tipo_material: 'SEMILLA' | 'ESTACA' | 'PLANTULA' | 'INJERTO';
-        if (formData.type === 'seed') {
-          tipo_material = 'SEMILLA';
-        } else if (formData.type === 'cutting') {
-          tipo_material = 'ESTACA';
-        } else {
-          tipo_material = 'SEMILLA';
-        }
-
-        const metodoId = formData.metodo_id;
-        if (!metodoId) {
-          throw new Error('Debes seleccionar un método de recolección válido.');
-        }
-
-        const paisId = formData.paisId ? Number(formData.paisId) : undefined;
-        const divisionId = formData.divisionId ? Number(formData.divisionId) : undefined;
-        const precisionM = formData.precisionM ? Number(formData.precisionM) : undefined;
-
-        const dto: CreateRecoleccionDto = {
-          fecha: formData.date,
-          cantidad: parseFloat(formData.quantity) || 0,
-          unidad: formData.unit === 'kg' ? 'kg' : 'unidades',
-          tipo_material,
-          estado: 'ALMACENADO',
-          especie_nueva: Boolean(formData.isNewFind),
-          observaciones: formData.notes || undefined,
-          ubicacion: {
-            nombre: formData.ubicacionNombre || undefined,
-            referencia: formData.referencia || undefined,
-            latitud: parseFloat(formData.latitud) || 0,
-            longitud: parseFloat(formData.longitud) || 0,
-            pais_id: Number.isFinite(paisId) ? paisId : undefined,
-            division_id: Number.isFinite(divisionId) ? divisionId : undefined,
-            precision_m: Number.isFinite(precisionM) ? precisionM : undefined,
-            fuente: 'GPS_MOVIL',
-          },
-          metodo_id: metodoId,
-          vivero_id: formData.vivero_id ? parseInt(String(formData.vivero_id)) : undefined,
-          fotos: fotos.length > 0 ? fotos : undefined,
-        };
-
-        if (!formData.isNewFind && formData.planta_id) {
-          dto.planta_id = parseInt(String(formData.planta_id));
-          dto.nombre_cientifico = formData.nombre_cientifico;
-          dto.nombre_comercial = formData.species;
-        } else if (!formData.isNewFind) {
-          throw new Error('Debes seleccionar una especie existente o marcarla como nuevo hallazgo.');
-        }
-
-        if (formData.isNewFind && formData.species) {
-          dto.nueva_planta = {
-            especie: formData.species,
-            nombre_cientifico: formData.nombre_cientifico || formData.species,
-            variedad: 'Común',
-            fuente: 'NATIVA',
-          };
-        }
-
-        const response = await RecoleccionService.create(dto);
-
-        if (!response.success) {
-          throw new Error('Error al crear recolección');
-        }
-
-        setShowSuccess(true);
+      if (fotos.length < 2 || fotos.length > 5) {
+        throw new Error('Debes agregar entre 2 y 5 fotos para registrar la recolección.');
       }
+
+      const cantidad = parseFloat(formData.quantity) || 0;
+      if (cantidad <= 0) {
+        throw new Error('La cantidad debe ser mayor a 0.');
+      }
+
+      if (formData.type === 'cutting' && !Number.isInteger(cantidad)) {
+        throw new Error('Para ESQUEJE la cantidad debe ser un número entero.');
+      }
+
+      const latitud = parseFloat(formData.latitud);
+      const longitud = parseFloat(formData.longitud);
+      if (!Number.isFinite(latitud) || !Number.isFinite(longitud)) {
+        throw new Error('Debes completar una ubicación válida.');
+      }
+
+      const paisId = Number(formData.paisId);
+      const divisionId = Number(formData.divisionId);
+      const precisionM = formData.precisionM ? Number(formData.precisionM) : undefined;
+      const plantaId = formData.planta_id ? Number(formData.planta_id) : 1;
+      const metodoId = formData.metodo_id ? Number(formData.metodo_id) : 1;
+      const viveroId = formData.vivero_id ? Number(formData.vivero_id) : 1;
+
+      const dtoV2: CreateRecoleccionV2Dto = {
+        fecha: formData.date,
+        cantidad,
+        unidad:
+          formData.type === 'cutting'
+            ? 'unidad'
+            : formData.unit === 'kg'
+              ? 'kg'
+              : 'unidad',
+        tipo_material: formData.type === 'seed' ? 'SEMILLA' : 'ESQUEJE',
+        planta_id: Number.isFinite(plantaId) && plantaId > 0 ? plantaId : 1,
+        metodo_id: Number.isFinite(metodoId) && metodoId > 0 ? metodoId : 1,
+        vivero_id: Number.isFinite(viveroId) && viveroId > 0 ? viveroId : 1,
+        observaciones: formData.notes || undefined,
+        ubicacion: {
+          nombre: formData.ubicacionNombre || undefined,
+          referencia: formData.referencia || undefined,
+          latitud,
+          longitud,
+          pais_id: Number.isFinite(paisId) && paisId > 0 ? paisId : 1,
+          division_id: Number.isFinite(divisionId) && divisionId > 0 ? divisionId : 1,
+          precision_m:
+            precisionM !== undefined && Number.isFinite(precisionM) ? precisionM : undefined,
+          fuente: 'GPS_MOVIL',
+        },
+        fotos,
+      };
+
+      const response = await RecoleccionesV2Service.create(dtoV2);
+      if (!response.success) {
+        throw new Error('No se pudo crear la recolección con el backend canónico.');
+      }
+
+      setShowSuccess(true);
       
     } catch (err) {
       console.error('❌ Error al enviar recolección:', err);

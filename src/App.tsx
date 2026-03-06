@@ -4,8 +4,6 @@ import AppLayout from './layouts/AppLayout'
 import ProtectedRoute from './routes/ProtectedRoute'
 import GuestRoute from './routes/GuestRoute'
 import HomeScreen from './modules/home/HomeScreen'
-import CollectionsScreen from './modules/collections/CollectionsScreen'
-import CollectionDetailScreen from './modules/collections/CollectionDetailScreen'
 import NewCollectionForm from './modules/collections/NewCollectionForm'
 import LocationForm from './modules/collections/LocationForm'
 import SummaryForm from './modules/collections/SummaryForm'
@@ -29,7 +27,6 @@ import ComunidadesScreen from './modules/comunidades/ComunidadesScreen'
 import PlantasScreen from './modules/plantas/PlantasScreen'
 import NuevaComunidadScreen from './modules/comunidades/NuevaComunidadScreen'
 import EditarComunidadScreen from './modules/comunidades/EditarComunidadScreen'
-import { getCollectionsUiMode } from './config/collectionsUiMode'
 
 function RootRedirect() {
   const { isAuthenticated, hydrated } = useAuth()
@@ -61,8 +58,6 @@ function CompleteProfileRoute() {
 }
 
 function App() {
-  const collectionsUiMode = getCollectionsUiMode()
-
   return (
     <Routes>
       <Route path="/" element={<RootRedirect />} />
@@ -84,27 +79,13 @@ function App() {
           <Route index element={<Navigate to="home" replace />} />
           <Route path="home" element={<HomeScreen />} />
           <Route path="collections">
-            {collectionsUiMode === 'legacy' ? (
-              <>
-                <Route index element={<CollectionsScreen />} />
-                <Route path=":id" element={<CollectionDetailScreen />} />
-                <Route path="new" element={<CollectionFormLayout />}>
-                  <Route index element={<NewCollectionForm />} />
-                  <Route path="location" element={<LocationForm />} />
-                  <Route path="summary" element={<SummaryForm />} />
-                </Route>
-              </>
-            ) : (
-              <>
-                <Route index element={<RecoleccionesV2Screen />} />
-                <Route path="new" element={<CollectionFormLayout />}>
-                  <Route index element={<NewCollectionForm />} />
-                  <Route path="location" element={<LocationForm />} />
-                  <Route path="summary" element={<SummaryForm />} />
-                </Route>
-                <Route path=":id" element={<RecoleccionV2DetailScreen />} />
-              </>
-            )}
+            <Route index element={<RecoleccionesV2Screen />} />
+            <Route path="new" element={<CollectionFormLayout />}>
+              <Route index element={<NewCollectionForm />} />
+              <Route path="location" element={<LocationForm />} />
+              <Route path="summary" element={<SummaryForm />} />
+            </Route>
+            <Route path=":id" element={<RecoleccionV2DetailScreen />} />
             <Route path=":id/evidencias/new" element={<NuevaEvidenciaRecoleccionV2Screen />} />
           </Route>
           <Route path="vivero">

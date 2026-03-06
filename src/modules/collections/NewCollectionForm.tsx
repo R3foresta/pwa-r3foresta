@@ -3,8 +3,12 @@ import { useNavigate } from "react-router-dom";
 import Icon from "../../components/Icon";
 import type { MaterialType, Unit } from "./types";
 import { useCollectionForm } from "./CollectionFormContext";
-import { RecoleccionService } from "../../services/recoleccion.service";
-import type { MetodoRecoleccion, Planta, TipoPlanta } from "../../services/recoleccion.service";
+import {
+  RecoleccionesV2Service,
+  type MetodoRecoleccionCatalogo as MetodoRecoleccion,
+  type PlantaCatalogo as Planta,
+  type TipoPlantaCatalogo as TipoPlanta,
+} from "../../services/recolecciones-v2.service";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB en bytes
 const ALLOWED_FORMATS = ['image/jpeg', 'image/png', 'image/jpg'];
@@ -94,8 +98,7 @@ function NewCollectionForm() {
     const cargarMetodos = async () => {
       setLoadingMetodos(true);
       try {
-        const response = await RecoleccionService.getMetodos();
-        const metodosBackend = response.data || [];
+        const metodosBackend = await RecoleccionesV2Service.getMetodos();
         setMetodos(metodosBackend);
 
         if (formData?.metodo_id) {
@@ -126,7 +129,7 @@ function NewCollectionForm() {
     const cargarPlantas = async () => {
       setLoadingPlantas(true);
       try {
-        const plantasBackend = await RecoleccionService.getPlantas();
+        const plantasBackend = await RecoleccionesV2Service.getPlantas();
         setPlantas(plantasBackend);
         console.log('✅ Plantas cargadas desde backend:', plantasBackend);
         console.log('📊 Total de plantas:', plantasBackend.length);
@@ -154,7 +157,7 @@ function NewCollectionForm() {
     const cargarTiposPlantas = async () => {
       setLoadingTiposPlantas(true);
       try {
-        const tipos = await RecoleccionService.getTiposPlantas();
+        const tipos = await RecoleccionesV2Service.getTiposPlantas();
         setTiposPlantas(tipos);
         console.log('✅ Tipos de planta cargados:', tipos);
       } catch (error) {
@@ -286,7 +289,7 @@ function NewCollectionForm() {
     setCreatingTipo(true);
     try {
       console.log('📤 Creando nuevo tipo de planta:', newTipoNombre);
-      const result = await RecoleccionService.createTipoPlanta(newTipoNombre.trim());
+      const result = await RecoleccionesV2Service.createTipoPlanta(newTipoNombre.trim());
       
       if (result.success && result.data) {
         // Agregar el nuevo tipo a la lista
@@ -352,7 +355,7 @@ function NewCollectionForm() {
     try {
       // 1. Validar si ya existe una planta con la misma especie
       console.log('🔍 Validando si existe planta con especie:', newPlantData.especie);
-      const plantasExistentes = await RecoleccionService.buscarPlantasPorEspecie(newPlantData.especie.trim());
+      const plantasExistentes = await RecoleccionesV2Service.buscarPlantasPorEspecie(newPlantData.especie.trim());
       
       if (plantasExistentes.length > 0) {
         // Verificar si alguna tiene la misma especie exacta (case-insensitive)
@@ -382,7 +385,7 @@ function NewCollectionForm() {
       };
 
       console.log('📤 Creando nueva planta:', plantaData);
-      const response = await RecoleccionService.createPlanta(plantaData);
+      const response = await RecoleccionesV2Service.createPlanta(plantaData);
       
       if (response.success && response.data) {
         // Actualizar lista de plantas
