@@ -10,6 +10,25 @@ import {
   getUbicacionTitulo,
 } from '../../utils/ubicacion'
 
+type LegacyFoto = {
+  id: number
+  url: string
+  formato: string
+  peso_bytes: number
+}
+
+type CanonicalEvidencia = {
+  id: number
+  public_url?: string | null
+  mime_type?: string | null
+  tamano_bytes?: number | null
+}
+
+type RecoleccionCompat = Recoleccion & {
+  fotos?: LegacyFoto[]
+  evidencias?: CanonicalEvidencia[]
+}
+
 function CollectionDetailScreen() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -25,12 +44,14 @@ function CollectionDetailScreen() {
         setLoading(true)
         setError(null)
         const response = await RecoleccionService.getById(Number(id))
-        setRecoleccion(response.data)
+        const responseData = response.data as RecoleccionCompat
+        setRecoleccion(responseData)
         
         // Log para debugging - ver qué fotos recibimos
-        console.log('📸 Fotos recibidas del backend:', response.data.fotos)
-        if (response.data.fotos.length > 0) {
-          console.log('🔗 Primera URL de foto:', response.data.fotos[0].url)
+        const fotosRecibidas = Array.isArray(responseData.fotos) ? responseData.fotos : []
+        console.log('📸 Fotos recibidas del backend:', fotosRecibidas)
+        if (fotosRecibidas.length > 0) {
+          console.log('🔗 Primera URL de foto:', fotosRecibidas[0].url)
         }
       } catch (err) {
         console.error('Error cargando detalle:', err)
@@ -115,6 +136,22 @@ function CollectionDetailScreen() {
   const ubicacionDivision = getUbicacionDivision(recoleccion.ubicacion)
   const ubicacionCoords = getUbicacionCoords(recoleccion.ubicacion)
   const viveroUbicacion = getUbicacionDisplay(recoleccion.vivero?.ubicacion ?? null)
+  const recoleccionCompat = recoleccion as RecoleccionCompat
+  const fotosLegacy = Array.isArray(recoleccionCompat.fotos) ? recoleccionCompat.fotos : []
+  const evidenciasCanonicas = Array.isArray(recoleccionCompat.evidencias)
+    ? recoleccionCompat.evidencias
+    : []
+  const fotosNormalizadas: LegacyFoto[] =
+    fotosLegacy.length > 0
+      ? fotosLegacy
+      : evidenciasCanonicas
+          .map((item) => ({
+            id: item.id,
+            url: item.public_url || '',
+            formato: item.mime_type || 'image/jpeg',
+            peso_bytes: Number(item.tamano_bytes ?? 0),
+          }))
+          .filter((item) => item.url.length > 0)
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#f6f7f3] to-[#eef1eb] text-brand-700">
@@ -238,9 +275,9 @@ function CollectionDetailScreen() {
               <h2 className="text-lg font-extrabold text-brand-700">Evidencia fotográfica</h2>
               <Icon name="arrow-left" className="h-4 w-4 rotate-180 text-slate-400" />
             </div>
-            {recoleccion.fotos.length > 0 ? (
+            {fotosNormalizadas.length > 0 ? (
               <div className="mt-3 grid grid-cols-3 gap-3">
-                {recoleccion.fotos.map((foto) => (
+                {fotosNormalizadas.map((foto) => (
                   <div key={foto.id} className="space-y-1">
                     <div className="overflow-hidden rounded-2xl shadow-sm ring-1 ring-slate-100 bg-slate-50">
                       <img

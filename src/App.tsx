@@ -10,7 +10,6 @@ import NewCollectionForm from './modules/collections/NewCollectionForm'
 import LocationForm from './modules/collections/LocationForm'
 import SummaryForm from './modules/collections/SummaryForm'
 import {
-  NuevaRecoleccionV2Screen,
   NuevaEvidenciaRecoleccionV2Screen,
   RecoleccionV2DetailScreen,
   RecoleccionesV2Screen,
@@ -98,9 +97,11 @@ function App() {
             ) : (
               <>
                 <Route index element={<RecoleccionesV2Screen />} />
-                <Route path="new" element={<NuevaRecoleccionV2Screen />} />
-                <Route path="new/location" element={<Navigate to="/app/collections/new" replace />} />
-                <Route path="new/summary" element={<Navigate to="/app/collections/new" replace />} />
+                <Route path="new" element={<CollectionFormLayout />}>
+                  <Route index element={<NewCollectionForm />} />
+                  <Route path="location" element={<LocationForm />} />
+                  <Route path="summary" element={<SummaryForm />} />
+                </Route>
                 <Route path=":id" element={<RecoleccionV2DetailScreen />} />
               </>
             )}

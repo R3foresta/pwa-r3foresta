@@ -9,6 +9,23 @@ import Icon from "../../components/Icon";
 import type { Recoleccion } from "../../services/recoleccion.service";
 import { getUbicacionDisplay } from "../../utils/ubicacion";
 
+type LegacyFoto = {
+  id: number;
+  url: string;
+  formato: string;
+  peso_bytes: number;
+};
+
+type CanonicalEvidencia = {
+  id: number;
+  public_url?: string | null;
+};
+
+type RecoleccionCompat = Recoleccion & {
+  fotos?: LegacyFoto[];
+  evidencias?: CanonicalEvidencia[];
+};
+
 /**
  * Componente tarjeta de recolección
  * Muestra información resumida de una recolección con estilo visual atractivo
@@ -16,6 +33,10 @@ import { getUbicacionDisplay } from "../../utils/ubicacion";
  * @param {Recoleccion} recoleccion - Objeto completo de la recolección
  */
 function CollectionCard({ recoleccion }: { recoleccion: Recoleccion }) {
+  const recoleccionCompat = recoleccion as RecoleccionCompat;
+  const fotos = Array.isArray(recoleccionCompat.fotos) ? recoleccionCompat.fotos : [];
+  const evidencias = Array.isArray(recoleccionCompat.evidencias) ? recoleccionCompat.evidencias : [];
+
   /**
    * Retorna clases de Tailwind CSS según el tipo de material
    * Define colores distintivos para cada tipo: Semilla, Esqueje, Plántula, Injerto
@@ -120,7 +141,8 @@ function CollectionCard({ recoleccion }: { recoleccion: Recoleccion }) {
   const nombreCientifico = recoleccion.planta?.nombre_cientifico || recoleccion.nombre_cientifico;
   
   // Obtiene la URL de la primera foto para mostrar como imagen principal
-  const mainPhoto = recoleccion.fotos[0]?.url;
+  const mainPhoto = fotos[0]?.url || evidencias.find((item) => item.public_url)?.public_url;
+  const photosCount = fotos.length > 0 ? fotos.length : evidencias.length;
 
   // ============================================================================
   // Renderizado del componente
@@ -207,15 +229,15 @@ function CollectionCard({ recoleccion }: { recoleccion: Recoleccion }) {
         
         {/* Badge: Estado actual (Almacenado, En proceso, etc.) con color según estado */}
         <span
-          className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${getStatusStyles(recoleccion.estado)}`}
+          className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${getStatusStyles(recoleccion.estado || '')}`}
         >
-          {getEstadoLabel(recoleccion.estado)}
+          {getEstadoLabel(recoleccion.estado || 'SIN_ESTADO')}
         </span>
         
         {/* Badge: Contador de fotos (solo si hay más de 1) */}
-        {recoleccion.fotos.length > 1 && (
+        {photosCount > 1 && (
           <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
-            📸 {recoleccion.fotos.length}
+            📸 {photosCount}
           </span>
         )}
         
