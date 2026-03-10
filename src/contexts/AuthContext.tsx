@@ -80,7 +80,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             organizacion: userData.organizacion || undefined,
             contacto: userData.contacto || undefined,
             rol: userData.rol || 'GENERAL',
-            createdAt: userData.created_at ? new Date(userData.created_at) : undefined
+            createdAt: userData.created_at ? new Date(userData.created_at) : undefined,
+            foto_perfil_url: userData.foto_perfil_url || undefined
           }
           
           console.log('✅ Usuario verificado con backend:', updatedUser)
@@ -138,7 +139,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         organizacion: userData.organizacion || undefined,
         contacto: userData.contacto || undefined,
         rol: userData.rol || 'GENERAL',
-        createdAt: userData.created_at ? new Date(userData.created_at) : undefined
+        createdAt: userData.created_at ? new Date(userData.created_at) : undefined,
+        foto_perfil_url: userData.foto_perfil_url || undefined
       }
       
       console.log('✅ Usuario actualizado con datos del backend:', updatedUser)

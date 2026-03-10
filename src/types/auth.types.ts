@@ -12,6 +12,7 @@ export interface User {
   organizacion?: string;
   contacto?: string;
   rol?: string;
+  foto_perfil_url?: string;
 }
 
 export interface AuthResponse {
