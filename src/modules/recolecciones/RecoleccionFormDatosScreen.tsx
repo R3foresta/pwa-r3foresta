@@ -21,10 +21,6 @@ function toLocalDateInputValue(date: Date) {
   return `${year}-${month}-${day}`;
 }
 
-function isDateInAllowedRange(value: string, minDate: string, maxDate: string) {
-  return value >= minDate && value <= maxDate;
-}
-
 function RecoleccionFormDatosScreen() {
   const navigate = useNavigate();
   const { formData, updateForm } = useRecoleccionForm();
@@ -117,9 +113,6 @@ function RecoleccionFormDatosScreen() {
     photos: false,
     method: false,
   });
-
-  // Adicion de funciones de validacion de fecha:
-  const [dateErrorMessage, setDateErrorMessage] = useState<string>("");
 
   useEffect(() => {
     const cargarMetodos = async () => {
@@ -481,37 +474,12 @@ function RecoleccionFormDatosScreen() {
     }
   };
 
-  // Insercion de la funcion de validacion de fecha:
-  const validateDate = (selectedDate: string) => {
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0); 
-    
-    const fechaSeleccionada = new Date(selectedDate);
-    // Ajuste para evitar problemas de zona horaria al comparar
-    const fechaAjustada = new Date(fechaSeleccionada.getTime() + fechaSeleccionada.getTimezoneOffset() * 60000);
-    fechaAjustada.setHours(0, 0, 0, 0);
-
-    if (fechaAjustada > hoy) {
-      setDateErrorMessage("La fecha no puede ser futura");
-      return false;
-    } 
-    
-    // Validación de fecha mínima (opcional, ej: 1 año atrás)
-    const unAnioAtras = new Date();
-    unAnioAtras.setFullYear(unAnioAtras.getFullYear() - 1);
-    if (fechaAjustada < unAnioAtras) {
-      setDateErrorMessage("La fecha es demasiado antigua");
-      return false;
-    }
-
-    setDateErrorMessage("");
-    return true;
-  };
-
   const handleContinue = () => {
-    const isDateValid = validateDate(date); // Nueva validación de fecha
+    const hasDate = Boolean(date);
+    const isDateValid = hasDate && date >= minAllowedDate && date <= todayDate;
     const newErrors = {
-      date: !date || !isDateValid,
+      date: !hasDate,
+      dateRange: hasDate && !isDateValid,
       quantity: parseFloat(quantity) <= 0,
       photos: placePhotos.length === 0 || totalPhotos.length === 0,
       method: !metodoId,
@@ -605,14 +573,14 @@ function RecoleccionFormDatosScreen() {
             <input
               type="date"
               value={date}
-              max={new Date().toISOString().split("T")[0]} //  Evita seleccionar días futuros
+              min={minAllowedDate}
+              max={todayDate}
               onChange={(event) => {
                 setDate(event.target.value);
-                validateDate(event.target.value);
-                setErrors(prev => ({ ...prev, date: false }));
+                setErrors(prev => ({ ...prev, date: false, dateRange: false }));
               }}
               className={`w-full rounded-2xl border px-4 py-3 text-base font-semibold text-slate-700 shadow-soft outline-none transition focus:ring-2 ${
-                errors.date || dateErrorMessage // Cambia el color si hay error de fecha futura
+                errors.date || errors.dateRange
                   ? 'border-red-400 focus:border-red-400 focus:ring-red-200'
                   : 'border-slate-200 bg-white focus:border-brand-400 focus:ring-brand-200'
               }`}
@@ -620,8 +588,8 @@ function RecoleccionFormDatosScreen() {
             {errors.date && (
               <p className="text-xs font-semibold text-red-500">* La fecha es obligatoria</p>
             )}
-            {dateErrorMessage && (
-              <p className="text-xs font-semibold text-red-500">* {dateErrorMessage}</p>
+            {errors.dateRange && (
+              <p className="text-xs font-semibold text-red-500">* La fecha debe estar entre {minAllowedDate} y {todayDate}</p>
             )}
           </div>
 
