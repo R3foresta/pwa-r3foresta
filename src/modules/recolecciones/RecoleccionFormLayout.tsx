@@ -1,12 +1,12 @@
 // ============================================================================
-// CollectionFormLayout.tsx
+// RecoleccionFormLayout.tsx
 // ============================================================================
 // Layout wrapper que provee el contexto del formulario a las rutas hijas
-// Envuelve las 3 pantallas del formulario: NewCollectionForm, LocationForm, SummaryForm
+// Envuelve las 3 pantallas del formulario: Datos, Ubicación y Resumen
 // ============================================================================
 
 import { Outlet } from 'react-router-dom'
-import { CollectionFormProvider } from './CollectionFormContext'
+import { RecoleccionFormProvider } from './RecoleccionFormContext'
 
 /**
  * Layout del formulario de recolección
@@ -14,17 +14,17 @@ import { CollectionFormProvider } from './CollectionFormContext'
  * 
  * React Router renderizará automáticamente los componentes hijos en <Outlet />
  */
-function CollectionFormLayout() {
+function RecoleccionFormLayout() {
   return (
     // Envuelve las rutas hijas con el Provider del contexto
-    <CollectionFormProvider>
+    <RecoleccionFormProvider>
       {/* Outlet renderiza la ruta hija actual:
-          - /app/collections/new → NewCollectionForm
-          - /app/collections/new/location → LocationForm  
-          - /app/collections/new/summary → SummaryForm */}
+          - /app/collections/new → RecoleccionFormDatosScreen
+          - /app/collections/new/location → RecoleccionFormUbicacionScreen
+          - /app/collections/new/summary → RecoleccionFormResumenScreen */}
       <Outlet />
-    </CollectionFormProvider>
+    </RecoleccionFormProvider>
   )
 }
 
-export default CollectionFormLayout
+export default RecoleccionFormLayout

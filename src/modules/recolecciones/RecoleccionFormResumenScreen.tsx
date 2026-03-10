@@ -1,15 +1,29 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Icon from "../../components/Icon";
-import SuccessModal from "./SuccessModal";
-import { useCollectionForm } from "./CollectionFormContext";
+import RecoleccionSuccessModal from "./RecoleccionSuccessModal";
+import { useRecoleccionForm } from "./RecoleccionFormContext";
 import { useAuth } from "../../contexts/AuthContext";
-import { RecoleccionService } from "../../services/recoleccion.service";
-import type { CreateRecoleccionDto } from "../../services/recoleccion.service";
+import {
+  RecoleccionesService,
+  type CreateRecoleccionDto,
+} from "../../services/recolecciones.service";
 
-function SummaryForm() {
+function base64ToFile(base64: string, filename: string): File {
+  const arr = base64.split(',');
+  const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new File([u8arr], filename, { type: mime });
+}
+
+function RecoleccionFormResumenScreen() {
   const navigate = useNavigate();
-  const { formData, resetForm } = useCollectionForm();
+  const { formData, resetForm } = useRecoleccionForm();
   const { user } = useAuth();
   const [showSuccess, setShowSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -34,80 +48,75 @@ function SummaryForm() {
       const fotos: File[] = [];
 
       formData.placePhotos.forEach((base64, index) => {
-        const file = RecoleccionService.base64ToFile(base64, `lugar_${index + 1}.jpg`);
+        const file = base64ToFile(base64, `lugar_${index + 1}.jpg`);
         fotos.push(file);
       });
 
       formData.totalPhotos.forEach((base64, index) => {
-        const file = RecoleccionService.base64ToFile(base64, `total_${index + 1}.jpg`);
+        const file = base64ToFile(base64, `total_${index + 1}.jpg`);
         fotos.push(file);
       });
 
-      let tipo_material: 'SEMILLA' | 'ESTACA' | 'PLANTULA' | 'INJERTO';
-      if (formData.type === 'seed') {
-        tipo_material = 'SEMILLA';
-      } else if (formData.type === 'cutting') {
-        tipo_material = 'ESTACA';
-      } else {
-        tipo_material = 'SEMILLA';
+      if (fotos.length < 2 || fotos.length > 5) {
+        throw new Error('Debes agregar entre 2 y 5 fotos para registrar la recolección.');
       }
 
-      const metodoId = formData.metodo_id;
-      if (!metodoId) {
-        throw new Error('Debes seleccionar un método de recolección válido.');
+      const cantidad = parseFloat(formData.quantity) || 0;
+      if (cantidad <= 0) {
+        throw new Error('La cantidad debe ser mayor a 0.');
       }
 
-      const paisId = formData.paisId ? Number(formData.paisId) : undefined;
-      const divisionId = formData.divisionId ? Number(formData.divisionId) : undefined;
+      if (formData.type === 'cutting' && !Number.isInteger(cantidad)) {
+        throw new Error('Para ESQUEJE la cantidad debe ser un número entero.');
+      }
+
+      const latitud = parseFloat(formData.latitud);
+      const longitud = parseFloat(formData.longitud);
+      if (!Number.isFinite(latitud) || !Number.isFinite(longitud)) {
+        throw new Error('Debes completar una ubicación válida.');
+      }
+
+      const paisId = Number(formData.paisId);
+      const divisionId = Number(formData.divisionId);
       const precisionM = formData.precisionM ? Number(formData.precisionM) : undefined;
+      const plantaId = formData.planta_id ? Number(formData.planta_id) : 1;
+      const metodoId = formData.metodo_id ? Number(formData.metodo_id) : 1;
+      const viveroId = formData.vivero_id ? Number(formData.vivero_id) : 1;
 
-      const dto: CreateRecoleccionDto = {
+      const dtoV2: CreateRecoleccionDto = {
         fecha: formData.date,
-        cantidad: parseFloat(formData.quantity) || 0,
-        unidad: formData.unit === 'kg' ? 'kg' : 'unidades',
-        tipo_material,
-        estado: 'ALMACENADO',
-        especie_nueva: Boolean(formData.isNewFind),
+        cantidad,
+        unidad:
+          formData.type === 'cutting'
+            ? 'unidad'
+            : formData.unit === 'kg'
+              ? 'kg'
+              : 'unidad',
+        tipo_material: formData.type === 'seed' ? 'SEMILLA' : 'ESQUEJE',
+        planta_id: Number.isFinite(plantaId) && plantaId > 0 ? plantaId : 1,
+        metodo_id: Number.isFinite(metodoId) && metodoId > 0 ? metodoId : 1,
+        vivero_id: Number.isFinite(viveroId) && viveroId > 0 ? viveroId : 1,
         observaciones: formData.notes || undefined,
         ubicacion: {
           nombre: formData.ubicacionNombre || undefined,
           referencia: formData.referencia || undefined,
-          latitud: parseFloat(formData.latitud) || 0,
-          longitud: parseFloat(formData.longitud) || 0,
-          pais_id: Number.isFinite(paisId) ? paisId : undefined,
-          division_id: Number.isFinite(divisionId) ? divisionId : undefined,
-          precision_m: Number.isFinite(precisionM) ? precisionM : undefined,
+          latitud,
+          longitud,
+          pais_id: Number.isFinite(paisId) && paisId > 0 ? paisId : 1,
+          division_id: Number.isFinite(divisionId) && divisionId > 0 ? divisionId : 1,
+          precision_m:
+            precisionM !== undefined && Number.isFinite(precisionM) ? precisionM : undefined,
           fuente: 'GPS_MOVIL',
         },
-        metodo_id: metodoId,
-        vivero_id: formData.vivero_id ? parseInt(String(formData.vivero_id)) : undefined,
-        fotos: fotos.length > 0 ? fotos : undefined,
+        fotos,
       };
 
-      if (!formData.isNewFind && formData.planta_id) {
-        dto.planta_id = parseInt(String(formData.planta_id));
-        dto.nombre_cientifico = formData.nombre_cientifico;
-        dto.nombre_comercial = formData.species;
-      } else if (!formData.isNewFind) {
-        throw new Error('Debes seleccionar una especie existente o marcarla como nuevo hallazgo.');
+      const response = await RecoleccionesService.create(dtoV2);
+      if (!response.success) {
+        throw new Error('No se pudo crear la recolección con el backend canónico.');
       }
 
-      if (formData.isNewFind && formData.species) {
-        dto.nueva_planta = {
-          especie: formData.species,
-          nombre_cientifico: formData.nombre_cientifico || formData.species,
-          variedad: 'Común',
-          fuente: 'NATIVA',
-        };
-      }
-
-      const response = await RecoleccionService.create(dto);
-
-      if (response.success) {
-        setShowSuccess(true);
-      } else {
-        throw new Error('Error al crear recolección');
-      }
+      setShowSuccess(true);
       
     } catch (err) {
       console.error('❌ Error al enviar recolección:', err);
@@ -393,7 +402,7 @@ function SummaryForm() {
       </div>
 
       {showSuccess && (
-        <SuccessModal
+        <RecoleccionSuccessModal
           onViewBlockchain={() => {
             // Aquí iría la lógica para ver el registro en blockchain
             setShowSuccess(false);
@@ -410,4 +419,4 @@ function SummaryForm() {
   );
 }
 
-export default SummaryForm;
+export default RecoleccionFormResumenScreen;

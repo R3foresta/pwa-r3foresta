@@ -1,12 +1,12 @@
 // ============================================================================
-// SuccessModal.tsx
+// RecoleccionSuccessModal.tsx
 // ============================================================================
 // Modal de confirmación que se muestra después de crear exitosamente una recolección
 // Ofrece opciones para ver el registro en blockchain o volver al menú principal
 // ============================================================================
 
 // ============================================================================
-// SuccessModal.tsx
+// RecoleccionSuccessModal.tsx
 // ============================================================================
 // Modal de confirmación que se muestra después de crear exitosamente una recolección
 // Ofrece opciones para ver el registro en blockchain o volver al menú principal
@@ -27,7 +27,7 @@ type Props = {
  * 
  * @param {Props} props - Handlers y texto resumen
  */
-function SuccessModal({ onViewBlockchain, onBackToMenu, summaryText }: Props) {
+function RecoleccionSuccessModal({ onViewBlockchain, onBackToMenu, summaryText }: Props) {
   return (
     // Overlay oscuro que cubre toda la pantalla
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
@@ -95,4 +95,4 @@ function SuccessModal({ onViewBlockchain, onBackToMenu, summaryText }: Props) {
   );
 }
 
-export default SuccessModal;
+export default RecoleccionSuccessModal;
