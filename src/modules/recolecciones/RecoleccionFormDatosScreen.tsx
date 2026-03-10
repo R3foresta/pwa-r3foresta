@@ -1,22 +1,45 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import Icon from "../../components/Icon";
-import type { MaterialType, Unit } from "./types";
-import { useCollectionForm } from "./CollectionFormContext";
+import type { MaterialType, Unit } from "./recoleccionTypes";
+import { useRecoleccionForm } from "./RecoleccionFormContext";
 import {
-  RecoleccionesV2Service,
+  RecoleccionesService,
   type MetodoRecoleccionCatalogo as MetodoRecoleccion,
   type PlantaCatalogo as Planta,
   type TipoPlantaCatalogo as TipoPlanta,
-} from "../../services/recolecciones-v2.service";
+} from "../../services/recolecciones.service";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB en bytes
 const ALLOWED_FORMATS = ['image/jpeg', 'image/png', 'image/jpg'];
+const MAX_DIAS_ANTIGUEDAD_RECOLECCION = 45;
 
-function NewCollectionForm() {
+function toLocalDateInputValue(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function isDateInAllowedRange(value: string, minDate: string, maxDate: string) {
+  return value >= minDate && value <= maxDate;
+}
+
+function RecoleccionFormDatosScreen() {
   const navigate = useNavigate();
-  const { formData, updateForm } = useCollectionForm();
-  const [date, setDate] = useState(() => formData?.date || new Date().toISOString().slice(0, 10));
+  const { formData, updateForm } = useRecoleccionForm();
+  const todayDate = toLocalDateInputValue(new Date());
+  const minAllowedDate = useMemo(() => {
+    const date = new Date();
+    date.setDate(date.getDate() - MAX_DIAS_ANTIGUEDAD_RECOLECCION);
+    return toLocalDateInputValue(date);
+  }, []);
+  const [date, setDate] = useState(() => {
+    const candidate = formData?.date || todayDate;
+    if (candidate > todayDate) return todayDate;
+    if (candidate < minAllowedDate) return minAllowedDate;
+    return candidate;
+  });
   const [type, setType] = useState<MaterialType>(formData?.type || "seed");
   const [species, setSpecies] = useState(formData?.species || "");
   const [method, setMethod] = useState(formData?.method || "");
@@ -89,6 +112,7 @@ function NewCollectionForm() {
   
   const [errors, setErrors] = useState({
     date: false,
+    dateRange: false,
     quantity: false,
     photos: false,
     method: false,
@@ -98,7 +122,7 @@ function NewCollectionForm() {
     const cargarMetodos = async () => {
       setLoadingMetodos(true);
       try {
-        const metodosBackend = await RecoleccionesV2Service.getMetodos();
+        const metodosBackend = await RecoleccionesService.getMetodos();
         setMetodos(metodosBackend);
 
         if (formData?.metodo_id) {
@@ -129,7 +153,7 @@ function NewCollectionForm() {
     const cargarPlantas = async () => {
       setLoadingPlantas(true);
       try {
-        const plantasBackend = await RecoleccionesV2Service.getPlantas();
+        const plantasBackend = await RecoleccionesService.getPlantas();
         setPlantas(plantasBackend);
         console.log('✅ Plantas cargadas desde backend:', plantasBackend);
         console.log('📊 Total de plantas:', plantasBackend.length);
@@ -157,7 +181,7 @@ function NewCollectionForm() {
     const cargarTiposPlantas = async () => {
       setLoadingTiposPlantas(true);
       try {
-        const tipos = await RecoleccionesV2Service.getTiposPlantas();
+        const tipos = await RecoleccionesService.getTiposPlantas();
         setTiposPlantas(tipos);
         console.log('✅ Tipos de planta cargados:', tipos);
       } catch (error) {
@@ -289,7 +313,7 @@ function NewCollectionForm() {
     setCreatingTipo(true);
     try {
       console.log('📤 Creando nuevo tipo de planta:', newTipoNombre);
-      const result = await RecoleccionesV2Service.createTipoPlanta(newTipoNombre.trim());
+      const result = await RecoleccionesService.createTipoPlanta(newTipoNombre.trim());
       
       if (result.success && result.data) {
         // Agregar el nuevo tipo a la lista
@@ -355,7 +379,7 @@ function NewCollectionForm() {
     try {
       // 1. Validar si ya existe una planta con la misma especie
       console.log('🔍 Validando si existe planta con especie:', newPlantData.especie);
-      const plantasExistentes = await RecoleccionesV2Service.buscarPlantasPorEspecie(newPlantData.especie.trim());
+      const plantasExistentes = await RecoleccionesService.buscarPlantasPorEspecie(newPlantData.especie.trim());
       
       if (plantasExistentes.length > 0) {
         // Verificar si alguna tiene la misma especie exacta (case-insensitive)
@@ -385,7 +409,7 @@ function NewCollectionForm() {
       };
 
       console.log('📤 Creando nueva planta:', plantaData);
-      const response = await RecoleccionesV2Service.createPlanta(plantaData);
+      const response = await RecoleccionesService.createPlanta(plantaData);
       
       if (response.success && response.data) {
         // Actualizar lista de plantas
@@ -455,8 +479,11 @@ function NewCollectionForm() {
   };
 
   const handleContinue = () => {
+    const hasDate = Boolean(date);
+    const isDateValid = hasDate && isDateInAllowedRange(date, minAllowedDate, todayDate);
     const newErrors = {
-      date: !date,
+      date: !hasDate,
+      dateRange: hasDate && !isDateValid,
       quantity: parseFloat(quantity) <= 0,
       photos: placePhotos.length === 0 || totalPhotos.length === 0,
       method: !metodoId,
@@ -550,18 +577,25 @@ function NewCollectionForm() {
             <input
               type="date"
               value={date}
+              min={minAllowedDate}
+              max={todayDate}
               onChange={(event) => {
                 setDate(event.target.value);
-                setErrors(prev => ({ ...prev, date: false }));
+                setErrors(prev => ({ ...prev, date: false, dateRange: false }));
               }}
               className={`w-full rounded-2xl border px-4 py-3 text-base font-semibold text-slate-700 shadow-soft outline-none transition focus:ring-2 ${
-                errors.date
+                errors.date || errors.dateRange
                   ? 'border-red-400 focus:border-red-400 focus:ring-red-200'
                   : 'border-slate-200 bg-white focus:border-brand-400 focus:ring-brand-200'
               }`}
             />
             {errors.date && (
               <p className="text-xs font-semibold text-red-500">* La fecha es obligatoria</p>
+            )}
+            {errors.dateRange && (
+              <p className="text-xs font-semibold text-red-500">
+                * La fecha debe estar entre {minAllowedDate} y {todayDate}
+              </p>
             )}
           </div>
 
@@ -1512,4 +1546,4 @@ function NewCollectionForm() {
   );
 }
 
-export default NewCollectionForm;
+export default RecoleccionFormDatosScreen;

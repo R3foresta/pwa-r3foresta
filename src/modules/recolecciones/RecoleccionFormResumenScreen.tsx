@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Icon from "../../components/Icon";
-import SuccessModal from "./SuccessModal";
-import { useCollectionForm } from "./CollectionFormContext";
+import RecoleccionSuccessModal from "./RecoleccionSuccessModal";
+import { useRecoleccionForm } from "./RecoleccionFormContext";
 import { useAuth } from "../../contexts/AuthContext";
 import {
-  RecoleccionesV2Service,
-  type CreateRecoleccionV2Dto,
-} from "../../services/recolecciones-v2.service";
+  RecoleccionesService,
+  type CreateRecoleccionDto,
+} from "../../services/recolecciones.service";
 
 function base64ToFile(base64: string, filename: string): File {
   const arr = base64.split(',');
@@ -21,9 +21,9 @@ function base64ToFile(base64: string, filename: string): File {
   return new File([u8arr], filename, { type: mime });
 }
 
-function SummaryForm() {
+function RecoleccionFormResumenScreen() {
   const navigate = useNavigate();
-  const { formData, resetForm } = useCollectionForm();
+  const { formData, resetForm } = useRecoleccionForm();
   const { user } = useAuth();
   const [showSuccess, setShowSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -83,7 +83,7 @@ function SummaryForm() {
       const metodoId = formData.metodo_id ? Number(formData.metodo_id) : 1;
       const viveroId = formData.vivero_id ? Number(formData.vivero_id) : 1;
 
-      const dtoV2: CreateRecoleccionV2Dto = {
+      const dtoV2: CreateRecoleccionDto = {
         fecha: formData.date,
         cantidad,
         unidad:
@@ -111,7 +111,7 @@ function SummaryForm() {
         fotos,
       };
 
-      const response = await RecoleccionesV2Service.create(dtoV2);
+      const response = await RecoleccionesService.create(dtoV2);
       if (!response.success) {
         throw new Error('No se pudo crear la recolección con el backend canónico.');
       }
@@ -402,7 +402,7 @@ function SummaryForm() {
       </div>
 
       {showSuccess && (
-        <SuccessModal
+        <RecoleccionSuccessModal
           onViewBlockchain={() => {
             // Aquí iría la lógica para ver el registro en blockchain
             setShowSuccess(false);
@@ -419,4 +419,4 @@ function SummaryForm() {
   );
 }
 
-export default SummaryForm;
+export default RecoleccionFormResumenScreen;

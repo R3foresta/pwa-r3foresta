@@ -1,18 +1,18 @@
 import Icon from '../../components/Icon'
-import type { RecoleccionV2 } from '../../services/recolecciones-v2.service'
+import type { Recoleccion } from '../../services/recolecciones.service'
 import { getUbicacionDisplay } from '../../utils/ubicacion'
 import {
   estadoOperativoBadgeClass,
   estadoRegistroBadgeClass,
   resolveEstadoOperativo,
   resolveEstadoRegistro,
-} from './recoleccion-status'
+} from './recoleccionStatus'
 
 type Props = {
-  recoleccion: RecoleccionV2
+  recoleccion: Recoleccion
 }
 
-type RecoleccionV2Compat = RecoleccionV2 & {
+type RecoleccionCompat = Recoleccion & {
   estadoRegistro?: string | null
   estadoRegistroRecoleccion?: string | null
 }
@@ -37,8 +37,8 @@ function materialBadgeClass(tipoMaterial: string) {
 }
 
 
-function RecoleccionV2Card({ recoleccion }: Props) {
-  const recoleccionCompat = recoleccion as RecoleccionV2Compat
+function RecoleccionCard({ recoleccion }: Props) {
+  const recoleccionCompat = recoleccion as RecoleccionCompat
   const nombreComercial =
     recoleccion.planta?.nombre_comun_principal ||
     recoleccion.nombre_comun_principal ||
@@ -114,4 +114,4 @@ function RecoleccionV2Card({ recoleccion }: Props) {
   )
 }
 
-export default RecoleccionV2Card
+export default RecoleccionCard

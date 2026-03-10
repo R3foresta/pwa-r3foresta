@@ -2,17 +2,17 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Icon from '../../components/Icon'
 import {
-  RecoleccionesV2Service,
+  RecoleccionesService,
   type EvidenciaTrazabilidad,
-  type RecoleccionV2,
-} from '../../services/recolecciones-v2.service'
+  type Recoleccion,
+} from '../../services/recolecciones.service'
 import { getUbicacionCoords, getUbicacionDisplay, getUbicacionDivision } from '../../utils/ubicacion'
 import {
   estadoOperativoBadgeClass,
   estadoRegistroBadgeClass,
   resolveEstadoOperativo,
   resolveEstadoRegistro,
-} from './recoleccion-status'
+} from './recoleccionStatus'
 
 function formatDate(value: string) {
   return new Date(value).toLocaleDateString('es-BO', {
@@ -33,11 +33,11 @@ function formatDateTime(value: string | null | undefined) {
   })
 }
 
-function RecoleccionV2DetailScreen() {
+function RecoleccionDetailScreen() {
   const navigate = useNavigate()
   const { id } = useParams()
 
-  const [recoleccion, setRecoleccion] = useState<RecoleccionV2 | null>(null)
+  const [recoleccion, setRecoleccion] = useState<Recoleccion | null>(null)
   const [evidenciasFallback, setEvidenciasFallback] = useState<EvidenciaTrazabilidad[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -58,8 +58,8 @@ function RecoleccionV2DetailScreen() {
         setError(null)
 
         const [recoleccionResponse, evidenciasResponse] = await Promise.all([
-          RecoleccionesV2Service.getById(parsedId),
-          RecoleccionesV2Service.getEvidenciasByRecoleccion(parsedId),
+          RecoleccionesService.getById(parsedId),
+          RecoleccionesService.getEvidenciasByRecoleccion(parsedId),
         ])
 
         if (!mounted) {
@@ -285,4 +285,4 @@ function RecoleccionV2DetailScreen() {
   )
 }
 
-export default RecoleccionV2DetailScreen
+export default RecoleccionDetailScreen

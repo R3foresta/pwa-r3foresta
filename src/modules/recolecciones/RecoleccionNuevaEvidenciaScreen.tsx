@@ -1,13 +1,13 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Icon from '../../components/Icon'
-import { RecoleccionesV2Service } from '../../services/recolecciones-v2.service'
+import { RecoleccionesService } from '../../services/recolecciones.service'
 
 const MAX_FOTOS = 5
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/jpg', 'image/png']
 
-function NuevaEvidenciaRecoleccionV2Screen() {
+function RecoleccionNuevaEvidenciaScreen() {
   const navigate = useNavigate()
   const { id } = useParams()
 
@@ -94,7 +94,7 @@ function NuevaEvidenciaRecoleccionV2Screen() {
     try {
       setSubmitting(true)
 
-      await RecoleccionesV2Service.addEvidenciasToRecoleccion(recoleccionId, {
+      await RecoleccionesService.addEvidenciasToRecoleccion(recoleccionId, {
         titulo,
         descripcion,
         metadata,
@@ -225,4 +225,4 @@ function NuevaEvidenciaRecoleccionV2Screen() {
   )
 }
 
-export default NuevaEvidenciaRecoleccionV2Screen
+export default RecoleccionNuevaEvidenciaScreen

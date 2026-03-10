@@ -5,15 +5,15 @@ import Icon from '../../components/Icon'
 import SelectorComunidad from '../comunidades/SelectorComunidad'
 import { useViveros } from '../../hooks/useViveros'
 import {
-  RecoleccionesV2Service,
+  RecoleccionesService,
   type PaisCatalogoV2 as PaisCatalogo,
-} from '../../services/recolecciones-v2.service'
+} from '../../services/recolecciones.service'
 import type { ComunidadCard } from '../../tipos/comunidades'
-import { useCollectionForm } from './CollectionFormContext'
+import { useRecoleccionForm } from './RecoleccionFormContext'
 
-function LocationForm() {
+function RecoleccionFormUbicacionScreen() {
   const navigate = useNavigate()
-  const { formData, updateForm } = useCollectionForm()
+  const { formData, updateForm } = useRecoleccionForm()
   const { viveros, loading: viveroLoading, error: viveroError } = useViveros()
 
   const [ubicacionNombre, setUbicacionNombre] = useState(formData?.ubicacionNombre || '')
@@ -92,7 +92,7 @@ function LocationForm() {
     try {
       setLoadingPaises(true)
       setCatalogoError(null)
-      const response = await RecoleccionesV2Service.getPaises()
+      const response = await RecoleccionesService.getPaises()
       const nextPaises = response || []
       setPaises(nextPaises)
 
@@ -580,4 +580,4 @@ function LocationForm() {
   )
 }
 
-export default LocationForm
+export default RecoleccionFormUbicacionScreen

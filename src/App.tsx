@@ -4,16 +4,16 @@ import AppLayout from './layouts/AppLayout'
 import ProtectedRoute from './routes/ProtectedRoute'
 import GuestRoute from './routes/GuestRoute'
 import HomeScreen from './modules/home/HomeScreen'
-import NewCollectionForm from './modules/collections/NewCollectionForm'
-import LocationForm from './modules/collections/LocationForm'
-import SummaryForm from './modules/collections/SummaryForm'
 import {
-  NuevaEvidenciaRecoleccionV2Screen,
-  RecoleccionV2DetailScreen,
-  RecoleccionesV2Screen,
-} from './modules/recolecciones_v2'
+  RecoleccionDetailScreen,
+  RecoleccionNuevaEvidenciaScreen,
+  RecoleccionesScreen,
+} from './modules/recolecciones'
 import PlaceholderScreen from './modules/PlaceholderScreen'
-import CollectionFormLayout from './modules/collections/CollectionFormLayout'
+import RecoleccionFormDatosScreen from './modules/recolecciones/RecoleccionFormDatosScreen'
+import RecoleccionFormLayout from './modules/recolecciones/RecoleccionFormLayout'
+import RecoleccionFormResumenScreen from './modules/recolecciones/RecoleccionFormResumenScreen'
+import RecoleccionFormUbicacionScreen from './modules/recolecciones/RecoleccionFormUbicacionScreen'
 import LoginScreen from './modules/auth/LoginScreen'
 import RegisterScreen from './modules/auth/RegisterScreen'
 import RecoverScreen from './modules/auth/RecoverScreen'
@@ -79,14 +79,14 @@ function App() {
           <Route index element={<Navigate to="home" replace />} />
           <Route path="home" element={<HomeScreen />} />
           <Route path="collections">
-            <Route index element={<RecoleccionesV2Screen />} />
-            <Route path="new" element={<CollectionFormLayout />}>
-              <Route index element={<NewCollectionForm />} />
-              <Route path="location" element={<LocationForm />} />
-              <Route path="summary" element={<SummaryForm />} />
+            <Route index element={<RecoleccionesScreen />} />
+            <Route path="new" element={<RecoleccionFormLayout />}>
+              <Route index element={<RecoleccionFormDatosScreen />} />
+              <Route path="location" element={<RecoleccionFormUbicacionScreen />} />
+              <Route path="summary" element={<RecoleccionFormResumenScreen />} />
             </Route>
-            <Route path=":id" element={<RecoleccionV2DetailScreen />} />
-            <Route path=":id/evidencias/new" element={<NuevaEvidenciaRecoleccionV2Screen />} />
+            <Route path=":id" element={<RecoleccionDetailScreen />} />
+            <Route path=":id/evidencias/new" element={<RecoleccionNuevaEvidenciaScreen />} />
           </Route>
           <Route path="vivero">
             <Route index element={<ViveroScreen />} />

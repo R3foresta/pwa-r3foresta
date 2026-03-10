@@ -2,17 +2,17 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Icon from '../../components/Icon'
 import {
-  RecoleccionesV2Service,
-  type RecoleccionV2,
+  RecoleccionesService,
+  type Recoleccion,
   type TipoMaterialCanonico,
-} from '../../services/recolecciones-v2.service'
-import RecoleccionV2Card from './RecoleccionV2Card'
+} from '../../services/recolecciones.service'
+import RecoleccionCard from './RecoleccionCard'
 
 type MaterialFilter = 'all' | TipoMaterialCanonico
 
-function RecoleccionesV2Screen() {
+function RecoleccionesScreen() {
   const navigate = useNavigate()
-  const [items, setItems] = useState<RecoleccionV2[]>([])
+  const [items, setItems] = useState<Recoleccion[]>([])
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<MaterialFilter>('all')
   const [loading, setLoading] = useState(false)
@@ -23,7 +23,7 @@ function RecoleccionesV2Screen() {
       setLoading(true)
       setError(null)
 
-      const response = await RecoleccionesV2Service.list({
+      const response = await RecoleccionesService.list({
         page: 1,
         limit: 30,
         q: searchValue.trim() || undefined,
@@ -155,7 +155,7 @@ function RecoleccionesV2Screen() {
                   onClick={() => navigate(`/app/collections/${item.id}`)}
                   className="w-full text-left"
                 >
-                  <RecoleccionV2Card recoleccion={item} />
+                  <RecoleccionCard recoleccion={item} />
                 </button>
               ))}
             </div>
@@ -187,4 +187,4 @@ function RecoleccionesV2Screen() {
   )
 }
 
-export default RecoleccionesV2Screen
+export default RecoleccionesScreen
