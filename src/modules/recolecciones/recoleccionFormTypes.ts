@@ -5,14 +5,14 @@
 // Define la estructura del estado compartido entre los 3 pasos del formulario
 // ============================================================================
 
-import type { MaterialType, Unit } from "./types";
+import type { MaterialType, Unit } from "./recoleccionTypes";
 import type { FuenteUbicacion } from "../../types/ubicacion";
 
 /**
  * Interfaz completa del estado del formulario de recolección
  * Agrupa datos de los 3 pasos: Datos generales, Ubicación y Resumen
  */
-export interface CollectionFormData {
+export interface RecoleccionFormData {
   // ============================================================================
   // PASO 1: Datos generales de la recolección
   // ============================================================================
@@ -59,7 +59,7 @@ export interface CollectionFormData {
  * Valores iniciales del formulario
  * Se usa al crear un nuevo formulario y al resetear después de enviar
  */
-export const initialFormData: CollectionFormData = {
+export const initialFormData: RecoleccionFormData = {
   date: new Date().toISOString().slice(0, 10),
   type: "seed",
   species: "",
