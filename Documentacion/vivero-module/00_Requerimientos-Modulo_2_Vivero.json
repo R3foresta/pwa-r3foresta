@@ -1,0 +1,92 @@
+[
+  {
+    "ID": "RF-VIV-01",
+    "Sección": "Vivero",
+    "Nombre": "Inicio: Crear lote de vivero desde lote origen (Módulo 1)",
+    "Objetivo": "Iniciar el proceso de vivero registrando el material biológico (semilla o esqueje) y su contexto.",
+    "Campos clave y obligatoriedad": "Obligatorio (PENDIENTE):\n- id_lote_origen (único)\n- tipo_material (Semilla/Esqueje) (viene del lote origen)\n- id_vivero\n- fecha_evento_inicio\n- responsable\n- unidades_iniciales_en_proceso (semillas sembradas o esquejes en agua)\nObligatorio (COMPLETO):\n- Todo lo anterior + evidencia (>=1 foto) o excepción aprobada (RF-VIV-08)\nOpcional:\n- observaciones\n- fotos (hasta 5 por evento; configurable)",
+    "Reglas y validaciónes": "- No se permite mezclar múltiples lotes origen en un lote de vivero.\n- El lote origen debe estar activo/disponible.\n- El lote origen debe corresponder al mismo vivero seleccionado (según Módulo 1).\n- unidades_iniciales_en_proceso > 0.\n- fecha_evento_inicio: no futura; permitida hasta 10 días en el pasado.\n- created_at se registra automáticamente (fecha real del registro).",
+    "Comportamiento al Guardar": "- Guarda el lote en estado PENDIENTE por defecto.\n- Muestra confirmación + resumen del lote.\n- Si faltan datos obligatorios del estado actual, muestra feedback campo por campo."
+  },
+  {
+    "ID": "RF-VIV-02",
+    "Sección": "Vivero",
+    "Nombre": "Embolsado: Registrar ingreso a etapa de plantas vivas",
+    "Objetivo": "Marcar el momento en que el lote pasa a bolsa/maceta y comienza el seguimiento de plantas vivas.",
+    "Campos clave y obligatoriedad": "Obligatorio (PENDIENTE):\n- id_lote_vivero\n- fecha_evento_embolsado\n- responsable\n- plantas_vivas_iniciales\nObligatorio (COMPLETO):\n- Todo lo anterior + evidencia (>=1 foto) o excepción aprobada\nOpcional:\n- observaciones\n- fotos (1..5)",
+    "Reglas y validaciónes": "- plantas_vivas_iniciales > 0.\n- fecha_evento_embolsado >= fecha_evento_inicio.\n- No se permite embolsar si el lote está finalizado/cerrado.",
+    "Comportamiento al Guardar": "- Crea evento EMBOLSADO (append-only).\n- Actualiza el estado del lote (En proceso / Embolsado).\n- Confirmación + timeline actualizado."
+  },
+  {
+    "ID": "RF-VIV-03",
+    "Sección": "Vivero",
+    "Nombre": "Merma: Registrar pérdida por causa y cantidad",
+    "Objetivo": "Registrar pérdidas reales (hongos, hídrico, mecánico, etc.) de forma auditable.",
+    "Campos clave y obligatoriedad": "Obligatorio:\n- id_lote_vivero\n- etapa_actual (Embolsado/Adaptación/Despacho)\n- fecha_evento\n- responsable\n- cantidad_perdida\n- causa_merma (catálogo)\nOpcional:\n- notas/observación\n- evidencia fotográfica (recomendado)",
+    "Reglas y validaciónes": "- cantidad_perdida > 0.\n- cantidad_perdida <= plantas_vivas_disponibles (a la fecha del evento).\n- fecha_evento: no futura; permitida hasta 10 días en el pasado.\n- Permitir mermas elevadas sin bloquear; exigir observación si supera umbral (regla de negocio).",
+    "Comportamiento al Guardar": "- Crea evento MERMA (append-only).\n- Recalcula plantas_vivas_actuales.\n- Si llega a 0, puede gatillar cierre automático (RF-VIV-10)."
+  },
+  {
+    "ID": "RF-VIV-04",
+    "Sección": "Vivero",
+    "Nombre": "Adaptación: Registrar cambio de ambiente (flexible)",
+    "Objetivo": "Registrar cambios de ambiente como historial agronómico (no rígido) para análisis y gestión.",
+    "Campos clave y obligatoriedad": "Obligatorio:\n- id_lote_vivero\n- fecha_evento\n- responsable\n- ambiente_destino (catálogo: Media Sombra/Sol Directo/etc.)\nOpcional:\n- ambiente_origen (si el sistema no lo infiere)\n- observaciones técnicas\n- fotos",
+    "Reglas y validaciónes": "- Permite cualquier secuencia (ida y vuelta).\n- fecha_evento >= fecha_evento_embolsado.\n- No se permite registrar cambios si el lote está finalizado.",
+    "Comportamiento al Guardar": "- Crea evento CAMBIO_AMBIENTE.\n- Actualiza el ambiente actual del lote.\n- Confirma el registro y muestra el cambio en el timeline."
+  },
+  {
+    "ID": "RF-VIV-05",
+    "Sección": "Vivero",
+    "Nombre": "Despacho: Registrar salida parcial/total hacia Plantación (Módulo 3)",
+    "Objetivo": "Registrar la salida (parcial o total) del lote hacia plantación, manteniendo el saldo vivo auditado.",
+    "Campos clave y obligatoriedad": "Obligatorio:\n- id_lote_vivero\n- fecha_evento\n- responsable\n- cantidad_despachada\n- destino (ideal: id_actividad_plantacion o referencia)\nOpcional:\n- observaciones\n- fotos (recomendado)",
+    "Reglas y validaciónes": "- cantidad_despachada > 0.\n- cantidad_despachada <= plantas_vivas_disponibles.\n- fecha_evento >= fecha_evento_embolsado.\n- Permite múltiples despachos parciales.\n- Si plantas_vivas_actuales queda en 0, cierre automático (RF-VIV-10).",
+    "Comportamiento al Guardar": "- Crea evento DESPACHO.\n- Actualiza saldo vivo.\n- Si corresponde, marca lote finalizado."
+  },
+  {
+    "ID": "RF-VIV-06",
+    "Sección": "Vivero",
+    "Nombre": "Validación: Cambiar estado PENDIENTE → COMPLETO (Supervisor)",
+    "Objetivo": "Validar el registro para bloquear edición y dejarlo listo para auditoría y/o anclaje blockchain.",
+    "Campos clave y obligatoriedad": "Obligatorio:\n- id_lote_vivero\n- etapa_a_validar (Inicio/Embolsado/Adaptación/Despacho)\n- aprobado_por (Supervisor)\n- fecha_aprobacion\nOpcional:\n- comentario_validacion",
+    "Reglas y validaciónes": "- Solo rol Supervisor puede completar.\n- Para completar: datos mínimos completos + evidencia requerida o excepción aprobada (RF-VIV-08).\n- Una vez COMPLETO: no se permite edición; solo CORRECCIÓN (RF-VIV-07).",
+    "Comportamiento al Guardar": "- Cambia estado a COMPLETO (por etapa/lote según diseño).\n- (MVP) Puede marcar como 'apto para anclaje' sin ejecutar gas automáticamente.\n- Confirma y muestra sello de validación."
+  },
+  {
+    "ID": "RF-VIV-07",
+    "Sección": "Vivero",
+    "Nombre": "Corrección: Evento correctivo post-validación (sin editar historial)",
+    "Objetivo": "Corregir errores manteniendo auditoría fuerte mediante un evento con delta y motivo.",
+    "Campos clave y obligatoriedad": "Obligatorio:\n- id_lote_vivero\n- evento_referenciado\n- fecha_evento\n- responsable\n- delta_ajuste (+/-)\n- motivo_correccion\nOpcional:\n- evidencia\n- aprobado_por (si se define)",
+    "Reglas y validaciónes": "- No se edita el evento original.\n- delta_ajuste > 0 permitido solo como corrección (auditado).\n- No puede dejar saldo negativo; debe mantener consistencia de cantidades.",
+    "Comportamiento al Guardar": "- Crea evento CORRECCION (append-only).\n- Recalcula saldos.\n- Se muestra claramente en el historial como corrección."
+  },
+  {
+    "ID": "RF-VIV-08",
+    "Sección": "Vivero",
+    "Nombre": "Excepción: Autorizar COMPLETO sin evidencia obligatoria",
+    "Objetivo": "Permitir completar cuando no hay foto por limitaciones operativas, sin perder control ni auditoría.",
+    "Campos clave y obligatoriedad": "Obligatorio:\n- id_lote_vivero\n- etapa\n- motivo_excepcion\n- responsable\n- aprobado_por (Supervisor)\n- fecha_aprobacion",
+    "Reglas y validaciónes": "- Solo Supervisor aprueba.\n- La excepción queda auditada.\n- Evidencia tardía puede cargarse después como evento, sin borrar la excepción.",
+    "Comportamiento al Guardar": "- Registra excepción.\n- Habilita pasar a COMPLETO aunque falte foto.\n- Confirma aprobación y registra en el timeline."
+  },
+  {
+    "ID": "RF-VIV-09",
+    "Sección": "Vivero",
+    "Nombre": "Historial: Consultar timeline de eventos y trazabilidad del lote",
+    "Objetivo": "Visualizar el historial completo del lote (fecha_evento vs created_at), evidencias y evolución de saldos.",
+    "Campos clave y obligatoriedad": "Vista incluye:\n- timeline por evento\n- responsable\n- fotos/adjuntos\n- saldo antes/después\nFiltros:\n- por tipo de evento (mermas, despachos, correcciones, ambientes)",
+    "Reglas y validaciónes": "- No se pueden ocultar eventos.\n- Las correcciones deben verse claramente diferenciadas.\n- Control de acceso por rol (lectura/escritura).",
+    "Comportamiento al Guardar": "- No aplica (solo consulta).\n- Permite exportación/reporte si se habilita más adelante."
+  },
+  {
+    "ID": "RF-VIV-10",
+    "Sección": "Vivero",
+    "Nombre": "Cierre automático: Finalizar lote por saldo vivo 0 o despacho total",
+    "Objetivo": "Finalizar automáticamente el lote cuando ya no existen plantas vivas disponibles.",
+    "Campos clave y obligatoriedad": "Automático:\n- Se evalúa tras eventos MERMA, DESPACHO y CORRECCION.",
+    "Reglas y validaciónes": "- Si plantas_vivas_actuales = 0 → estado FINALIZADO.\n- Bloquea nuevos eventos excepto correcciones (RF-VIV-07) y consulta (RF-VIV-09).",
+    "Comportamiento al Guardar": "- Al guardar un evento que deja saldo en 0, el sistema finaliza el lote.\n- Muestra mensaje 'Lote finalizado' y actualiza el estado."
+  }
+]
