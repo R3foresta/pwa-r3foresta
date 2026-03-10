@@ -9,33 +9,20 @@ import {
   type PlantaCatalogo as Planta,
   type TipoPlantaCatalogo as TipoPlanta,
 } from "../../services/recolecciones.service";
+import { buildPastRange, clampDateToRange, validateDateInRange } from "../../utils/validations/date";
+import { validateCantidad } from "../../utils/validations/cantidad";
+import { MAX_DIAS_RECOLECCION } from "../../config/recoleccion";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB en bytes
 const ALLOWED_FORMATS = ['image/jpeg', 'image/png', 'image/jpg'];
-const MAX_DIAS_ANTIGUEDAD_RECOLECCION = 45;
-
-function toLocalDateInputValue(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
 
 function RecoleccionFormDatosScreen() {
   const navigate = useNavigate();
   const { formData, updateForm } = useRecoleccionForm();
-  const todayDate = toLocalDateInputValue(new Date());
-  const minAllowedDate = useMemo(() => {
-    const date = new Date();
-    date.setDate(date.getDate() - MAX_DIAS_ANTIGUEDAD_RECOLECCION);
-    return toLocalDateInputValue(date);
-  }, []);
-  const [date, setDate] = useState(() => {
-    const candidate = formData?.date || todayDate;
-    if (candidate > todayDate) return todayDate;
-    if (candidate < minAllowedDate) return minAllowedDate;
-    return candidate;
-  });
+  const dateRange = useMemo(() => buildPastRange(MAX_DIAS_RECOLECCION), []);
+  const [date, setDate] = useState(() =>
+    clampDateToRange(formData?.date, dateRange),
+  );
   const [type, setType] = useState<MaterialType>(formData?.type || "seed");
   const [species, setSpecies] = useState(formData?.species || "");
   const [method, setMethod] = useState(formData?.method || "");
@@ -475,12 +462,13 @@ function RecoleccionFormDatosScreen() {
   };
 
   const handleContinue = () => {
-    const hasDate = Boolean(date);
-    const isDateValid = hasDate && date >= minAllowedDate && date <= todayDate;
+    const dateCheck = validateDateInRange(date, dateRange);
+    const tipoMaterialCanonico = type === 'cutting' ? 'ESQUEJE' : 'SEMILLA';
+    const cantidadCheck = validateCantidad(quantity, tipoMaterialCanonico);
     const newErrors = {
-      date: !hasDate,
-      dateRange: hasDate && !isDateValid,
-      quantity: parseFloat(quantity) <= 0,
+      date: dateCheck.errorKey === 'empty',
+      dateRange: dateCheck.errorKey === 'future' || dateCheck.errorKey === 'too_old',
+      quantity: !cantidadCheck.isValid,
       photos: placePhotos.length === 0 || totalPhotos.length === 0,
       method: !metodoId,
     }
@@ -573,8 +561,8 @@ function RecoleccionFormDatosScreen() {
             <input
               type="date"
               value={date}
-              min={minAllowedDate}
-              max={todayDate}
+              min={dateRange.min}
+              max={dateRange.max}
               onChange={(event) => {
                 setDate(event.target.value);
                 setErrors(prev => ({ ...prev, date: false, dateRange: false }));
@@ -589,7 +577,7 @@ function RecoleccionFormDatosScreen() {
               <p className="text-xs font-semibold text-red-500">* La fecha es obligatoria</p>
             )}
             {errors.dateRange && (
-              <p className="text-xs font-semibold text-red-500">* La fecha debe estar entre {minAllowedDate} y {todayDate}</p>
+              <p className="text-xs font-semibold text-red-500">* La fecha debe estar entre {dateRange.min} y {dateRange.max}</p>
             )}
           </div>
 

@@ -1,0 +1,1 @@
+export const MAX_DIAS_RECOLECCION = 45

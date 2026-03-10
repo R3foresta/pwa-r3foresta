@@ -7,6 +7,8 @@ import { GerminacionService } from '../../services/germinacion.service'
 import { RecoleccionService } from '../../services/recoleccion.service'
 import type { Recoleccion } from '../../services/recoleccion.service'
 import { getUbicacionDisplay } from '../../utils/ubicacion'
+import { buildPastRange, clampDateToRange, validateDateInRange } from '../../utils/validations/date'
+import { MAX_DIAS_GERMINACION } from '../../config/germinacion'
 
 const createLotId = () => {
   const year = new Date().getFullYear()
@@ -46,7 +48,10 @@ function ViveroNewScreen() {
   const [selectedRecolecciones, setSelectedRecolecciones] = useState<number[]>([])
 
   const [cantidadInicio, setCantidadInicio] = useState('')
-  const [fechaInicio, setFechaInicio] = useState(() => new Date().toISOString().slice(0, 10))
+  const fechaRange = useMemo(() => buildPastRange(MAX_DIAS_GERMINACION), [])
+  const [fechaInicio, setFechaInicio] = useState(() =>
+    clampDateToRange(new Date().toISOString().slice(0, 10), fechaRange),
+  )
   const [observaciones, setObservaciones] = useState('')
   const [photos, setPhotos] = useState<{ file: File; previewUrl: string }[]>([])
   const [showErrors, setShowErrors] = useState(false)
@@ -142,18 +147,20 @@ function ViveroNewScreen() {
 
   const cantidadValue = Number(cantidadInicio)
   const responsable = user?.username ?? ''
+  const fechaInicioCheck = validateDateInRange(fechaInicio, fechaRange)
+
   const validation = {
     vivero: !selectedViveroId,
     recolecciones: selectedRecolecciones.length === 0,
     cantidadInicio: !cantidadValue || cantidadValue <= 0,
-    fechaInicio: !fechaInicio,
+    fechaInicio: !fechaInicioCheck.isValid,
     responsable: !responsable.trim(),
   }
   const canSubmit =
     Boolean(selectedViveroId) &&
     selectedRecolecciones.length > 0 &&
     cantidadValue > 0 &&
-    Boolean(fechaInicio) &&
+    fechaInicioCheck.isValid &&
     Boolean(responsable.trim()) &&
     !submitting
 
@@ -184,7 +191,7 @@ function ViveroNewScreen() {
       vivero_id: selectedViveroId as number,
       planta_id: uniquePlantaIds[0],
       responsable_id: Number.isFinite(responsableId) ? responsableId : undefined,
-      fecha_inicio: fechaInicio,
+      fecha_inicio: fechaInicioCheck.normalized,
       cantidad_inicio: cantidadValue,
       estado: 'INICIO' as const,
       tipo_material: 'SEMILLA' as const,
@@ -408,12 +415,14 @@ function ViveroNewScreen() {
               <input
                 type="date"
                 value={fechaInicio}
+                min={fechaRange.min}
+                max={fechaRange.max}
                 onChange={(event) => setFechaInicio(event.target.value)}
                 className="mt-2 w-full border-none bg-transparent text-lg font-semibold text-brand-700 outline-none"
               />
               {showErrors && validation.fechaInicio && (
                 <p className="mt-1 text-xs font-semibold text-red-500">
-                  Selecciona una fecha de inicio.
+                  Selecciona una fecha entre {fechaRange.min} y {fechaRange.max}.
                 </p>
               )}
             </div>
