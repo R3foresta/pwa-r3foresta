@@ -1,0 +1,96 @@
+import { useMemo, useState } from 'react'
+import Icon from '../../../components/Icon'
+import type { PlantaCatalogo } from '../../../services/recolecciones.service'
+
+type Props = {
+  plantas: PlantaCatalogo[]
+  loading: boolean
+  onSelect: (planta: PlantaCatalogo) => void
+  onCreateNew: () => void
+}
+
+function PlantSelector({ plantas, loading, onSelect, onCreateNew }: Props) {
+  const [searchTerm, setSearchTerm] = useState('')
+
+  const filtered = useMemo(() => {
+    if (!searchTerm.trim()) return plantas
+    const term = searchTerm.toLowerCase()
+    return plantas.filter(
+      (p) =>
+        p.especie?.toLowerCase().includes(term) ||
+        p.nombre_cientifico?.toLowerCase().includes(term),
+    )
+  }, [plantas, searchTerm])
+
+  return (
+    <div className="space-y-3">
+      <div className="relative">
+        <Icon name="search" className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Buscar"
+          className="w-full rounded-2xl border border-slate-200 bg-white pl-12 pr-4 py-3 text-base font-semibold text-slate-700 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
+        />
+      </div>
+
+      <button
+        type="button"
+        onClick={onCreateNew}
+        className="w-full flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-brand-300 bg-brand-50/50 py-4 text-brand-600 transition hover:bg-brand-50 active:scale-[0.99]"
+      >
+        <Icon name="plus" className="h-5 w-5" />
+        <span className="text-base font-extrabold">Añadir nueva planta</span>
+      </button>
+
+      <div className="space-y-3">
+        {loading ? (
+          <p className="text-sm font-semibold text-slate-500">Cargando plantas...</p>
+        ) : filtered.length === 0 ? (
+          <div className="py-8 text-center">
+            <p className="text-sm font-semibold text-slate-500">No se encontraron plantas</p>
+          </div>
+        ) : (
+          filtered.map((planta) => (
+            <button
+              key={planta.id}
+              type="button"
+              onClick={() => onSelect(planta)}
+              className="w-full flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-soft transition hover:border-brand-300 hover:bg-brand-50 active:scale-[0.99]"
+            >
+              <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-slate-100">
+                {planta.imagen_url ? (
+                  <img
+                    src={planta.imagen_url}
+                    alt={planta.especie || planta.nombre_cientifico}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center">
+                    <Icon name="photo" className="h-8 w-8 text-slate-300" />
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 text-left">
+                <p className="text-base font-extrabold text-brand-700">
+                  {planta.especie || 'Sin nombre común'}
+                </p>
+                <p className="text-sm font-semibold text-slate-500">
+                  {planta.nombre_cientifico}
+                </p>
+              </div>
+              {planta.tipo_planta && (
+                <div className="rounded-xl border border-brand-500 bg-brand-50 text-brand-600 px-3 py-1.5 text-xs font-bold">
+                  {planta.tipo_planta}
+                </div>
+              )}
+            </button>
+          ))
+        )}
+      </div>
+    </div>
+  )
+}
+
+export default PlantSelector

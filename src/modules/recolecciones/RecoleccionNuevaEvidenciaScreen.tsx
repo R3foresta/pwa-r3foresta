@@ -1,11 +1,9 @@
-import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Icon from '../../components/Icon'
 import { RecoleccionesService } from '../../services/recolecciones.service'
-
-const MAX_FOTOS = 5
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024
-const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/jpg', 'image/png']
+import { MAX_FOTOS as MAX_FOTOS_FORM } from './validators/recoleccionForm'
+import PhotoPicker from './components/PhotoPicker'
 
 function RecoleccionNuevaEvidenciaScreen() {
   const navigate = useNavigate()
@@ -21,44 +19,11 @@ function RecoleccionNuevaEvidenciaScreen() {
   const [previewUrls, setPreviewUrls] = useState<string[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    const urls = fotos.map((foto) => URL.createObjectURL(foto))
-    setPreviewUrls(urls)
-
-    return () => {
-      urls.forEach((url) => URL.revokeObjectURL(url))
-    }
-  }, [fotos])
-
-  const handleFotos = (event: ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || [])
-    if (!files.length) {
-      return
-    }
-
-    const accepted: File[] = []
-
-    for (const file of files) {
-      if (!ALLOWED_MIME_TYPES.includes(file.type)) {
-        setError(`Formato inválido: ${file.name}. Solo JPG/PNG.`)
-        continue
-      }
-
-      if (file.size > MAX_IMAGE_SIZE) {
-        setError(`Imagen demasiado grande: ${file.name}. Máximo 5MB.`)
-        continue
-      }
-
-      accepted.push(file)
-    }
-
-    setFotos((prev) => [...prev, ...accepted].slice(0, MAX_FOTOS))
-    event.target.value = ''
-  }
+  const MAX_FOTOS = MAX_FOTOS_FORM
 
   const removeFoto = (index: number) => {
     setFotos((prev) => prev.filter((_, i) => i !== index))
+    setPreviewUrls((prev) => prev.filter((_, i) => i !== index))
   }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -175,34 +140,23 @@ function RecoleccionNuevaEvidenciaScreen() {
               <span className="text-xs font-semibold text-slate-500">{fotos.length}/{MAX_FOTOS}</span>
             </div>
 
-            <label className="flex cursor-pointer items-center justify-center rounded-2xl border-2 border-dashed border-brand-200 bg-brand-50 px-4 py-5 text-center text-sm font-bold text-brand-700 transition hover:bg-brand-100">
-              <input
-                type="file"
-                accept="image/jpeg,image/jpg,image/png"
-                multiple
-                onChange={handleFotos}
-                className="hidden"
-              />
-              <span>Seleccionar fotos</span>
-            </label>
+            <PhotoPicker
+              label="Evidencias"
+              photos={previewUrls}
+              maxPhotos={MAX_FOTOS}
+              onChange={(next) => setPreviewUrls(next)}
+              onFilesAccepted={(accepted) => {
+                const remaining = Math.max(0, MAX_FOTOS - fotos.length)
+                const trimmed = accepted.slice(0, remaining)
+                if (trimmed.length === 0) return
+                setFotos((prev) => [...prev, ...trimmed].slice(0, MAX_FOTOS))
+                setError(null)
+              }}
+              onRemove={(index) => removeFoto(index)}
+            />
 
-            {previewUrls.length > 0 && (
-              <div className="grid grid-cols-3 gap-3">
-                {previewUrls.map((url, index) => (
-                  <div key={`${url}-${index}`} className="space-y-1">
-                    <div className="h-24 overflow-hidden rounded-2xl bg-slate-100">
-                      <img src={url} alt={`Foto ${index + 1}`} className="h-full w-full object-cover" />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => removeFoto(index)}
-                      className="w-full rounded-lg bg-slate-100 py-1 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-200"
-                    >
-                      Quitar
-                    </button>
-                  </div>
-                ))}
-              </div>
+            {error && (
+              <p className="text-xs font-semibold text-red-500">{error}</p>
             )}
           </section>
 

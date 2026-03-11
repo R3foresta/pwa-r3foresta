@@ -85,6 +85,8 @@ export function useCatalogosRecoleccion(formPlantaId?: number, formMetodoId?: nu
     plantas,
     tiposPlantas,
     metodos,
+    setPlantas,
+    setTiposPlantas,
     selectedPlanta,
     setSelectedPlanta,
     metodoId,
