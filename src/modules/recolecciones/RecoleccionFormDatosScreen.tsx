@@ -12,6 +12,8 @@ import {
 import { buildPastRange, clampDateToRange } from "../../utils/validations/date";
 import { MAX_DIAS_RECOLECCION } from "../../config/recoleccion";
 import { validateRecoleccionForm } from "./validators/recoleccionForm";
+import TipoMaterialSwitcher from "./components/TipoMaterialSwitcher";
+import CantidadInput from "./components/CantidadInput";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB en bytes
 const ALLOWED_FORMATS = ['image/jpeg', 'image/png', 'image/jpg'];
@@ -177,122 +179,7 @@ function RecoleccionFormDatosScreen() {
     cargarTiposPlantas();
   }, []);
 
-  // Cambiar unidad automáticamente cuando cambia el tipo
-  const handleTypeChange = (newType: MaterialType) => {
-    setType(newType);
-    if (newType === "cutting") {
-      setUnit("units");
-    } else if (unit === "units") {
-      setUnit("kg");
-    }
-  };
-
-  const changeQuantity = (delta: number) => {
-    setQuantity((value) => {
-      const numValue = parseFloat(value) || 0;
-      const newValue = Math.max(0, numValue + delta);
-      return newValue.toString();
-    });
-  };
-
-  const handleQuantityChange = (value: string) => {
-    // Permitir vacío, números y decimales
-    if (value === "" || value === "0") {
-      setQuantity("0");
-      return;
-    }
-    
-    // Remover ceros a la izquierda excepto si es "0." o "0.algo"
-    const cleanValue = value.replace(/^0+(?=\d)/, "");
-    
-    // Validar que sea un número válido con posible decimal
-    if (/^\d*\.?\d*$/.test(cleanValue)) {
-      setQuantity(cleanValue);
-      if (parseFloat(cleanValue) > 0) {
-        setErrors(prev => ({ ...prev, quantity: false }));
-      }
-    }
-  };
-
-  const handlePhotoUpload = (type: 'place' | 'total', event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files) {
-      Array.from(files).forEach(file => {
-        // --- BLOQUE DE VALIDACIÓN  ---
-        if (!ALLOWED_FORMATS.includes(file.type)) {
-          alert(`El archivo ${file.name} no es JPG o PNG.`);
-          return; 
-        }
-        if (file.size > MAX_FILE_SIZE) {
-          alert(`La imagen ${file.name} supera los 5MB.`);
-          return; 
-        }
-        // ---------------------------------------
-
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const result = reader.result as string;
-          if (type === 'place') {
-            setPlacePhotos(prev => {
-              const newPhotos = [...prev, result];
-              if (newPhotos.length > 0 && totalPhotos.length > 0) {
-                setErrors(prevErrors => ({ ...prevErrors, photos: false }));
-              }
-              return newPhotos;
-            });
-          } else {
-            setTotalPhotos(prev => {
-              const newPhotos = [...prev, result];
-              if (newPhotos.length > 0 && placePhotos.length > 0) {
-                setErrors(prevErrors => ({ ...prevErrors, photos: false }));
-              }
-              return newPhotos;
-            });
-          }
-        };
-        reader.readAsDataURL(file);
-      });
-    }
-  };
-
-  const removePhoto = (type: 'place' | 'total', index: number) => {
-    if (type === 'place') {
-      setPlacePhotos(prev => prev.filter((_, i) => i !== index));
-    } else {
-      setTotalPhotos(prev => prev.filter((_, i) => i !== index));
-    }
-  };
-
-  const handleNewPlantImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    // --- BLOQUE DE VALIDACIÓN  ---
-    if (!ALLOWED_FORMATS.includes(file.type)) {
-      alert("Formato no permitido. Solo JPG o PNG.");
-      return;
-    }
-    if (file.size > MAX_FILE_SIZE) {
-      alert("La imagen de la planta no debe superar los 5MB.");
-      return;
-    }
-    // ---------------------------------------
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64String = reader.result as string;
-      setNewPlantImagePreview(base64String);
-      setNewPlantData(prev => ({ ...prev, imagen_url: base64String }));
-    };
-    reader.readAsDataURL(file);
-  };
-
   const handleCreateNewTipo = async () => {
-    if (!newTipoNombre.trim()) {
-      alert('Por favor, ingresa el nombre del nuevo tipo de planta');
-      return;
-    }
-
     setCreatingTipo(true);
     try {
       console.log('📤 Creando nuevo tipo de planta:', newTipoNombre);
@@ -461,6 +348,64 @@ function RecoleccionFormDatosScreen() {
     }
   };
 
+  const handleNewPlantImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!ALLOWED_FORMATS.includes(file.type)) {
+      alert("Formato no permitido. Solo JPG o PNG.");
+      return;
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      alert("La imagen de la planta no debe superar los 5MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      setNewPlantImagePreview(base64String);
+      setNewPlantData(prev => ({ ...prev, imagen_url: base64String }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handlePhotoUpload = (type: 'place' | 'total', event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) return;
+
+    Array.from(files).forEach(file => {
+      if (!ALLOWED_FORMATS.includes(file.type)) {
+        alert(`El archivo ${file.name} no es JPG o PNG.`);
+        return;
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        alert(`La imagen ${file.name} supera los 5MB.`);
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        if (type === 'place') {
+          setPlacePhotos(prev => [...prev, result]);
+        } else {
+          setTotalPhotos(prev => [...prev, result]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+    event.target.value = '';
+  };
+
+  const removePhoto = (type: 'place' | 'total', index: number) => {
+    if (type === 'place') {
+      setPlacePhotos(prev => prev.filter((_, i) => i !== index));
+    } else {
+      setTotalPhotos(prev => prev.filter((_, i) => i !== index));
+    }
+  };
+
   const handleContinue = () => {
     const { errors: validationErrors, isValid } = validateRecoleccionForm(
       {
@@ -587,33 +532,14 @@ function RecoleccionFormDatosScreen() {
             )}
           </div>
 
-          <div className="space-y-3">
-            <p className="text-base font-extrabold text-brand-700">
-              Seleccionar tipo
-            </p>
-            <div className="flex gap-3">
-              {[
-                { label: "Semilla", value: "seed" as MaterialType },
-                { label: "Esqueje", value: "cutting" as MaterialType },
-              ].map((option) => {
-                const isActive = type === option.value;
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => handleTypeChange(option.value)}
-                    className={`flex-1 rounded-2xl border px-4 py-3 text-center text-base font-extrabold shadow-soft transition ${
-                      isActive
-                        ? "border-brand-500 bg-emerald-50 text-brand-600 ring-2 ring-emerald-100"
-                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          <TipoMaterialSwitcher
+            value={type}
+            onChange={(newType) => {
+              setType(newType)
+              setUnit(newType === 'cutting' ? 'units' : 'kg')
+              setErrors((prev) => ({ ...prev, tipoMaterial: false }))
+            }}
+          />
 
           <div className="space-y-2">
             <p className="text-base font-extrabold text-brand-700">
@@ -648,77 +574,46 @@ function RecoleccionFormDatosScreen() {
             )}
           </div>
 
-          <div className="space-y-2">
-            <p className="text-base font-extrabold text-brand-700">Cantidad <span className="text-red-500">*</span></p>
-            <div className={`flex items-center gap-3 rounded-2xl border px-3 py-3 shadow-soft ${
-              errors.quantity
-                ? 'border-red-400 bg-red-50'
-                : 'border-slate-200 bg-white'
-            }`}>
+          <CantidadInput
+            value={quantity}
+            tipoMaterial={type}
+            error={errors.quantity}
+            onChange={(val) => {
+              setQuantity(val);
+              setErrors((prev) => ({ ...prev, quantity: false }));
+            }}
+            onErrorClear={() => setErrors((prev) => ({ ...prev, quantity: false }))}
+          />
+          {type === 'seed' ? (
+            <div className="flex gap-2">
               <button
                 type="button"
-                onClick={() => changeQuantity(-1)}
-                className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-brand-600 transition hover:border-brand-400 hover:bg-brand-50"
+                onClick={() => setUnit('kg')}
+                className={`rounded-xl border px-3 py-2 text-sm font-bold transition ${
+                  unit === 'kg'
+                    ? 'border-brand-500 bg-brand-500 text-white shadow-sm'
+                    : 'border-slate-200 bg-white text-slate-600 hover:border-brand-300 hover:bg-brand-50'
+                }`}
               >
-                <Icon name="minus" className="h-5 w-5" />
+                Kg
               </button>
-              <div className="flex flex-1 items-center justify-center gap-2">
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={quantity}
-                  onChange={(event) => handleQuantityChange(event.target.value)}
-                  onBlur={() => {
-                    // Al perder foco, si está vacío poner 0
-                    if (quantity === "" || quantity === ".") {
-                      setQuantity("0");
-                    }
-                  }}
-                  className="w-20 rounded-xl border border-slate-200 bg-transparent px-3 py-2 text-center text-lg font-extrabold text-slate-700 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
-                />
-                {type === "seed" ? (
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setUnit("kg")}
-                      className={`rounded-xl border px-3 py-2 text-sm font-bold transition ${
-                        unit === "kg"
-                          ? "border-brand-500 bg-brand-500 text-white shadow-sm"
-                          : "border-slate-200 bg-white text-slate-600 hover:border-brand-300 hover:bg-brand-50"
-                      }`}
-                    >
-                      Kg
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setUnit("units")}
-                      className={`rounded-xl border px-3 py-2 text-sm font-bold transition ${
-                        unit === "units"
-                          ? "border-brand-500 bg-brand-500 text-white shadow-sm"
-                          : "border-slate-200 bg-white text-slate-600 hover:border-brand-300 hover:bg-brand-50"
-                      }`}
-                    >
-                      Unidades
-                    </button>
-                  </div>
-                ) : (
-                  <div className="rounded-xl border border-brand-500 bg-brand-500 px-3 py-2 text-sm font-bold text-white shadow-sm">
-                    Unidades
-                  </div>
-                )}
-              </div>
               <button
                 type="button"
-                onClick={() => changeQuantity(1)}
-                className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-brand-600 transition hover:border-brand-400 hover:bg-brand-50"
+                onClick={() => setUnit('units')}
+                className={`rounded-xl border px-3 py-2 text-sm font-bold transition ${
+                  unit === 'units'
+                    ? 'border-brand-500 bg-brand-500 text-white shadow-sm'
+                    : 'border-slate-200 bg-white text-slate-600 hover:border-brand-300 hover:bg-brand-50'
+                }`}
               >
-                <Icon name="plus" className="h-5 w-5" />
+                Unidades
               </button>
             </div>
-            {errors.quantity && (
-              <p className="text-xs font-semibold text-red-500">* La cantidad debe ser mayor a 0</p>
-            )}
-          </div>
+          ) : (
+            <div className="rounded-xl border border-brand-500 bg-brand-500 px-3 py-2 text-sm font-bold text-white shadow-sm">
+              Unidades
+            </div>
+          )}
 
           <div className="space-y-2">
             <p className="text-base font-extrabold text-brand-700">
