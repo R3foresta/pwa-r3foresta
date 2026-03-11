@@ -14,7 +14,7 @@ function sanitizeQuantity(value: string, tipo: MaterialType): string {
 
   // remove leading zeros except decimals
   const clean = value.replace(/^0+(?=\d)/, '')
-  const regex = tipo === 'cutting' ? /^\\d*$/ : /^\\d*\\.?\\d*$/
+  const regex = tipo === 'cutting' ? /^\d*$/ : /^\d*\.?\d*$/
   if (!regex.test(clean)) return clean.slice(0, -1)
   return clean
 }

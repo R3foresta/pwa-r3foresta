@@ -63,10 +63,11 @@ export function validateRecoleccionForm(
 export function mapFormToCreateDto(form: RecoleccionFormData): CreateRecoleccionDto {
   const tipo_material = form.type === 'cutting' ? 'ESQUEJE' : 'SEMILLA'
   const cantidad = Number(form.quantity)
+  const unidad = form.unit === 'units' ? 'unidad' : form.unit
   return {
     fecha: form.date,
     cantidad,
-    unidad: form.unit === 'units' ? 'unidad' : form.unit,
+    unidad,
     tipo_material,
     planta_id: form.planta_id ? Number(form.planta_id) : 1,
     metodo_id: form.metodo_id ? Number(form.metodo_id) : 1,

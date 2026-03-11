@@ -585,29 +585,25 @@ function RecoleccionFormDatosScreen() {
             onErrorClear={() => setErrors((prev) => ({ ...prev, quantity: false }))}
           />
           {type === 'seed' ? (
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setUnit('kg')}
-                className={`rounded-xl border px-3 py-2 text-sm font-bold transition ${
-                  unit === 'kg'
-                    ? 'border-brand-500 bg-brand-500 text-white shadow-sm'
-                    : 'border-slate-200 bg-white text-slate-600 hover:border-brand-300 hover:bg-brand-50'
-                }`}
-              >
-                Kg
-              </button>
-              <button
-                type="button"
-                onClick={() => setUnit('units')}
-                className={`rounded-xl border px-3 py-2 text-sm font-bold transition ${
-                  unit === 'units'
-                    ? 'border-brand-500 bg-brand-500 text-white shadow-sm'
-                    : 'border-slate-200 bg-white text-slate-600 hover:border-brand-300 hover:bg-brand-50'
-                }`}
-              >
-                Unidades
-              </button>
+            <div className="flex gap-2 flex-wrap">
+              {[
+                { label: 'Kg', value: 'kg' as Unit },
+                { label: 'Gr', value: 'g' as Unit },
+                { label: 'Unidades', value: 'units' as Unit },
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setUnit(option.value)}
+                  className={`rounded-xl border px-3 py-2 text-sm font-bold transition ${
+                    unit === option.value
+                      ? 'border-brand-500 bg-brand-500 text-white shadow-sm'
+                      : 'border-slate-200 bg-white text-slate-600 hover:border-brand-300 hover:bg-brand-50'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
             </div>
           ) : (
             <div className="rounded-xl border border-brand-500 bg-brand-500 px-3 py-2 text-sm font-bold text-white shadow-sm">
