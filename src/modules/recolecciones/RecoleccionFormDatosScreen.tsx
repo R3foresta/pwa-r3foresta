@@ -9,9 +9,9 @@ import {
   type PlantaCatalogo as Planta,
   type TipoPlantaCatalogo as TipoPlanta,
 } from "../../services/recolecciones.service";
-import { buildPastRange, clampDateToRange, validateDateInRange } from "../../utils/validations/date";
-import { validateCantidad } from "../../utils/validations/cantidad";
+import { buildPastRange, clampDateToRange } from "../../utils/validations/date";
 import { MAX_DIAS_RECOLECCION } from "../../config/recoleccion";
+import { validateRecoleccionForm } from "./validators/recoleccionForm";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB en bytes
 const ALLOWED_FORMATS = ['image/jpeg', 'image/png', 'image/jpg'];
@@ -462,22 +462,28 @@ function RecoleccionFormDatosScreen() {
   };
 
   const handleContinue = () => {
-    const dateCheck = validateDateInRange(date, dateRange);
-    const tipoMaterialCanonico = type === 'cutting' ? 'ESQUEJE' : 'SEMILLA';
-    const cantidadCheck = validateCantidad(quantity, tipoMaterialCanonico);
-    const newErrors = {
-      date: dateCheck.errorKey === 'empty',
-      dateRange: dateCheck.errorKey === 'future' || dateCheck.errorKey === 'too_old',
-      quantity: !cantidadCheck.isValid,
-      photos: placePhotos.length === 0 || totalPhotos.length === 0,
-      method: !metodoId,
-    }
+    const { errors: validationErrors, isValid } = validateRecoleccionForm(
+      {
+        ...formData,
+        date,
+        type,
+        quantity,
+        placePhotos,
+        totalPhotos,
+        metodo_id: metodoId,
+      },
+      { dateRange, stage: 'datos' },
+    )
 
-    setErrors(newErrors)
+    setErrors({
+      date: Boolean(validationErrors.date),
+      dateRange: Boolean(validationErrors.dateRange),
+      quantity: Boolean(validationErrors.quantity),
+      photos: Boolean(validationErrors.fotos),
+      method: Boolean(validationErrors.method),
+    })
 
-    if (Object.values(newErrors).some(error => error)) {
-      return
-    }
+    if (!isValid) return
 
     // Obtener datos de la planta seleccionada
     let planta_id: number | undefined;

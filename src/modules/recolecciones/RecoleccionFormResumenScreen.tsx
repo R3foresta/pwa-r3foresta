@@ -1,25 +1,13 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Icon from "../../components/Icon";
 import RecoleccionSuccessModal from "./RecoleccionSuccessModal";
 import { useRecoleccionForm } from "./RecoleccionFormContext";
 import { useAuth } from "../../contexts/AuthContext";
-import {
-  RecoleccionesService,
-  type CreateRecoleccionDto,
-} from "../../services/recolecciones.service";
-
-function base64ToFile(base64: string, filename: string): File {
-  const arr = base64.split(',');
-  const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
-  const bstr = atob(arr[1]);
-  let n = bstr.length;
-  const u8arr = new Uint8Array(n);
-  while (n--) {
-    u8arr[n] = bstr.charCodeAt(n);
-  }
-  return new File([u8arr], filename, { type: mime });
-}
+import { RecoleccionesService } from "../../services/recolecciones.service";
+import { mapFormToCreateDto, validateRecoleccionForm } from "./validators/recoleccionForm";
+import { buildPastRange } from "../../utils/validations/date";
+import { MAX_DIAS_RECOLECCION } from "../../config/recoleccion";
 
 function RecoleccionFormResumenScreen() {
   const navigate = useNavigate();
@@ -28,6 +16,7 @@ function RecoleccionFormResumenScreen() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const dateRange = useMemo(() => buildPastRange(MAX_DIAS_RECOLECCION), []);
   const [traceabilityCode] = useState(() => 
     `REC-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`
   );
@@ -40,77 +29,18 @@ function RecoleccionFormResumenScreen() {
     navigate('/app/collections');
   };
   
+
   const handleSubmit = async () => {
     setLoading(true);
     setError(null);
     
     try {
-      const fotos: File[] = [];
-
-      formData.placePhotos.forEach((base64, index) => {
-        const file = base64ToFile(base64, `lugar_${index + 1}.jpg`);
-        fotos.push(file);
-      });
-
-      formData.totalPhotos.forEach((base64, index) => {
-        const file = base64ToFile(base64, `total_${index + 1}.jpg`);
-        fotos.push(file);
-      });
-
-      if (fotos.length < 2 || fotos.length > 5) {
-        throw new Error('Debes agregar entre 2 y 5 fotos para registrar la recolección.');
+      const validation = validateRecoleccionForm(formData, { dateRange, stage: 'resumen' });
+      if (!validation.isValid) {
+        throw new Error(Object.values(validation.errors).filter(Boolean)[0] || 'Datos incompletos');
       }
 
-      const cantidad = parseFloat(formData.quantity) || 0;
-      if (cantidad <= 0) {
-        throw new Error('La cantidad debe ser mayor a 0.');
-      }
-
-      if (formData.type === 'cutting' && !Number.isInteger(cantidad)) {
-        throw new Error('Para ESQUEJE la cantidad debe ser un número entero.');
-      }
-
-      const latitud = parseFloat(formData.latitud);
-      const longitud = parseFloat(formData.longitud);
-      if (!Number.isFinite(latitud) || !Number.isFinite(longitud)) {
-        throw new Error('Debes completar una ubicación válida.');
-      }
-
-      const paisId = Number(formData.paisId);
-      const divisionId = Number(formData.divisionId);
-      const precisionM = formData.precisionM ? Number(formData.precisionM) : undefined;
-      const plantaId = formData.planta_id ? Number(formData.planta_id) : 1;
-      const metodoId = formData.metodo_id ? Number(formData.metodo_id) : 1;
-      const viveroId = formData.vivero_id ? Number(formData.vivero_id) : 1;
-
-      const dtoV2: CreateRecoleccionDto = {
-        fecha: formData.date,
-        cantidad,
-        unidad:
-          formData.type === 'cutting'
-            ? 'unidad'
-            : formData.unit === 'kg'
-              ? 'kg'
-              : 'unidad',
-        tipo_material: formData.type === 'seed' ? 'SEMILLA' : 'ESQUEJE',
-        planta_id: Number.isFinite(plantaId) && plantaId > 0 ? plantaId : 1,
-        metodo_id: Number.isFinite(metodoId) && metodoId > 0 ? metodoId : 1,
-        vivero_id: Number.isFinite(viveroId) && viveroId > 0 ? viveroId : 1,
-        observaciones: formData.notes || undefined,
-        ubicacion: {
-          nombre: formData.ubicacionNombre || undefined,
-          referencia: formData.referencia || undefined,
-          latitud,
-          longitud,
-          pais_id: Number.isFinite(paisId) && paisId > 0 ? paisId : 1,
-          division_id: Number.isFinite(divisionId) && divisionId > 0 ? divisionId : 1,
-          precision_m:
-            precisionM !== undefined && Number.isFinite(precisionM) ? precisionM : undefined,
-          fuente: 'GPS_MOVIL',
-        },
-        fotos,
-      };
-
+      const dtoV2 = mapFormToCreateDto(formData);
       const response = await RecoleccionesService.create(dtoV2);
       if (!response.success) {
         throw new Error('No se pudo crear la recolección con el backend canónico.');
