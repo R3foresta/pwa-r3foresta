@@ -14,7 +14,7 @@ function RecoleccionFormResumenScreen() {
   const { formData, resetForm } = useRecoleccionForm();
   const { user } = useAuth();
   const [showSuccess, setShowSuccess] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loadingType, setLoadingType] = useState<'borrador' | 'validacion' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const dateRange = useMemo(() => buildPastRange(MAX_DIAS_RECOLECCION), []);
   const [traceabilityCode] = useState(() => 
@@ -23,17 +23,20 @@ function RecoleccionFormResumenScreen() {
   const typeLabel = formData.type === 'seed' ? 'Semilla' : 'Esqueje';
   const unitLabel = formData.unit === 'kg' ? 'kg' : 'unidades';
   const summaryText = `${formData.quantity} ${unitLabel} de ${formData.species || typeLabel}`;
-  
+
+  const userRol = (user?.rol ?? '').toUpperCase();
+  // RECOLECTOR y TECNICO ven dos botones (borrador / validar)
+  const isRecolector = userRol === 'RECOLECTOR' || userRol === 'TECNICO';
+
   const finalize = () => {
     resetForm();
     navigate('/app/collections');
   };
-  
 
-  const handleSubmit = async () => {
-    setLoading(true);
+  const handleGuardar = async (enviarAValidacion: boolean) => {
+    setLoadingType(enviarAValidacion ? 'validacion' : 'borrador');
     setError(null);
-    
+
     try {
       const validation = validateRecoleccionForm(formData, { dateRange, stage: 'resumen' });
       if (!validation.isValid) {
@@ -41,18 +44,21 @@ function RecoleccionFormResumenScreen() {
       }
 
       const dtoV2 = mapFormToCreateDto(formData);
-      const response = await RecoleccionesService.create(dtoV2);
-      if (!response.success) {
-        throw new Error('No se pudo crear la recolección con el backend canónico.');
+      const created = await RecoleccionesService.create(dtoV2);
+      if (!created.success || !created.data?.id) {
+        throw new Error('No se pudo crear la recolección.');
+      }
+
+      if (enviarAValidacion) {
+        await RecoleccionesService.submit(created.data.id);
       }
 
       setShowSuccess(true);
-      
     } catch (err) {
-      console.error('❌ Error al enviar recolección:', err);
+      console.error('❌ Error al guardar recolección:', err);
       setError(err instanceof Error ? err.message : 'Error desconocido al crear recolección');
     } finally {
-      setLoading(false);
+      setLoadingType(null);
     }
   };
   
@@ -309,24 +315,68 @@ function RecoleccionFormResumenScreen() {
               </div>
             )}
 
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={loading}
-              className="w-full rounded-2xl bg-brand-500 py-4 text-center text-lg font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-3"
-            >
-              {loading ? (
-                <>
-                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  <span>Guardando recolección...</span>
-                </>
-              ) : (
-                'Registrar Recolección'
-              )}
-            </button>
+            {isRecolector ? (
+              /* RECOLECTOR / TECNICO → dos botones */
+              <div className="flex flex-col gap-3">
+                <button
+                  type="button"
+                  onClick={() => void handleGuardar(true)}
+                  disabled={loadingType !== null}
+                  className="w-full rounded-2xl bg-brand-500 py-4 text-center text-lg font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                >
+                  {loadingType === 'validacion' ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      <span>Enviando a validación...</span>
+                    </>
+                  ) : (
+                    'Enviar a Validación'
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => void handleGuardar(false)}
+                  disabled={loadingType !== null}
+                  className="w-full rounded-2xl border-2 border-brand-500 bg-white py-4 text-center text-lg font-extrabold text-brand-600 shadow-soft transition hover:bg-brand-50 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                >
+                  {loadingType === 'borrador' ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      <span>Guardando borrador...</span>
+                    </>
+                  ) : (
+                    'Guardar Borrador'
+                  )}
+                </button>
+              </div>
+            ) : (
+              /* GENERAL / ADMIN → botón único, solo crea sin enviar a validación */
+              <button
+                type="button"
+                onClick={() => void handleGuardar(false)}
+                disabled={loadingType !== null}
+                className="w-full rounded-2xl bg-brand-500 py-4 text-center text-lg font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+              >
+                {loadingType === 'borrador' ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    <span>Registrando recolección...</span>
+                  </>
+                ) : (
+                  'Registrar Recolección'
+                )}
+              </button>
+            )}
           </div>
         </div>
       </div>

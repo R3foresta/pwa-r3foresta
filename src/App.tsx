@@ -8,6 +8,7 @@ import {
   RecoleccionDetailScreen,
   RecoleccionNuevaEvidenciaScreen,
   RecoleccionesScreen,
+  RecoleccionesValidacionScreen,
 } from './modules/recolecciones'
 import PlaceholderScreen from './modules/PlaceholderScreen'
 import RecoleccionFormDatosScreen from './modules/recolecciones/RecoleccionFormDatosScreen'
@@ -85,6 +86,7 @@ function App() {
               <Route path="location" element={<RecoleccionFormUbicacionScreen />} />
               <Route path="summary" element={<RecoleccionFormResumenScreen />} />
             </Route>
+            <Route path="validate" element={<RecoleccionesValidacionScreen />} />
             <Route path=":id" element={<RecoleccionDetailScreen />} />
             <Route path=":id/evidencias/new" element={<RecoleccionNuevaEvidenciaScreen />} />
           </Route>

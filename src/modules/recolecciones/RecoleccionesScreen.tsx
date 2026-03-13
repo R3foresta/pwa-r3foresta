@@ -6,17 +6,22 @@ import {
   type Recoleccion,
   type TipoMaterialCanonico,
 } from '../../services/recolecciones.service'
+import { useAuth } from '../../contexts/AuthContext'
 import RecoleccionCard from './RecoleccionCard'
 
 type MaterialFilter = 'all' | TipoMaterialCanonico
 
 function RecoleccionesScreen() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [items, setItems] = useState<Recoleccion[]>([])
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<MaterialFilter>('all')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const userRol = (user?.rol ?? '').toUpperCase()
+  const canValidate = userRol === 'GENERAL' || userRol === 'ADMIN'
 
   const loadRecolecciones = async (searchValue: string, filterValue: MaterialFilter) => {
     try {
@@ -73,10 +78,20 @@ function RecoleccionesScreen() {
           >
             <Icon name="arrow-left" className="h-5 w-5" />
           </button>
-          <div>
+          <div className="flex-1">
             <h1 className="text-3xl font-extrabold leading-tight">Recolecciones</h1>
             <p className="text-sm font-medium text-white/90">{subtitle}</p>
           </div>
+          {canValidate && (
+            <button
+              type="button"
+              onClick={() => navigate('/app/collections/validate')}
+              className="my-auto ml-2 flex items-center gap-1.5 rounded-full bg-amber-400 px-4 py-2 text-sm font-extrabold text-amber-900 transition hover:bg-amber-300 active:scale-[0.97]"
+            >
+              <Icon name="check" className="h-4 w-4" />
+              Validar
+            </button>
+          )}
         </header>
 
         <div className="-mt-10 space-y-4 px-5">

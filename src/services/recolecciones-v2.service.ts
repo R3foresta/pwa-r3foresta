@@ -708,6 +708,93 @@ export class RecoleccionesV2Service {
     return Array.isArray(payload.data) ? payload.data : []
   }
 
+  // ─── Helper con rol de usuario ─────────────────────────────────────────────
+
+  private static getAuthHeadersWithRole(options?: { includeContentType?: boolean }): HeadersInit {
+    const headers = this.getAuthHeaders(options) as Record<string, string>
+    try {
+      const stored = localStorage.getItem('r3foresta:user')
+      if (stored) {
+        const userData = JSON.parse(stored) as { rol?: string }
+        if (userData?.rol) {
+          headers['x-user-role'] = userData.rol.toUpperCase()
+        }
+      }
+    } catch {
+      // si falla la lectura del rol, se envían solo los headers base
+    }
+    return headers
+  }
+
+  // ─── Flujo de estados ────────────────────────────────────────────────────────
+
+  static async submit(id: number): Promise<{ success: boolean; data: RecoleccionV2 }> {
+    const response = await fetch(`${API_URL}/api/recolecciones/${id}/submit`, {
+      method: 'PATCH',
+      headers: this.getAuthHeadersWithRole({ includeContentType: false }),
+    })
+    const payload = await this.parseJsonResponse<ApiEnvelope<RecoleccionV2> | RecoleccionV2>(response)
+    if ('data' in (payload as ApiEnvelope<RecoleccionV2>) && (payload as ApiEnvelope<RecoleccionV2>).data) {
+      return { success: true, data: (payload as ApiEnvelope<RecoleccionV2>).data as RecoleccionV2 }
+    }
+    return { success: true, data: payload as RecoleccionV2 }
+  }
+
+  static async getPendingValidation(filters?: {
+    page?: number
+    limit?: number
+    fecha_inicio?: string
+    fecha_fin?: string
+    search?: string
+  }): Promise<ListRecoleccionesResult> {
+    const params = new URLSearchParams()
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          params.append(key, String(value))
+        }
+      })
+    }
+    const query = params.toString()
+    const url = `${API_URL}/api/recolecciones/pending-validation${query ? `?${query}` : ''}`
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: this.getAuthHeadersWithRole(),
+    })
+    const payload = await this.parseJsonResponse<unknown>(response)
+    return this.normalizeListResponse(payload)
+  }
+
+  static async approve(id: number): Promise<{ success: boolean; data: RecoleccionV2 }> {
+    const response = await fetch(`${API_URL}/api/recolecciones/${id}/approve`, {
+      method: 'PATCH',
+      headers: this.getAuthHeadersWithRole({ includeContentType: false }),
+    })
+    const payload = await this.parseJsonResponse<ApiEnvelope<RecoleccionV2> | RecoleccionV2>(response)
+    if ('data' in (payload as ApiEnvelope<RecoleccionV2>) && (payload as ApiEnvelope<RecoleccionV2>).data) {
+      return { success: true, data: (payload as ApiEnvelope<RecoleccionV2>).data as RecoleccionV2 }
+    }
+    return { success: true, data: payload as RecoleccionV2 }
+  }
+
+  static async reject(
+    id: number,
+    motivo_rechazo: string,
+  ): Promise<{ success: boolean; data: RecoleccionV2 }> {
+    const response = await fetch(`${API_URL}/api/recolecciones/${id}/reject`, {
+      method: 'PATCH',
+      headers: this.getAuthHeadersWithRole(),
+      body: JSON.stringify({ motivo_rechazo }),
+    })
+    const payload = await this.parseJsonResponse<ApiEnvelope<RecoleccionV2> | RecoleccionV2>(response)
+    if ('data' in (payload as ApiEnvelope<RecoleccionV2>) && (payload as ApiEnvelope<RecoleccionV2>).data) {
+      return { success: true, data: (payload as ApiEnvelope<RecoleccionV2>).data as RecoleccionV2 }
+    }
+    return { success: true, data: payload as RecoleccionV2 }
+  }
+
+  // ─── Validación de payload ───────────────────────────────────────────────────
+
   private static validateCreatePayload(data: CreateRecoleccionV2Dto) {
     if (!isTipoMaterialCanonico(data.tipo_material)) {
       throw new Error('Tipo de material inválido. Solo se permite SEMILLA o ESQUEJE.')
