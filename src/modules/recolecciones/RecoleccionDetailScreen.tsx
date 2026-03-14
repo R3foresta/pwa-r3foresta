@@ -273,10 +273,11 @@ function RecoleccionDetailScreen() {
                 <span className="text-slate-500">Validado en</span>
                 <span className="text-right">{formatDateTime(recoleccion.fecha_validacion)}</span>
               </p>
-              <p className="flex items-center justify-between gap-4">
-                <span className="text-slate-500">Usuario</span>
-                <span className="text-right">{recoleccion.usuario?.nombre || recoleccion.usuario?.username || 'No disponible'}</span>
-              </p>
+              <span className="text-right">
+                {recoleccion.usuario?.nombre 
+                  ? `${recoleccion.usuario.nombre} ${recoleccion.usuario.apellido || ''}`.trim() 
+                  : recoleccion.usuario?.username || 'No disponible'}
+              </span>
             </div>
           </section>
         </div>

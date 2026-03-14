@@ -80,6 +80,7 @@ export interface Recoleccion {
   usuario: {                               // Usuario que realizó la recolección
     id: number;
     nombre: string;
+    apellido: string;
     username: string;
   };
   ubicacion: UbicacionApi | null;
