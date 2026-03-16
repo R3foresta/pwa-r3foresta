@@ -195,6 +195,31 @@ export interface AddEvidenciasRecoleccionDto {
   fotos: File[]
 }
 
+export interface UpdateRecoleccionDraftDto {
+  fecha?: string
+  cantidad?: number
+  unidad?: string
+  tipo_material?: TipoMaterialCanonico
+  observaciones?: string
+  vivero_id?: number
+  metodo_id?: number
+  planta_id?: number
+  ubicacion?: {
+    nombre?: string
+    referencia?: string
+    latitud?: number
+    longitud?: number
+    pais_id?: number
+    division_id?: number
+    precision_m?: number
+    fuente?: FuenteUbicacionCanonica
+  }
+}
+
+const DRAFT_ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png']
+const DRAFT_MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024
+const DRAFT_MAX_NEW_FILES = 5
+
 type ApiEnvelope<T> = {
   success?: boolean
   data?: T
@@ -728,11 +753,76 @@ export class RecoleccionesV2Service {
 
   // ─── Flujo de estados ────────────────────────────────────────────────────────
 
+  private static validateDraftFiles(files: File[]) {
+    if (files.length > DRAFT_MAX_NEW_FILES) {
+      throw new Error('Solo se permiten hasta 5 fotos nuevas por edición.')
+    }
+
+    files.forEach((file) => {
+      if (!DRAFT_ALLOWED_IMAGE_TYPES.includes(file.type)) {
+        throw new Error(`Formato inválido en ${file.name}. Solo JPG, JPEG o PNG.`)
+      }
+      if (file.size > DRAFT_MAX_IMAGE_SIZE_BYTES) {
+        throw new Error(`La imagen ${file.name} supera el máximo de 5MB.`)
+      }
+    })
+  }
+
+  private static buildDraftPayload(data: UpdateRecoleccionDraftDto, files: File[]) {
+    const sanitizedData: UpdateRecoleccionDraftDto = { ...data }
+    delete sanitizedData.ubicacion
+
+    if (files.length === 0) {
+      return {
+        body: JSON.stringify(sanitizedData),
+        headers: this.getAuthHeadersWithRole(),
+      }
+    }
+
+    this.validateDraftFiles(files)
+    const formData = new FormData()
+
+    Object.entries(sanitizedData).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        formData.append(key, String(value))
+      }
+    })
+
+    files.forEach((file) => {
+      formData.append('fotos', file)
+    })
+
+    return {
+      body: formData,
+      headers: this.getAuthHeadersWithRole({ includeContentType: false }),
+    }
+  }
+
   static async submit(id: number): Promise<{ success: boolean; data: RecoleccionV2 }> {
     const response = await fetch(`${API_URL}/api/recolecciones/${id}/submit`, {
       method: 'PATCH',
       headers: this.getAuthHeadersWithRole({ includeContentType: false }),
     })
+    const payload = await this.parseJsonResponse<ApiEnvelope<RecoleccionV2> | RecoleccionV2>(response)
+    if ('data' in (payload as ApiEnvelope<RecoleccionV2>) && (payload as ApiEnvelope<RecoleccionV2>).data) {
+      return { success: true, data: (payload as ApiEnvelope<RecoleccionV2>).data as RecoleccionV2 }
+    }
+    return { success: true, data: payload as RecoleccionV2 }
+  }
+
+  static async updateDraft(
+    id: number,
+    data: UpdateRecoleccionDraftDto,
+    files: File[] = [],
+  ): Promise<{ success: boolean; data: RecoleccionV2 }> {
+    const payloadRequest = this.buildDraftPayload(data, files)
+
+    const response = await fetch(`${API_URL}/api/recolecciones/${id}/draft`, {
+      method: 'PATCH',
+      headers: payloadRequest.headers,
+      body: payloadRequest.body,
+    })
+
     const payload = await this.parseJsonResponse<ApiEnvelope<RecoleccionV2> | RecoleccionV2>(response)
     if ('data' in (payload as ApiEnvelope<RecoleccionV2>) && (payload as ApiEnvelope<RecoleccionV2>).data) {
       return { success: true, data: (payload as ApiEnvelope<RecoleccionV2>).data as RecoleccionV2 }

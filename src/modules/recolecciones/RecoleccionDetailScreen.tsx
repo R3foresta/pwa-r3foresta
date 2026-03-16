@@ -41,6 +41,9 @@ function RecoleccionDetailScreen() {
   const [evidenciasFallback, setEvidenciasFallback] = useState<EvidenciaTrazabilidad[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [submittingToValidation, setSubmittingToValidation] = useState(false)
+  const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [showValidationPopup, setShowValidationPopup] = useState(false)
 
   useEffect(() => {
     const parsedId = Number(id)
@@ -94,6 +97,32 @@ function RecoleccionDetailScreen() {
     return evidenciasFallback
   }, [evidenciasFallback, recoleccion?.evidencias])
 
+  const handleSubmitForValidation = async () => {
+    if (!recoleccion) {
+      return
+    }
+
+    try {
+      setSubmittingToValidation(true)
+      setActionMessage(null)
+      await RecoleccionesService.submit(recoleccion.id)
+
+      const refreshed = await RecoleccionesService.getById(recoleccion.id)
+      setRecoleccion(refreshed.data)
+      setShowValidationPopup(true)
+    } catch (submitError) {
+      setActionMessage({
+        type: 'error',
+        text:
+          submitError instanceof Error
+            ? submitError.message
+            : 'No se pudo enviar la recolección a validación.',
+      })
+    } finally {
+      setSubmittingToValidation(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-[#f6f7f3] to-[#eef1eb]">
@@ -136,6 +165,7 @@ function RecoleccionDetailScreen() {
   const ubicacionCoords = getUbicacionCoords(recoleccion.ubicacion)
   const estadoRegistro = resolveEstadoRegistro(recoleccion)
   const estadoOperativo = resolveEstadoOperativo(recoleccion.cantidad)
+  const isBorrador = estadoRegistro === 'BORRADOR'
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#f6f7f3] to-[#eef1eb] text-brand-700">
@@ -222,13 +252,6 @@ function RecoleccionDetailScreen() {
           <section className="rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-extrabold text-brand-700">Evidencias ({evidencias.length})</h2>
-              <button
-                type="button"
-                onClick={() => navigate(`/app/collections/${recoleccion.id}/evidencias/new`)}
-                className="rounded-xl bg-brand-50 px-3 py-2 text-xs font-bold text-brand-700 transition hover:bg-brand-100"
-              >
-                Agregar
-              </button>
             </div>
 
             {evidencias.length > 0 ? (
@@ -278,9 +301,62 @@ function RecoleccionDetailScreen() {
                 <span className="text-right">{recoleccion.usuario?.nombre || recoleccion.usuario?.username || 'No disponible'}</span>
               </p>
             </div>
+
+            {isBorrador && (
+              <div className="mt-4 space-y-3 border-t border-slate-100 pt-4">
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/app/collections/new?editId=${recoleccion.id}`)}
+                    className="rounded-xl border border-brand-200 bg-brand-50 py-2.5 text-sm font-bold text-brand-700 transition hover:bg-brand-100"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleSubmitForValidation()}
+                    disabled={submittingToValidation}
+                    className="rounded-xl bg-brand-500 py-2.5 text-sm font-bold text-white transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {submittingToValidation ? 'Enviando...' : 'Validar'}
+                  </button>
+                </div>
+
+                {actionMessage && (
+                  <p
+                    className={`text-xs font-semibold ${
+                      actionMessage.type === 'success' ? 'text-green-700' : 'text-red-700'
+                    }`}
+                  >
+                    {actionMessage.text}
+                  </p>
+                )}
+              </div>
+            )}
           </section>
         </div>
       </div>
+
+      {showValidationPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-6 text-center shadow-2xl ring-1 ring-black/5">
+            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
+              <Icon name="check" className="h-8 w-8 text-green-600" />
+            </div>
+            <h3 className="text-base font-extrabold text-slate-800">Envío exitoso</h3>
+            <p className="mt-1 text-sm font-semibold text-slate-600">
+              La recolección se envió a validar correctamente.
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowValidationPopup(false)}
+              className="mt-4 w-full rounded-xl bg-brand-500 py-2.5 text-sm font-bold text-white transition hover:bg-brand-600"
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

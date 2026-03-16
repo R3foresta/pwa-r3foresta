@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import Icon from "../../components/Icon";
 import type { MaterialType, Unit } from "./recoleccionTypes";
 import { useRecoleccionForm } from "./RecoleccionFormContext";
@@ -19,6 +19,7 @@ const ALLOWED_FORMATS = ['image/jpeg', 'image/png', 'image/jpg'];
 
 function RecoleccionFormDatosScreen() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { formData, updateForm } = useRecoleccionForm();
   const dateRange = useMemo(() => buildPastRange(MAX_DIAS_RECOLECCION), []);
   const [date, setDate] = useState(() =>
@@ -64,6 +65,8 @@ function RecoleccionFormDatosScreen() {
   const [createdPlantName, setCreatedPlantName] = useState('');
   const [showPlantErrorModal, setShowPlantErrorModal] = useState(false);
   const [plantErrorMessage, setPlantErrorMessage] = useState('');
+  const [loadingEditDraft, setLoadingEditDraft] = useState(false);
+  const [didHydrateEditDraft, setDidHydrateEditDraft] = useState(false);
   const [newPlantErrors, setNewPlantErrors] = useState({
     especie: false,
     nombre_cientifico: false,
@@ -79,6 +82,156 @@ function RecoleccionFormDatosScreen() {
     photos: false,
     method: false,
   });
+
+  const editIdParam = searchParams.get('editId');
+  const editId = editIdParam ? Number(editIdParam) : NaN;
+  const isEditMode = Number.isFinite(editId) && editId > 0;
+
+  const normalizeUnit = (value: string | null | undefined): Unit => {
+    const unitValue = (value || '').toLowerCase();
+    if (unitValue === 'unidad' || unitValue === 'unidades' || unitValue === 'units') {
+      return 'units';
+    }
+    if (unitValue === 'g' || unitValue === 'gr') {
+      return 'g';
+    }
+    return 'kg';
+  };
+
+  const imageUrlToDataUrl = async (url: string): Promise<string | null> => {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) return null;
+      const blob = await response.blob();
+      return await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error('No se pudo convertir imagen a base64'));
+        reader.readAsDataURL(blob);
+      });
+    } catch {
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    if (!isEditMode || didHydrateEditDraft) {
+      return;
+    }
+
+    let isMounted = true;
+
+    const hydrateFromDraft = async () => {
+      try {
+        setLoadingEditDraft(true);
+        const response = await RecoleccionesService.getById(editId);
+        if (!isMounted) return;
+
+        const draft = response.data;
+        const tipoMaterial = (draft.tipo_material || '').toUpperCase();
+        const isCutting = tipoMaterial === 'ESQUEJE';
+        const nextType: MaterialType = isCutting ? 'cutting' : 'seed';
+        const nextUnit = normalizeUnit(draft.unidad);
+
+        const rawPhotos = draft.fotos?.map((photo) => photo.url).filter(Boolean) ?? [];
+        const convertedPhotos = await Promise.all(rawPhotos.map((photoUrl) => imageUrlToDataUrl(photoUrl)));
+        const fotosBase64 = convertedPhotos.filter((photo): photo is string => Boolean(photo));
+        const splitIndex = Math.ceil(fotosBase64.length / 2);
+        const nextPlacePhotos = fotosBase64.slice(0, splitIndex);
+        const nextTotalPhotos = fotosBase64.slice(splitIndex);
+
+        if (!isMounted) return;
+
+        const plantaNombre =
+          draft.nombre_comun_principal ??
+          draft.nombre_comercial ??
+          draft.planta?.nombre_comun_principal ??
+          draft.planta?.especie ??
+          '';
+
+        setDate(draft.fecha || formData.date);
+        setType(nextType);
+        setSpecies(plantaNombre);
+        setQuantity(String(draft.cantidad ?? formData.quantity));
+        setUnit(nextUnit);
+        setNotes(draft.observaciones || '');
+        setIsNewFind(Boolean(draft.especie_nueva));
+        setPlacePhotos(nextPlacePhotos);
+        setTotalPhotos(nextTotalPhotos);
+        setMethodName(draft.metodo?.nombre || '');
+        setMetodoId(draft.metodo_id || draft.metodo?.id || 0);
+
+        if (draft.planta) {
+          setSelectedPlanta(draft.planta);
+          setPlantas((prev) => {
+            if (prev.some((planta) => planta.id === draft.planta?.id)) {
+              return prev;
+            }
+            return [...prev, draft.planta!];
+          });
+        }
+
+        updateForm({
+          editId,
+          editInitialPhotos: fotosBase64,
+          date: draft.fecha || formData.date,
+          type: nextType,
+          species: plantaNombre,
+          method: draft.metodo?.nombre || '',
+          quantity: String(draft.cantidad ?? formData.quantity),
+          unit: nextUnit,
+          notes: draft.observaciones || '',
+          isNewFind: Boolean(draft.especie_nueva),
+          placePhotos: nextPlacePhotos,
+          totalPhotos: nextTotalPhotos,
+          metodo_id: draft.metodo_id || draft.metodo?.id || undefined,
+          planta_id: draft.planta_id || draft.planta?.id || undefined,
+          nombre_cientifico: draft.nombre_cientifico || draft.planta?.nombre_cientifico || undefined,
+          nombre_comercial: draft.nombre_comercial || draft.planta?.especie || undefined,
+          ubicacionNombre: draft.ubicacion?.nombre || '',
+          referencia: draft.ubicacion?.referencia || '',
+          latitud: String(draft.ubicacion?.coordenadas?.lat ?? ''),
+          longitud: String(draft.ubicacion?.coordenadas?.lon ?? ''),
+          paisId: draft.ubicacion?.pais?.id ? String(draft.ubicacion.pais.id) : '',
+          paisNombre: draft.ubicacion?.pais?.nombre || '',
+          divisionId: draft.ubicacion?.division?.id ? String(draft.ubicacion.division.id) : '',
+          divisionRuta: draft.ubicacion?.division?.ruta?.map((item) => item.nombre) || [],
+          precisionM:
+            draft.ubicacion?.coordenadas?.precision_m !== null &&
+            draft.ubicacion?.coordenadas?.precision_m !== undefined
+              ? String(draft.ubicacion.coordenadas.precision_m)
+              : '',
+          fuenteUbicacion: draft.ubicacion?.coordenadas?.fuente || 'GPS_MOVIL',
+          almacenamiento: draft.vivero?.nombre || '',
+          vivero_id: draft.vivero_id || draft.vivero?.id || undefined,
+        });
+      } catch (errorHydrate) {
+        console.error('❌ Error cargando borrador para edición:', errorHydrate);
+      } finally {
+        if (isMounted) {
+          setLoadingEditDraft(false);
+          setDidHydrateEditDraft(true);
+        }
+      }
+    };
+
+    void hydrateFromDraft();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [
+    didHydrateEditDraft,
+    editId,
+    formData.date,
+    formData.quantity,
+    isEditMode,
+    setMetodoId,
+    setMethodName,
+    setPlantas,
+    setSelectedPlanta,
+    updateForm,
+  ]);
 
   const handleCreateNewPlant = async () => {
     // Validar campos obligatorios
@@ -306,7 +459,7 @@ function RecoleccionFormDatosScreen() {
           </button>
           <div className="text-center">
             <h1 className="text-xl font-extrabold tracking-tight text-brand-700">
-              Nueva recolección
+              {isEditMode ? 'Editar recolección' : 'Nueva recolección'}
             </h1>
             <p className="text-sm font-semibold text-brand-500">
               Paso 1 de 3 ·{" "}
@@ -316,6 +469,12 @@ function RecoleccionFormDatosScreen() {
         </header>
 
         <div className="flex-1 space-y-5 px-5">
+          {loadingEditDraft && (
+            <div className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-600 shadow-soft ring-1 ring-black/5">
+              Cargando borrador para edición...
+            </div>
+          )}
+
           <div className="space-y-2">
             <p className="text-sm font-semibold text-brand-700">Fecha <span className="text-red-500">*</span></p>
             <input
@@ -458,6 +617,13 @@ function RecoleccionFormDatosScreen() {
               </p>
               <Icon name="arrow-left" className="h-4 w-4 rotate-180 text-slate-400" />
             </div>
+
+            {isEditMode && (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-semibold text-amber-800">
+                Las imágenes subidas anteriormente no se pueden modificar ni reemplazar en edición.
+                Solo puedes agregar imágenes nuevas.
+              </div>
+            )}
 
             <PhotoPicker
               label="Lugar"

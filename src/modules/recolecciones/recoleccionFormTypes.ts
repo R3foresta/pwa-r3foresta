@@ -53,6 +53,8 @@ export interface RecoleccionFormData {
   planta_id?: number;              // ID de la planta (si no es especie nueva)
   nombre_cientifico?: string;      // Nombre científico de la planta
   nombre_comercial?: string;       // Nombre común/comercial de la planta
+  editId?: number;                 // ID de recolección cuando el formulario está en modo edición
+  editInitialPhotos?: string[];    // Fotos iniciales del borrador para detectar nuevas evidencias
 }
 
 /**

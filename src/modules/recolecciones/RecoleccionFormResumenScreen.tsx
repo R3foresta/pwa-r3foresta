@@ -1,13 +1,37 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Icon from "../../components/Icon";
 import RecoleccionSuccessModal from "./RecoleccionSuccessModal";
 import { useRecoleccionForm } from "./RecoleccionFormContext";
 import { useAuth } from "../../contexts/AuthContext";
-import { RecoleccionesService } from "../../services/recolecciones.service";
+import { RecoleccionesService, type TipoMaterialCanonico } from "../../services/recolecciones.service";
 import { mapFormToCreateDto, validateRecoleccionForm } from "./validators/recoleccionForm";
 import { buildPastRange } from "../../utils/validations/date";
 import { MAX_DIAS_RECOLECCION } from "../../config/recoleccion";
+
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png'];
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_NEW_FILES = 5;
+
+function base64ToFile(base64: string, filename: string): File {
+  const arr = base64.split(',');
+  const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new File([u8arr], filename, { type: mime });
+}
+
+function chunkArray<T>(items: T[], chunkSize: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < items.length; i += chunkSize) {
+    chunks.push(items.slice(i, i + chunkSize));
+  }
+  return chunks;
+}
 
 function RecoleccionFormResumenScreen() {
   const navigate = useNavigate();
@@ -16,6 +40,8 @@ function RecoleccionFormResumenScreen() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [loadingType, setLoadingType] = useState<'borrador' | 'validacion' | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [newDraftFiles, setNewDraftFiles] = useState<File[]>([]);
+  const [newDraftPreviewUrls, setNewDraftPreviewUrls] = useState<string[]>([]);
   const dateRange = useMemo(() => buildPastRange(MAX_DIAS_RECOLECCION), []);
   const [traceabilityCode] = useState(() => 
     `REC-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`
@@ -26,6 +52,52 @@ function RecoleccionFormResumenScreen() {
 
   const userRol = (user?.rol ?? '').toUpperCase();
   const canSubmitForValidation = userRol === 'GENERAL';
+  const isEditMode = Boolean(formData.editId);
+
+  useEffect(() => {
+    const urls = newDraftFiles.map((file) => URL.createObjectURL(file));
+    setNewDraftPreviewUrls(urls);
+    return () => {
+      urls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [newDraftFiles]);
+
+  const handleSelectNewDraftFiles = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = Array.from(event.target.files || []);
+    if (selectedFiles.length === 0) {
+      return;
+    }
+
+    const mergedFiles = [...newDraftFiles, ...selectedFiles];
+
+    if (mergedFiles.length > MAX_NEW_FILES) {
+      setError('Solo puedes agregar hasta 5 fotos nuevas por edición.');
+      event.target.value = '';
+      return;
+    }
+
+    const invalidType = mergedFiles.find((file) => !ALLOWED_IMAGE_TYPES.includes(file.type));
+    if (invalidType) {
+      setError(`Formato inválido (${invalidType.name}). Solo JPG/JPEG/PNG.`);
+      event.target.value = '';
+      return;
+    }
+
+    const invalidSize = mergedFiles.find((file) => file.size > MAX_IMAGE_SIZE_BYTES);
+    if (invalidSize) {
+      setError(`La imagen ${invalidSize.name} supera el máximo de 5MB.`);
+      event.target.value = '';
+      return;
+    }
+
+    setError(null);
+    setNewDraftFiles(mergedFiles);
+    event.target.value = '';
+  };
+
+  const removeNewDraftFile = (indexToRemove: number) => {
+    setNewDraftFiles((prev) => prev.filter((_, index) => index !== indexToRemove));
+  };
 
   const finalize = () => {
     resetForm();
@@ -42,16 +114,59 @@ function RecoleccionFormResumenScreen() {
         throw new Error(Object.values(validation.errors).filter(Boolean)[0] || 'Datos incompletos');
       }
 
-      const dtoV2 = mapFormToCreateDto(formData);
-      const created = await RecoleccionesService.create(dtoV2);
-      if (!created.success || !created.data?.id) {
-        throw new Error('No se pudo crear la recolección.');
+      const tipo_material: TipoMaterialCanonico = formData.type === 'cutting' ? 'ESQUEJE' : 'SEMILLA';
+      const cantidad = Number(formData.quantity);
+      const unidad = formData.unit === 'units' ? 'unidad' : formData.unit;
+
+      if (isEditMode && formData.editId) {
+        const draftPayload = {
+          fecha: formData.date,
+          cantidad,
+          unidad,
+          tipo_material,
+          observaciones: formData.notes || undefined,
+          vivero_id: formData.vivero_id,
+          metodo_id: formData.metodo_id,
+          planta_id: formData.planta_id,
+        };
+
+        const currentPhotos = [...(formData.placePhotos || []), ...(formData.totalPhotos || [])];
+        const initialPhotos = new Set(formData.editInitialPhotos || []);
+        const pickerNewPhotos = currentPhotos.filter((photo) => !initialPhotos.has(photo));
+        const pickerNewFiles = pickerNewPhotos.map((photo, index) => {
+          const extension = photo.startsWith('data:image/png') ? 'png' : 'jpg';
+          return base64ToFile(photo, `edicion_picker_${Date.now()}_${index + 1}.${extension}`);
+        });
+
+        const allNewFiles = [...pickerNewFiles, ...newDraftFiles];
+
+        if (allNewFiles.length > 0) {
+          const batches = chunkArray(allNewFiles, MAX_NEW_FILES);
+          await RecoleccionesService.updateDraft(formData.editId, draftPayload, batches[0]);
+
+          for (const batch of batches.slice(1)) {
+            await RecoleccionesService.updateDraft(formData.editId, {}, batch);
+          }
+        } else {
+          await RecoleccionesService.updateDraft(formData.editId, draftPayload);
+        }
+
+        if (enviarAValidacion) {
+          await RecoleccionesService.submit(formData.editId);
+        }
+      } else {
+        const dtoV2 = mapFormToCreateDto(formData);
+        const created = await RecoleccionesService.create(dtoV2);
+        if (!created.success || !created.data?.id) {
+          throw new Error('No se pudo crear la recolección.');
+        }
+
+        if (enviarAValidacion) {
+          await RecoleccionesService.submit(created.data.id);
+        }
       }
 
-      if (enviarAValidacion) {
-        await RecoleccionesService.submit(created.data.id);
-      }
-
+      setNewDraftFiles([]);
       setShowSuccess(true);
     } catch (err) {
       console.error('❌ Error al guardar recolección:', err);
@@ -190,6 +305,48 @@ function RecoleccionFormResumenScreen() {
                   </div>
                 ))}
               </div>
+
+              {isEditMode && (
+                <div className="mt-4 space-y-3 border-t border-slate-100 pt-4"> 
+                  <label className="inline-flex cursor-pointer items-center rounded-xl border border-brand-200 bg-brand-50 px-3 py-2 text-xs font-bold text-brand-700 transition hover:bg-brand-100">
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png"
+                      multiple
+                      className="hidden"
+                      onChange={handleSelectNewDraftFiles}
+                    />
+                    Agregar fotos nuevas
+                  </label>
+
+                  {newDraftPreviewUrls.length > 0 && (
+                    <div className="grid grid-cols-2 gap-3">
+                      {newDraftPreviewUrls.map((previewUrl, index) => (
+                        <div key={`${previewUrl}-${index}`} className="space-y-1">
+                          <div className="aspect-square overflow-hidden rounded-xl bg-slate-100">
+                            <img
+                              src={previewUrl}
+                              alt={`Nueva evidencia ${index + 1}`}
+                              className="h-full w-full object-cover"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeNewDraftFile(index)}
+                            className="w-full rounded-lg border border-red-200 bg-red-50 py-1.5 text-[11px] font-bold text-red-700 transition hover:bg-red-100"
+                          >
+                            Quitar
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <p className="text-[11px] font-semibold text-slate-500">
+                    Máximo 5 fotos nuevas. Formatos JPG/JPEG/PNG. Tamaño máximo 5MB por foto.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Ubicación */}
@@ -200,6 +357,11 @@ function RecoleccionFormResumenScreen() {
                   Ubicación
                 </h3>
               </div>
+              {isEditMode && (
+                <p className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 border border-amber-200">
+                  La ubicación no puede modificarse al editar un borrador. Si necesitas cambiarla, crea una nueva recolección.
+                </p>
+              )}
               <div className="space-y-2">
                 {formData.ubicacionNombre && (
                   <div className="flex justify-between text-sm">
@@ -375,7 +537,7 @@ function RecoleccionFormResumenScreen() {
                     <span>Registrando recolección...</span>
                   </>
                 ) : (
-                  'Registrar Recolección'
+                  isEditMode ? 'Guardar Cambios' : 'Registrar Recolección'
                 )}
               </button>
             )}
