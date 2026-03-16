@@ -21,7 +21,7 @@ function RecoleccionesScreen() {
   const [error, setError] = useState<string | null>(null)
 
   const userRol = (user?.rol ?? '').toUpperCase()
-  const canValidate = userRol === 'GENERAL' || userRol === 'ADMIN'
+  const canValidate = userRol === 'ADMIN' || userRol === 'VALIDADOR'
 
   const loadRecolecciones = async (searchValue: string, filterValue: MaterialFilter) => {
     try {

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Icon from '../../components/Icon'
+import { useAuth } from '../../contexts/AuthContext'
 import { RecoleccionesService, type RecoleccionV2 } from '../../services/recolecciones.service'
 import {
   getUbicacionCoords,
@@ -406,6 +407,7 @@ function PendingCard({ item, onApprove, onReject, isActioning }: PendingCardProp
 
 function RecoleccionesValidacionScreen() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [items, setItems] = useState<RecoleccionV2[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -413,6 +415,8 @@ function RecoleccionesValidacionScreen() {
   const [rejectTarget, setRejectTarget] = useState<RecoleccionV2 | null>(null)
   const [rejectLoading, setRejectLoading] = useState(false)
   const [toastMsg, setToastMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null)
+  const userRol = (user?.rol ?? '').toUpperCase()
+  const canValidate = userRol === 'ADMIN' || userRol === 'VALIDADOR'
 
   const showToast = (text: string, type: 'success' | 'error') => {
     setToastMsg({ text, type })
@@ -433,8 +437,21 @@ function RecoleccionesValidacionScreen() {
   }
 
   useEffect(() => {
+    if (!canValidate) {
+      navigate('/app/collections', { replace: true })
+    }
+  }, [canValidate, navigate])
+
+  useEffect(() => {
+    if (!canValidate) {
+      return
+    }
     void load()
-  }, [])
+  }, [canValidate])
+
+  if (!canValidate) {
+    return null
+  }
 
   const handleApprove = async (item: RecoleccionV2) => {
     setActioningId(item.id)

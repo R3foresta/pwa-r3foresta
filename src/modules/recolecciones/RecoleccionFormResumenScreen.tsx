@@ -25,8 +25,7 @@ function RecoleccionFormResumenScreen() {
   const summaryText = `${formData.quantity} ${unitLabel} de ${formData.species || typeLabel}`;
 
   const userRol = (user?.rol ?? '').toUpperCase();
-  // RECOLECTOR y TECNICO ven dos botones (borrador / validar)
-  const isRecolector = userRol === 'RECOLECTOR' || userRol === 'TECNICO';
+  const canSubmitForValidation = userRol === 'GENERAL';
 
   const finalize = () => {
     resetForm();
@@ -318,8 +317,8 @@ function RecoleccionFormResumenScreen() {
               </div>
             )}
 
-            {isRecolector ? (
-              /* RECOLECTOR / TECNICO → dos botones */
+            {canSubmitForValidation ? (
+              /* GENERAL → dos botones (enviar a validación / guardar borrador) */
               <div className="flex flex-col gap-3">
                 <button
                   type="button"
@@ -360,7 +359,7 @@ function RecoleccionFormResumenScreen() {
                 </button>
               </div>
             ) : (
-              /* GENERAL / ADMIN → botón único, solo crea sin enviar a validación */
+              /* ADMIN / VALIDADOR / VOLUNTARIO → botón único, solo crea sin enviar a validación */
               <button
                 type="button"
                 onClick={() => void handleGuardar(false)}
