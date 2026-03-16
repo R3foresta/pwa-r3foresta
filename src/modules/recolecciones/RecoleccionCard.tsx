@@ -82,6 +82,18 @@ function RecoleccionCard({ recoleccion }: Props) {
               <Icon name="pin" className="h-4 w-4 text-brand-500" />
               {getUbicacionDisplay(recoleccion.ubicacion)}
             </p>
+
+
+            {/* ⬇️ INSERTAMOS ESTO AQUÍ ⬇️ */}
+            <p className="flex items-center gap-2">
+              <Icon name="user" className="h-4 w-4 text-brand-500" />
+              <span className="truncate">
+                {recoleccion.usuario?.nombre 
+                  ? `${recoleccion.usuario.nombre} ${recoleccion.usuario.apellido || ''}`.trim() 
+                  : recoleccion.usuario?.username || 'Sin responsable'}
+              </span>
+            </p>
+            
           </div>
         </div>
 
