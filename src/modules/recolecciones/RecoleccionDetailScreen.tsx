@@ -123,6 +123,7 @@ function RecoleccionDetailScreen() {
     )
   }
 
+  // TODO: (VERIFICAR) Acá estámos usando algo pasado. Tenemos que usar los datos directamente de la tabla planta. Ver de donde se están trayendo los daots.
   const plantaNombre =
     recoleccion.planta?.nombre_comun_principal ||
     recoleccion.nombre_comun_principal ||
@@ -274,8 +275,12 @@ function RecoleccionDetailScreen() {
                 <span className="text-right">{formatDateTime(recoleccion.fecha_validacion)}</span>
               </p>
               <p className="flex items-center justify-between gap-4">
+                <span className="text-slate-500">Responsable</span>
+                <span className="text-right">{recoleccion.usuario?.nombre || recoleccion.usuario?.username || 'No disponible'} {recoleccion.usuario?.apellido}</span>
+              </p>
+              <p className="flex items-center justify-between gap-4">
                 <span className="text-slate-500">Usuario</span>
-                <span className="text-right">{recoleccion.usuario?.nombre || recoleccion.usuario?.username || 'No disponible'}</span>
+                <span className="text-right">{recoleccion.usuario?.username || 'No disponible'}</span>
               </p>
             </div>
           </section>
