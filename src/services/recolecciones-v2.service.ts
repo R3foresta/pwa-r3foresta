@@ -18,6 +18,7 @@ export interface UsuarioResumen {
   id: number
   correo?: string | null
   nombre?: string | null
+  apellido?: string | null
   username?: string | null
 }
 
