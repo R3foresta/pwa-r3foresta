@@ -17,7 +17,6 @@ function HomeScreen() {
     collectionForm: '/app/collections/new',
     collectionFormStep2: '/app/collections/new/location',
     collectionFormStep3: '/app/collections/new/summary',
-    vivero: '/app/vivero',
     scan: '/app/scan',
     report: '/app/report',
     profile: '/app/profile',

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
-import Icon from './Icon'
+import Icon, { type IconName } from './Icon'
 import { NAV_ITEMS } from '../data/navigation'
 import { useAuth } from '../contexts/AuthContext'
 import { ProfileService } from '../modules/user_profile'
@@ -12,16 +12,15 @@ function BottomNav() {
   const [open, setOpen] = useState(false)
   const [showProfileWarning, setShowProfileWarning] = useState(false)
 
-  const quickActions = [
+  const quickActions: { label: string; icon: IconName; to: string }[] = [
     { label: 'Registrar recolección', icon: 'package', to: '/app/collections/new' },
-    { label: 'Nuevo germinación', icon: 'vivero', to: '/app/vivero/new' },
     { label: 'Registrar plantación', icon: 'leaf', to: '/app/planting' },
     { label: 'Actualizar CO₂', icon: 'balance', to: '/app/co2' },
   ]
 
   const handleQuickNav = (to: string) => {
     // Validar si el usuario tiene el perfil completo antes de permitir ciertas acciones
-    const requiresCompleteProfile = ['/app/collections/new', '/app/vivero/new', '/app/planting', '/app/co2']
+    const requiresCompleteProfile = ['/app/collections/new', '/app/planting', '/app/co2']
     
     if (requiresCompleteProfile.includes(to)) {
       const isComplete = ProfileService.isProfileComplete(user)
@@ -115,7 +114,7 @@ function BottomNav() {
                   className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-slate-50 active:bg-slate-100"
                 >
                   <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
-                    <Icon name={action.icon as any} className="h-5 w-5" />
+                    <Icon name={action.icon} className="h-5 w-5" />
                   </div>
                   <span className="text-sm font-semibold text-brand-800">{action.label}</span>
                 </button>

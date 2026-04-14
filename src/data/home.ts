@@ -1,6 +1,5 @@
 import heroCanopy from '../assets/home/hero-canopy.jpg'
 import recoleccionImg from '../assets/home/recoleccion.jpg'
-import germinacionImg from '../assets/home/germinacion.jpg'
 import plantacionImg from '../assets/home/plantacion.jpg'
 import co2Img from '../assets/home/co2.jpg'
 import type { Screen } from '../types/navigation'
@@ -19,7 +18,6 @@ export const syncNotice = {
 
 export const metrics = [
   { label: 'Plantaciones activas', value: '12', helper: 'en 4 fincas' },
-  { label: 'Listos para trasplantar', value: '120', helper: 'Semana 48' },
   { label: 'CO₂ estimado', value: '20,6 T', helper: '+1.4 T este mes' },
   { label: 'Superficie monitoreada', value: '86 ha', helper: 'Satélite al día' },
 ]
@@ -39,13 +37,6 @@ export const sections: {
     detail: 'Último ingreso hace 1h',
   },
   {
-    label: 'Germinación',
-    target: 'vivero',
-    image: germinacionImg,
-    stat: '120 plántulas',
-    detail: '78% con riego hoy',
-  },
-  {
     label: 'Plantación',
     target: 'planting',
     image: plantacionImg,
@@ -63,6 +54,5 @@ export const sections: {
 
 export const recent = [
   { title: 'Trasplante programado', time: '09:30', meta: 'Lote Alto Verde · 36 plántulas' },
-  { title: 'Riego completado', time: '08:10', meta: 'Germinación · Sector B' },
   { title: 'Captura de CO₂', time: 'Ayer', meta: ' +0,3 T estimadas' },
 ]
