@@ -383,7 +383,7 @@ function MapScreen() {
                       </div>
                       
                       <div style={{ fontSize: '12px', color: '#666' }}>
-                        <strong>Cantidad:</strong> {recoleccion.cantidad} {recoleccion.unidad}
+                        <strong>Cantidad:</strong> {recoleccion.cantidad_inicial_canonica} {recoleccion.unidad_canonica}
                       </div>
                       
                       {ubicacionTexto && (

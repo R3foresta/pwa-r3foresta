@@ -41,7 +41,6 @@ This is the most significant issue in the codebase.
 The following issues were identified by the linter and manual review. They are not as critical as the architectural flaws but should be addressed to improve code quality and prevent bugs.
 
 *   **React Hook and Component Purity:**
-    *   **`react-hooks/purity` error:** `Date.now()` is called directly in the render function of `ViveroScreen.tsx`. This makes the component impure and can lead to unpredictable behavior.
     *   **`react-hooks/exhaustive-deps` warnings:** Multiple `useEffect` hooks are missing dependencies. This will lead to stale data and bugs where effects don't re-run when they should.
     *   **`react-hooks/immutability` error:** A function is called before it is declared in `MapScreen.tsx`, which will cause a runtime error.
 
@@ -62,7 +61,6 @@ The following issues were identified by the linter and manual review. They are n
     *   Implement a secure session hydration flow that validates the token with the backend on every application load.
 
 2.  **[HIGH] Fix All Linter Errors and Warnings:**
-    *   Fix the `react-hooks/purity` error by moving the `Date.now()` call out of the render path.
     *   Add all missing dependencies to `useEffect` dependency arrays.
     *   Fix the `no-explicit-any` error by providing a proper type.
     *   Restructure files to only export React components where appropriate to fix Fast Refresh.

@@ -70,8 +70,10 @@ export interface Recoleccion {
   fecha: string;                           // Fecha de recolección
   nombre_cientifico?: string;              // Nombre científico (opcional)
   nombre_comercial?: string;               // Nombre comercial (opcional)
-  cantidad: number;                        // Cantidad recolectada
-  unidad: string;                          // Unidad de medida
+  cantidad: number;                        // Cantidad recolectada (deprecated para display, usar cantidad_inicial_canonica)
+  unidad: string;                          // Unidad de medida (deprecated para display, usar unidad_canonica)
+  cantidad_inicial_canonica: number | null; // Cantidad en unidad canónica (usar para mostrar al usuario)
+  unidad_canonica: string | null;          // Unidad canónica: "G" o "UNIDAD" (usar para mostrar al usuario)
   tipo_material: string;                   // Tipo: SEMILLA, ESTACA, PLANTULA, INJERTO
   estado: string;                          // Estado: ALMACENADO, EN_PROCESO, UTILIZADO, DESCARTADO
   especie_nueva: boolean;                  // Si es una especie nueva

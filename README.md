@@ -160,76 +160,6 @@ erDiagram
     }
 
     %% =========================================
-    %% FASE VIVERO (antes: LOTE_PLANTACION)
-    %% =========================================
-    LOTE_FASE_VIVERO {
-        bigint id PK
-        string codigo_trazabilidad "UNIQUE; LFV-YYYY-XXXXX"
-        bigint planta_id FK
-        bigint vivero_id FK
-        bigint responsable_id FK "creador/responsable"
-        date fecha_inicio
-        int cantidad_inicio
-        int cantidad_embolsadas "DEFAULT=0"
-        int cantidad_sombra "DEFAULT=0"
-        int cantidad_lista_plantar "DEFAULT=0"
-        date fecha_embolsado
-        date fecha_sombra
-        date fecha_salida
-        decimal altura_prom_sombra
-        decimal altura_prom_salida
-        string estado "DEFAULT=INICIO; {INICIO|EMBOLSADO|SOMBRA|LISTA_PLANTAR|SALIDA_VIVERO}"
-        datetime created_at
-        datetime updated_at
-        bigint updated_by FK "obligatorio en UPDATE (para historial)"
-    }
-
-    LOTE_FASE_VIVERO_RECOLECCION {
-        bigint lote_id PK, FK
-        bigint recoleccion_id PK, FK
-        %% PK compuesta (lote_id, recoleccion_id)
-    }
-
-    LOTE_FASE_VIVERO_HISTORIAL {
-        bigint id PK
-        bigint lote_id FK
-        int nro_cambio "UNIQUE por lote (lote_id, nro_cambio)"
-        datetime fecha_cambio "DEFAULT=now()"
-        bigint responsable_id FK
-        string accion "{INICIO|EMBOLSADO|SOMBRA|LISTA_PLANTAR|SALIDA|AJUSTE}"
-        string estado "{INICIO|EMBOLSADO|SOMBRA|LISTA_PLANTAR|SALIDA_VIVERO}"
-
-        int cantidad_inicio
-        int cantidad_embolsadas
-        int cantidad_sombra
-        int cantidad_lista_plantar
-
-        date fecha_inicio
-        date fecha_embolsado
-        date fecha_sombra
-        date fecha_salida
-
-        decimal altura_prom_sombra
-        decimal altura_prom_salida
-
-        string notas "max 2000 chars"
-        %% Se llena automáticamente en INSERT/UPDATE del LOTE_FASE_VIVERO (triggers)
-    }
-
-    LOTE_FASE_VIVERO_FOTO {
-        bigint id PK
-        bigint lote_historial_id FK
-        string url
-        int peso_bytes "max 5MB (regla de negocio)"
-        string formato "JPG/JPEG/PNG"
-        boolean es_portada "TRUE si es la foto principal de ese cambio"
-        string descripcion "ej: detalle de raíces, vista general"
-        datetime created_at
-    }
-
-    LOTE_FASE_VIVERO_HISTORIAL ||--o{ LOTE_FASE_VIVERO_FOTO : tiene_fotos
-
-    %% =========================================
     %% MÓDULO PLANTACIÓN (campo)
     %% =========================================
 
@@ -269,13 +199,6 @@ erDiagram
         bigint plantacion_id PK, FK
         bigint usuario_id PK, FK
         string rol "RESPONSABLE / VOLUNTARIO / TECNICO / etc."
-    }
-
-    PLANTACION_LOTE_FASE_VIVERO {
-        bigint plantacion_id PK, FK
-        bigint lote_fase_vivero_id PK, FK
-        int cantidad_plantines_usados "OBLIGATORIO > 0"
-        %% permite que una plantación use varios lotes de vivero
     }
 
     PLANTACION_RIEGO {
@@ -321,31 +244,19 @@ erDiagram
     UBICACION ||--o{ PLANTACION : se_ubica_en
 
     USUARIO ||--o{ RECOLECCION : recolecta
-    USUARIO ||--o{ LOTE_FASE_VIVERO : crea
-    USUARIO ||--o{ LOTE_FASE_VIVERO_HISTORIAL : registra
-    USUARIO ||--o{ LOTE_FASE_VIVERO : actualiza "via updated_by"
     USUARIO ||--o{ PLANTACION : registra
     USUARIO ||--o{ PLANTACION_USUARIO : participa
     USUARIO ||--o{ PLANTACION_MONITOREO : monitorea
 
     VIVERO ||--o{ RECOLECCION : almacena
-    VIVERO ||--o{ LOTE_FASE_VIVERO : se_realiza_en
 
     PLANTA ||--o{ RECOLECCION : corresponde_a
-    PLANTA ||--o{ LOTE_FASE_VIVERO : se_siembra
 
     METODO_RECOLECCION ||--o{ RECOLECCION : se_usa_en
 
     RECOLECCION ||--o{ RECOLECCION_FOTO : tiene
 
-    LOTE_FASE_VIVERO ||--o{ LOTE_FASE_VIVERO_RECOLECCION : usa
-    RECOLECCION ||--o{ LOTE_FASE_VIVERO_RECOLECCION : proviene_de
-
-    LOTE_FASE_VIVERO ||--o{ LOTE_FASE_VIVERO_HISTORIAL : versiona
-
     PLANTACION ||--o{ PLANTACION_USUARIO : tiene
-    PLANTACION ||--o{ PLANTACION_LOTE_FASE_VIVERO : usa_lotes_vivero
-    LOTE_FASE_VIVERO ||--o{ PLANTACION_LOTE_FASE_VIVERO : provee_plantines
 
     PLANTACION ||--o{ PLANTACION_RIEGO : usa_riego
     TIPO_RIEGO ||--o{ PLANTACION_RIEGO : se_aplica_en
@@ -373,14 +284,6 @@ erDiagram
 - `string unidad` // UNIDAD / UNIDADES / KG / G
 - `string tipo_material` // SEMILLA / ESQUEJE
 - `string estado` // USADO / ALMACENADO / DESECHADO
-
-**En LOTE_FASE_VIVERO:**
-
-- `string estado` // INICIO / EMBOLSADO / SOMBRA / LISTA_PLANTAR / SALIDA_VIVERO
-
-**En LOTE_FASE_VIVERO_HISTORIAL:**
-
-- `string accion` // INICIO, EMBOLSADO, SOMBRA, LISTA_PLANTAR, SALIDA, AJUSTE...
 
 **En PLANTACION:**
 

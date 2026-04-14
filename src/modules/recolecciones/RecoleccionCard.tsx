@@ -56,7 +56,7 @@ function RecoleccionCard({ recoleccion }: Props) {
   const foto = fotoPrincipal || fallbackFoto
   const imageUrl = evidencia?.public_url ?? foto?.url ?? null
   const estadoRegistro = resolveEstadoRegistro(recoleccionCompat)
-  const estadoOperativo = resolveEstadoOperativo(recoleccion.cantidad)
+  const estadoOperativo = resolveEstadoOperativo(recoleccion.cantidad_inicial_canonica)
   const evidenciasCount = recoleccion.evidencias?.length ?? recoleccion.fotos?.length ?? 0
 
   return (
@@ -72,7 +72,7 @@ function RecoleccionCard({ recoleccion }: Props) {
           <div className="mt-3 space-y-1 text-sm font-semibold text-slate-600">
             <p className="flex items-center gap-2">
               <Icon name="package" className="h-4 w-4 text-brand-500" />
-              {recoleccion.cantidad} {recoleccion.unidad}
+              {recoleccion.cantidad_inicial_canonica} {recoleccion.unidad_canonica}
             </p>
             <p className="flex items-center gap-2">
               <Icon name="date" className="h-4 w-4 text-brand-500" />
