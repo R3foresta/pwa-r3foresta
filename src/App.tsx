@@ -19,9 +19,6 @@ import LoginScreen from './modules/auth/LoginScreen'
 import RegisterScreen from './modules/auth/RegisterScreen'
 import RecoverScreen from './modules/auth/RecoverScreen'
 import { useAuth } from './contexts/AuthContext'
-import ViveroScreen from './modules/vivero/ViveroScreen'
-import ViveroDetailScreen from './modules/vivero/ViveroDetailScreen'
-import ViveroNewScreen from './modules/vivero/ViveroNewScreen'
 import MapScreen from './modules/map/MapScreen'
 import { CompleteProfileScreen, PerfilScreen } from './modules/user_profile'
 import ComunidadesScreen from './modules/comunidades/ComunidadesScreen'
@@ -90,20 +87,6 @@ function App() {
             <Route path=":id" element={<RecoleccionDetailScreen />} />
             <Route path=":id/evidencias/new" element={<RecoleccionNuevaEvidenciaScreen />} />
           </Route>
-          <Route path="vivero">
-            <Route index element={<ViveroScreen />} />
-            <Route path="new" element={<ViveroNewScreen />} />
-            <Route path=":id" element={<ViveroDetailScreen />} />
-            <Route
-              path=":id/event/new"
-              element={<PlaceholderScreen title="Registrar evento de germinación" />}
-            />
-            <Route
-              path=":id/update"
-              element={<PlaceholderScreen title="Actualizar fase de germinación" />}
-            />
-          </Route>
-          <Route path="nursery" element={<Navigate to="/app/vivero" replace />} />
           <Route path="planting" element={<PlaceholderScreen title="Plantación" />} />
           <Route path="co2" element={<PlaceholderScreen title="CO₂" />} />
           <Route path="map" element={<MapScreen />} />

@@ -7,7 +7,6 @@ export type IconName =
   | 'user'
   | 'search'
   | 'leaf'
-  | 'vivero'
   | 'cutting'
   | 'plus'
   | 'minus'
@@ -168,28 +167,6 @@ function Icon({ name, className }: Props) {
             d="M18 5s-3 0-6 1.6C9 8 6 10.5 6 13c0 3 2.5 5 5.5 5 2.5 0 4.5-2 4.5-4.5C16 10 18 5 18 5Z"
           />
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 13.5 8 11" />
-        </svg>
-      )
-    case 'vivero':
-      return (
-        <svg
-          className={`${common} ${className ?? ''}`}
-          viewBox="0 0 24 24"
-          fill="none"
-          strokeWidth="1.8"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 19.5h9" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 19.5v-6.5" />
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M12 13Q9 13 9 9Q12 9 12 13Z"
-          />
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M12 13.5Q15 13.5 15 9.5Q12 9.5 12 13.5Z"
-          />
         </svg>
       )
     case 'cutting':
