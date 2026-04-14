@@ -165,7 +165,7 @@ function RecoleccionDetailScreen() {
   const ubicacionDivision = getUbicacionDivision(recoleccion.ubicacion)
   const ubicacionCoords = getUbicacionCoords(recoleccion.ubicacion)
   const estadoRegistro = resolveEstadoRegistro(recoleccion)
-  const estadoOperativo = resolveEstadoOperativo(recoleccion.cantidad)
+  const estadoOperativo = resolveEstadoOperativo(recoleccion.cantidad_inicial_canonica)
   const isBorrador = estadoRegistro === 'BORRADOR'
 
   return (
@@ -207,7 +207,7 @@ function RecoleccionDetailScreen() {
               <p className="flex items-center justify-between gap-4">
                 <span className="text-slate-500">Cantidad</span>
                 <span>
-                  {recoleccion.cantidad} {recoleccion.unidad}
+                  {recoleccion.cantidad_inicial_canonica} {recoleccion.unidad_canonica}
                 </span>
               </p>
               <p className="flex items-center justify-between gap-4">

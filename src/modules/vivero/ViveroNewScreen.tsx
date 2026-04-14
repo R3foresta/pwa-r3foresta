@@ -375,7 +375,7 @@ function ViveroNewScreen() {
                         </span>
                       </div>
                       <p className="text-xs font-semibold text-brand-500">
-                        {formatDate(item.fecha)} · {item.cantidad} {item.unidad}
+                        {formatDate(item.fecha)} · {item.cantidad_inicial_canonica} {item.unidad_canonica}
                       </p>
                       <p className="text-xs font-semibold text-brand-500">
                         Responsable: {item.usuario?.nombre ?? 'Sin registro'}
