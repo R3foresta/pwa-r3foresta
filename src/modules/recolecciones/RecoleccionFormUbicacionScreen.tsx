@@ -4,10 +4,7 @@ import { obtenerComunidad } from '../../api/comunidades.api'
 import Icon from '../../components/Icon'
 import SelectorComunidad from '../comunidades/SelectorComunidad'
 import { useViveros } from '../../hooks/useViveros'
-import {
-  RecoleccionesService,
-  type PaisCatalogo,
-} from '../../services/recolecciones.service'
+import { UbicacionesService, type PaisCatalogo } from '../../services/ubicaciones.service'
 import type { ComunidadCard } from '../../tipos/comunidades'
 import { useRecoleccionForm } from './RecoleccionFormContext'
 
@@ -92,8 +89,7 @@ function RecoleccionFormUbicacionScreen() {
     try {
       setLoadingPaises(true)
       setCatalogoError(null)
-      const response = await RecoleccionesService.getPaises()
-      const nextPaises = response || []
+      const nextPaises = await UbicacionesService.getPaises()
       setPaises(nextPaises)
 
       if (selectedPaisId) {

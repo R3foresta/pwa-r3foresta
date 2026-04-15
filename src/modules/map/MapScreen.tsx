@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import type { LatLngExpression } from 'leaflet'
 import L from 'leaflet'
-import { RecoleccionService, type Recoleccion } from '../../services/recoleccion.service'
+import { RecoleccionesService, type Recoleccion } from '../../services/recolecciones.service'
 import { getUbicacionDisplay, getUbicacionDivision } from '../../utils/ubicacion'
 
 // Importar estilos de Leaflet
@@ -253,7 +253,7 @@ function MapScreen() {
 
   async function loadRecolecciones() {
     try {
-      const response = await RecoleccionService.list()
+      const response = await RecoleccionesService.list()
       setRecolecciones(response.data || [])
       console.log('✅ Recolecciones cargadas:', response.data?.length)
     } catch (error) {
@@ -360,7 +360,7 @@ function MapScreen() {
                 lon,
               ]
               
-              const fotosUrls = recoleccion.fotos.map((foto) => foto.url)
+              const fotosUrls = (recoleccion.fotos ?? []).map((foto) => foto.url)
               const ubicacionTexto = getUbicacionDisplay(recoleccion.ubicacion)
               const divisionTexto = getUbicacionDivision(recoleccion.ubicacion)
               

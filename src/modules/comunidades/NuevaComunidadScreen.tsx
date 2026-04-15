@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { crearComunidad } from '../../api/comunidades.api'
 import Icon from '../../components/Icon'
 import {
-  RecoleccionService,
+  UbicacionesService,
   type DivisionCatalogo,
   type PaisCatalogo,
-} from '../../services/recoleccion.service'
+} from '../../services/ubicaciones.service'
 
 type DivisionLevel = {
   parentId: number | null
@@ -67,8 +67,7 @@ function NuevaComunidadScreen() {
       setLoadingPaises(true)
       setCatalogoError(null)
 
-      const response = await RecoleccionService.getPaises()
-      const nextPaises = response.data ?? []
+      const nextPaises = await UbicacionesService.getPaises()
       setPaises(nextPaises)
 
       if (selectedPaisId !== null || nextPaises.length === 0) {
@@ -96,8 +95,7 @@ function NuevaComunidadScreen() {
       setLoadingDivisiones(true)
       setCatalogoError(null)
 
-      const response = await RecoleccionService.getDivisiones(paisId)
-      const rootOptions = response.data ?? []
+      const rootOptions = await UbicacionesService.getDivisiones(paisId)
 
       if (requestId !== divisionRequestRef.current) {
         return
@@ -162,8 +160,7 @@ function NuevaComunidadScreen() {
       setLoadingDivisiones(true)
       setCatalogoError(null)
 
-      const response = await RecoleccionService.getDivisiones(selectedPaisId, selectedId)
-      const children = response.data ?? []
+      const children = await UbicacionesService.getDivisiones(selectedPaisId, selectedId)
 
       if (requestId !== divisionRequestRef.current || children.length === 0) {
         return

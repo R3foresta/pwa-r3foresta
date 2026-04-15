@@ -1,12 +1,7 @@
-// export * from './recolecciones-v2.service'
-// export {
-//   RecoleccionesV2Service as RecoleccionesService,
-//   type CreateRecoleccionDto as CreateRecoleccionDto,
-//   type RecoleccionV2 as Recoleccion,
-//   type RecoleccionV2Filters as RecoleccionFilters,
-// } from './recolecciones-v2.service'
-
 import type { UbicacionApi, UbicacionCreateInput } from '../types/ubicacion'
+import { UbicacionesService } from './ubicaciones.service'
+import type { DivisionCatalogo, PaisCatalogo } from './ubicaciones.service'
+export type { DivisionCatalogo, PaisCatalogo } from './ubicaciones.service'
 
 const API_URL = import.meta.env.VITE_API_URL
 
@@ -73,22 +68,6 @@ export interface CreatePlantaDto {
   nombres_comunes?: string
   imagen_url: string
   notas?: string
-}
-
-export interface PaisCatalogo {
-  id: number
-  nombre: string
-  codigo_iso2: string | null
-}
-
-export interface DivisionCatalogo {
-  id: number
-  pais_id: number
-  parent_id: number | null
-  tipo_id: number
-  tipo_nombre: string | null
-  tipo_orden: number | null
-  nombre: string
 }
 
 export interface EvidenciaTrazabilidad {
@@ -707,40 +686,11 @@ export class RecoleccionesService {
   }
 
   static async getPaises(): Promise<PaisCatalogo[]> {
-    const response = await fetch(`${API_URL}/api/ubicaciones/paises`, {
-      method: 'GET',
-      headers: this.getAuthHeaders(),
-    })
-
-    const payload = await this.parseJsonResponse<ApiEnvelope<PaisCatalogo[]> | PaisCatalogo[]>(response)
-
-    if (Array.isArray(payload)) {
-      return payload
-    }
-
-    return Array.isArray(payload.data) ? payload.data : []
+    return UbicacionesService.getPaises()
   }
 
   static async getDivisiones(paisId: number, parentId?: number): Promise<DivisionCatalogo[]> {
-    const params = new URLSearchParams({ pais_id: String(paisId) })
-    if (parentId !== undefined) {
-      params.append('parent_id', String(parentId))
-    }
-
-    const response = await fetch(`${API_URL}/api/ubicaciones/divisiones?${params.toString()}`, {
-      method: 'GET',
-      headers: this.getAuthHeaders(),
-    })
-
-    const payload = await this.parseJsonResponse<DivisionCatalogo[] | ApiEnvelope<DivisionCatalogo[]>>(
-      response,
-    )
-
-    if (Array.isArray(payload)) {
-      return payload
-    }
-
-    return Array.isArray(payload.data) ? payload.data : []
+    return UbicacionesService.getDivisiones(paisId, parentId)
   }
 
   // ─── Helper con rol de usuario ─────────────────────────────────────────────
@@ -932,4 +882,3 @@ export class RecoleccionesService {
     }
   }
 }
-

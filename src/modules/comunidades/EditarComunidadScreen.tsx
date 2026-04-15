@@ -7,10 +7,10 @@ import {
 } from '../../api/comunidades.api'
 import Icon from '../../components/Icon'
 import {
-  RecoleccionService,
+  UbicacionesService,
   type DivisionCatalogo,
   type PaisCatalogo,
-} from '../../services/recoleccion.service'
+} from '../../services/ubicaciones.service'
 import type { ComunidadCard } from '../../tipos/comunidades'
 
 type DivisionLevel = {
@@ -106,8 +106,7 @@ function EditarComunidadScreen() {
       setLoadingDivisiones(true)
       setCatalogoError(null)
 
-      const rootResponse = await RecoleccionService.getDivisiones(paisId)
-      const rootOptions = rootResponse.data ?? []
+      const rootOptions = await UbicacionesService.getDivisiones(paisId)
 
       if (requestId !== divisionRequestRef.current) {
         return
@@ -147,8 +146,7 @@ function EditarComunidadScreen() {
           break
         }
 
-        const childrenResponse = await RecoleccionService.getDivisiones(paisId, divisionId)
-        const children = childrenResponse.data ?? []
+        const children = await UbicacionesService.getDivisiones(paisId, divisionId)
 
         if (children.length === 0) {
           break
@@ -213,8 +211,8 @@ function EditarComunidadScreen() {
       setSelectedPaisId(paisId)
 
       try {
-        const paisesResponse = await RecoleccionService.getPaises()
-        setPaises(paisesResponse.data ?? [])
+        const paisesResponse = await UbicacionesService.getPaises()
+        setPaises(paisesResponse ?? [])
       } catch (error) {
         console.error('Error cargando paises:', error)
         setCatalogoError('No se pudo cargar el catalogo de paises.')
@@ -268,8 +266,7 @@ function EditarComunidadScreen() {
       setLoadingDivisiones(true)
       setCatalogoError(null)
 
-      const response = await RecoleccionService.getDivisiones(selectedPaisId, selectedId)
-      const children = response.data ?? []
+      const children = await UbicacionesService.getDivisiones(selectedPaisId, selectedId)
 
       if (requestId !== divisionRequestRef.current || children.length === 0) {
         return

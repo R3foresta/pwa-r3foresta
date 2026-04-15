@@ -4,8 +4,7 @@ import Icon from '../../components/Icon'
 import { useAuth } from '../../contexts/AuthContext'
 import { useViveros } from '../../hooks/useViveros'
 import { GerminacionService } from '../../services/germinacion.service'
-import { RecoleccionService } from '../../services/recoleccion.service'
-import type { Recoleccion } from '../../services/recoleccion.service'
+import { RecoleccionesService, type Recoleccion } from '../../services/recolecciones.service'
 import { getUbicacionDisplay } from '../../utils/ubicacion'
 import { buildPastRange, clampDateToRange, validateDateInRange } from '../../utils/validations/date'
 import { MAX_DIAS_GERMINACION } from '../../config/germinacion'
@@ -70,7 +69,7 @@ function ViveroNewScreen() {
       try {
         setRecoleccionLoading(true)
         setRecoleccionError(null)
-        const response = await RecoleccionService.list({
+        const response = await RecoleccionesService.list({
           vivero_id: selectedViveroId,
           tipo_material: 'SEMILLA',
         })
