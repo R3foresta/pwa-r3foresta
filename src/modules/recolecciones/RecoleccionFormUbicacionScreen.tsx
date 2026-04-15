@@ -6,7 +6,7 @@ import SelectorComunidad from '../comunidades/SelectorComunidad'
 import { useViveros } from '../../hooks/useViveros'
 import {
   RecoleccionesService,
-  type PaisCatalogoV2 as PaisCatalogo,
+  type PaisCatalogo,
 } from '../../services/recolecciones.service'
 import type { ComunidadCard } from '../../tipos/comunidades'
 import { useRecoleccionForm } from './RecoleccionFormContext'

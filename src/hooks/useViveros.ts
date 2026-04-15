@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { RecoleccionesV2Service } from '../services/recolecciones-v2.service';
-import type { ViveroCatalogo as Vivero } from '../services/recolecciones-v2.service';
+import { RecoleccionesService } from '../services/recolecciones.service';
+import type { ViveroCatalogo as Vivero } from '../services/recolecciones.service';
 
 export function useViveros() {
   const [viveros, setViveros] = useState<Vivero[]>([]);
@@ -14,7 +14,7 @@ export function useViveros() {
       try {
         setLoading(true);
         setError(null);
-        const response = await RecoleccionesV2Service.getViveros();
+        const response = await RecoleccionesService.getViveros();
         if (isMounted) {
           setViveros(response || []);
         }

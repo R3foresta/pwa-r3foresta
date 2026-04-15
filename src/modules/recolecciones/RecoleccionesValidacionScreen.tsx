@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Icon from '../../components/Icon'
 import { useAuth } from '../../contexts/AuthContext'
-import { RecoleccionesService, type RecoleccionV2 } from '../../services/recolecciones.service'
+import { RecoleccionesService, type Recoleccion } from '../../services/recolecciones.service'
 import {
   getUbicacionCoords,
   getUbicacionDisplay,
@@ -18,7 +18,7 @@ import {
 // ─── Modal de rechazo ────────────────────────────────────────────────────────
 
 interface RejectModalProps {
-  recoleccion: RecoleccionV2
+  recoleccion: Recoleccion
   onConfirm: (motivo: string) => void
   onCancel: () => void
   loading: boolean
@@ -92,7 +92,7 @@ function materialBadgeClass(tipoMaterial: string) {
 }
 
 interface PendingCardProps {
-  item: RecoleccionV2
+  item: Recoleccion
   onApprove: () => void
   onReject: () => void
   isActioning: boolean
@@ -408,11 +408,11 @@ function PendingCard({ item, onApprove, onReject, isActioning }: PendingCardProp
 function RecoleccionesValidacionScreen() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const [items, setItems] = useState<RecoleccionV2[]>([])
+  const [items, setItems] = useState<Recoleccion[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [actioningId, setActioningId] = useState<number | null>(null)
-  const [rejectTarget, setRejectTarget] = useState<RecoleccionV2 | null>(null)
+  const [rejectTarget, setRejectTarget] = useState<Recoleccion | null>(null)
   const [rejectLoading, setRejectLoading] = useState(false)
   const [toastMsg, setToastMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null)
   const userRol = (user?.rol ?? '').toUpperCase()
@@ -453,7 +453,7 @@ function RecoleccionesValidacionScreen() {
     return null
   }
 
-  const handleApprove = async (item: RecoleccionV2) => {
+  const handleApprove = async (item: Recoleccion) => {
     setActioningId(item.id)
     try {
       await RecoleccionesService.approve(item.id)
