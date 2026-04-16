@@ -1,7 +1,4 @@
 import type { UbicacionApi, UbicacionCreateInput } from '../types/ubicacion'
-import { UbicacionesService } from './ubicaciones.service'
-import type { DivisionCatalogo, PaisCatalogo } from './ubicaciones.service'
-export type { DivisionCatalogo, PaisCatalogo } from './ubicaciones.service'
 
 const API_URL = import.meta.env.VITE_API_URL
 
@@ -683,14 +680,6 @@ export class RecoleccionesService {
     }
 
     return Array.isArray(payload.data) ? payload.data : []
-  }
-
-  static async getPaises(): Promise<PaisCatalogo[]> {
-    return UbicacionesService.getPaises()
-  }
-
-  static async getDivisiones(paisId: number, parentId?: number): Promise<DivisionCatalogo[]> {
-    return UbicacionesService.getDivisiones(paisId, parentId)
   }
 
   // ─── Helper con rol de usuario ─────────────────────────────────────────────
