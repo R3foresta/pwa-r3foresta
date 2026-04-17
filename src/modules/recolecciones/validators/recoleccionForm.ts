@@ -1,6 +1,7 @@
 import type { CreateRecoleccionDto } from '../../../services/recolecciones.service'
 import { validateCantidad } from '../../../utils/validations/cantidad'
 import { validateDateInRange, type DateRange } from '../../../utils/validations/date'
+import { mapToCantidadYUnidadCanonica } from '../../../utils/recoleccionUnidad'
 import type { RecoleccionFormData } from '../recoleccionFormTypes'
 
 export const MIN_FOTOS = 2
@@ -41,6 +42,14 @@ export function validateRecoleccionForm(
     }
   }
 
+  if (form.type === 'cutting' && form.unit !== 'units') {
+    errors.quantity = 'Para ESQUEJE la unidad debe ser Unidades'
+  }
+
+  if (form.unit === 'units' && Number.isFinite(cantidadCheck.parsed) && !Number.isInteger(cantidadCheck.parsed)) {
+    errors.quantity = 'Para UNIDADES la cantidad debe ser entera'
+  }
+
   const totalFotos = (form.placePhotos?.length || 0) + (form.totalPhotos?.length || 0)
   if (totalFotos < MIN_FOTOS || totalFotos > MAX_FOTOS) {
     errors.fotos = `Adjunta entre ${MIN_FOTOS} y ${MAX_FOTOS} fotos` 
@@ -62,12 +71,14 @@ export function validateRecoleccionForm(
 
 export function mapFormToCreateDto(form: RecoleccionFormData): CreateRecoleccionDto {
   const tipo_material = form.type === 'cutting' ? 'ESQUEJE' : 'SEMILLA'
-  const cantidad = Number(form.quantity)
-  const unidad = form.unit === 'units' ? 'unidad' : form.unit
+  const { cantidad_inicial_canonica, unidad_canonica } = mapToCantidadYUnidadCanonica(
+    Number(form.quantity),
+    form.unit,
+  )
   return {
     fecha: form.date,
-    cantidad,
-    unidad,
+    cantidad_inicial_canonica,
+    unidad_canonica,
     tipo_material,
     planta_id: form.planta_id ? Number(form.planta_id) : 1,
     metodo_id: form.metodo_id ? Number(form.metodo_id) : 1,

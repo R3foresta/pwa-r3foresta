@@ -6,6 +6,7 @@ import {
   type EvidenciaTrazabilidad,
   type Recoleccion,
 } from '../../services/recolecciones.service'
+import { formatUnidadCanonicaDisplay } from '../../utils/recoleccionUnidad'
 import { getUbicacionCoords, getUbicacionDisplay, getUbicacionDivision } from '../../utils/ubicacion'
 import {
   estadoOperativoBadgeClass,
@@ -165,7 +166,9 @@ function RecoleccionDetailScreen() {
   const ubicacionDivision = getUbicacionDivision(recoleccion.ubicacion)
   const ubicacionCoords = getUbicacionCoords(recoleccion.ubicacion)
   const estadoRegistro = resolveEstadoRegistro(recoleccion)
-  const estadoOperativo = resolveEstadoOperativo(recoleccion.cantidad)
+  const estadoOperativo = resolveEstadoOperativo(recoleccion)
+  const cantidadActual = recoleccion.saldo_actual ?? 0
+  const unidadDisplay = formatUnidadCanonicaDisplay(recoleccion.unidad_canonica)
   const isBorrador = estadoRegistro === 'BORRADOR'
 
   return (
@@ -205,9 +208,9 @@ function RecoleccionDetailScreen() {
                 <span>{recoleccion.tipo_material}</span>
               </p>
               <p className="flex items-center justify-between gap-4">
-                <span className="text-slate-500">Cantidad</span>
+                <span className="text-slate-500">Saldo actual</span>
                 <span>
-                  {recoleccion.cantidad} {recoleccion.unidad}
+                  {cantidadActual} {unidadDisplay}
                 </span>
               </p>
               <p className="flex items-center justify-between gap-4">

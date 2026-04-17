@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useViveros } from '../../hooks/useViveros'
 import { GerminacionService } from '../../services/germinacion.service'
 import { RecoleccionesService, type Recoleccion } from '../../services/recolecciones.service'
+import { formatUnidadCanonicaDisplay } from '../../utils/recoleccionUnidad'
 import { getUbicacionDisplay } from '../../utils/ubicacion'
 import { buildPastRange, clampDateToRange, validateDateInRange } from '../../utils/validations/date'
 import { MAX_DIAS_GERMINACION } from '../../config/germinacion'
@@ -31,6 +32,21 @@ const getRecoleccionLabel = (item: Recoleccion) => {
     item.nombre_cientifico ||
     `Recoleccion #${item.id}`
   )
+}
+
+const isRecoleccionElegibleParaVivero = (item: Recoleccion) => {
+  if (item.tipo_material !== 'SEMILLA') {
+    return false
+  }
+
+  if (item.elegible_para_vivero === false) {
+    return false
+  }
+
+  const saldoActual = Number(item.saldo_actual ?? 0)
+  const estadoOperativo = String(item.estado_operativo ?? '').toUpperCase()
+  const isAbierto = estadoOperativo ? estadoOperativo === 'ABIERTO' : saldoActual > 0
+  return saldoActual > 0 && isAbierto
 }
 
 function ViveroNewScreen() {
@@ -101,7 +117,7 @@ function ViveroNewScreen() {
   )
 
   const recoleccionesDisponibles = useMemo(
-    () => recolecciones.filter((item) => item.tipo_material === 'SEMILLA'),
+    () => recolecciones.filter((item) => isRecoleccionElegibleParaVivero(item)),
     [recolecciones],
   )
 
@@ -351,6 +367,7 @@ function ViveroNewScreen() {
             {selectedViveroId &&
               recoleccionesDisponibles.map((item) => {
                 const isSelected = selectedRecolecciones.includes(item.id)
+                const unidadDisplay = formatUnidadCanonicaDisplay(item.unidad_canonica)
                 return (
                   <label
                     key={item.id}
@@ -374,7 +391,7 @@ function ViveroNewScreen() {
                         </span>
                       </div>
                       <p className="text-xs font-semibold text-brand-500">
-                        {formatDate(item.fecha)} · {item.cantidad} {item.unidad}
+                        {formatDate(item.fecha)} · {item.saldo_actual ?? 0} {unidadDisplay}
                       </p>
                       <p className="text-xs font-semibold text-brand-500">
                         Responsable: {item.usuario?.nombre ?? 'Sin registro'}

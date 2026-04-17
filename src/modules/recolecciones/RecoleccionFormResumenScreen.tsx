@@ -7,6 +7,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { RecoleccionesService, type TipoMaterialCanonico } from "../../services/recolecciones.service";
 import { mapFormToCreateDto, validateRecoleccionForm } from "./validators/recoleccionForm";
 import { buildPastRange } from "../../utils/validations/date";
+import { mapToCantidadYUnidadCanonica } from "../../utils/recoleccionUnidad";
 import { MAX_DIAS_RECOLECCION } from "../../config/recoleccion";
 
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png'];
@@ -115,14 +116,16 @@ function RecoleccionFormResumenScreen() {
       }
 
       const tipo_material: TipoMaterialCanonico = formData.type === 'cutting' ? 'ESQUEJE' : 'SEMILLA';
-      const cantidad = Number(formData.quantity);
-      const unidad = formData.unit === 'units' ? 'unidad' : formData.unit;
+      const { cantidad_inicial_canonica, unidad_canonica } = mapToCantidadYUnidadCanonica(
+        Number(formData.quantity),
+        formData.unit,
+      );
 
       if (isEditMode && formData.editId) {
         const draftPayload = {
           fecha: formData.date,
-          cantidad,
-          unidad,
+          cantidad_inicial_canonica,
+          unidad_canonica,
           tipo_material,
           observaciones: formData.notes || undefined,
           vivero_id: formData.vivero_id,

@@ -1,27 +1,31 @@
 import Icon from '../../../components/Icon'
-import type { MaterialType } from '../recoleccionTypes'
+import type { MaterialType, Unit } from '../recoleccionTypes'
 
 type Props = {
   value: string
   tipoMaterial: MaterialType
+  unidad: Unit
   error?: boolean
   onChange: (value: string) => void
   onErrorClear?: () => void
 }
 
-function sanitizeQuantity(value: string, tipo: MaterialType): string {
+function sanitizeQuantity(value: string, tipo: MaterialType, unidad: Unit): string {
   if (!value) return '0'
 
   // remove leading zeros except decimals
   const clean = value.replace(/^0+(?=\d)/, '')
-  const regex = tipo === 'cutting' ? /^\d*$/ : /^\d*\.?\d*$/
+  const requiresInteger = tipo === 'cutting' || unidad === 'units'
+  const regex = requiresInteger ? /^\d*$/ : /^\d*\.?\d*$/
   if (!regex.test(clean)) return clean.slice(0, -1)
   return clean
 }
 
-function CantidadInput({ value, tipoMaterial, error, onChange, onErrorClear }: Props) {
+function CantidadInput({ value, tipoMaterial, unidad, error, onChange, onErrorClear }: Props) {
+  const requiresInteger = tipoMaterial === 'cutting' || unidad === 'units'
+
   const handleInput = (next: string) => {
-    const sanitized = sanitizeQuantity(next, tipoMaterial)
+    const sanitized = sanitizeQuantity(next, tipoMaterial, unidad)
     onChange(sanitized || '0')
     if (onErrorClear) onErrorClear()
   }
@@ -45,7 +49,7 @@ function CantidadInput({ value, tipoMaterial, error, onChange, onErrorClear }: P
         </button>
         <input
           type="text"
-          inputMode={tipoMaterial === 'cutting' ? 'numeric' : 'decimal'}
+          inputMode={requiresInteger ? 'numeric' : 'decimal'}
           value={value}
           onChange={(event) => handleInput(event.target.value)}
           className="w-full border-none bg-transparent text-center text-3xl font-extrabold text-brand-700 outline-none"
@@ -60,7 +64,7 @@ function CantidadInput({ value, tipoMaterial, error, onChange, onErrorClear }: P
       </div>
       {error && (
         <p className="text-xs font-semibold text-red-500">
-          {tipoMaterial === 'cutting' ? 'Ingresa un entero ≥ 1' : 'Ingresa una cantidad mayor a 0'}
+          {requiresInteger ? 'Ingresa un entero ≥ 1' : 'Ingresa una cantidad mayor a 0'}
         </p>
       )}
     </div>

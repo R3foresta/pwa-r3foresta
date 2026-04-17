@@ -1,4 +1,5 @@
 import type { UbicacionApi, UbicacionCreateInput } from '../types/ubicacion'
+import type { UnidadCanonicaRecoleccion } from '../utils/recoleccionUnidad'
 
 const API_URL = import.meta.env.VITE_API_URL
 
@@ -107,11 +108,7 @@ export interface Recoleccion {
   nombre_cientifico: string | null
   nombre_comercial: string | null
   nombre_comun_principal?: string | null
-  cantidad: number
-  unidad: string
   tipo_material: string
-  estado?: string | null
-  estado_detalle?: string | null
   especie_nueva: boolean
   observaciones: string | null
   usuario_id: number
@@ -125,11 +122,21 @@ export interface Recoleccion {
   token_id: string | null
   transaction_hash: string | null
   estado_registro: string | null
-  unidad_canonica: string | null
+  unidad_canonica: UnidadCanonicaRecoleccion | null
   cantidad_inicial_canonica: number | null
+  saldo_actual: number | null
+  estado_operativo: 'ABIERTO' | 'CERRADO' | null
   usuario_validacion_id: number | null
   fecha_validacion: string | null
+  blockchain_tx_validacion?: string | null
   blockchain_hash_validacion?: string | null
+  elegible_para_vivero?: boolean
+  motivo_no_elegibilidad_para_vivero?: string | null
+  cantidad_solicitada_vivero_evaluada?: number | null
+  can_edit?: boolean
+  can_submit_for_validation?: boolean
+  can_approve?: boolean
+  can_reject?: boolean
   usuario?: UsuarioResumen
   vivero?: ViveroCatalogo | null
   metodo?: MetodoRecoleccionCatalogo | null
@@ -142,7 +149,6 @@ export interface Recoleccion {
 export interface RecoleccionFilters {
   page?: number
   limit?: number
-  usuario_id?: number
   q?: string
   search?: string
   tipo_material?: TipoMaterialCanonico
@@ -160,8 +166,8 @@ export interface ListRecoleccionesResult {
 
 export interface CreateRecoleccionDto {
   fecha: string
-  cantidad: number
-  unidad: string
+  cantidad_inicial_canonica: number
+  unidad_canonica: UnidadCanonicaRecoleccion
   tipo_material: TipoMaterialCanonico
   planta_id: number
   metodo_id: number
@@ -183,8 +189,8 @@ export interface AddEvidenciasRecoleccionDto {
 
 export interface UpdateRecoleccionDraftDto {
   fecha?: string
-  cantidad?: number
-  unidad?: string
+  cantidad_inicial_canonica?: number
+  unidad_canonica?: UnidadCanonicaRecoleccion
   tipo_material?: TipoMaterialCanonico
   observaciones?: string
   vivero_id?: number
@@ -216,6 +222,10 @@ type ApiEnvelope<T> = {
 
 function isTipoMaterialCanonico(value: string): value is TipoMaterialCanonico {
   return value === 'SEMILLA' || value === 'ESQUEJE'
+}
+
+function isUnidadCanonicaRecoleccion(value: string): value is UnidadCanonicaRecoleccion {
+  return value === 'G' || value === 'UNIDAD'
 }
 
 export class RecoleccionesService {
@@ -377,8 +387,8 @@ export class RecoleccionesService {
 
     const formData = new FormData()
     formData.append('fecha', data.fecha)
-    formData.append('cantidad', String(data.cantidad))
-    formData.append('unidad', data.unidad)
+    formData.append('cantidad_inicial_canonica', String(data.cantidad_inicial_canonica))
+    formData.append('unidad_canonica', data.unidad_canonica)
     formData.append('tipo_material', data.tipo_material)
     formData.append('planta_id', String(data.planta_id))
     formData.append('metodo_id', String(data.metodo_id))
@@ -839,12 +849,20 @@ export class RecoleccionesService {
       throw new Error('Tipo de material inválido. Solo se permite SEMILLA o ESQUEJE.')
     }
 
-    if (!Number.isFinite(data.cantidad) || data.cantidad <= 0) {
+    if (!isUnidadCanonicaRecoleccion(data.unidad_canonica)) {
+      throw new Error('Unidad inválida. Solo se permite G o UNIDAD.')
+    }
+
+    if (!Number.isFinite(data.cantidad_inicial_canonica) || data.cantidad_inicial_canonica <= 0) {
       throw new Error('La cantidad debe ser mayor a 0.')
     }
 
-    if (data.tipo_material === 'ESQUEJE' && !Number.isInteger(data.cantidad)) {
-      throw new Error('Para ESQUEJE la cantidad debe ser un número entero.')
+    if (data.tipo_material === 'ESQUEJE' && data.unidad_canonica !== 'UNIDAD') {
+      throw new Error('Para ESQUEJE la unidad canónica debe ser UNIDAD.')
+    }
+
+    if (data.unidad_canonica === 'UNIDAD' && !Number.isInteger(data.cantidad_inicial_canonica)) {
+      throw new Error('Para unidad UNIDAD la cantidad debe ser un número entero.')
     }
 
     if (data.fotos.length < 2 || data.fotos.length > 5) {

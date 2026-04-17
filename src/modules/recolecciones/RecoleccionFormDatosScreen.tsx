@@ -131,7 +131,7 @@ function RecoleccionFormDatosScreen() {
         const tipoMaterial = (draft.tipo_material || '').toUpperCase();
         const isCutting = tipoMaterial === 'ESQUEJE';
         const nextType: MaterialType = isCutting ? 'cutting' : 'seed';
-        const nextUnit = normalizeUnit(draft.unidad);
+        const nextUnit = normalizeUnit(draft.unidad_canonica);
 
         const rawPhotos = draft.fotos?.map((photo) => photo.url).filter(Boolean) ?? [];
         const convertedPhotos = await Promise.all(rawPhotos.map((photoUrl) => imageUrlToDataUrl(photoUrl)));
@@ -152,7 +152,11 @@ function RecoleccionFormDatosScreen() {
         setDate(draft.fecha || formData.date);
         setType(nextType);
         setSpecies(plantaNombre);
-        setQuantity(String(draft.cantidad ?? formData.quantity));
+        setQuantity(
+          String(
+            draft.cantidad_inicial_canonica ?? draft.saldo_actual ?? formData.quantity,
+          ),
+        );
         setUnit(nextUnit);
         setNotes(draft.observaciones || '');
         setIsNewFind(Boolean(draft.especie_nueva));
@@ -178,7 +182,7 @@ function RecoleccionFormDatosScreen() {
           type: nextType,
           species: plantaNombre,
           method: draft.metodo?.nombre || '',
-          quantity: String(draft.cantidad ?? formData.quantity),
+          quantity: String(draft.cantidad_inicial_canonica ?? draft.saldo_actual ?? formData.quantity),
           unit: nextUnit,
           notes: draft.observaciones || '',
           isNewFind: Boolean(draft.especie_nueva),
@@ -541,6 +545,7 @@ function RecoleccionFormDatosScreen() {
           <CantidadInput
             value={quantity}
             tipoMaterial={type}
+            unidad={unit}
             error={errors.quantity}
             onChange={(val) => {
               setQuantity(val);

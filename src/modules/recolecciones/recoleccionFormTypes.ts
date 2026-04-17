@@ -21,7 +21,7 @@ export interface RecoleccionFormData {
   species: string;                 // Nombre de la especie seleccionada
   method: string;                  // Método de recolección (nombre del método)
   quantity: string;                // Cantidad como string (para input numérico)
-  unit: Unit;                      // Unidad: 'kg' o 'units'
+  unit: Unit;                      // Unidad de entrada: 'kg', 'g' o 'units'
   notes: string;                   // Observaciones/notas adicionales
   isNewFind: boolean;              // ¿Es un nuevo hallazgo/especie nueva?
   placePhotos: string[];           // Fotos del lugar (base64)

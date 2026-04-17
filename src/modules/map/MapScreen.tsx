@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import type { LatLngExpression } from 'leaflet'
 import L from 'leaflet'
 import { RecoleccionesService, type Recoleccion } from '../../services/recolecciones.service'
+import { formatUnidadCanonicaDisplay } from '../../utils/recoleccionUnidad'
 import { getUbicacionDisplay, getUbicacionDivision } from '../../utils/ubicacion'
 
 // Importar estilos de Leaflet
@@ -363,6 +364,8 @@ function MapScreen() {
               const fotosUrls = (recoleccion.fotos ?? []).map((foto) => foto.url)
               const ubicacionTexto = getUbicacionDisplay(recoleccion.ubicacion)
               const divisionTexto = getUbicacionDivision(recoleccion.ubicacion)
+              const cantidadActual = recoleccion.saldo_actual ?? 0
+              const unidadDisplay = formatUnidadCanonicaDisplay(recoleccion.unidad_canonica)
               
               return (
                 <Marker
@@ -383,7 +386,7 @@ function MapScreen() {
                       </div>
                       
                       <div style={{ fontSize: '12px', color: '#666' }}>
-                        <strong>Cantidad:</strong> {recoleccion.cantidad} {recoleccion.unidad}
+                        <strong>Saldo actual:</strong> {cantidadActual} {unidadDisplay}
                       </div>
                       
                       {ubicacionTexto && (

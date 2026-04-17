@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import Icon from '../../components/Icon'
 import { useAuth } from '../../contexts/AuthContext'
 import { RecoleccionesService, type Recoleccion } from '../../services/recolecciones.service'
+import { formatUnidadCanonicaDisplay } from '../../utils/recoleccionUnidad'
 import {
   getUbicacionCoords,
   getUbicacionDisplay,
@@ -121,7 +122,9 @@ function PendingCard({ item, onApprove, onReject, isActioning }: PendingCardProp
   const ubicacionDivision = getUbicacionDivision(item.ubicacion)
   const ubicacionCoords = getUbicacionCoords(item.ubicacion)
   const estadoRegistro = resolveEstadoRegistro(item)
-  const estadoOperativo = resolveEstadoOperativo(item.cantidad)
+  const estadoOperativo = resolveEstadoOperativo(item)
+  const cantidadActual = item.saldo_actual ?? 0
+  const unidadDisplay = formatUnidadCanonicaDisplay(item.unidad_canonica)
 
   const evidencias = item.fotos ?? []
   const fotoPrincipal = evidencias.find((f) => f.es_principal) ?? evidencias[0] ?? null
@@ -150,7 +153,7 @@ function PendingCard({ item, onApprove, onReject, isActioning }: PendingCardProp
             <div className="mt-3 space-y-1 text-sm font-semibold text-slate-600">
               <p className="flex items-center gap-2">
                 <Icon name="package" className="h-4 w-4 shrink-0 text-brand-500" />
-                {item.cantidad} {item.unidad}
+                {cantidadActual} {unidadDisplay}
               </p>
               <p className="flex items-center gap-2">
                 <Icon name="date" className="h-4 w-4 shrink-0 text-brand-500" />
@@ -228,9 +231,9 @@ function PendingCard({ item, onApprove, onReject, isActioning }: PendingCardProp
                 <span>{item.tipo_material}</span>
               </p>
               <p className="flex items-center justify-between gap-4">
-                <span className="text-slate-500">Cantidad</span>
+                <span className="text-slate-500">Saldo actual</span>
                 <span>
-                  {item.cantidad} {item.unidad}
+                  {cantidadActual} {unidadDisplay}
                 </span>
               </p>
               <p className="flex items-center justify-between gap-4">
