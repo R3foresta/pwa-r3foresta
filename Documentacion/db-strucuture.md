@@ -211,7 +211,6 @@ erDiagram
     date fecha_salida
     numeric altura_prom_sombra
     numeric altura_prom_salida
-    ENUM(lote_estado) estado
     timestamptz created_at
     timestamptz updated_at
     bigint updated_by FK
@@ -224,8 +223,6 @@ erDiagram
     int nro_cambio
     timestamptz fecha_cambio
     bigint responsable_id FK
-    ENUM(lote_accion) accion
-    ENUM(lote_estado) estado
     int cantidad_inicio
     int cantidad_embolsadas
     int cantidad_sombra
@@ -414,10 +411,6 @@ erDiagram
 * `tipo_material` = enum user-defined
 * fechas: `fecha` limitada a 45 días hacia atrás
 
-**En LOTE_FASE_VIVERO:**
-
-* `estado` = enum `lote_estado`
-* `updated_at` y `updated_by` se usan para auditoría y para el historial
 
 **En PLANTACION:**
 
