@@ -172,15 +172,6 @@ erDiagram
     text blockchain_tx_validacion
   }
 
-  RECOLECCION_FOTO {
-    bigint id PK
-    bigint recoleccion_id FK
-    text url
-    int peso_bytes
-    text formato
-    timestamptz created_at
-  }
-
   RECOLECCION_MOVIMIENTO {
     bigint id PK
     bigint recoleccion_id FK
@@ -346,7 +337,6 @@ erDiagram
   METODO_RECOLECCION ||--o{ RECOLECCION : metodo
   PLANTA ||--o{ RECOLECCION : identifica
 
-  RECOLECCION ||--o{ RECOLECCION_FOTO : fotos
   RECOLECCION ||--o{ RECOLECCION_MOVIMIENTO : movimientos
   USUARIO ||--o{ RECOLECCION_MOVIMIENTO : creado_por
 

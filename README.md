@@ -149,15 +149,6 @@ erDiagram
         datetime created_at
     }
 
-    RECOLECCION_FOTO {
-        bigint id PK
-        bigint recoleccion_id FK
-        string url
-        int peso_bytes "max 5MB"
-        string formato "JPG/JPEG/PNG"
-        datetime created_at
-        %% Regla negocio: mínimo 2 fotos por recolección (validar en backend)
-    }
 
     %% =========================================
     %% FASE VIVERO (antes: LOTE_PLANTACION)
@@ -335,8 +326,6 @@ erDiagram
     PLANTA ||--o{ LOTE_FASE_VIVERO : se_siembra
 
     METODO_RECOLECCION ||--o{ RECOLECCION : se_usa_en
-
-    RECOLECCION ||--o{ RECOLECCION_FOTO : tiene
 
     LOTE_FASE_VIVERO ||--o{ LOTE_FASE_VIVERO_RECOLECCION : usa
     RECOLECCION ||--o{ LOTE_FASE_VIVERO_RECOLECCION : proviene_de
