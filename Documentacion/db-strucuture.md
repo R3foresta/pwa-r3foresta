@@ -1,6 +1,3 @@
-## Documentación actualizada (Mermaid ER)
-
-```mermaid
 erDiagram
 
   PAIS {
@@ -87,7 +84,7 @@ erDiagram
   EVIDENCIAS_TRAZABILIDAD {
     bigint id PK
     smallint tipo_entidad_id FK
-    bigint entidad_id
+    bigint entidad_id "polimórfico"
     text codigo_trazabilidad
     text bucket
     text ruta_archivo
@@ -139,19 +136,19 @@ erDiagram
 
   METODO_RECOLECCION {
     bigint id PK
-    text nombre "UNIQUE (USER-DEFINED en tu DDL)"
+    text nombre
     text descripcion
   }
 
   RECOLECCION {
     bigint id PK
     date fecha
-    text nombre_cientifico
-    text nombre_comercial
-    numeric cantidad
-    text unidad
     ENUM(tipo_material_origen) tipo_material
-    ENUM(estado_recoleccion) estado
+    text nombre_cientifico_snapshot "NOT NULL - snapshot oficial se congela al VALIDAR"
+    text nombre_comercial_snapshot "NOT NULL - naming oficial; snapshot se congela al VALIDAR"
+    text variedad_snapshot "NOT NULL - snapshot oficial se congela al VALIDARr"
+    text nombre_comunidad_snapshot "NOT NULL - comunidad donde se recolectó; snapshot oficial se congela al VALIDAR"
+    text nombre_recolector_snapshot "NOT NULL - snapshot oficial se congela al VALIDAR"
     boolean especie_nueva
     text observaciones
     bigint usuario_id FK
@@ -160,16 +157,34 @@ erDiagram
     bigint metodo_id FK
     bigint planta_id FK
     timestamptz created_at
+    timestamptz updated_at "nullable - ultima edicion de ficha en BORRADOR o RECHAZADO"
+    bigint updated_by FK "nullable"
+    timestamptz deleted_at "nullable - soft delete solo para BORRADOR"
+    bigint deleted_by FK "nullable"
     text codigo_trazabilidad "UNIQUE"
     text blockchain_url
     text token_id
     text transaction_hash
     ENUM(estado_registro_recoleccion) estado_registro
-    text unidad_canonica
+    ENUM(unidad_medida) unidad_canonica
     numeric cantidad_inicial_canonica
-    bigint usuario_validacion_id FK
-    timestamptz fecha_validacion
+  bigint usuario_validacion_id FK "nullable - solo cuando la solicitud fue aprobada"
+    timestamptz fecha_validacion "nullable - solo cuando pasa a VALIDADO"
     text blockchain_tx_validacion
+    numeric saldo_actual
+    ENUM(estado_operativo_recoleccion) estado_operativo
+  }
+
+  RECOLECCION_HISTORIAL {
+    bigint id PK
+    bigint recoleccion_id FK
+    ENUM(tipo_historial_recoleccion) tipo_historial
+    ENUM(estado_registro_recoleccion) estado_origen
+    ENUM(estado_registro_recoleccion) estado_destino
+    text observaciones
+    jsonb metadata
+    bigint actor_user_id FK
+    timestamptz created_at
   }
 
   RECOLECCION_MOVIMIENTO {
@@ -177,71 +192,62 @@ erDiagram
     bigint recoleccion_id FK
     ENUM(tipo_movimiento_recoleccion) tipo_movimiento
     numeric delta
-    text unidad_operativa
+    ENUM(unidad_medida) unidad_medida_movimiento
     ENUM(motivo_movimiento_recoleccion) motivo
     text motivo_otro
-    bigint lote_vivero_id
-    jsonb detalle_cambios
+    bigint lote_vivero_id "FK a LOTE_VIVERO"
+    jsonb detalle_cambios "nullable - solo para correcciones o ajustes tecnicos futuros"
     bigint created_by FK
     timestamptz created_at
     text blockchain_tx_hash
   }
 
-  LOTE_FASE_VIVERO {
+  LOTE_VIVERO {
     bigint id PK
-    bigint planta_id FK
-    bigint vivero_id FK
-    bigint responsable_id FK
-    date fecha_inicio
-    int cantidad_inicio
-    int cantidad_embolsadas
-    int cantidad_sombra
-    int cantidad_lista_plantar
-    date fecha_embolsado
-    date fecha_sombra
-    date fecha_salida
-    numeric altura_prom_sombra
-    numeric altura_prom_salida
-    timestamptz created_at
-    timestamptz updated_at
-    bigint updated_by FK
-    text codigo_trazabilidad "UNIQUE"
-  }
+    bigint recoleccion_id FK "NOT NULL - origen único por lote, sin UNIQUE"
+    bigint planta_id FK "NOT NULL"
+    bigint vivero_id FK "NOT NULL"
+    bigint responsable_id FK "NOT NULL"
+    text nombre_cientifico_snapshot "NOT NULL - congelado al crear, heredado desde Recolección"
+    text nombre_comercial_snapshot "NOT NULL - congelado al crear, heredado desde Recolección"
+    ENUM(tipo_material_origen) tipo_material_snapshot "NOT NULL - congelado al crear, heredado desde Recolección"
+    text variedad_snapshot "NOT NULL - congelado al crear, heredado desde Recolección"
+    text nombre_comunidad_origen_snapshot "NOT NULL - congelado al crear"
+    text nombre_responsable_snapshot "NOT NULL - congelado al crear"
+    date fecha_inicio "NOT NULL"
+    numeric cantidad_inicial_en_proceso "NOT NULL - lectura operativa de inicio"
+    ENUM(unidad_medida) unidad_medida_inicial "NOT NULL - UNIDAD | G"
+    int plantas_vivas_iniciales "nullable - materializado al registrar EMBOLSADO"
+    int saldo_vivo_actual "nullable - caché controlada, nunca editar directo"
+    ENUM(subetapa_adaptabilidad) subetapa_actual "nullable - SOMBRA | MEDIA_SOMBRA | SOL_DIRECTO"
+    ENUM(estado_lote_vivero) estado_lote "NOT NULL - ACTIVO | FINALIZADO, default ACTIVO"
+    ENUM(motivo_cierre_lote) motivo_cierre "nullable - DESPACHO_TOTAL | PERDIDA_TOTAL | MIXTO"
+    text codigo_trazabilidad "NOT NULL - UNIQUE"
+    timestamptz created_at "NOT NULL"
+    timestamptz updated_at "NOT NULL"
+}
 
-  LOTE_FASE_VIVERO_HISTORIAL {
+EVENTO_LOTE_VIVERO {
     bigint id PK
-    bigint lote_id FK
-    int nro_cambio
-    timestamptz fecha_cambio
-    bigint responsable_id FK
-    int cantidad_inicio
-    int cantidad_embolsadas
-    int cantidad_sombra
-    int cantidad_lista_plantar
-    date fecha_inicio
-    date fecha_embolsado
-    date fecha_sombra
-    date fecha_salida
-    numeric altura_prom_sombra
-    numeric altura_prom_salida
-    text notas
-  }
-
-  LOTE_FASE_VIVERO_FOTO {
-    bigint id PK
-    bigint lote_historial_id FK
-    text url
-    int peso_bytes
-    text formato
-    boolean es_portada
-    text descripcion
-    timestamptz created_at
-  }
-
-  LOTE_FASE_VIVERO_RECOLECCION {
-    bigint lote_id PK,FK
-    bigint recoleccion_id PK,FK
-  }
+    bigint lote_id FK "NOT NULL"
+    ENUM(tipo_evento_vivero) tipo_evento "NOT NULL - INICIO | EMBOLSADO | ADAPTABILIDAD | MERMA | DESPACHO | CIERRE_AUTOMATICO"
+    date fecha_evento "NOT NULL"
+    timestamptz created_at "NOT NULL - inmutable, cuándo se guardó realmente"
+    bigint responsable_id FK "NOT NULL"
+    numeric cantidad_afectada "nullable - plantas o unidades según tipo_evento"
+    ENUM(unidad_medida) unidad_medida_evento "nullable - UNIDAD | G"
+    ENUM(causa_merma_vivero) causa_merma "nullable - solo aplica en MERMA"
+    ENUM(destino_tipo_vivero) destino_tipo "nullable - solo aplica en DESPACHO"
+    text destino_referencia "nullable - solo aplica en DESPACHO"
+    bigint comunidad_destino_id FK "nullable - referencia a DIVISION_ADMINISTRATIVA(id), solo aplica en DESPACHO"
+    ENUM(subetapa_adaptabilidad) subetapa_destino "nullable - SOMBRA | MEDIA_SOMBRA | SOL_DIRECTO"
+    int saldo_vivo_antes "nullable - calculado por sistema"
+    int saldo_vivo_despues "nullable - calculado por sistema"
+    ENUM(motivo_cierre_lote) motivo_cierre_calculado "nullable - DESPACHO_TOTAL | PERDIDA_TOTAL | MIXTO"
+    bigint ref_evento_trigger_id FK "nullable - autorreferencia, solo aplica en CIERRE_AUTOMATICO"
+    jsonb metadata_blockchain "nullable - solo aplica en DESPACHO con anclaje activo"
+    text observaciones "nullable"
+}
 
   PLANTACION {
     bigint id PK
@@ -272,18 +278,18 @@ erDiagram
   }
 
   PLANTACION_ABONO {
-    bigint plantacion_id PK,FK
-    int tipo_abono_id PK,FK
+    bigint plantacion_id PK
+    int tipo_abono_id PK
   }
 
   PLANTACION_RIEGO {
-    bigint plantacion_id PK,FK
-    int tipo_riego_id PK,FK
+    bigint plantacion_id PK
+    int tipo_riego_id PK
   }
 
   PLANTACION_USUARIO {
-    bigint plantacion_id PK,FK
-    int usuario_id PK,FK
+    bigint plantacion_id PK
+    int usuario_id PK
     text rol
   }
 
@@ -308,102 +314,106 @@ erDiagram
     timestamptz created_at
   }
 
-  PLANTACION_LOTE_FASE_VIVERO {
-    bigint plantacion_id PK,FK
-    int lote_fase_vivero_id PK,FK
+  PLANTACION_LOTE_VIVERO {
+    bigint plantacion_id PK
+    bigint lote_vivero_id PK
     int cantidad_plantines_usados
   }
 
-  %% =========================
-  %% Relaciones
-  %% =========================
+  %% === Relaciones sin cambio ===
 
   PAIS ||--o{ DIVISION_TIPO : tiene
   PAIS ||--o{ DIVISION_ADMINISTRATIVA : tiene
   PAIS ||--o{ UBICACION : tiene
-
   DIVISION_TIPO ||--o{ DIVISION_ADMINISTRATIVA : clasifica
   DIVISION_ADMINISTRATIVA ||--o{ DIVISION_ADMINISTRATIVA : parent
   DIVISION_ADMINISTRATIVA ||--o{ DIVISION_ADMINISTRATIVA : reemplaza
-
   UBICACION }o--|| DIVISION_ADMINISTRATIVA : pertenece_a
   UBICACION ||--|| VIVERO : ubicacion_unica
-
   USUARIO ||--o{ USUARIO_CREDENCIAL : tiene
-
   USUARIO ||--o{ RECOLECCION : registra
   UBICACION ||--o{ RECOLECCION : ocurre_en
   VIVERO ||--o{ RECOLECCION : almacena_en
   METODO_RECOLECCION ||--o{ RECOLECCION : metodo
   PLANTA ||--o{ RECOLECCION : identifica
-
+  RECOLECCION ||--o{ RECOLECCION_HISTORIAL : historial_ciclo_vida
+  USUARIO ||--o{ RECOLECCION_HISTORIAL : actor
   RECOLECCION ||--o{ RECOLECCION_MOVIMIENTO : movimientos
   USUARIO ||--o{ RECOLECCION_MOVIMIENTO : creado_por
-
-  VIVERO ||--o{ LOTE_FASE_VIVERO : contiene
-  USUARIO ||--o{ LOTE_FASE_VIVERO : responsable
-  USUARIO ||--o{ LOTE_FASE_VIVERO : updated_by
-  PLANTA ||--o{ LOTE_FASE_VIVERO : planta
-
-  LOTE_FASE_VIVERO ||--o{ LOTE_FASE_VIVERO_HISTORIAL : historial
-  USUARIO ||--o{ LOTE_FASE_VIVERO_HISTORIAL : responsable
-  LOTE_FASE_VIVERO_HISTORIAL ||--o{ LOTE_FASE_VIVERO_FOTO : fotos
-
-  LOTE_FASE_VIVERO ||--o{ LOTE_FASE_VIVERO_RECOLECCION : consume
-  RECOLECCION ||--o{ LOTE_FASE_VIVERO_RECOLECCION : origen
-
-  UBICACION ||--o{ PLANTACION : lugar
-  USUARIO ||--o{ PLANTACION : created_by
-
-  PLANTACION ||--o{ PLANTACION_FOTO : fotos
-  PLANTACION ||--o{ PLANTACION_MONITOREO : monitoreos
-  USUARIO ||--o{ PLANTACION_MONITOREO : registra
-
-  PLANTACION ||--o{ PLANTACION_ABONO : usa
-  TIPO_ABONO ||--o{ PLANTACION_ABONO : tipo
-
-  PLANTACION ||--o{ PLANTACION_RIEGO : usa
-  TIPO_RIEGO ||--o{ PLANTACION_RIEGO : tipo
-
-  PLANTACION ||--o{ PLANTACION_USUARIO : asigna
-  USUARIO ||--o{ PLANTACION_USUARIO : participa
-
-  PLANTACION ||--o{ PLANTACION_LOTE_FASE_VIVERO : usa_lote
-  LOTE_FASE_VIVERO ||--o{ PLANTACION_LOTE_FASE_VIVERO : se_usa_en
-
   TIPOS_ENTIDAD_EVIDENCIA ||--o{ EVIDENCIAS_TRAZABILIDAD : tipo
   USUARIO ||--o{ EVIDENCIAS_TRAZABILIDAD : creado_por
   USUARIO ||--o{ EVIDENCIAS_TRAZABILIDAD : actualizado_por
   USUARIO ||--o{ EVIDENCIAS_TRAZABILIDAD : eliminado_por
 
-```
+  %% === Relaciones módulo vivero — actualizadas ===
 
----
+  RECOLECCION ||--o{ LOTE_VIVERO : "origen único"
+  PLANTA ||--o{ LOTE_VIVERO : planta
+  VIVERO ||--o{ LOTE_VIVERO : contiene
+  USUARIO ||--o{ LOTE_VIVERO : responsable
 
-## Aclaraciones (déjalas aparte tal como pediste)
+  LOTE_VIVERO ||--o{ EVENTO_LOTE_VIVERO : "historial append-only"
+  USUARIO ||--o{ EVENTO_LOTE_VIVERO : responsable
+  EVENTO_LOTE_VIVERO ||--o| EVENTO_LOTE_VIVERO : "ref_evento_trigger"
 
-**En UBICACION (nuevo):**
+  RECOLECCION_MOVIMIENTO }o--|| LOTE_VIVERO : "registra consumo en M1"
 
-* `division_id` = la **división más específica** conocida (puede ser municipio, comunidad, cantón, etc.)
-* `nombre` = nombre del sitio puntual: *Parcela X, Vivero Y, Sector Z*
-* `fuente` = `GPS_MOVIL | MAPA | MANUAL | LEGACY`
-* `precision_m` = precisión aproximada en metros
-* `referencia` = indicaciones humanas (texto libre)
+  TIPOS_ENTIDAD_EVIDENCIA ||--o{ EVIDENCIAS_TRAZABILIDAD : tipo
 
-**En DIVISION_ADMINISTRATIVA:**
+  %% === Relaciones plantación — sin cambio ===
 
-* `parent_id` arma el árbol (nivel variable por país)
-* `reemplazada_por_id` sirve para “fusionar/renombrar” sin borrar historia (muy útil para trazabilidad)
+  UBICACION ||--o{ PLANTACION : lugar
+  USUARIO ||--o{ PLANTACION : created_by
+  PLANTACION ||--o{ PLANTACION_FOTO : fotos
+  PLANTACION ||--o{ PLANTACION_MONITOREO : monitoreos
+  USUARIO ||--o{ PLANTACION_MONITOREO : registra
+  PLANTACION ||--o{ PLANTACION_ABONO : usa
+  TIPO_ABONO ||--o{ PLANTACION_ABONO : tipo
+  PLANTACION ||--o{ PLANTACION_RIEGO : usa
+  TIPO_RIEGO ||--o{ PLANTACION_RIEGO : tipo
+  PLANTACION ||--o{ PLANTACION_USUARIO : asigna
+  USUARIO ||--o{ PLANTACION_USUARIO : participa
+  PLANTACION ||--o{ PLANTACION_LOTE_VIVERO : usa_lote
+  LOTE_VIVERO ||--o{ PLANTACION_LOTE_VIVERO : se_usa_en
+ENUMS
+RECOLECCION
+tipo_material_origen = [SEMILLA, ESQUEJE]
 
-**En RECOLECCION:**
+estado_registro_recoleccion = [BORRADOR, PENDIENTE_VALIDACION, VALIDADO, RECHAZADO]
 
-* `estado` = `ALMACENADO` por defecto (enum)
-* `tipo_material` = enum user-defined
-* fechas: `fecha` limitada a 45 días hacia atrás
+tipo_movimiento_recoleccion = [
+  CONSUMO_A_VIVERO, DESECHO, CORRECCION, AJUSTE_MIGRACION
+]
 
+motivo_movimiento_recoleccion = [
+CONSUMO_PARA_VIVERO, DESECHO_MALA_CALIDAD, DESECHO_PLAGA, DESECHO_HONGO, DESECHO_PUDRICION, DESECHO_DANO_TRANSPORTE, DESECHO_DANO_MANIPULACION, DESECHO_CONTAMINACION, DESECHO_CADUCIDAD, DESECHO_OTRO, CORRECCION_CONTEO_FISICO, CORRECCION_ERROR_DIGITACION, CORRECCION_CAMBIO_UNIDAD, CORRECCION_OTRO, AJUSTE_MIGRACION, AJUSTE_INTEGRIDAD_DATOS, AJUSTE_REVERSA_OPERACION, AJUSTE_OTRO, OTRO
+]
+motivo_movimiento_recoleccion se mantiene en DB como enum oficial, pero debe documentarse y tratarse en tres grupos:
+Motivos funcionales: usados en la operación normal del negocio.
+Motivos correctivos: usados para correcciones auditadas.
+Motivos técnicos: usados para migraciones, integridad o reversas técnicas.
 
-**En PLANTACION:**
+LOTE VIVIERO
+estado_lote_vivero = [ACTIVO, FINALIZADO]
 
-* `destino` = `ARBORIZACION | FORESTACION | REFORESTACION`
-* `origen_propiedad` = `DONADO | ADQUIRIDO | OTRO | NULL`
+tipo_evento_vivero = [
+  INICIO, EMBOLSADO, ADAPTABILIDAD, MERMA, DESPACHO, CIERRE_AUTOMATICO
+]
 
+subetapa_adaptabilidad = [SOMBRA, MEDIA_SOMBRA, SOL_DIRECTO]
+
+causa_merma_vivero = [
+  PLAGA, ENFERMEDAD, SEQUIA, DANO_FISICO,
+  MUERTE_NATURAL, DESCARTE_CALIDAD, OTRO
+]
+
+destino_tipo_vivero = [
+  PLANTACION_PROPIA, DONACION_COMUNIDAD, VENTA, OTRO
+]
+
+motivo_cierre_lote = [DESPACHO_TOTAL, PERDIDA_TOTAL, MIXTO]
+estado_operativo_recoleccion = [ABIERTO, CERRADO]
+USUARIO
+rol_usuario = [ADMIN, GENERAL, VALIDADOR, VOLUNTARIO]
+UNIDADES
+unidad_medida = [UNIDAD, G]
