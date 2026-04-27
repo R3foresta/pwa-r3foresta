@@ -144,7 +144,7 @@ function PlantasScreen() {
                 value={formData.nombre_cientifico} onChange={e => setFormData({...formData, nombre_cientifico: e.target.value})}/>
 
               <select className="w-full p-3 rounded-xl bg-slate-50 border-none ring-1 ring-black/5"
-                onChange={e => setFormData({...formData, tipo_plantas_id: Number(e.target.value)})}>
+                onChange={e => setFormData({...formData, tipo_planta_id: Number(e.target.value)})}>
                 <option value="0">Seleccionar Tipo *</option>
                 {tiposPlantas.map(t => <option key={t.id} value={t.id}>{t.nombre}</option>)}
               </select>
