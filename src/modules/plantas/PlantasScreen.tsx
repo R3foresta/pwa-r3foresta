@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import Icon from '../../components/Icon'
 import { usePlantasCatalog } from '../recolecciones/hooks/usePlantasCatalog'
-import { useState } from 'react'
+import React, { useState } from 'react'
 
 function PlantasScreen() {
   const navigate = useNavigate()

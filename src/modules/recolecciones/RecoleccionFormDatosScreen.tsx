@@ -13,10 +13,7 @@ import PhotoPicker from "./components/PhotoPicker";
 import PlantSelector from "./components/PlantSelector";
 //Usamos el nuevo hook especializado
 import { usePlantasCatalog } from "./hooks/usePlantasCatalog";
-import { useCatalogosRecoleccion } from "./hooks/useCatalogosRecoleccion";
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB en bytes
-const ALLOWED_FORMATS = ['image/jpeg', 'image/png', 'image/jpg'];
 
 function RecoleccionFormDatosScreen() {
   const navigate = useNavigate();
@@ -30,9 +27,9 @@ function RecoleccionFormDatosScreen() {
   const [quantity, setQuantity] = useState(formData?.quantity || "0");
   const [unit, setUnit] = useState<Unit>(formData?.unit || "kg");
   const [notes, setNotes] = useState(formData?.notes || "");
-  const { metodos } = useCatalogosRecoleccion(formData.metodo_id);
+
   const [type, setType] = useState<MaterialType>(formData?.type || "seed");
-  const [species, setSpecies] = useState(formData?.species || "");
+
   // Cargamos plantas del nuevo hook independiente
   const { plantas, loading: loadingPlantas } = usePlantasCatalog(formData.planta_id);
 
@@ -111,16 +108,9 @@ function RecoleccionFormDatosScreen() {
 
         if (!isMounted) return;
         // 3. Sincronizar Estados Locales Operativos
-        const plantaNombre =
-          draft.nombre_comun_principal ??
-          draft.nombre_comercial ??
-          draft.planta?.nombre_comun_principal ??
-          draft.planta?.especie ??
-          '';
 
         setDate(draft.fecha || formData.date);
         setType(nextType);
-        setSpecies(plantaNombre);
         setQuantity(
           String(
             draft.cantidad_inicial_canonica ?? draft.saldo_actual ?? formData.quantity,
@@ -135,7 +125,6 @@ function RecoleccionFormDatosScreen() {
           editInitialPhotos: fotosBase64,
           date: draft.fecha || formData.date,
           type: nextType,
-          species: plantaNombre,
           method: draft.metodo?.nombre || '',
           quantity: String(draft.cantidad_inicial_canonica ?? draft.saldo_actual ?? formData.quantity),
           unit: nextUnit,
