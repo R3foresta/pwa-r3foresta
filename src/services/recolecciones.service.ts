@@ -171,7 +171,7 @@ export interface CreateRecoleccionDto {
   tipo_material: TipoMaterialCanonico
   planta_id: number
   metodo_id: number
-  vivero_id: number
+  vivero_id?: number
   observaciones?: string
   ubicacion: UbicacionCreateInput & {
     fuente?: FuenteUbicacionCanonica
@@ -884,8 +884,11 @@ export class RecoleccionesService {
     if (!Number.isFinite(data.metodo_id) || data.metodo_id <= 0) {
       throw new Error('Debes seleccionar un método de recolección válido.')
     }
-    if (!Number.isFinite(data.vivero_id) || data.vivero_id <= 0) {
-      throw new Error('Debes seleccionar un vivero válido.')
+    // Validar vivero SOLO si está presente
+    if (data.vivero_id !== undefined) {
+      if (!Number.isFinite(data.vivero_id) || data.vivero_id <= 0) {
+        throw new Error('Debes seleccionar un vivero válido.')
+      }
     }
   }
 }
