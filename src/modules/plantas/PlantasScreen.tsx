@@ -15,8 +15,8 @@ function PlantasScreen() {
   )
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-28 pt-6 text-brand-700">
-      {/* Header (El que ya tenías) */}
+    // Agregamos pb-32 para que el listado no quede tapado por el botón flotante o el menú
+    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-32 pt-6 text-brand-700">
       <header className="relative mb-4 flex items-center gap-4">
         <button onClick={() => navigate(-1)} className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-soft">
           <Icon name="arrow-left" className="h-5 w-5" />
@@ -27,7 +27,6 @@ function PlantasScreen() {
         </div>
       </header>
 
-      {/* Buscador */}
       <div className="mt-4 relative">
         <input 
           type="text"
@@ -38,24 +37,37 @@ function PlantasScreen() {
         />
       </div>
 
-      {/* Listado de Especies */}
       <section className="mt-6 flex flex-col gap-3">
         {loading ? (
           <p className="text-center py-10 text-brand-400 italic">Cargando catálogo...</p>
         ) : plantasFiltradas.length > 0 ? (
           plantasFiltradas.map(planta => (
             <div key={planta.id} className="flex items-center gap-4 rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
-              <div className="h-12 w-12 flex-shrink-0 rounded-2xl bg-brand-50 flex items-center justify-center text-brand-500 font-bold">
-                {planta.nombre_comun_principal?.[0] || '?'}
+              
+              {/* 🖼️ BLOQUE DEL AVATAR (IMAGEN) ACTUALIZADO */}
+              <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded-2xl bg-brand-50 flex items-center justify-center">
+                {planta.imagen_url ? (
+                  <img 
+                    src={planta.imagen_url} 
+                    alt={planta.nombre_comun_principal || 'Planta'} 
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="text-brand-500 font-bold text-xl">
+                    {planta.nombre_comun_principal?.[0] || '?'}
+                  </span>
+                )}
               </div>
-              <div className="flex flex-col">
-                <span className="font-semibold text-brand-800">
+
+              <div className="flex flex-col flex-1">
+                <span className="font-semibold text-brand-800 leading-tight">
                   {planta.nombre_comun_principal || 'Sin nombre común'}
                 </span>
                 <span className="text-xs italic text-brand-400">
-                  {planta.nombre_cientifico || 'Sin nombre científico'}
+                  {planta.nombre_cientifico}
                 </span>
               </div>
+              
               <Icon name="arrow-left" className="ml-auto h-5 w-5 rotate-180 text-brand-200" />
             </div>
           ))
@@ -64,12 +76,12 @@ function PlantasScreen() {
         )}
       </section>
 
-      {/* Botón Flotante para Nueva Planta (Solo Admin debería verlo después) */}
+      {/* ➕ BOTÓN FLOTANTE CON Z-INDEX PARA QUE NO SE OCULTE */}
       <button 
-        className="fixed bottom-24 right-6 flex h-14 w-14 items-center justify-center rounded-full bg-brand-500 text-white shadow-lg transition-transform active:scale-95"
-        onClick={() => alert("Aquí abriremos el formulario de nueva planta")}
+        className="fixed bottom-24 right-6 z-50 flex h-16 w-16 items-center justify-center rounded-full bg-brand-500 text-white shadow-2xl transition-transform active:scale-95 hover:bg-brand-600"
+        onClick={() => alert("Próximamente: Formulario de creación")}
       >
-        <Icon name="plus" className="h-6 w-6" />
+        <Icon name="plus" className="h-8 w-8" />
       </button>
     </div>
   )

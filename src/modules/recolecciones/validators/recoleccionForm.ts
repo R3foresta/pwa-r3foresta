@@ -89,7 +89,7 @@ export function mapFormToCreateDto(form: RecoleccionFormData): CreateRecoleccion
     // Eliminamos los ": 1" y convertimos directamente:
     planta_id: Number(form.planta_id), 
     metodo_id: Number(form.metodo_id),
-    vivero_id: form.vivero_id ? Number(form.vivero_id) : undefined, // El vivero puede ser opcional según el contexto
+    vivero_id: form.vivero_id ? Number(form.vivero_id) : undefined, //  puede ser opcional según el contexto
     observaciones: form.notes || undefined,
     ubicacion: {
       nombre: form.ubicacionNombre || undefined,

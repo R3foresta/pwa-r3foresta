@@ -11,7 +11,8 @@ import TipoMaterialSwitcher from "./components/TipoMaterialSwitcher";
 import CantidadInput from "./components/CantidadInput";
 import PhotoPicker from "./components/PhotoPicker";
 import PlantSelector from "./components/PlantSelector";
-import NewPlantModal from "./components/NewPlantModal";
+//Usamos el nuevo hook especializado
+import { usePlantasCatalog } from "./hooks/usePlantasCatalog";
 import { useCatalogosRecoleccion } from "./hooks/useCatalogosRecoleccion";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB en bytes
@@ -25,55 +26,20 @@ function RecoleccionFormDatosScreen() {
   const [date, setDate] = useState(() =>
     clampDateToRange(formData?.date, dateRange),
   );
-  const [type, setType] = useState<MaterialType>(formData?.type || "seed");
-  const [species, setSpecies] = useState(formData?.species || "");
-  const {
-    plantas,
-    tiposPlantas,
-    metodos,
-    setPlantas,
-    selectedPlanta,
-    setSelectedPlanta,
-    metodoId,
-    setMetodoId,
-    methodName,
-    setMethodName,
-    loadingPlantas,
-    loadingMetodos,
-  } = useCatalogosRecoleccion(formData?.planta_id, formData?.metodo_id);
+  // Estados locales para manejo de UI fluida
   const [quantity, setQuantity] = useState(formData?.quantity || "0");
   const [unit, setUnit] = useState<Unit>(formData?.unit || "kg");
   const [notes, setNotes] = useState(formData?.notes || "");
-  const [isNewFind, setIsNewFind] = useState(formData?.isNewFind || false);
-  const [placePhotos, setPlacePhotos] = useState<string[]>(formData?.placePhotos || []);
-  const [totalPhotos, setTotalPhotos] = useState<string[]>(formData?.totalPhotos || []);
-  const [showSpeciesModal, setShowSpeciesModal] = useState(false);
-  const [showNewPlantForm, setShowNewPlantForm] = useState(false);
-  const [newPlantData, setNewPlantData] = useState({
-    especie: '',
-    nombre_cientifico: '',
-    variedad: '',
-    tipo_planta_id: 0,
-    nombre_comun_principal: '',
-    nombres_comunes: '',
-    imagen_url: '',
-    notas: '',
-  });
-  const [newPlantImagePreview, setNewPlantImagePreview] = useState<string>('');
-  const [submittingNewPlant, setSubmittingNewPlant] = useState(false);
-  const [showPlantSuccessModal, setShowPlantSuccessModal] = useState(false);
-  const [createdPlantName, setCreatedPlantName] = useState('');
-  const [showPlantErrorModal, setShowPlantErrorModal] = useState(false);
-  const [plantErrorMessage, setPlantErrorMessage] = useState('');
+  const { metodos } = useCatalogosRecoleccion(formData.metodo_id);
+  const [type, setType] = useState<MaterialType>(formData?.type || "seed");
+  const [species, setSpecies] = useState(formData?.species || "");
+  // Cargamos plantas del nuevo hook independiente
+  const { plantas, loading: loadingPlantas } = usePlantasCatalog(formData.planta_id);
+
+
   const [loadingEditDraft, setLoadingEditDraft] = useState(false);
   const [didHydrateEditDraft, setDidHydrateEditDraft] = useState(false);
-  const [newPlantErrors, setNewPlantErrors] = useState({
-    especie: false,
-    nombre_cientifico: false,
-    imagen_url: false,
-    tipo_planta_id: false,
-    nombre_comun_principal: false,
-  });
+  const [showSpeciesModal, setShowSpeciesModal] = useState(false);
   
   const [errors, setErrors] = useState({
     date: false,
@@ -81,6 +47,7 @@ function RecoleccionFormDatosScreen() {
     quantity: false,
     photos: false,
     method: false,
+    planta: false,
   });
 
   const editIdParam = searchParams.get('editId');
@@ -128,20 +95,22 @@ function RecoleccionFormDatosScreen() {
         if (!isMounted) return;
 
         const draft = response.data;
+        // 1. Mapeo de Tipos y Unidades
         const tipoMaterial = (draft.tipo_material || '').toUpperCase();
         const isCutting = tipoMaterial === 'ESQUEJE';
         const nextType: MaterialType = isCutting ? 'cutting' : 'seed';
         const nextUnit = normalizeUnit(draft.unidad_canonica);
-
+        // 2. Procesamiento de Fotos (Se mantiene igual)
         const rawPhotos = draft.fotos?.map((photo) => photo.url).filter(Boolean) ?? [];
         const convertedPhotos = await Promise.all(rawPhotos.map((photoUrl) => imageUrlToDataUrl(photoUrl)));
         const fotosBase64 = convertedPhotos.filter((photo): photo is string => Boolean(photo));
+        // Dividimos las fotos para los dos pickers (lugar y total)
         const splitIndex = Math.ceil(fotosBase64.length / 2);
         const nextPlacePhotos = fotosBase64.slice(0, splitIndex);
         const nextTotalPhotos = fotosBase64.slice(splitIndex);
 
         if (!isMounted) return;
-
+        // 3. Sincronizar Estados Locales Operativos
         const plantaNombre =
           draft.nombre_comun_principal ??
           draft.nombre_comercial ??
@@ -159,21 +128,7 @@ function RecoleccionFormDatosScreen() {
         );
         setUnit(nextUnit);
         setNotes(draft.observaciones || '');
-        setIsNewFind(Boolean(draft.especie_nueva));
-        setPlacePhotos(nextPlacePhotos);
-        setTotalPhotos(nextTotalPhotos);
-        setMethodName(draft.metodo?.nombre || '');
-        setMetodoId(draft.metodo_id || draft.metodo?.id || 0);
-
-        if (draft.planta) {
-          setSelectedPlanta(draft.planta);
-          setPlantas((prev) => {
-            if (prev.some((planta) => planta.id === draft.planta?.id)) {
-              return prev;
-            }
-            return [...prev, draft.planta!];
-          });
-        }
+        
 
         updateForm({
           editId,
@@ -230,169 +185,16 @@ function RecoleccionFormDatosScreen() {
     formData.date,
     formData.quantity,
     isEditMode,
-    setMetodoId,
-    setMethodName,
-    setPlantas,
-    setSelectedPlanta,
     updateForm,
   ]);
 
-  const handleCreateNewPlant = async () => {
-    // Validar campos obligatorios
-    const errors = {
-      especie: !newPlantData.especie.trim(),
-      nombre_cientifico: !newPlantData.nombre_cientifico.trim(),
-      imagen_url: !newPlantData.imagen_url,
-      tipo_planta_id: !newPlantData.tipo_planta_id || newPlantData.tipo_planta_id === 0,
-      nombre_comun_principal: !newPlantData.nombre_comun_principal.trim(),
-    };
 
-    setNewPlantErrors(errors);
-
-    if (Object.values(errors).some(error => error)) {
-      console.log('⚠️ Errores de validación:', errors);
-      return;
-    }
-
-    setSubmittingNewPlant(true);
-
-    try {
-      // 1. Validar si ya existe una planta con la misma especie
-      console.log('🔍 Validando si existe planta con especie:', newPlantData.especie);
-      const plantasExistentes = await RecoleccionesService.buscarPlantasPorEspecie(newPlantData.especie.trim());
-      
-      if (plantasExistentes.length > 0) {
-        // Verificar si alguna tiene la misma especie exacta (case-insensitive)
-        const especieDuplicada = plantasExistentes.find(
-          p => p.especie.toLowerCase() === newPlantData.especie.trim().toLowerCase()
-        );
-        
-        if (especieDuplicada) {
-          setPlantErrorMessage(`Ya existe una planta con el nombre "${especieDuplicada.especie}".\n\nPor favor, verifica si es la planta que buscas o usa un nombre diferente.`);
-          setShowPlantErrorModal(true);
-          console.log('⚠️ Planta duplicada encontrada:', especieDuplicada);
-          setSubmittingNewPlant(false);
-          return;
-        }
-      }
-
-      // 2. Crear la planta con el nuevo sistema de tipo_planta_id
-      const plantaData = {
-        especie: newPlantData.especie.trim(),
-        nombre_cientifico: newPlantData.nombre_cientifico.trim(),
-        variedad: newPlantData.variedad?.trim() || undefined,
-        tipo_planta_id: newPlantData.tipo_planta_id,
-        nombre_comun_principal: newPlantData.nombre_comun_principal.trim(),
-        nombres_comunes: newPlantData.nombres_comunes.trim() || undefined,
-        imagen_url: newPlantData.imagen_url,
-        notas: newPlantData.notas.trim() || undefined,
-      };
-
-      console.log('📤 Creando nueva planta:', plantaData);
-      const response = await RecoleccionesService.createPlanta(plantaData);
-      
-      if (response.success && response.data) {
-        // Actualizar lista de plantas
-        setPlantas(prev => [...prev, response.data]);
-        
-        // Seleccionar la nueva planta
-        const nombreEspecie = response.data.especie || response.data.nombre_cientifico;
-        setSpecies(nombreEspecie);
-        setSelectedPlanta(response.data);
-        setCreatedPlantName(nombreEspecie);
-        
-        // Cerrar modal de formulario
-        setShowNewPlantForm(false);
-        
-        // Limpiar formulario
-        setNewPlantData({
-          especie: '',
-          nombre_cientifico: '',
-          variedad: '',
-          tipo_planta_id: 0,
-          nombre_comun_principal: '',
-          nombres_comunes: '',
-          imagen_url: '',
-          notas: '',
-        });
-        setNewPlantImagePreview('');
-        setNewPlantErrors({
-          especie: false,
-          nombre_cientifico: false,
-          imagen_url: false,
-          tipo_planta_id: false,
-          nombre_comun_principal: false,
-        });
-        
-        // Mostrar modal de éxito
-        setShowPlantSuccessModal(true);
-        
-        // Cerrar automáticamente después de 2 segundos
-        setTimeout(() => {
-          setShowPlantSuccessModal(false);
-          setShowSpeciesModal(false);
-        }, 2000);
-        
-        console.log('✅ Planta creada y seleccionada:', response.data);
-      }
-    } catch (error: unknown) {
-      console.error('❌ Error al crear planta:', error);
-      const status =
-        typeof error === 'object' && error !== null && 'response' in error
-          ? (error as { response?: { status?: number } }).response?.status
-          : undefined;
-      
-      // Manejar error de planta duplicada (409)
-      if (status === 409) {
-        setPlantErrorMessage('Ya existe una planta con ese nombre científico y variedad.\n\nPor favor verifica si la planta ya está registrada o cambia la variedad.');
-        setShowPlantErrorModal(true);
-      } else if (status === 400) {
-        setPlantErrorMessage('Error de validación. Por favor verifica los datos ingresados.');
-        setShowPlantErrorModal(true);
-      } else {
-        setPlantErrorMessage('Error al crear la planta. Por favor, intenta de nuevo.');
-        setShowPlantErrorModal(true);
-      }
-    } finally {
-      setSubmittingNewPlant(false);
-    }
-  };
-
-  const handleNewPlantImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    if (!ALLOWED_FORMATS.includes(file.type)) {
-      alert("Formato no permitido. Solo JPG o PNG.");
-      return;
-    }
-    if (file.size > MAX_FILE_SIZE) {
-      alert("La imagen de la planta no debe superar los 5MB.");
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64String = reader.result as string;
-      setNewPlantImagePreview(base64String);
-      setNewPlantData(prev => ({ ...prev, imagen_url: base64String }));
-    };
-    reader.readAsDataURL(file);
-  };
 
   const handleContinue = () => {
     const { errors: validationErrors, isValid } = validateRecoleccionForm(
-      {
-        ...formData,
-        date,
-        type,
-        quantity,
-        placePhotos,
-        totalPhotos,
-        metodo_id: metodoId,
-      },
-      { dateRange, stage: 'datos' },
-    )
+      formData, 
+      { dateRange, stage: 'datos' }
+    );
 
     setErrors({
       date: Boolean(validationErrors.date),
@@ -400,54 +202,18 @@ function RecoleccionFormDatosScreen() {
       quantity: Boolean(validationErrors.quantity),
       photos: Boolean(validationErrors.fotos),
       method: Boolean(validationErrors.method),
+      planta: Boolean(validationErrors.planta),
     })
-
-    if (!isValid) return
-
-    // Obtener datos de la planta seleccionada
-    let planta_id: number | undefined;
-    let nombre_cientifico: string | undefined;
-    let nombre_comercial: string | undefined;
-    
-    if (!isNewFind) {
-      if (selectedPlanta) {
-        // Usar la planta seleccionada del backend
-        planta_id = selectedPlanta.id;
-        nombre_cientifico = selectedPlanta.nombre_cientifico;
-        nombre_comercial = selectedPlanta.especie;
-        console.log('✅ Planta seleccionada:', { planta_id, nombre_cientifico, nombre_comercial });
-      } else {
-        console.warn('⚠️ No se seleccionó una planta cuando especie_nueva = false');
-      }
+    // 3. Si no es válido (ej. no seleccionó planta), detenemos el flujo
+    if (!isValid) {
+      console.warn('⚠️ Formulario inválido:', validationErrors);
+      return;
     }
-
-    updateForm({
-      date,
-      type,
-      species,
-      quantity,
-      unit,
-      notes,
-      isNewFind,
-      placePhotos,
-      totalPhotos,
-      metodo_id: metodoId,
-      planta_id,
-      nombre_cientifico: nombre_cientifico || species,
-      nombre_comercial: nombre_comercial || species,
-      method: methodName,
-    })
-    
-    console.log('📤 Datos guardados en formulario:', {
-      planta_id,
-      nombre_cientifico,
-      especie_nueva: isNewFind
-    });
     
     navigate('/app/collections/new/location')
   }
 
-  const hasMinimumPhotos = placePhotos.length >= 1 && totalPhotos.length >= 1;
+  const hasMinimumPhotos = (formData.totalPhotos?.length || 0) >= 2;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#f6f7f3] to-[#eef1eb] text-brand-700">
@@ -515,30 +281,42 @@ function RecoleccionFormDatosScreen() {
 
           <div className="space-y-2">
             <p className="text-base font-extrabold text-brand-700">Especie de la semilla:</p>
-            {species ? (
+            {formData.planta_id ? (
               <div className="flex flex-1 items-center justify-between rounded-2xl border border-brand-400 bg-brand-50 px-4 py-3 shadow-soft">
-                <span className="text-base font-semibold text-brand-700">{species}</span>
+                <div className="flex flex-col">
+                  <span className="text-base font-bold text-brand-700">
+                    {/* Buscamos el nombre en la lista cargada por usePlantasCatalog */}
+                    {plantas.find(p => p.id === formData.planta_id)?.nombre_comun_principal || 'Cargando especie...'}
+                  </span>
+                  <span className="text-xs italic text-brand-400">
+                    ID: {formData.planta_id}
+                  </span>
+                </div>
                 <button
                   type="button"
-                  onClick={() => {
-                    setSpecies('')
-                    setSelectedPlanta(null)
-                  }}
-                  className="flex h-6 w-6 items-center justify-center rounded-full text-slate-500 transition hover:bg-white hover:text-red-500"
+                  onClick={() => updateForm({ planta_id: undefined })}
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-slate-500 shadow-sm transition hover:text-red-500"
                   title="Cambiar especie"
                 >
-                  <Icon name="x" className="h-4 w-4" />
+                  <Icon name="x" className="h-5 w-5" />
                 </button>
               </div>
             ) : (
-              <button
-                type="button"
-                onClick={() => setShowSpeciesModal(true)}
-                disabled={loadingPlantas}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left text-base font-semibold text-slate-500 shadow-soft transition hover:border-brand-300 hover:bg-brand-50 disabled:opacity-50"
-              >
-                {loadingPlantas ? 'Cargando especies...' : 'Seleccionar especie'}
-              </button>
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => setShowSpeciesModal(true)}
+                  disabled={loadingPlantas}
+                  className={`w-full rounded-2xl border px-4 py-3 text-left text-base font-semibold shadow-soft transition hover:bg-brand-50 disabled:opacity-50 ${
+                    errors.planta ? 'border-red-400 text-red-400' : 'border-slate-200 bg-white text-slate-500 hover:border-brand-300'
+                  }`}
+                >
+                  {loadingPlantas ? 'Sincronizando catálogo...' : 'Seleccionar del catálogo botánico'}
+                </button>
+                <p className="text-[10px] text-brand-400 ml-1 italic leading-tight">
+                  ¿No encuentras la especie? Regístrala primero en la sección de Gestión Botánica.
+                </p>
+              </div>
             )}
           </div>
 
@@ -581,37 +359,40 @@ function RecoleccionFormDatosScreen() {
           )}
 
           <div className="space-y-2">
-            <p className="text-base font-extrabold text-brand-700">
-              Seleccionar método <span className="text-red-500">*</span>
-            </p>
-            <div className={`flex items-center rounded-2xl border px-4 shadow-soft ${
-              errors.method
-                ? 'border-red-400 bg-red-50 focus-within:border-red-400 focus-within:ring-2 focus-within:ring-red-200'
-                : 'border-slate-200 bg-white focus-within:border-brand-400 focus-within:ring-2 focus-within:ring-brand-200'
-            }`}>
-              <select
-                value={metodoId ? String(metodoId) : ""}
-                onChange={(event) => {
-                  const selectedId = Number(event.target.value);
-                  const selectedMetodo = metodos.find((metodo) => metodo.id === selectedId);
-                  setMetodoId(Number.isFinite(selectedId) ? selectedId : undefined);
-                  setMethodName(selectedMetodo?.nombre || "");
-                  setErrors(prev => ({ ...prev, method: false }));
-                }}
-                disabled={loadingMetodos}
-                className="w-full bg-transparent py-3 text-base font-semibold text-slate-700 outline-none"
-              >
-                <option value="">{loadingMetodos ? "Cargando métodos..." : "Seleccionar método"}</option>
-                {metodos.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.nombre}
-                  </option>
-                ))}
-              </select>
-              <Icon name="chevron-down" className="h-4 w-4 text-slate-400" />
-            </div>
-            {errors.method && (
-              <p className="text-xs font-semibold text-red-500">* Debes seleccionar un método de recolección</p>
+            <p className="text-base font-extrabold text-brand-700">Identidad Botánica (Catálogo):</p>
+            {formData.planta_id ? (
+              <div className="flex flex-1 items-center justify-between rounded-2xl border border-brand-400 bg-brand-50 px-4 py-3 shadow-soft">
+                <div className="flex flex-col">
+                  <span className="text-base font-bold text-brand-700">
+                    {/* Buscamos el nombre real en el catálogo que cargó el hook */}
+                    {plantas.find(p => p.id === formData.planta_id)?.nombre_comun_principal || 'Cargando especie...'}
+                  </span>
+                  <span className="text-xs italic text-brand-400">ID: {formData.planta_id}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => updateForm({ planta_id: undefined })}
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-slate-500 shadow-sm transition hover:text-red-500"
+                >
+                  <Icon name="x" className="h-5 w-5" />
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => setShowSpeciesModal(true)}
+                  disabled={loadingPlantas}
+                  className={`w-full rounded-2xl border px-4 py-3 text-left text-base font-semibold shadow-soft transition disabled:opacity-50 ${
+                    errors.planta ? 'border-red-400 text-red-400 bg-red-50' : 'border-slate-200 bg-white text-slate-500 hover:bg-brand-50'
+                  }`}
+                >
+                  {loadingPlantas ? 'Sincronizando catálogo...' : 'Seleccionar especie del catálogo'}
+                </button>
+                <p className="text-[10px] text-brand-400 ml-1 italic">
+                  ¿No encuentras la especie? Regístrala primero en la sección de Plantas.
+                </p>
+              </div>
             )}
           </div>
 
@@ -633,27 +414,28 @@ function RecoleccionFormDatosScreen() {
             <PhotoPicker
               label="Lugar"
               badgeLabel="Lugar"
-              photos={placePhotos}
+              photos={formData.placePhotos || []} //  Usa formData
               onChange={(next) => {
-                setPlacePhotos(next)
-                setErrors((prev) => ({ ...prev, photos: false }))
+                updateForm({ placePhotos: next }); // Actualiza el contexto directamente
+                setErrors((prev) => ({ ...prev, photos: false }));
               }}
             />
 
             <PhotoPicker
               label="Total recolectado"
               badgeLabel="Total"
-              photos={totalPhotos}
+              photos={formData.totalPhotos || []} // Usa formData
               onChange={(next) => {
-                setTotalPhotos(next)
-                setErrors((prev) => ({ ...prev, photos: false }))
+                updateForm({ totalPhotos: next }); // Actualiza el contexto directamente
+                setErrors((prev) => ({ ...prev, photos: false }));
               }}
             />
 
             <div className="flex items-center gap-2 text-xs font-semibold text-slate-600">
               <Icon name="info" className="h-4 w-4 text-brand-500" />
               <span className={hasMinimumPhotos ? "text-brand-600" : ""}>
-                Obligatorio: Mínimo 1 de cada tipo ({placePhotos.length} lugar, {totalPhotos.length} total)
+                {/* 🔄 FASE 4: Leemos del contexto global */}
+                Obligatorio: Mínimo 1 de cada tipo ({(formData.placePhotos?.length || 0)} lugar, {(formData.totalPhotos?.length || 0)} total)
               </span>
             </div>
             {errors.photos && (
@@ -672,30 +454,6 @@ function RecoleccionFormDatosScreen() {
             />
           </div>
 
-          <label className="flex items-start gap-3 rounded-2xl bg-white px-4 py-3 shadow-soft">
-            <input
-              type="checkbox"
-              checked={isNewFind}
-              onChange={(event) => {
-                const checked = event.target.checked;
-                setIsNewFind(checked);
-                // Si marca como nuevo hallazgo, limpiar la planta seleccionada
-                if (checked) {
-                  setSelectedPlanta(null);
-                  console.log('⚠️ Nuevo hallazgo marcado, planta_id limpiado');
-                }
-              }}
-              className="mt-1 h-5 w-5 accent-brand-600"
-            />
-            <div className="space-y-1">
-              <p className="text-base font-extrabold text-brand-700">
-                ¿Puede ser nuevo hallazgo?
-              </p>
-              <p className="text-sm font-semibold text-brand-600">
-                Activa si sospechas que es un nuevo registro.
-              </p>
-            </div>
-          </label>
           <button
             type="button"
             onClick={handleContinue}
@@ -706,11 +464,12 @@ function RecoleccionFormDatosScreen() {
         </div>
       </div>
 
+      {/* Modal de Selección de Especie (Catálogo) */}
       {showSpeciesModal && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50">
           <div className="w-full max-w-md rounded-t-3xl bg-white pb-8 max-h-[85vh] flex flex-col">
             <div className="rounded-3xl sticky top-0 flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4">
-              <h2 className="text-lg font-extrabold text-brand-700">Escoger una planta</h2>
+              <h2 className="text-lg font-extrabold text-brand-700">Catálogo Botánico</h2>
               <button
                 type="button"
                 onClick={() => setShowSpeciesModal(false)}
@@ -725,97 +484,17 @@ function RecoleccionFormDatosScreen() {
                 plantas={plantas}
                 loading={loadingPlantas}
                 onSelect={(planta) => {
-                  const nombreEspecie = planta.especie || planta.nombre_cientifico
-                  setSpecies(nombreEspecie)
-                  setSelectedPlanta(planta)
-                  setShowSpeciesModal(false)
-                }}
-                onCreateNew={() => {
-                  setShowSpeciesModal(false)
-                  setShowNewPlantForm(true)
+                  // Guardamos el ID directamente en el contexto global
+                  updateForm({ planta_id: planta.id });
+                  setShowSpeciesModal(false);
+                  // Limpiamos el error visual si existía
+                  setErrors(prev => ({ ...prev, planta: false }));
                 }}
               />
-            </div>
-          </div>
-        </div>
-      )}
-
-      <NewPlantModal
-        open={showNewPlantForm}
-        tiposPlantas={tiposPlantas}
-        data={newPlantData}
-        imagePreview={newPlantImagePreview}
-        errors={newPlantErrors}
-        submitting={submittingNewPlant}
-        onClose={() => {
-          setShowNewPlantForm(false);
-          setNewPlantData({
-            especie: '',
-            nombre_cientifico: '',
-            variedad: '',
-            tipo_planta_id: 0,
-            nombre_comun_principal: '',
-            nombres_comunes: '',
-            imagen_url: '',
-            notas: '',
-          });
-          setNewPlantImagePreview('');
-          setNewPlantErrors({
-            especie: false,
-            nombre_cientifico: false,
-            imagen_url: false,
-            tipo_planta_id: false,
-            nombre_comun_principal: false,
-          });
-        }}
-        onChange={(partial) => {
-          setNewPlantData((prev) => ({ ...prev, ...partial }));
-          setNewPlantErrors((prev) => {
-            const cleared = { ...prev };
-            Object.keys(partial).forEach((key) => {
-              if (key in cleared) {
-                cleared[key as keyof typeof cleared] = false;
-              }
-            });
-            return cleared;
-          });
-        }}
-        onSubmit={handleCreateNewPlant}
-        onImageUpload={(e) => {
-          handleNewPlantImageUpload(e);
-          setNewPlantErrors((prev) => ({ ...prev, imagen_url: false }));
-        }}
-      />
-
-      {/* Modal de éxito al crear planta */}
-      {showPlantSuccessModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50">
-          <div className="w-full max-w-sm mx-4 rounded-3xl bg-white p-8 shadow-2xl transform animate-in fade-in zoom-in duration-300">
-            <div className="flex flex-col items-center space-y-4">
-              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
-                <svg
-                  className="h-10 w-10 text-green-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              </div>
-              <div className="text-center space-y-2">
-                <h3 className="text-xl font-extrabold text-brand-700">
-                  ¡Planta creada exitosamente!
-                </h3>
-                <p className="text-base font-semibold text-slate-600">
-                  {createdPlantName}
-                </p>
-                <p className="text-sm font-semibold text-brand-500">
-                  Se ha agregado al catálogo
+            {/* Nota informativa dentro del modal */}
+              <div className="mt-4 rounded-xl bg-brand-50 p-4 border border-brand-100 text-center">
+                <p className="text-xs font-semibold text-brand-600 italic">
+                  ¿No encuentras la especie? Regístrala primero en la pantalla de "Gestión de Plantas" para mantener la integridad del catálogo.
                 </p>
               </div>
             </div>
@@ -823,45 +502,14 @@ function RecoleccionFormDatosScreen() {
         </div>
       )}
 
-      {/* Modal de error al crear planta */}
-      {showPlantErrorModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50">
-          <div className="w-full max-w-sm mx-4 rounded-3xl bg-white p-8 shadow-2xl transform animate-in fade-in zoom-in duration-300">
-            <div className="flex flex-col items-center space-y-4">
-              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-red-100">
-                <svg
-                  className="h-10 w-10 text-red-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </div>
-              <div className="text-center space-y-2">
-                <h3 className="text-xl font-extrabold text-red-700">
-                  Esta planta ya existe
-                </h3>
-                <p className="text-base font-semibold text-slate-600 whitespace-pre-line">
-                  {plantErrorMessage}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowPlantErrorModal(false)}
-                className="w-full rounded-2xl bg-red-500 py-3 text-center text-base font-extrabold text-white shadow-soft transition hover:bg-red-600 active:scale-[0.99]"
-              >
-                Intentar nuevamente
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* ❌ ELIMINACIÓN DE MODALES DE CREACIÓN
+        Se han borrado los bloques:
+        - showPlantSuccessModal (Éxito al crear planta)
+        - showPlantErrorModal (Error al crear planta)
+        
+        Razón: El formulario de recolección ya no crea plantas 'en caliente'.
+      */}
+
     </div>
   );
 }
