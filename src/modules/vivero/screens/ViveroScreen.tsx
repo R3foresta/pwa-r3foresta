@@ -1,16 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import Icon from '../../components/Icon'
-import ViveroLotCard, { type ViveroLotCardData } from './ViveroLotCard'
-import { GerminacionService, type LoteFaseVivero } from '../../services/germinacion.service'
-import { getUbicacionDisplay } from '../../utils/ubicacion'
-
-type ListLot = ViveroLotCardData & { ubicacionTexto: string }
+import Icon from '../../../components/Icon'
+import { LotesViveroService } from '../../../services/lotes-vivero.service'
+import { mapLoteToCardData } from '../mappers/lote.mapper'
+import type { LoteViveroItem } from '../types/contracts'
+import ViveroLotCard from '../components/ViveroLotCard'
 
 function ViveroScreen() {
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
-  const [lots, setLots] = useState<LoteFaseVivero[]>([])
+  const [lots, setLots] = useState<LoteViveroItem[]>([])
   const [loadingLots, setLoadingLots] = useState(true)
   const [errorLots, setErrorLots] = useState<string | null>(null)
 
@@ -21,15 +20,13 @@ function ViveroScreen() {
       try {
         setLoadingLots(true)
         setErrorLots(null)
-        const response = await GerminacionService.list()
+        const response = await LotesViveroService.list()
         if (isMounted) {
           setLots(response.data || [])
         }
       } catch (error) {
         if (isMounted) {
-          setErrorLots(
-            error instanceof Error ? error.message : 'Error al cargar lotes de germinacion',
-          )
+          setErrorLots(error instanceof Error ? error.message : 'Error al cargar lotes de vivero')
         }
       } finally {
         if (isMounted) {
@@ -44,64 +41,13 @@ function ViveroScreen() {
     }
   }, [])
 
-  const filteredLots = useMemo<ListLot[]>(() => {
-    const withDerived: ListLot[] = lots.map((lot) => {
-      const fechaInicio = lot.fecha_inicio ?? ''
-      const cantidadInicio = lot.cantidad_inicio ?? 0
-      const fuente: ViveroLotCardData['fuente'] =
-        lot.tipo_material === 'ESQUEJE' ? 'ESQUEJE' : 'SEMILLA'
-
-      const cantidadActual = (() => {
-        switch (lot.estado) {
-          case 'EMBOLSADO':
-            return lot.cantidad_embolsadas ?? cantidadInicio
-          case 'SOMBRA':
-            return lot.cantidad_sombra ?? lot.cantidad_embolsadas ?? cantidadInicio
-          case 'LISTA_PLANTAR':
-          case 'SALIDA_VIVERO':
-            return (
-              lot.cantidad_lista_plantar ??
-              lot.cantidad_sombra ??
-              lot.cantidad_embolsadas ??
-              cantidadInicio
-            )
-          case 'INICIO':
-          default:
-            return cantidadInicio
-        }
-      })()
-
-      const germinadas = Math.max(cantidadActual, 0)
-      const muertas = Math.max(cantidadInicio - germinadas, 0)
-
-      return {
-        id: String(lot.id),
-        codigo: lot.codigo_trazabilidad || `LFV-${lot.id}`,
-        especie: lot.planta?.especie || 'Sin especie',
-        fuente,
-        estado: lot.estado,
-        fechaInicio,
-        diasDesdeInicio: fechaInicio
-          ? Math.max(
-              0,
-              Math.round(
-                (Date.now() - new Date(fechaInicio).getTime()) / (1000 * 60 * 60 * 24),
-              ),
-            )
-          : 0,
-        cantidadInicial: cantidadInicio,
-        germinadas,
-        muertas,
-        vivero: lot.vivero?.nombre || 'Sin vivero',
-        ubicacionTexto: getUbicacionDisplay(lot.vivero?.ubicacion),
-      }
-    })
-
+  const filteredLots = useMemo(() => {
+    const cards = lots.map(mapLoteToCardData)
     const normalized = query.trim().toLowerCase()
-    if (!normalized) return withDerived
+    if (!normalized) return cards
 
-    return withDerived.filter((lot) =>
-      [lot.codigo, lot.especie, lot.ubicacionTexto, lot.vivero].some((field) =>
+    return cards.filter((lot) =>
+      [lot.codigo, lot.especie, lot.vivero, lot.subetapaActual ?? ''].some((field) =>
         field.toLowerCase().includes(normalized),
       ),
     )
@@ -121,12 +67,10 @@ function ViveroScreen() {
           </button>
           <div className="space-y-1">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-brand-500">
-              Módulo germinación
+              Módulo vivero
             </p>
-            <h1 className="text-3xl font-extrabold leading-tight text-brand-700">
-              Lotes de germinaciones
-            </h1>
-            <p className="text-sm font-semibold text-brand-500">Registro y seguimiento</p>
+            <h1 className="text-3xl font-extrabold leading-tight text-brand-700">Lotes de vivero</h1>
+            <p className="text-sm font-semibold text-brand-500">Registro y trazabilidad</p>
           </div>
         </div>
 
@@ -136,7 +80,7 @@ function ViveroScreen() {
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Buscar por ID, especie o ubicación..."
+              placeholder="Buscar por código, especie, vivero..."
               className="w-full border-none bg-transparent text-base font-semibold text-slate-700 outline-none placeholder:font-medium placeholder:text-slate-400"
               type="search"
             />
@@ -151,9 +95,9 @@ function ViveroScreen() {
               <Icon name="plus" className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-lg font-extrabold">Nuevo lote de germinación</p>
+              <p className="text-lg font-extrabold">Nuevo lote de vivero</p>
               <p className="text-sm font-semibold text-emerald-700/80">
-                Registrar nueva germinación de esquejes o semillas
+                Registrar inicio desde recolección validada
               </p>
             </div>
           </button>
@@ -161,7 +105,7 @@ function ViveroScreen() {
           <div className="space-y-4">
             {loadingLots && (
               <div className="rounded-3xl bg-white px-4 py-6 text-center text-sm font-semibold text-slate-600 shadow-soft ring-1 ring-black/5">
-                Cargando lotes de germinacion...
+                Cargando lotes de vivero...
               </div>
             )}
 
