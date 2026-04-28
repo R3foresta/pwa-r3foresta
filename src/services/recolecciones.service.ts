@@ -128,8 +128,6 @@ export interface Recoleccion {
   estado_operativo: 'ABIERTO' | 'CERRADO' | null
   usuario_validacion_id: number | null
   fecha_validacion: string | null
-  blockchain_tx_validacion?: string | null
-  blockchain_hash_validacion?: string | null
   elegible_para_vivero?: boolean
   motivo_no_elegibilidad_para_vivero?: string | null
   cantidad_solicitada_vivero_evaluada?: number | null

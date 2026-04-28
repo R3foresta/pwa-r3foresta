@@ -169,7 +169,6 @@ erDiagram
     numeric cantidad_inicial_canonica
     bigint usuario_validacion_id FK
     timestamptz fecha_validacion
-    text blockchain_tx_validacion
   }
 
   RECOLECCION_MOVIMIENTO {
