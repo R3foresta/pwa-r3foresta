@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import Icon from '../../../components/Icon'
-import type { PlantaCatalogo } from '../../../services/recolecciones.service'
+import type { PlantaCatalogo } from '../../../types/plantas.types'
 
 type Props = {
   plantas: PlantaCatalogo[]

@@ -10,9 +10,9 @@ import { validateRecoleccionForm } from "./validators/recoleccionForm";
 import TipoMaterialSwitcher from "./components/TipoMaterialSwitcher";
 import CantidadInput from "./components/CantidadInput";
 import PhotoPicker from "./components/PhotoPicker";
-import PlantSelector from "./components/PlantSelector";
+import PlantSelector from "../plantas/components/PlantSelector";
 //Usamos el nuevo hook especializado
-import { usePlantasCatalog } from "./hooks/usePlantasCatalog";
+import { usePlantasCatalog } from "../plantas/hooks/usePlantasCatalog";
 
 
 function RecoleccionFormDatosScreen() {
@@ -31,7 +31,7 @@ function RecoleccionFormDatosScreen() {
   const [type, setType] = useState<MaterialType>(formData?.type || "seed");
 
   // Cargamos plantas del nuevo hook independiente
-  const { plantas, loading: loadingPlantas } = usePlantasCatalog(formData.planta_id);
+  const { plantas, loading: loadingPlantas } = usePlantasCatalog();
 
 
   const [loadingEditDraft, setLoadingEditDraft] = useState(false);
