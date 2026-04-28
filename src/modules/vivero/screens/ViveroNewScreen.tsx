@@ -447,7 +447,7 @@ function ViveroNewScreen() {
               <input
                 type="number"
                 min={0}
-                step="0.000001"
+                step="0.1"
                 value={cantidadInicio}
                 onChange={(event) => setCantidadInicio(event.target.value)}
                 placeholder="0"

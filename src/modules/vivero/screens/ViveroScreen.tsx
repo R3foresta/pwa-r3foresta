@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Icon from '../../../components/Icon'
-import { mapLoteToCardData } from '../mappers/lote.mapper'
+import { DEFAULT_VIVERO_LIST_LIMIT, DEFAULT_VIVERO_LIST_PAGE } from '../../../config/vivero'
 import ViveroLotCard from '../components/ViveroLotCard'
 import { useViveroLots } from '../hooks/useViveroLots'
 import { STAGE_FILTERS, type StageFilter } from '../utils/stageFilters'
@@ -10,19 +10,14 @@ function ViveroScreen() {
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [stageFilter, setStageFilter] = useState<StageFilter>('TODOS')
-  const { lots, loading: loadingLots, error: errorLots } = useViveroLots(stageFilter)
-
-  const filteredLots = useMemo(() => {
-    const cards = lots.map(mapLoteToCardData)
-    const normalized = query.trim().toLowerCase()
-    if (!normalized) return cards
-
-    return cards.filter((lot) =>
-      [lot.codigo, lot.especie, lot.vivero, lot.subetapaActual ?? ''].some((field) =>
-        field.toLowerCase().includes(normalized),
-      ),
-    )
-  }, [lots, query])
+  const page = DEFAULT_VIVERO_LIST_PAGE
+  const limit = DEFAULT_VIVERO_LIST_LIMIT
+  const { lots, loading: loadingLots, error: errorLots, refetch } = useViveroLots({
+    stageFilter,
+    searchQuery: query,
+    page,
+    limit,
+  })
 
   return (
     <div className="relative min-h-screen bg-[#eef2ed] text-brand-700">
@@ -108,17 +103,25 @@ function ViveroScreen() {
 
             {!loadingLots &&
               !errorLots &&
-              filteredLots.map((lot) => (
-                <ViveroLotCard
-                  key={lot.id}
-                  lot={lot}
-                  onClick={() => navigate(`/app/vivero/${lot.id}`)}
-                />
+              lots.map((lot) => (
+                <ViveroLotCard key={lot.id} lot={lot} onClick={() => navigate(`/app/vivero/${lot.id}`)} />
               ))}
 
-            {!loadingLots && !errorLots && filteredLots.length === 0 && (
+            {!loadingLots && !errorLots && lots.length === 0 && (
               <div className="rounded-3xl bg-white px-4 py-6 text-center text-sm font-semibold text-slate-600 shadow-soft ring-1 ring-black/5">
                 No se encontraron lotes con ese criterio de búsqueda.
+              </div>
+            )}
+
+            {errorLots && !loadingLots && (
+              <div className="flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => void refetch()}
+                  className="rounded-full bg-white px-4 py-2 text-xs font-extrabold text-brand-700 ring-1 ring-brand-200 transition hover:ring-brand-300"
+                >
+                  Reintentar carga
+                </button>
               </div>
             )}
           </div>

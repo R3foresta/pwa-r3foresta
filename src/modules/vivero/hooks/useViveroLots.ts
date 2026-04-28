@@ -1,60 +1,66 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { LotesViveroService } from '../../../services/lotes-vivero.service'
-import type { LoteViveroItem } from '../types/contracts'
-import {
-  buildBackendQueryForStageFilter,
-  matchesStageFilter,
-  type StageFilter,
-} from '../utils/stageFilters'
+import type { ApiPagination } from '../types/contracts'
+import type { ViveroLotCardData } from '../types/view-models'
+import type { StageFilter } from '../utils/stageFilters'
 
-type UseViveroLotsResult = {
-  lots: LoteViveroItem[]
-  loading: boolean
-  error: string | null
+type UseViveroLotsOptions = {
+  stageFilter: StageFilter
+  searchQuery?: string
+  page: number
+  limit: number
 }
 
-export function useViveroLots(stageFilter: StageFilter): UseViveroLotsResult {
-  const [lots, setLots] = useState<LoteViveroItem[]>([])
+type UseViveroLotsResult = {
+  lots: ViveroLotCardData[]
+  pagination: ApiPagination | null
+  loading: boolean
+  error: string | null
+  refetch: () => Promise<void>
+}
+
+export function useViveroLots(options: UseViveroLotsOptions): UseViveroLotsResult {
+  const { stageFilter, searchQuery, page, limit } = options
+  const [lots, setLots] = useState<ViveroLotCardData[]>([])
+  const [pagination, setPagination] = useState<ApiPagination | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const requestIdRef = useRef(0)
 
-  useEffect(() => {
-    let isMounted = true
+  const refetch = useCallback(async () => {
+    const requestId = ++requestIdRef.current
 
-    const loadLots = async () => {
-      try {
-        setLoading(true)
-        setError(null)
+    try {
+      setLoading(true)
+      setError(null)
 
-        const query = {
-          page: 1,
-          limit: 50,
-          ...buildBackendQueryForStageFilter(stageFilter),
-        }
+      const response = await LotesViveroService.listForUi({
+        stageFilter,
+        searchQuery,
+        page,
+        limit,
+      })
 
-        const response = await LotesViveroService.list(query)
-        const stageScoped = response.data.filter((lot) => matchesStageFilter(lot, stageFilter))
+      // Evita que respuestas viejas sobreescriban estado reciente.
+      if (requestId !== requestIdRef.current) return
 
-        if (isMounted) {
-          setLots(stageScoped)
-        }
-      } catch (err) {
-        if (isMounted) {
-          setError(err instanceof Error ? err.message : 'Error al cargar lotes de vivero.')
-          setLots([])
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false)
-        }
+      setLots(response.items)
+      setPagination(response.pagination)
+    } catch (err) {
+      if (requestId !== requestIdRef.current) return
+      setError(err instanceof Error ? err.message : 'Error al cargar lotes de vivero.')
+      setLots([])
+      setPagination(null)
+    } finally {
+      if (requestId === requestIdRef.current) {
+        setLoading(false)
       }
     }
+  }, [limit, page, searchQuery, stageFilter])
 
-    loadLots()
-    return () => {
-      isMounted = false
-    }
-  }, [stageFilter])
+  useEffect(() => {
+    void refetch()
+  }, [refetch])
 
-  return { lots, loading, error }
+  return { lots, pagination, loading, error, refetch }
 }
