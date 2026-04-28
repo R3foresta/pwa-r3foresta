@@ -6,6 +6,15 @@ import { mapLoteToCardData, mapLoteToDetailView } from '../mappers/lote.mapper'
 import { LotesViveroService } from '../../../services/lotes-vivero.service'
 import type { LoteViveroItem } from '../types/contracts'
 
+type StageKey = 'INICIO' | 'EMBOLSADO' | 'ADAPTABILIDAD' | 'DESPACHO' | 'CIERRE'
+
+type StageItem = {
+  key: StageKey
+  label: string
+  done: boolean
+  date: string | null
+}
+
 function formatDate(value?: string | null) {
   if (!value) return 'Sin fecha'
   const date = new Date(value)
@@ -23,6 +32,72 @@ function formatDateTime(value?: string | null) {
 function formatQuantity(value: number | null, unit: string) {
   if (value === null) return 'Pendiente'
   return `${value} ${unit}`
+}
+
+function buildVisualStages(detail: ReturnType<typeof mapLoteToDetailView>): StageItem[] {
+  const hasEmbolsadoData =
+    detail.plantasVivasIniciales !== null ||
+    detail.saldoVivoActual !== null ||
+    detail.stockVivoActual !== null ||
+    detail.subetapaActual !== null
+
+  const hasAdaptabilidadData = detail.subetapaActual !== null
+  const hasDespachoData =
+    detail.estadoLote === 'FINALIZADO' &&
+    (detail.motivoCierre === 'DESPACHO_TOTAL' || detail.motivoCierre === 'MIXTO')
+  const hasCierreData = detail.estadoLote === 'FINALIZADO'
+
+  return [
+    {
+      key: 'INICIO',
+      label: 'Inicio',
+      done: true,
+      date: detail.fechaInicio,
+    },
+    {
+      key: 'EMBOLSADO',
+      label: 'Embolsado',
+      done: hasEmbolsadoData,
+      date: null,
+    },
+    {
+      key: 'ADAPTABILIDAD',
+      label: 'Adaptabilidad',
+      done: hasAdaptabilidadData,
+      date: null,
+    },
+    {
+      key: 'DESPACHO',
+      label: 'Despacho',
+      done: hasDespachoData,
+      date: null,
+    },
+    {
+      key: 'CIERRE',
+      label: 'Cierre',
+      done: hasCierreData,
+      date: hasCierreData ? detail.updatedAt : null,
+    },
+  ]
+}
+
+function getNextStageCta(stages: StageItem[]) {
+  const firstPending = stages.find((stage) => !stage.done)
+  if (!firstPending) return 'Proceso completado'
+
+  switch (firstPending.key) {
+    case 'EMBOLSADO':
+      return 'Registrar Embolsado'
+    case 'ADAPTABILIDAD':
+      return 'Registrar Adaptabilidad'
+    case 'DESPACHO':
+      return 'Registrar Despacho'
+    case 'CIERRE':
+      return 'Finalizar lote'
+    case 'INICIO':
+    default:
+      return 'Continuar proceso'
+  }
 }
 
 function ViveroDetailScreen() {
@@ -75,6 +150,8 @@ function ViveroDetailScreen() {
 
   const detail = useMemo(() => (lot ? mapLoteToDetailView(lot) : null), [lot])
   const summaryCard = useMemo(() => (lot ? mapLoteToCardData(lot) : null), [lot])
+  const visualStages = useMemo(() => (detail ? buildVisualStages(detail) : []), [detail])
+  const nextStageCta = useMemo(() => getNextStageCta(visualStages), [visualStages])
 
   if (loading) {
     return (
@@ -119,6 +196,77 @@ function ViveroDetailScreen() {
 
         <div className="mt-6 space-y-5 px-5">
           <ViveroLotCard lot={summaryCard} />
+
+          <div className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
+            <p className="text-sm font-semibold text-brand-700">Estado del proceso</p>
+            <div className="mt-4 grid grid-cols-[1.1fr,0.9fr] gap-4">
+              <div className="space-y-4">
+                {visualStages.map((stage) => (
+                  <div key={stage.key} className="flex items-start gap-3">
+                    <div
+                      className={`flex h-9 w-9 items-center justify-center rounded-full ${
+                        stage.done ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'
+                      }`}
+                    >
+                      <Icon name="check" className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p
+                        className={`text-lg font-extrabold ${
+                          stage.done ? 'text-brand-700' : 'text-brand-400'
+                        }`}
+                      >
+                        {stage.label}
+                      </p>
+                      <p className="text-xs font-semibold text-brand-500">{formatDate(stage.date)}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-col gap-3">
+                {detail.plantaImagenUrl ? (
+                  <div className="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-black/5">
+                    <img
+                      src={detail.plantaImagenUrl}
+                      alt={`Planta ${detail.especie}`}
+                      className="h-36 w-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex h-36 items-center justify-center rounded-2xl bg-brand-50 text-sm font-semibold text-brand-500 ring-1 ring-dashed ring-brand-200">
+                    Sin imagen
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => navigate(`/app/vivero/${detail.id}/event/new`)}
+                  disabled={nextStageCta === 'Proceso completado'}
+                  className="w-full rounded-2xl bg-amber-200 px-3 py-2.5 text-sm font-extrabold text-brand-800 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600"
+                >
+                  {nextStageCta}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate(`/app/vivero/${detail.id}/update`)}
+                  className="w-full rounded-2xl bg-white px-3 py-2.5 text-sm font-bold text-brand-700 ring-1 ring-brand-200 transition hover:ring-brand-300"
+                >
+                  Editar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate(`/app/vivero/${detail.id}/update`)}
+                  className="w-full rounded-2xl bg-white px-3 py-2.5 text-sm font-bold text-brand-700 ring-1 ring-brand-200 transition hover:ring-brand-300"
+                >
+                  Subir imagen
+                </button>
+              </div>
+            </div>
+            <p className="mt-3 text-[11px] font-semibold text-brand-500">
+              Las fechas intermedias se completarán cuando se habilite el endpoint de timeline de eventos.
+            </p>
+          </div>
 
           <div className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5 space-y-3">
             <p className="text-sm font-semibold text-brand-700">Estado operativo</p>

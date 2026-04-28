@@ -63,6 +63,7 @@ export function mapLoteToDetailView(lot: LoteViveroItem): ViveroLotDetailView {
     nombreCientifico: lot.planta?.nombre_cientifico || lot.nombre_cientifico_snapshot || 'N/D',
     nombreComercial: lot.planta?.nombre_comun_principal || lot.nombre_comercial_snapshot || 'N/D',
     variedad: lot.planta?.variedad || lot.variedad_snapshot || null,
+    plantaImagenUrl: lot.planta?.imagen_url || null,
     viveroNombre: lot.vivero?.nombre || `Vivero #${lot.vivero_id}`,
     viveroCodigo: lot.vivero?.codigo || 'N/D',
     responsableNombre,

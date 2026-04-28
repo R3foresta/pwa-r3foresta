@@ -37,6 +37,7 @@ export interface ViveroLotDetailView {
   nombreCientifico: string
   nombreComercial: string
   variedad: string | null
+  plantaImagenUrl: string | null
   viveroNombre: string
   viveroCodigo: string
   responsableNombre: string
