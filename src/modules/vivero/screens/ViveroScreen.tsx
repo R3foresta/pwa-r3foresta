@@ -6,9 +6,42 @@ import { mapLoteToCardData } from '../mappers/lote.mapper'
 import type { LoteViveroItem } from '../types/contracts'
 import ViveroLotCard from '../components/ViveroLotCard'
 
+type StageFilter = 'TODOS' | 'INICIO' | 'EMBOLSADO' | 'ADAPTABILIDAD' | 'FINALIZADOS'
+
+const STAGE_FILTERS: { key: StageFilter; label: string }[] = [
+  { key: 'TODOS', label: 'Todos' },
+  { key: 'INICIO', label: 'Inicio' },
+  { key: 'EMBOLSADO', label: 'Embolsado' },
+  { key: 'ADAPTABILIDAD', label: 'Adaptabilidad' },
+  { key: 'FINALIZADOS', label: 'Finalizados' },
+]
+
+function matchesStageFilter(lot: LoteViveroItem, filter: StageFilter): boolean {
+  if (filter === 'TODOS') return true
+  if (filter === 'FINALIZADOS') return lot.estado_lote === 'FINALIZADO'
+
+  const isActivo = lot.estado_lote === 'ACTIVO'
+  if (!isActivo) return false
+
+  if (filter === 'INICIO') {
+    return lot.plantas_vivas_iniciales === null && lot.subetapa_actual === null
+  }
+
+  if (filter === 'EMBOLSADO') {
+    return lot.plantas_vivas_iniciales !== null && lot.subetapa_actual === null
+  }
+
+  if (filter === 'ADAPTABILIDAD') {
+    return lot.subetapa_actual !== null
+  }
+
+  return true
+}
+
 function ViveroScreen() {
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
+  const [stageFilter, setStageFilter] = useState<StageFilter>('TODOS')
   const [lots, setLots] = useState<LoteViveroItem[]>([])
   const [loadingLots, setLoadingLots] = useState(true)
   const [errorLots, setErrorLots] = useState<string | null>(null)
@@ -42,7 +75,8 @@ function ViveroScreen() {
   }, [])
 
   const filteredLots = useMemo(() => {
-    const cards = lots.map(mapLoteToCardData)
+    const stageFiltered = lots.filter((lot) => matchesStageFilter(lot, stageFilter))
+    const cards = stageFiltered.map(mapLoteToCardData)
     const normalized = query.trim().toLowerCase()
     if (!normalized) return cards
 
@@ -85,6 +119,26 @@ function ViveroScreen() {
               type="search"
             />
           </label>
+
+          <div className="scrollbar-hide flex gap-2 overflow-x-auto pb-1">
+            {STAGE_FILTERS.map((item) => {
+              const isActive = stageFilter === item.key
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => setStageFilter(item.key)}
+                  className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-extrabold transition ${
+                    isActive
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-white text-brand-700 ring-1 ring-brand-100 hover:ring-brand-200'
+                  }`}
+                >
+                  {item.label}
+                </button>
+              )
+            })}
+          </div>
 
           <button
             type="button"
