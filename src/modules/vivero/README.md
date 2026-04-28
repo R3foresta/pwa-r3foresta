@@ -7,10 +7,11 @@ Este modulo usa organizacion **feature-first** con separacion por responsabilida
 ```txt
 src/modules/vivero/
   components/        # UI reutilizable del modulo (cards, timeline, forms)
+  hooks/             # Orquestacion de estado/side-effects por caso de uso
   mappers/           # Adaptadores backend -> modelos de UI
   screens/           # Paginas/rutas del modulo
   types/             # Tipos y contratos del dominio vivero
-  utils/             # Helpers especificos del modulo (fechas, estados, saldo)
+  utils/             # Helpers especificos del modulo (fechas, estados, saldo, filtros)
   index.ts           # Barrel publico del modulo
 ```
 
@@ -21,6 +22,7 @@ src/modules/vivero/
 3. Tipos de dominio viven en `types/` y se exportan desde `index.ts`.
 4. Componentes reutilizables se promueven a `src/components` solo si son cross-modulo.
 5. Mientras backend no habilite timeline/eventos completos, mantener placeholders en UI pero no acoplar mocks dentro de `screens/`.
+6. Los filtros por etapa se construyen en dos niveles: pre-filtro backend (`estado_lote`) y post-filtro local (`utils/stageFilters.ts`) para mantener consistencia de UX.
 
 ## Siguiente paso recomendado
 

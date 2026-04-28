@@ -1,82 +1,19 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Icon from '../../../components/Icon'
-import { LotesViveroService } from '../../../services/lotes-vivero.service'
 import { mapLoteToCardData } from '../mappers/lote.mapper'
-import type { LoteViveroItem } from '../types/contracts'
 import ViveroLotCard from '../components/ViveroLotCard'
-
-type StageFilter = 'TODOS' | 'INICIO' | 'EMBOLSADO' | 'ADAPTABILIDAD' | 'FINALIZADOS'
-
-const STAGE_FILTERS: { key: StageFilter; label: string }[] = [
-  { key: 'TODOS', label: 'Todos' },
-  { key: 'INICIO', label: 'Inicio' },
-  { key: 'EMBOLSADO', label: 'Embolsado' },
-  { key: 'ADAPTABILIDAD', label: 'Adaptabilidad' },
-  { key: 'FINALIZADOS', label: 'Finalizados' },
-]
-
-function matchesStageFilter(lot: LoteViveroItem, filter: StageFilter): boolean {
-  if (filter === 'TODOS') return true
-  if (filter === 'FINALIZADOS') return lot.estado_lote === 'FINALIZADO'
-
-  const isActivo = lot.estado_lote === 'ACTIVO'
-  if (!isActivo) return false
-
-  if (filter === 'INICIO') {
-    return lot.plantas_vivas_iniciales === null && lot.subetapa_actual === null
-  }
-
-  if (filter === 'EMBOLSADO') {
-    return lot.plantas_vivas_iniciales !== null && lot.subetapa_actual === null
-  }
-
-  if (filter === 'ADAPTABILIDAD') {
-    return lot.subetapa_actual !== null
-  }
-
-  return true
-}
+import { useViveroLots } from '../hooks/useViveroLots'
+import { STAGE_FILTERS, type StageFilter } from '../utils/stageFilters'
 
 function ViveroScreen() {
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [stageFilter, setStageFilter] = useState<StageFilter>('TODOS')
-  const [lots, setLots] = useState<LoteViveroItem[]>([])
-  const [loadingLots, setLoadingLots] = useState(true)
-  const [errorLots, setErrorLots] = useState<string | null>(null)
-
-  useEffect(() => {
-    let isMounted = true
-
-    const loadLots = async () => {
-      try {
-        setLoadingLots(true)
-        setErrorLots(null)
-        const response = await LotesViveroService.list()
-        if (isMounted) {
-          setLots(response.data || [])
-        }
-      } catch (error) {
-        if (isMounted) {
-          setErrorLots(error instanceof Error ? error.message : 'Error al cargar lotes de vivero')
-        }
-      } finally {
-        if (isMounted) {
-          setLoadingLots(false)
-        }
-      }
-    }
-
-    loadLots()
-    return () => {
-      isMounted = false
-    }
-  }, [])
+  const { lots, loading: loadingLots, error: errorLots } = useViveroLots(stageFilter)
 
   const filteredLots = useMemo(() => {
-    const stageFiltered = lots.filter((lot) => matchesStageFilter(lot, stageFilter))
-    const cards = stageFiltered.map(mapLoteToCardData)
+    const cards = lots.map(mapLoteToCardData)
     const normalized = query.trim().toLowerCase()
     if (!normalized) return cards
 
@@ -143,7 +80,7 @@ function ViveroScreen() {
           <button
             type="button"
             onClick={() => navigate('/app/vivero/new')}
-            className="flex items-start gap-3 rounded-2xl border-2 border-dashed border-emerald-200 bg-emerald-50 px-4 py-4 text-left text-emerald-800 shadow-soft transition hover:border-emerald-300 hover:bg-emerald-100"
+            className="flex w-full items-start gap-3 rounded-2xl border-2 border-dashed border-emerald-200 bg-emerald-50 px-4 py-4 text-left text-emerald-800 shadow-soft transition hover:border-emerald-300 hover:bg-emerald-100"
           >
             <div className="mt-1 flex h-10 w-10 items-center justify-center rounded-full bg-white text-emerald-700 ring-1 ring-emerald-200">
               <Icon name="plus" className="h-5 w-5" />
