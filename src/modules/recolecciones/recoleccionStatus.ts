@@ -4,8 +4,6 @@ type EstadoRegistroSource = {
   estadoRegistroRecoleccion?: string | null
   usuario_validacion_id?: number | null
   fecha_validacion?: string | null
-  blockchain_tx_validacion?: string | null
-  blockchain_hash_validacion?: string | null
 }
 
 export type EstadoOperativo = 'ABIERTO' | 'CERRADO'
@@ -34,9 +32,7 @@ export function resolveEstadoRegistro(recoleccion: EstadoRegistroSource) {
 
   const hasValidationData =
     Boolean(recoleccion.usuario_validacion_id) ||
-    Boolean(recoleccion.fecha_validacion) ||
-    Boolean(recoleccion.blockchain_tx_validacion) ||
-    Boolean(recoleccion.blockchain_hash_validacion)
+    Boolean(recoleccion.fecha_validacion)
 
   return hasValidationData ? 'VALIDADO' : 'BORRADOR'
 }

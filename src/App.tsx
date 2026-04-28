@@ -19,9 +19,7 @@ import LoginScreen from './modules/auth/LoginScreen'
 import RegisterScreen from './modules/auth/RegisterScreen'
 import RecoverScreen from './modules/auth/RecoverScreen'
 import { useAuth } from './contexts/AuthContext'
-import ViveroScreen from './modules/vivero/ViveroScreen'
-import ViveroDetailScreen from './modules/vivero/ViveroDetailScreen'
-import ViveroNewScreen from './modules/vivero/ViveroNewScreen'
+import { ViveroDetailScreen, ViveroNewScreen, ViveroScreen } from './modules/vivero'
 import MapScreen from './modules/map/MapScreen'
 import { CompleteProfileScreen, PerfilScreen } from './modules/user_profile'
 import ComunidadesScreen from './modules/comunidades/ComunidadesScreen'
@@ -96,11 +94,11 @@ function App() {
             <Route path=":id" element={<ViveroDetailScreen />} />
             <Route
               path=":id/event/new"
-              element={<PlaceholderScreen title="Registrar evento de germinación" />}
+              element={<PlaceholderScreen title="Registrar evento de vivero" />}
             />
             <Route
               path=":id/update"
-              element={<PlaceholderScreen title="Actualizar fase de germinación" />}
+              element={<PlaceholderScreen title="Actualizar lote de vivero" />}
             />
           </Route>
           <Route path="nursery" element={<Navigate to="/app/vivero" replace />} />
