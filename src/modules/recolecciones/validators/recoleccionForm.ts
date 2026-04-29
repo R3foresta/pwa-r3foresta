@@ -17,6 +17,7 @@ export type ValidationErrors = {
   method?: string
   tipoMaterial?: string
   ubicacion?: string
+  planta?: string
 }
 
 export function validateRecoleccionForm(
@@ -59,6 +60,11 @@ export function validateRecoleccionForm(
     errors.method = 'Selecciona un método de recolección'
   }
 
+  // NUEVA VALIDACIÓN FASE 3:
+  if (!form.planta_id) {
+    errors.planta = 'Debes seleccionar una planta del catálogo para continuar'
+  }
+
   if (options.stage !== 'datos') {
     // Ubicación mínima: lat/long y país/división opcionales ya capturados en form
     if (!form.latitud?.trim() || !form.longitud?.trim()) {
@@ -80,9 +86,10 @@ export function mapFormToCreateDto(form: RecoleccionFormData): CreateRecoleccion
     cantidad_inicial_canonica,
     unidad_canonica,
     tipo_material,
-    planta_id: form.planta_id ? Number(form.planta_id) : 1,
-    metodo_id: form.metodo_id ? Number(form.metodo_id) : 1,
-    vivero_id: form.vivero_id ? Number(form.vivero_id) : 1,
+    // Eliminamos los ": 1" y convertimos directamente:
+    planta_id: Number(form.planta_id), 
+    metodo_id: Number(form.metodo_id),
+    vivero_id: form.vivero_id ? Number(form.vivero_id) : undefined, //  puede ser opcional según el contexto
     observaciones: form.notes || undefined,
     ubicacion: {
       nombre: form.ubicacionNombre || undefined,

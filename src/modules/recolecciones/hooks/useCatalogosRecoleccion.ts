@@ -1,59 +1,12 @@
 import { useEffect, useState } from 'react'
-import type { MetodoRecoleccionCatalogo, PlantaCatalogo, TipoPlantaCatalogo } from '../../../services/recolecciones.service'
+import type { MetodoRecoleccionCatalogo } from '../../../services/recolecciones.service'
 import { RecoleccionesService } from '../../../services/recolecciones.service'
 
-export function useCatalogosRecoleccion(formPlantaId?: number, formMetodoId?: number) {
-  const [plantas, setPlantas] = useState<PlantaCatalogo[]>([])
-  const [tiposPlantas, setTiposPlantas] = useState<TipoPlantaCatalogo[]>([])
+export function useCatalogosRecoleccion(formMetodoId?: number) {
   const [metodos, setMetodos] = useState<MetodoRecoleccionCatalogo[]>([])
-
-  const [selectedPlanta, setSelectedPlanta] = useState<PlantaCatalogo | null>(null)
   const [metodoId, setMetodoId] = useState<number | undefined>(formMetodoId)
   const [methodName, setMethodName] = useState<string>('')
-
-  const [loadingPlantas, setLoadingPlantas] = useState(false)
-  const [loadingTiposPlantas, setLoadingTiposPlantas] = useState(false)
   const [loadingMetodos, setLoadingMetodos] = useState(false)
-
-  useEffect(() => {
-    let mounted = true
-    const cargarPlantas = async () => {
-      try {
-        setLoadingPlantas(true)
-        const plantasBackend = await RecoleccionesService.getPlantas()
-        if (!mounted) return
-        setPlantas(plantasBackend)
-        if (formPlantaId) {
-          const plantaGuardada = plantasBackend.find((p: PlantaCatalogo) => p.id === formPlantaId)
-          if (plantaGuardada) setSelectedPlanta(plantaGuardada)
-        }
-      } finally {
-        if (mounted) setLoadingPlantas(false)
-      }
-    }
-    void cargarPlantas()
-    return () => {
-      mounted = false
-    }
-  }, [formPlantaId])
-
-  useEffect(() => {
-    let mounted = true
-    const cargarTiposPlantas = async () => {
-      try {
-        setLoadingTiposPlantas(true)
-        const tipos = await RecoleccionesService.getTiposPlantas()
-        if (!mounted) return
-        setTiposPlantas(tipos)
-      } finally {
-        if (mounted) setLoadingTiposPlantas(false)
-      }
-    }
-    void cargarTiposPlantas()
-    return () => {
-      mounted = false
-    }
-  }, [])
 
   useEffect(() => {
     let mounted = true
@@ -65,7 +18,7 @@ export function useCatalogosRecoleccion(formPlantaId?: number, formMetodoId?: nu
         setMetodos(metodosBackend)
 
         if (formMetodoId) {
-          const metodoGuardado = metodosBackend.find((m: MetodoRecoleccionCatalogo) => m.id === formMetodoId)
+          const metodoGuardado = metodosBackend.find((m) => m.id === formMetodoId)
           if (metodoGuardado) {
             setMetodoId(metodoGuardado.id)
             setMethodName(metodoGuardado.nombre)
@@ -76,25 +29,15 @@ export function useCatalogosRecoleccion(formPlantaId?: number, formMetodoId?: nu
       }
     }
     void cargarMetodos()
-    return () => {
-      mounted = false
-    }
+    return () => { mounted = false }
   }, [formMetodoId])
 
   return {
-    plantas,
-    tiposPlantas,
     metodos,
-    setPlantas,
-    setTiposPlantas,
-    selectedPlanta,
-    setSelectedPlanta,
     metodoId,
     setMetodoId,
     methodName,
     setMethodName,
-    loadingPlantas,
-    loadingTiposPlantas,
-    loadingMetodos,
+    loadingMetodos
   }
 }
