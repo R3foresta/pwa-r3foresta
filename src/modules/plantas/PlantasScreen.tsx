@@ -198,16 +198,32 @@ function PlantasScreen() {
                 <div className="space-y-4">
                     {/* Campos con validación en rojo debajo */}
                     <div className="grid grid-cols-1 gap-4">
+                        {/* --- CAMPO: NOMBRE COMÚN (CORREGIDO) --- */}
                         <div>
-                            <label className="text-[10px] font-black text-brand-400 uppercase ml-1">Nombre Común*</label>
-                            <input readOnly={modalMode === 'view'} className={`w-full p-3.5 rounded-2xl bg-slate-50 border-none ring-1 font-bold ${formErrors.nombre_comun_principal ? 'ring-red-500' : 'ring-black/5'} outline-none focus:ring-brand-500`} 
-                            value={formData.nombre_comun_principal} onChange={e => setFormData({...formData, nombre_comun_principal: e.target.value, especie: e.target.value})}/>
+                            <label className="text-[10px] font-black text-brand-400 uppercase ml-1">Nombre Común Principal*</label>
+                            <input 
+                                readOnly={modalMode === 'view'} 
+                                className={`w-full p-3.5 rounded-2xl bg-slate-50 border-none ring-1 focus:ring-brand-500 outline-none font-bold ${formErrors.nombre_comun_principal ? 'ring-red-500' : 'ring-black/5'}`} 
+                                value={formData.nombre_comun_principal} 
+                                // Corregido: Ahora solo actualiza su propio campo
+                                onChange={e => setFormData({...formData, nombre_comun_principal: e.target.value})} 
+                            />
+                            {formErrors.nombre_comun_principal && <p className="text-red-500 text-[10px] font-bold mt-1 ml-2">{formErrors.nombre_comun_principal}</p>}
                         </div>
 
+                        {/* --- CAMPO: ESPECIE (CORREGIDO) --- */}
                         <div>
-                            <label className="text-[10px] font-black text-brand-400 uppercase ml-1">Especie (ID)*</label>
-                            <input readOnly={modalMode === 'view'} className={`w-full p-3.5 rounded-2xl bg-slate-50 border-none ring-1 font-bold ${formErrors.especie ? 'ring-red-500' : 'ring-black/5'} outline-none focus:ring-brand-500`} 
-                            value={formData.especie} onChange={e => setFormData({...formData, especie: e.target.value})}/>
+                            {/* Corregido: Eliminamos el "(ID)" del label */}
+                            <label className="text-[10px] font-black text-brand-400 uppercase ml-1">Especie*</label>
+                            <input 
+                                readOnly={modalMode === 'view'} 
+                                placeholder="Ej. Swietenia"
+                                className={`w-full p-3.5 rounded-2xl bg-slate-50 border-none ring-1 font-bold ${formErrors.especie ? 'ring-red-500' : 'ring-black/5'} outline-none focus:ring-brand-500`} 
+                                value={formData.especie} 
+                                // Corregido: Ahora se llena manualmente y no por reflejo
+                                onChange={e => setFormData({...formData, especie: e.target.value})} 
+                            />
+                            {formErrors.especie && <p className="text-red-500 text-[10px] font-bold mt-1 ml-2">{formErrors.especie}</p>}
                         </div>
 
                         <div>
