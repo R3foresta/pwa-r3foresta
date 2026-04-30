@@ -629,12 +629,12 @@ type CausaMermaVivero =
   | "SEQUIA"
   | "DANO_FISICO"
   | "MUERTE_NATURAL"
-  | "DESCARTE_CALIDAD"
   | "OTRO";
 
 type DestinoTipoVivero =
   | "PLANTACION_PROPIA"
-  | "DONACION_COMUNIDAD"
+  | "PLANTACION_COMUNIDAD"
+  | "DONACION"
   | "VENTA"
   | "OTRO";
 
