@@ -106,6 +106,7 @@ function ViveroDetailScreen() {
   const [lot, setLot] = useState<LoteViveroItem | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  
 
   useEffect(() => {
     if (!id) {
@@ -152,7 +153,16 @@ function ViveroDetailScreen() {
   const summaryCard = useMemo(() => (lot ? mapLoteToCardData(lot) : null), [lot])
   const visualStages = useMemo(() => (detail ? buildVisualStages(detail) : []), [detail])
   const nextStageCta = useMemo(() => getNextStageCta(visualStages), [visualStages])
-
+  const ultimaEvidenciaUrl = useMemo(() => {
+  // 1. Usamos ?. para que si detail es null, no rompa la app
+  // 2. Verificamos que existan evidencias
+  if (detail?.evidencias && detail.evidencias.length > 0) {
+    return detail.evidencias[detail.evidencias.length - 1].url;
+  }
+  // 3. Retornamos la imagen base (también con check opcional)
+  return detail?.plantaImagenUrl;
+  }, [detail]); // Es mejor pasar 'detail' como dependencia completa aquí
+  
   if (loading) {
     return (
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center px-6 pb-28 text-center text-brand-700">
@@ -225,17 +235,17 @@ function ViveroDetailScreen() {
               </div>
 
               <div className="flex flex-col gap-3">
-                {detail.plantaImagenUrl ? (
+                {ultimaEvidenciaUrl ? (
                   <div className="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-black/5">
                     <img
-                      src={detail.plantaImagenUrl}
-                      alt={`Planta ${detail.especie}`}
+                      src={ultimaEvidenciaUrl}
+                      alt={`Evidencia de ${detail.nombreComercial}`}
                       className="h-36 w-full object-cover"
                     />
                   </div>
                 ) : (
                   <div className="flex h-36 items-center justify-center rounded-2xl bg-brand-50 text-sm font-semibold text-brand-500 ring-1 ring-dashed ring-brand-200">
-                    Sin imagen
+                    Sin imagen de evidencia
                   </div>
                 )}
 
@@ -246,20 +256,6 @@ function ViveroDetailScreen() {
                   className="w-full rounded-2xl bg-amber-200 px-3 py-2.5 text-sm font-extrabold text-brand-800 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600"
                 >
                   {nextStageCta}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => navigate(`/app/vivero/${detail.id}/update`)}
-                  className="w-full rounded-2xl bg-white px-3 py-2.5 text-sm font-bold text-brand-700 ring-1 ring-brand-200 transition hover:ring-brand-300"
-                >
-                  Editar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => navigate(`/app/vivero/${detail.id}/update`)}
-                  className="w-full rounded-2xl bg-white px-3 py-2.5 text-sm font-bold text-brand-700 ring-1 ring-brand-200 transition hover:ring-brand-300"
-                >
-                  Subir imagen
                 </button>
               </div>
             </div>
@@ -371,6 +367,22 @@ function ViveroDetailScreen() {
               <div className="rounded-2xl bg-brand-50 px-3 py-2">
                 <p className="text-[11px] uppercase tracking-wide text-brand-500">Variedad</p>
                 <p className="text-brand-700">{detail.variedad ?? 'N/D'}</p>
+              </div>
+              {/* --- NUEVOS CAMPOS SEGÚN TU TABLA --- */}
+              <div className="rounded-2xl bg-emerald-50 px-3 py-2 ring-1 ring-emerald-100">
+                <p className="text-[11px] font-bold uppercase tracking-wide text-emerald-600">Material en proceso</p>
+                <p className="text-emerald-700 font-bold">
+                  {detail.cantidadInicialEnProceso} {detail.unidadMedidaInicial}
+                </p>
+              </div>
+
+              <div className={`rounded-2xl px-3 py-2 ring-1 ${detail.saldoVivoActual ? 'bg-brand-50 ring-brand-100' : 'bg-orange-50 ring-orange-100'}`}>
+                <p className={`text-[11px] font-bold uppercase tracking-wide ${detail.saldoVivoActual ? 'text-brand-500' : 'text-orange-600'}`}>
+                  Saldo Vivo Actual
+                </p>
+                <p className={`font-bold ${detail.saldoVivoActual ? 'text-brand-700' : 'text-orange-700'}`}>
+                  {detail.saldoVivoActual ?? 'Pendiente Embolsado'}
+                </p>
               </div>
             </div>
           </div>

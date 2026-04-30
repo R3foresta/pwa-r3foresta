@@ -46,4 +46,11 @@ export interface ViveroLotDetailView {
   recoleccionTipoMaterial: TipoMaterialVivero
   createdAt: string
   updatedAt: string
+  // AGREGA ESTO:
+  evidencias?: Array<{
+    id: number;
+    url: string;
+    fecha: string;
+  }>;
+  
 }
