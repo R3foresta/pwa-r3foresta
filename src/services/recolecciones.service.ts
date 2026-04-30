@@ -1,5 +1,6 @@
 import type { UbicacionApi, UbicacionCreateInput } from '../types/ubicacion'
 import type { UnidadCanonicaRecoleccion } from '../utils/recoleccionUnidad'
+import type { PlantaCatalogo } from '../types/plantas.types';
 
 const API_URL = import.meta.env.VITE_API_URL
 
@@ -37,25 +38,6 @@ export interface ViveroCatalogo {
   ubicacion?: UbicacionApi | null
 }
 
-export interface PlantaCatalogo {
-  id: number
-  especie: string
-  nombre_cientifico: string
-  variedad: string
-  tipo_planta?: string
-  created_at?: string
-  imagen_url?: string | null
-  tipo_planta_id?: number
-  nombres_comunes?: string | null
-  nombre_comun_principal?: string | null
-  notas?: string | null
-}
-
-export interface TipoPlantaCatalogo {
-  id: number
-  nombre: string
-  created_at: string
-}
 
 export interface CreatePlantaDto {
   especie: string
@@ -169,7 +151,7 @@ export interface CreateRecoleccionDto {
   tipo_material: TipoMaterialCanonico
   planta_id: number
   metodo_id: number
-  vivero_id: number
+  vivero_id?: number
   observaciones?: string
   ubicacion: UbicacionCreateInput & {
     fuente?: FuenteUbicacionCanonica
@@ -534,131 +516,6 @@ export class RecoleccionesService {
     return { success: Boolean(payload.success ?? true), data: [] }
   }
 
-  static async getPlantas(): Promise<PlantaCatalogo[]> {
-    const response = await fetch(`${API_URL}/api/plantas`, {
-      method: 'GET',
-      headers: this.getAuthHeaders(),
-    })
-    const payload = await this.parseJsonResponse<ApiEnvelope<PlantaCatalogo[]> | PlantaCatalogo[]>(response)
-
-    if (Array.isArray(payload)) {
-      return payload
-    }
-
-    return Array.isArray(payload.data) ? payload.data : []
-  }
-
-  static async buscarPlantasPorEspecie(especie: string): Promise<PlantaCatalogo[]> {
-    const response = await fetch(`${API_URL}/api/plantas?q=${encodeURIComponent(especie)}`, {
-      method: 'GET',
-      headers: this.getAuthHeaders(),
-    })
-
-    const payload = await this.parseJsonResponse<
-      ApiEnvelope<PlantaCatalogo[]> | PlantaCatalogo[]
-    >(response)
-
-    if (Array.isArray(payload)) {
-      return payload
-    }
-
-    return Array.isArray(payload.data) ? payload.data : []
-  }
-
-  static async createPlanta(data: CreatePlantaDto): Promise<{ success: boolean; data: PlantaCatalogo }> {
-    const response = await fetch(`${API_URL}/api/plantas`, {
-      method: 'POST',
-      headers: this.getAuthHeaders(),
-      body: JSON.stringify(data),
-    })
-
-    const rawText = await response.text()
-    const parsed = rawText ? this.tryParseJson(rawText) : null
-
-    if (!response.ok) {
-      const error = new Error(
-        (parsed as ApiEnvelope<unknown> | null)?.message ||
-          (parsed as ApiEnvelope<unknown> | null)?.error ||
-          'Error al crear planta',
-      ) as Error & { response?: { status: number; data: unknown } }
-      error.response = { status: response.status, data: parsed ?? rawText }
-      throw error
-    }
-
-    if (!parsed) {
-      throw new Error('Respuesta vacía del servidor al crear planta.')
-    }
-
-    const payload = parsed as ApiEnvelope<PlantaCatalogo> | PlantaCatalogo
-
-    if ('data' in (payload as ApiEnvelope<PlantaCatalogo>) && (payload as ApiEnvelope<PlantaCatalogo>).data) {
-      return {
-        success: Boolean((payload as ApiEnvelope<PlantaCatalogo>).success ?? true),
-        data: (payload as ApiEnvelope<PlantaCatalogo>).data as PlantaCatalogo,
-      }
-    }
-
-    return {
-      success: true,
-      data: payload as PlantaCatalogo,
-    }
-  }
-
-  static async getTiposPlantas(): Promise<TipoPlantaCatalogo[]> {
-    const response = await fetch(`${API_URL}/api/plantas/tipos-planta`, {
-      method: 'GET',
-      headers: this.getAuthHeaders(),
-    })
-
-    const payload = await this.parseJsonResponse<
-      ApiEnvelope<TipoPlantaCatalogo[]> | TipoPlantaCatalogo[]
-    >(response)
-
-    if (Array.isArray(payload)) {
-      return payload
-    }
-
-    return Array.isArray(payload.data) ? payload.data : []
-  }
-
-  static async createTipoPlanta(nombre: string): Promise<{ success: boolean; data: TipoPlantaCatalogo }> {
-    const response = await fetch(`${API_URL}/api/plantas/tipos-planta`, {
-      method: 'POST',
-      headers: this.getAuthHeaders(),
-      body: JSON.stringify({ nombre }),
-    })
-
-    const rawText = await response.text()
-    const parsed = rawText ? this.tryParseJson(rawText) : null
-
-    if (!response.ok) {
-      const error = new Error(
-        (parsed as ApiEnvelope<unknown> | null)?.message ||
-          (parsed as ApiEnvelope<unknown> | null)?.error ||
-          'Error al crear tipo de planta',
-      ) as Error & { response?: { status: number; data: unknown } }
-      error.response = { status: response.status, data: parsed ?? rawText }
-      throw error
-    }
-
-    if (!parsed) {
-      throw new Error('Respuesta vacía del servidor al crear tipo de planta.')
-    }
-
-    const payload = parsed as ApiEnvelope<TipoPlantaCatalogo> | TipoPlantaCatalogo
-
-    if ('data' in (payload as ApiEnvelope<TipoPlantaCatalogo>) && (payload as ApiEnvelope<TipoPlantaCatalogo>).data) {
-      return {
-        success: Boolean((payload as ApiEnvelope<TipoPlantaCatalogo>).success ?? true),
-        data: (payload as ApiEnvelope<TipoPlantaCatalogo>).data as TipoPlantaCatalogo,
-      }
-    }
-
-    return {
-      success: true,
-      data: payload as TipoPlantaCatalogo,
-    }
-  }
 
   static async getMetodos(): Promise<MetodoRecoleccionCatalogo[]> {
     const response = await fetch(`${API_URL}/api/metodos-recoleccion`, {
@@ -882,8 +739,11 @@ export class RecoleccionesService {
     if (!Number.isFinite(data.metodo_id) || data.metodo_id <= 0) {
       throw new Error('Debes seleccionar un método de recolección válido.')
     }
-    if (!Number.isFinite(data.vivero_id) || data.vivero_id <= 0) {
-      throw new Error('Debes seleccionar un vivero válido.')
+    // Validar vivero SOLO si está presente
+    if (data.vivero_id !== undefined) {
+      if (!Number.isFinite(data.vivero_id) || data.vivero_id <= 0) {
+        throw new Error('Debes seleccionar un vivero válido.')
+      }
     }
   }
 }

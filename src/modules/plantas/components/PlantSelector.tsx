@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react'
 import Icon from '../../../components/Icon'
-import type { PlantaCatalogo } from '../../../services/recolecciones.service'
+import type { PlantaCatalogo } from '../../../types/plantas.types'
 
 type Props = {
   plantas: PlantaCatalogo[]
   loading: boolean
   onSelect: (planta: PlantaCatalogo) => void
-  onCreateNew: () => void
+  onCreateNew?: () => void
 }
 
 function PlantSelector({ plantas, loading, onSelect, onCreateNew }: Props) {
@@ -17,7 +17,7 @@ function PlantSelector({ plantas, loading, onSelect, onCreateNew }: Props) {
     const term = searchTerm.toLowerCase()
     return plantas.filter(
       (p) =>
-        p.especie?.toLowerCase().includes(term) ||
+        (p.nombre_comun_principal?.toLowerCase() || p.especie?.toLowerCase() || '').includes(term) ||
         p.nombre_cientifico?.toLowerCase().includes(term),
     )
   }, [plantas, searchTerm])
@@ -30,23 +30,26 @@ function PlantSelector({ plantas, loading, onSelect, onCreateNew }: Props) {
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Buscar"
+          placeholder="Buscar especie..."
           className="w-full rounded-2xl border border-slate-200 bg-white pl-12 pr-4 py-3 text-base font-semibold text-slate-700 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
         />
       </div>
 
-      <button
-        type="button"
-        onClick={onCreateNew}
-        className="w-full flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-brand-300 bg-brand-50/50 py-4 text-brand-600 transition hover:bg-brand-50 active:scale-[0.99]"
-      >
-        <Icon name="plus" className="h-5 w-5" />
-        <span className="text-base font-extrabold">Añadir nueva planta</span>
-      </button>
+      {/* 3. RENDERIZADO CONDICIONAL: Solo mostramos el botón si se pasó la función onCreateNew */}
+      {onCreateNew && (
+        <button
+          type="button"
+          onClick={onCreateNew}
+          className="w-full flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-brand-300 bg-brand-50/50 py-4 text-brand-600 transition hover:bg-brand-50 active:scale-[0.99]"
+        >
+          <Icon name="plus" className="h-5 w-5" />
+          <span className="text-base font-extrabold">Añadir nueva planta</span>
+        </button>
+      )}
 
       <div className="space-y-3">
         {loading ? (
-          <p className="text-sm font-semibold text-slate-500">Cargando plantas...</p>
+          <p className="text-sm font-semibold text-slate-500 text-center py-4">Cargando catálogo...</p>
         ) : filtered.length === 0 ? (
           <div className="py-8 text-center">
             <p className="text-sm font-semibold text-slate-500">No se encontraron plantas</p>
@@ -63,7 +66,7 @@ function PlantSelector({ plantas, loading, onSelect, onCreateNew }: Props) {
                 {planta.imagen_url ? (
                   <img
                     src={planta.imagen_url}
-                    alt={planta.especie || planta.nombre_cientifico}
+                    alt={planta.nombre_comun_principal || planta.especie}
                     className="h-full w-full object-cover"
                   />
                 ) : (
@@ -74,9 +77,10 @@ function PlantSelector({ plantas, loading, onSelect, onCreateNew }: Props) {
               </div>
               <div className="flex-1 text-left">
                 <p className="text-base font-extrabold text-brand-700">
-                  {planta.especie || 'Sin nombre común'}
+                  {/* Priorizamos el nombre común principal */}
+                  {planta.nombre_comun_principal || planta.especie || 'Sin nombre común'}
                 </p>
-                <p className="text-sm font-semibold text-slate-500">
+                <p className="text-sm font-semibold text-slate-500 italic">
                   {planta.nombre_cientifico}
                 </p>
               </div>
