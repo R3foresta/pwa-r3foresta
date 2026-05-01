@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Icon from '../../../components/Icon'
+import type { IconName } from '../../../components/Icon'
 import { LotesViveroService } from '../../../services/lotes-vivero.service'
 import CollapsibleSection from '../components/CollapsibleSection'
 import StageTimeline from '../components/StageTimeline'
@@ -61,7 +62,13 @@ function buildTimeline(detail: ViveroLotDetailView): StageTimelineItem[] {
       done: hasEmbolsado,
       active: !hasEmbolsado && !hasFinalizado,
       date: null,
-      hasMermaRisk: true,
+    },
+    {
+      key: 'MERMA',
+      label: 'Merma',
+      done: false,
+      active: false,
+      date: null,
     },
     {
       key: 'ADAPTABILIDAD',
@@ -69,7 +76,6 @@ function buildTimeline(detail: ViveroLotDetailView): StageTimelineItem[] {
       done: hasAdaptabilidad && hasFinalizado,
       active: hasAdaptabilidad && !hasFinalizado,
       date: null,
-      hasMermaRisk: true,
       subStates: hasEmbolsado ? adaptSubStates : undefined,
     },
     {
@@ -89,11 +95,15 @@ function buildTimeline(detail: ViveroLotDetailView): StageTimelineItem[] {
   ]
 }
 
-function getNextStageCta(detail: ViveroLotDetailView): string | null {
+function getNextActionInfo(
+  detail: ViveroLotDetailView,
+): { label: string; iconName: IconName; path: string } | null {
   if (detail.estadoLote === 'FINALIZADO') return null
-  if (detail.plantasVivasIniciales === null) return 'Registrar Embolsado'
-  if (detail.subetapaActual === null) return 'Registrar Adaptabilidad'
-  return 'Registrar Despacho'
+  if (detail.plantasVivasIniciales === null)
+    return { label: 'Registrar Embolsado', iconName: 'package', path: `/app/vivero/${detail.id}/event/new` }
+  if (detail.subetapaActual === null)
+    return { label: 'Registrar Adaptabilidad', iconName: 'leaf', path: `/app/vivero/${detail.id}` }
+  return { label: 'Registrar Despacho', iconName: 'planting', path: `/app/vivero/${detail.id}` }
 }
 
 function InfoRow({ label, value }: { label: string; value: string }) {
@@ -146,7 +156,11 @@ function ViveroDetailScreen() {
 
   const detail = useMemo(() => (lot ? mapLoteToDetailView(lot) : null), [lot])
   const timeline = useMemo(() => (detail ? buildTimeline(detail) : []), [detail])
-  const nextCta = useMemo(() => (detail ? getNextStageCta(detail) : null), [detail])
+  const nextActionInfo = useMemo(() => (detail ? getNextActionInfo(detail) : null), [detail])
+  const canRegisterMerma = useMemo(
+    () => detail?.estadoLote === 'ACTIVO' && detail?.plantasVivasIniciales !== null,
+    [detail],
+  )
 
   const saldoVivo = detail?.saldoVivoActual ?? detail?.plantasVivasIniciales ?? null
   const muertas =
@@ -205,15 +219,14 @@ function ViveroDetailScreen() {
         </header>
 
         <div className="mt-5 space-y-4 px-5">
-          {/* CTA — primero, siempre visible */}
-          {nextCta ? (
+          {nextActionInfo ? (
             <button
               type="button"
-              onClick={() => navigate(`/app/vivero/${detail.id}/event/new`)}
+              onClick={() => navigate(nextActionInfo.path)}
               className="flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-700 py-4 text-base font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.98]"
             >
-              <span>▶</span>
-              <span>{nextCta}</span>
+              <Icon name={nextActionInfo.iconName} className="h-5 w-5" />
+              <span>{nextActionInfo.label}</span>
             </button>
           ) : (
             <div className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-100 py-4 text-base font-extrabold text-emerald-700 ring-1 ring-emerald-200">
@@ -281,7 +294,15 @@ function ViveroDetailScreen() {
           {/* Timeline de etapas */}
           <div className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
             <p className="mb-4 text-sm font-semibold text-brand-700">Etapas</p>
-            <StageTimeline stages={timeline} />
+            <StageTimeline
+              stages={timeline}
+              imagenUrl={detail.plantaImagenUrl}
+              mermaAction={
+                canRegisterMerma
+                  ? { onClick: () => navigate(`/app/vivero/${detail.id}/event/merma`) }
+                  : null
+              }
+            />
           </div>
 
           {/* Cantidades detalle */}
