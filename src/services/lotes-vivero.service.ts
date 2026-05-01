@@ -1,6 +1,10 @@
 import {
   createLoteViveroApi,
+  getEmbolsadoApi,
+  getEmbolsadoContextApi,
   listLotesViveroApi,
+  registrarEmbolsadoApi,
+  uploadEvidenciasEmbolsadoApi,
   uploadEvidenciasPendientesViveroApi,
 } from '../api/lotes-vivero.api'
 import { mapLoteToCardData } from '../modules/vivero/mappers/lote.mapper'
@@ -8,11 +12,18 @@ import type {
   ApiPagination,
   CreateLoteViveroInput,
   CreateLoteViveroResponse,
+  EmbolsadoContextData,
+  EmbolsadoContextResponse,
+  EvidenciasEmbolsadoResponse,
   ListLotesViveroQuery,
   ListLotesViveroResponse,
   LoteViveroItem,
+  ObtenerEmbolsadoResponse,
+  RegistrarEmbolsadoRequest,
+  RegistrarEmbolsadoResponse,
   UploadEvidenciasPendientesInput,
   UploadEvidenciasPendientesResponse,
+  UploadEvidenciasEmbolsadoInput,
 } from '../modules/vivero/types/contracts'
 import type { ViveroLotCardData } from '../modules/vivero/types/view-models'
 import {
@@ -204,6 +215,50 @@ export class LotesViveroService {
     return this.parseJsonResponse<CreateLoteViveroResponse>(
       response,
       'Error al crear lote de vivero.',
+    )
+  }
+
+  static async getEmbolsadoContext(loteId: number): Promise<EmbolsadoContextData> {
+    const response = await getEmbolsadoContextApi(loteId)
+    const payload = await this.parseJsonResponse<EmbolsadoContextResponse>(
+      response,
+      'Error al verificar el lote para embolsado.',
+    )
+    return payload.data
+  }
+
+  static async uploadEvidenciasEmbolsado(
+    loteId: number,
+    input: UploadEvidenciasEmbolsadoInput,
+    authId?: string,
+  ): Promise<EvidenciasEmbolsadoResponse> {
+    if (!Array.isArray(input.fotos) || input.fotos.length < 1) {
+      throw new Error('Debes adjuntar la foto del embolsado.')
+    }
+    const response = await uploadEvidenciasEmbolsadoApi(loteId, input, authId)
+    return this.parseJsonResponse<EvidenciasEmbolsadoResponse>(
+      response,
+      'Error al subir la foto del embolsado.',
+    )
+  }
+
+  static async registrarEmbolsado(
+    loteId: number,
+    input: RegistrarEmbolsadoRequest,
+    authId?: string,
+  ): Promise<RegistrarEmbolsadoResponse> {
+    const response = await registrarEmbolsadoApi(loteId, input, authId)
+    return this.parseJsonResponse<RegistrarEmbolsadoResponse>(
+      response,
+      'Error al registrar el embolsado.',
+    )
+  }
+
+  static async getEmbolsado(loteId: number): Promise<ObtenerEmbolsadoResponse> {
+    const response = await getEmbolsadoApi(loteId)
+    return this.parseJsonResponse<ObtenerEmbolsadoResponse>(
+      response,
+      'Error al obtener el embolsado registrado.',
     )
   }
 }
