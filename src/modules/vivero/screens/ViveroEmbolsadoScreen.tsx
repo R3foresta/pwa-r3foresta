@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom'
 import Icon from '../../../components/Icon'
 import { useEmbolsado } from '../hooks/useEmbolsado'
 
+const STAGE_TABS = ['Embolsado', 'Adaptabilidad', 'Merma', 'Despacho']
+
 function ViveroEmbolsadoScreen() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -35,6 +37,18 @@ function ViveroEmbolsadoScreen() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     void submit(loteId)
+  }
+
+  const maxPlantas = context?.cantidad_inicial_en_proceso ?? 0
+  const plantasDespues = Math.max(0, parseInt(formValues.plantasVivasIniciales) || 0)
+  const unidadLabel =
+    context?.unidad_medida_inicial === 'UNIDAD'
+      ? 'plantas vivas'
+      : (context?.unidad_medida_inicial?.toLowerCase() ?? 'plantas vivas')
+
+  function stepCount(delta: number) {
+    const next = Math.max(0, Math.min(maxPlantas, plantasDespues + delta))
+    updateForm({ plantasVivasIniciales: String(next) })
   }
 
   if (step === 'loading') {
@@ -127,8 +141,8 @@ function ViveroEmbolsadoScreen() {
     return (
       <div className="relative min-h-screen bg-[#eef2ed]">
         <div className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center px-5 pb-28">
-          <div className="w-full rounded-3xl bg-white p-6 shadow-soft ring-1 ring-black/5 text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+          <div className="w-full rounded-3xl bg-white p-6 text-center shadow-soft ring-1 ring-black/5">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
               <Icon name="check" className="h-8 w-8" />
             </div>
             <h2 className="text-xl font-extrabold text-brand-700">Embolsado registrado</h2>
@@ -140,9 +154,9 @@ function ViveroEmbolsadoScreen() {
                   {result.plantas_vivas_iniciales}
                 </p>
               </div>
-              <div className="rounded-2xl bg-brand-50 px-3 py-3">
-                <p className="text-[11px] uppercase tracking-wide text-brand-500">Saldo vivo</p>
-                <p className="mt-1 text-2xl font-extrabold text-brand-700">
+              <div className="rounded-2xl bg-emerald-50 px-3 py-3">
+                <p className="text-[11px] uppercase tracking-wide text-emerald-600">Saldo vivo</p>
+                <p className="mt-1 text-2xl font-extrabold text-emerald-700">
                   {result.saldo_vivo_despues}
                 </p>
               </div>
@@ -172,72 +186,148 @@ function ViveroEmbolsadoScreen() {
   return (
     <div className="relative min-h-screen bg-[#eef2ed] text-brand-700">
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-28">
-        <div className="flex items-start gap-3 px-5 pt-10">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/80 shadow-soft transition hover:bg-white"
-          >
-            <Icon name="arrow-left" className="h-5 w-5" />
-          </button>
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-brand-500">
-              Registrar evento
-            </p>
-            <h1 className="text-2xl font-extrabold text-brand-700">Embolsado</h1>
-            {context && (
-              <p className="text-sm font-semibold text-brand-500">
-                {context.nombre_cientifico_snapshot || context.nombre_comercial_snapshot}
-              </p>
-            )}
+        {/* Header */}
+        <div className="px-5 pt-10">
+          <div className="flex items-start gap-3">
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/80 shadow-soft transition hover:bg-white"
+            >
+              <Icon name="arrow-left" className="h-5 w-5" />
+            </button>
+            <div className="min-w-0">
+              <h1 className="truncate text-3xl font-extrabold leading-tight text-brand-700">
+                {context?.nombre_comercial_snapshot ||
+                  context?.nombre_cientifico_snapshot ||
+                  'Embolsado'}
+              </h1>
+              <p className="text-sm font-semibold text-brand-500">{context?.codigo_trazabilidad}</p>
+            </div>
+          </div>
+
+          {/* Stage indicator tabs */}
+          <div className="mt-4 flex gap-1.5 overflow-x-auto pb-1">
+            {STAGE_TABS.map((stage, i) => (
+              <span
+                key={stage}
+                className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${
+                  i === 0
+                    ? 'bg-brand-700 text-white'
+                    : 'bg-white/70 text-brand-400 ring-1 ring-brand-100'
+                }`}
+              >
+                {stage}
+              </span>
+            ))}
           </div>
         </div>
 
-        {context && (
-          <div className="mx-5 mt-4 rounded-2xl bg-white px-4 py-3 shadow-soft ring-1 ring-black/5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wide text-brand-500">
-                Lote
-              </span>
-              <span className="text-xs font-bold text-brand-700">{context.codigo_trazabilidad}</span>
+        <form onSubmit={handleSubmit} className="mt-4 space-y-4 px-5">
+          {/* Lote info card */}
+          {context && (
+            <div className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-soft ring-1 ring-black/5">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                <Icon name="leaf" className="h-5 w-5" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-brand-400">
+                  Lote de vivero
+                </p>
+                <p className="truncate text-sm font-extrabold text-brand-700">
+                  {context.nombre_comercial_snapshot}
+                </p>
+                <p className="truncate text-xs font-semibold text-brand-500">
+                  {context.cantidad_inicial_en_proceso} {context.tipo_material_snapshot}
+                </p>
+              </div>
             </div>
-            <div className="mt-1 flex items-center justify-between">
-              <span className="text-xs font-semibold text-brand-500">Cantidad inicial</span>
-              <span className="text-xs font-bold text-brand-700">
-                {context.cantidad_inicial_en_proceso} {context.unidad_medida_inicial}
-              </span>
+          )}
+
+          {/* Info banner */}
+          <div className="flex items-start gap-2.5 rounded-2xl bg-blue-50 px-4 py-3 ring-1 ring-blue-100">
+            <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
+            <p className="text-xs font-semibold leading-relaxed text-blue-700">
+              En esta etapa registramos las nuevas plantas que oficialmente son contadas.
+            </p>
+          </div>
+
+          {/* Antes / Después */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-2xl bg-white px-4 py-3 shadow-soft ring-1 ring-black/5">
+              <p className="text-xs font-semibold text-brand-500">Plantas Antes</p>
+              <p className="mt-0.5 text-2xl font-extrabold text-brand-700">0</p>
+              <p className="text-[11px] font-semibold text-brand-400">{unidadLabel}</p>
+            </div>
+            <div
+              className={`rounded-2xl px-4 py-3 shadow-soft ring-1 transition-all ${
+                plantasDespues > 0
+                  ? 'bg-emerald-50 ring-emerald-200'
+                  : 'bg-white ring-black/5'
+              }`}
+            >
+              <p
+                className={`text-xs font-semibold ${plantasDespues > 0 ? 'text-emerald-600' : 'text-brand-500'}`}
+              >
+                Plantas Después
+              </p>
+              <p
+                className={`mt-0.5 text-2xl font-extrabold ${plantasDespues > 0 ? 'text-emerald-700' : 'text-brand-300'}`}
+              >
+                {plantasDespues > 0 ? plantasDespues : '—'}
+              </p>
+              <p
+                className={`text-[11px] font-semibold ${plantasDespues > 0 ? 'text-emerald-500' : 'text-brand-300'}`}
+              >
+                {unidadLabel}
+              </p>
             </div>
           </div>
-        )}
 
-        <form onSubmit={handleSubmit} className="mt-5 space-y-4 px-5">
+          {/* Stepper */}
           <div>
-            <label className="mb-1.5 block text-sm font-bold text-brand-700">
-              Plantas vivas iniciales <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="number"
-              inputMode="numeric"
-              value={formValues.plantasVivasIniciales}
-              onChange={(e) => updateForm({ plantasVivasIniciales: e.target.value })}
-              min={1}
-              max={context?.cantidad_inicial_en_proceso}
-              step={1}
-              required
-              disabled={step === 'submitting'}
-              className="w-full rounded-2xl bg-white px-4 py-3 text-lg font-extrabold text-brand-700 shadow-soft ring-1 ring-black/5 outline-none focus:ring-2 focus:ring-brand-300 disabled:opacity-50"
-            />
+            <p className="mb-2 text-[11px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
+              Plantas vivas iniciales
+            </p>
+            <div className="flex items-stretch overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-black/5">
+              <button
+                type="button"
+                onClick={() => stepCount(-1)}
+                disabled={step === 'submitting' || plantasDespues <= 0}
+                className="flex w-14 items-center justify-center border-r border-slate-100 text-2xl font-bold text-brand-500 transition hover:bg-slate-50 disabled:opacity-30"
+              >
+                <Icon name="minus" className="h-5 w-5" />
+              </button>
+              <input
+                type="number"
+                inputMode="numeric"
+                value={formValues.plantasVivasIniciales}
+                onChange={(e) => updateForm({ plantasVivasIniciales: e.target.value })}
+                min={0}
+                max={maxPlantas}
+                required
+                disabled={step === 'submitting'}
+                className="min-w-0 flex-1 border-none bg-transparent py-4 text-center text-2xl font-extrabold text-brand-700 outline-none disabled:opacity-50 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              />
+              <button
+                type="button"
+                onClick={() => stepCount(1)}
+                disabled={step === 'submitting' || plantasDespues >= maxPlantas}
+                className="flex w-14 items-center justify-center border-l border-slate-100 text-2xl font-bold text-brand-500 transition hover:bg-slate-50 disabled:opacity-30"
+              >
+                <Icon name="plus" className="h-5 w-5" />
+              </button>
+            </div>
             {context && (
-              <p className="mt-1 text-xs font-semibold text-brand-500">
-                Máximo: {context.cantidad_inicial_en_proceso} {context.unidad_medida_inicial}
+              <p className="mt-1.5 text-right text-xs font-semibold text-brand-400">
+                máx. {maxPlantas} {context.unidad_medida_inicial}
               </p>
             )}
           </div>
 
-          <div>
-            <label className="mb-1.5 block text-sm font-bold text-brand-700">
-              Fecha del evento <span className="text-red-500">*</span>
-            </label>
+          {/* Date */}
+          <div className="flex items-center gap-3 overflow-hidden rounded-2xl bg-white px-4 shadow-soft ring-1 ring-black/5">
+            <Icon name="date" className="h-5 w-5 shrink-0 text-brand-400" />
             <input
               type="date"
               value={formValues.fechaEvento}
@@ -246,14 +336,16 @@ function ViveroEmbolsadoScreen() {
               max={new Date().toISOString().split('T')[0]}
               required
               disabled={step === 'submitting'}
-              className="w-full rounded-2xl bg-white px-4 py-3 text-base font-semibold text-brand-700 shadow-soft ring-1 ring-black/5 outline-none focus:ring-2 focus:ring-brand-300 disabled:opacity-50"
+              className="flex-1 border-none bg-transparent py-4 text-base font-semibold text-brand-700 outline-none disabled:opacity-50"
             />
           </div>
 
+          {/* Photo */}
           <div>
-            <label className="mb-1.5 block text-sm font-bold text-brand-700">
-              Foto del embolsado <span className="text-red-500">*</span>
-            </label>
+            <div className="mb-2 flex items-center gap-2">
+              <p className="text-sm font-bold text-brand-700">Evidencia Fotográfica</p>
+              <span className="text-xs font-extrabold text-red-500">Obligatorio</span>
+            </div>
             <input
               ref={fileInputRef}
               type="file"
@@ -267,7 +359,7 @@ function ViveroEmbolsadoScreen() {
                 <img
                   src={photoPreviewUrl}
                   alt="Vista previa del embolsado"
-                  className="h-48 w-full object-cover"
+                  className="h-52 w-full object-cover"
                 />
                 <button
                   type="button"
@@ -286,26 +378,24 @@ function ViveroEmbolsadoScreen() {
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={step === 'submitting'}
-                className="flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-brand-200 bg-white px-4 py-6 text-brand-500 shadow-soft transition hover:border-brand-300 hover:bg-brand-50 disabled:opacity-50"
+                className="flex h-36 w-full flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-slate-300 bg-white text-slate-400 transition hover:border-brand-300 hover:bg-brand-50 hover:text-brand-500 disabled:opacity-50"
               >
-                <Icon name="photo" className="h-6 w-6" />
-                <span className="text-sm font-semibold">Seleccionar foto (JPG/PNG, máx. 5 MB)</span>
+                <Icon name="photo" className="h-10 w-10" />
+                <span className="text-sm font-semibold">Añadir fotos</span>
               </button>
             )}
           </div>
 
+          {/* Observaciones */}
           <div>
-            <label className="mb-1.5 block text-sm font-bold text-brand-700">
-              Observaciones{' '}
-              <span className="text-xs font-medium text-brand-400">(opcional)</span>
-            </label>
+            <p className="mb-2 text-sm font-bold text-brand-700">Observaciones</p>
             <textarea
               value={formValues.observaciones}
               onChange={(e) => updateForm({ observaciones: e.target.value })}
               maxLength={1000}
-              rows={3}
+              rows={4}
               disabled={step === 'submitting'}
-              placeholder="Condiciones del embolsado, notas relevantes..."
+              placeholder="Acá escribes las notas mientras vas haciendo la recolección"
               className="w-full resize-none rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-brand-700 shadow-soft ring-1 ring-black/5 outline-none placeholder:font-medium placeholder:text-slate-400 focus:ring-2 focus:ring-brand-300 disabled:opacity-50"
             />
           </div>
@@ -319,9 +409,9 @@ function ViveroEmbolsadoScreen() {
           <button
             type="submit"
             disabled={step === 'submitting'}
-            className="w-full rounded-2xl bg-brand-700 py-4 text-base font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-2xl bg-emerald-500 py-4 text-base font-extrabold text-white shadow-soft transition hover:bg-emerald-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {step === 'submitting' ? 'Registrando embolsado...' : 'Registrar Embolsado'}
+            {step === 'submitting' ? 'Registrando...' : 'Confirmar embolsado'}
           </button>
         </form>
       </div>
