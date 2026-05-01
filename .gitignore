@@ -32,3 +32,4 @@ dist-ssr/
 
 # Documentacion/recoleccion-module/*
 # Documentacion/vivero-module/*
+.claude/*
