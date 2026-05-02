@@ -15,7 +15,7 @@ import { isValidYmdDate, validateCantidadInicial } from '../utils/validators'
 
 type UploadPhase = 'idle' | 'uploading' | 'creating'
 
-const VALID_UNITS: UnidadMedidaVivero[] = ['UNIDAD', 'G']
+const VALID_UNITS: UnidadMedidaVivero[] = ['Unidades', 'Gr', 'Kg']
 
 const formatDate = (value?: string) => {
   if (!value) return '--'
@@ -444,6 +444,7 @@ function ViveroNewScreen() {
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-2xl bg-white px-4 py-3 shadow-soft ring-1 ring-black/5">
               <p className="text-xs uppercase tracking-wide text-brand-500">Cantidad inicial</p>
+              {/* TODO: El incremento depende de la unidad canónica, si es gr el incremeto es 0.1 y si es kg el incremento es 1, si es unidades el incremento es 1 */}
               <input
                 type="number"
                 min={0}
