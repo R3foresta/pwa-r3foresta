@@ -85,27 +85,6 @@ function RecoleccionFormUbicacionScreen() {
       : null
   const resolvedSelectedViveroId = selectedViveroId ?? selectedViveroFromName
 
-  const loadPaises = async () => {
-    try {
-      setLoadingPaises(true)
-      setCatalogoError(null)
-      const nextPaises = await UbicacionesService.getPaises()
-      setPaises(nextPaises)
-
-      if (selectedPaisId) {
-        const selectedPais = nextPaises.find((pais) => pais.id === selectedPaisId)
-        if (selectedPais) {
-          setSelectedPaisNombre(selectedPais.nombre)
-        }
-      }
-    } catch (error) {
-      console.error('Error cargando paises:', error)
-      setCatalogoError('No se pudo cargar el catalogo de paises.')
-    } finally {
-      setLoadingPaises(false)
-    }
-  }
-
   const getLocation = () => {
     setLoadingLocation(true)
 
@@ -230,8 +209,43 @@ function RecoleccionFormUbicacionScreen() {
   }
 
   useEffect(() => {
+    let isActive = true
+
+    const loadPaises = async () => {
+      try {
+        setLoadingPaises(true)
+        setCatalogoError(null)
+        const nextPaises = await UbicacionesService.getPaises()
+        if (!isActive) {
+          return
+        }
+
+        setPaises(nextPaises)
+
+        if (selectedPaisId) {
+          const selectedPais = nextPaises.find((pais) => pais.id === selectedPaisId)
+          if (selectedPais) {
+            setSelectedPaisNombre(selectedPais.nombre)
+          }
+        }
+      } catch (error) {
+        if (isActive) {
+          console.error('Error cargando paises:', error)
+          setCatalogoError('No se pudo cargar el catalogo de paises.')
+        }
+      } finally {
+        if (isActive) {
+          setLoadingPaises(false)
+        }
+      }
+    }
+
     void loadPaises()
-  }, [])
+
+    return () => {
+      isActive = false
+    }
+  }, [selectedPaisId])
 
   useEffect(() => {
     if (!latitud && !longitud) {
@@ -240,7 +254,7 @@ function RecoleccionFormUbicacionScreen() {
       }, 0)
       return () => clearTimeout(timer)
     }
-  }, [])
+  }, [latitud, longitud])
 
   useEffect(() => {
     const savedDivisionId = formData?.divisionId ? Number(formData.divisionId) : null
@@ -514,7 +528,9 @@ function RecoleccionFormUbicacionScreen() {
               )}
 
               <div className="space-y-2">
-                <p className="text-sm font-semibold text-brand-700">Almacenamiento</p>
+                <p className="text-sm font-semibold text-brand-700">
+                  Almacenamiento <span className="text-red-500">*</span>
+                </p>
                 {viveroLoading ? (
                   <div className="rounded-2xl bg-brand-50 px-4 py-3 text-sm font-semibold text-brand-600 shadow-soft">
                     Cargando viveros...

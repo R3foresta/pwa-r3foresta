@@ -15,7 +15,7 @@ import { isValidYmdDate, validateCantidadInicial } from '../utils/validators'
 
 type UploadPhase = 'idle' | 'uploading' | 'creating'
 
-const VALID_UNITS: UnidadMedidaVivero[] = ['Unidades', 'Gr', 'Kg']
+const VALID_UNITS: UnidadMedidaVivero[] = ['UNIDAD', 'G']
 
 const formatDate = (value?: string) => {
   if (!value) return '--'

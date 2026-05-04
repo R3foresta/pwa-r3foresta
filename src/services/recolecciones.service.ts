@@ -151,7 +151,7 @@ export interface CreateRecoleccionDto {
   tipo_material: TipoMaterialCanonico
   planta_id: number
   metodo_id: number
-  vivero_id?: number
+  vivero_id: number
   observaciones?: string
   ubicacion: UbicacionCreateInput & {
     fuente?: FuenteUbicacionCanonica
@@ -206,6 +206,36 @@ function isTipoMaterialCanonico(value: string): value is TipoMaterialCanonico {
 
 function isUnidadCanonicaRecoleccion(value: string): value is UnidadCanonicaRecoleccion {
   return value === 'G' || value === 'UNIDAD'
+}
+
+function appendUbicacionToFormData(
+  formData: FormData,
+  ubicacion: NonNullable<UpdateRecoleccionDraftDto['ubicacion']> | CreateRecoleccionDto['ubicacion'],
+) {
+  if (ubicacion.latitud !== undefined) {
+    formData.append('ubicacion[latitud]', String(ubicacion.latitud))
+  }
+  if (ubicacion.longitud !== undefined) {
+    formData.append('ubicacion[longitud]', String(ubicacion.longitud))
+  }
+  if (ubicacion.pais_id !== undefined) {
+    formData.append('ubicacion[pais_id]', String(ubicacion.pais_id))
+  }
+  if (ubicacion.division_id !== undefined) {
+    formData.append('ubicacion[division_id]', String(ubicacion.division_id))
+  }
+  if (ubicacion.nombre?.trim()) {
+    formData.append('ubicacion[nombre]', ubicacion.nombre.trim())
+  }
+  if (ubicacion.referencia?.trim()) {
+    formData.append('ubicacion[referencia]', ubicacion.referencia.trim())
+  }
+  if (ubicacion.precision_m !== undefined) {
+    formData.append('ubicacion[precision_m]', String(ubicacion.precision_m))
+  }
+  if (ubicacion.fuente) {
+    formData.append('ubicacion[fuente]', ubicacion.fuente)
+  }
 }
 
 export class RecoleccionesService {
@@ -379,27 +409,7 @@ export class RecoleccionesService {
     }
 
     const { ubicacion } = data
-    formData.append('ubicacion[latitud]', String(ubicacion.latitud))
-    formData.append('ubicacion[longitud]', String(ubicacion.longitud))
-
-    if (ubicacion.pais_id !== undefined) {
-      formData.append('ubicacion[pais_id]', String(ubicacion.pais_id))
-    }
-    if (ubicacion.division_id !== undefined) {
-      formData.append('ubicacion[division_id]', String(ubicacion.division_id))
-    }
-    if (ubicacion.nombre?.trim()) {
-      formData.append('ubicacion[nombre]', ubicacion.nombre.trim())
-    }
-    if (ubicacion.referencia?.trim()) {
-      formData.append('ubicacion[referencia]', ubicacion.referencia.trim())
-    }
-    if (ubicacion.precision_m !== undefined) {
-      formData.append('ubicacion[precision_m]', String(ubicacion.precision_m))
-    }
-    if (ubicacion.fuente) {
-      formData.append('ubicacion[fuente]', ubicacion.fuente)
-    }
+    appendUbicacionToFormData(formData, ubicacion)
 
     data.fotos.forEach((foto) => {
       formData.append('fotos', foto)
@@ -583,24 +593,26 @@ export class RecoleccionesService {
   }
 
   private static buildDraftPayload(data: UpdateRecoleccionDraftDto, files: File[]) {
-    const sanitizedData: UpdateRecoleccionDraftDto = { ...data }
-    delete sanitizedData.ubicacion
-
-    if (files.length === 0) {
+    if (files.length === 0 && !data.ubicacion) {
       return {
-        body: JSON.stringify(sanitizedData),
+        body: JSON.stringify(data),
         headers: this.getAuthHeadersWithRole(),
       }
     }
 
     this.validateDraftFiles(files)
     const formData = new FormData()
+    const { ubicacion, ...rest } = data
 
-    Object.entries(sanitizedData).forEach(([key, value]) => {
+    Object.entries(rest).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
         formData.append(key, String(value))
       }
     })
+
+    if (ubicacion) {
+      appendUbicacionToFormData(formData, ubicacion)
+    }
 
     files.forEach((file) => {
       formData.append('fotos', file)
@@ -739,11 +751,24 @@ export class RecoleccionesService {
     if (!Number.isFinite(data.metodo_id) || data.metodo_id <= 0) {
       throw new Error('Debes seleccionar un método de recolección válido.')
     }
-    // Validar vivero SOLO si está presente
-    if (data.vivero_id !== undefined) {
-      if (!Number.isFinite(data.vivero_id) || data.vivero_id <= 0) {
-        throw new Error('Debes seleccionar un vivero válido.')
-      }
+    if (!Number.isFinite(data.vivero_id) || data.vivero_id <= 0) {
+      throw new Error('Debes seleccionar un vivero válido.')
+    }
+
+    if (!Number.isFinite(data.ubicacion.pais_id) || Number(data.ubicacion.pais_id) <= 0) {
+      throw new Error('Debes seleccionar un país válido.')
+    }
+
+    if (!Number.isFinite(data.ubicacion.division_id) || Number(data.ubicacion.division_id) <= 0) {
+      throw new Error('Debes seleccionar una comunidad o localidad válida.')
+    }
+
+    if (data.ubicacion.nombre !== undefined && !data.ubicacion.nombre.trim()) {
+      throw new Error('El nombre del punto de recolección no puede enviarse vacío.')
+    }
+
+    if (data.ubicacion.referencia !== undefined && !data.ubicacion.referencia.trim()) {
+      throw new Error('La referencia de ubicación no puede enviarse vacía.')
     }
   }
 }
