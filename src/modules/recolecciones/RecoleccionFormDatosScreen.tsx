@@ -177,30 +177,60 @@ function RecoleccionFormDatosScreen() {
     updateForm,
   ]);
 
+  const validateQuantity = (value: string, requiresInteger: boolean): boolean => {
+    const numericValue = Number(value)
+
+    if (!value || numericValue <= 0) return false
+
+    if (requiresInteger && !Number.isInteger(numericValue)) return false
+
+    return true
+  }
 
 
   const handleContinue = () => {
-    const { errors: validationErrors, isValid } = validateRecoleccionForm(
-      formData, 
-      { dateRange, stage: 'datos' }
-    );
+  const requiresInteger = type === 'cutting' || unit === 'units'
 
-    setErrors({
-      date: Boolean(validationErrors.date),
-      dateRange: Boolean(validationErrors.dateRange),
-      quantity: Boolean(validationErrors.quantity),
-      photos: Boolean(validationErrors.fotos),
-      method: Boolean(validationErrors.method),
-      planta: Boolean(validationErrors.planta),
-    })
-    // 3. Si no es válido (ej. no seleccionó planta), detenemos el flujo
-    if (!isValid) {
-      console.warn('⚠️ Formulario inválido:', validationErrors);
-      return;
-    }
-    
-    navigate('/app/collections/new/location')
+  if (!validateQuantity(quantity, requiresInteger)) {
+    setErrors((prev) => ({
+      ...prev,
+      quantity: true,
+    }))
+    return
   }
+
+  const nextFormData = {
+    ...formData,
+    date,
+    type,
+    quantity,
+    unit,
+    notes,
+  }
+
+  const { errors: validationErrors, isValid } = validateRecoleccionForm(
+    nextFormData,
+    { dateRange, stage: 'datos' }
+  )
+
+  setErrors({
+    date: Boolean(validationErrors.date),
+    dateRange: Boolean(validationErrors.dateRange),
+    quantity: Boolean(validationErrors.quantity),
+    photos: Boolean(validationErrors.fotos),
+    method: Boolean(validationErrors.method),
+    planta: Boolean(validationErrors.planta),
+  })
+
+  if (!isValid) {
+    console.warn('⚠️ Formulario inválido:', validationErrors)
+    return
+  }
+
+  updateForm(nextFormData)
+
+  navigate('/app/collections/new/location')
+}
 
   const hasMinimumPhotos = (formData.totalPhotos?.length || 0) >= 2;
 
@@ -318,7 +348,6 @@ function RecoleccionFormDatosScreen() {
               setQuantity(val);
               setErrors((prev) => ({ ...prev, quantity: false }));
             }}
-            onErrorClear={() => setErrors((prev) => ({ ...prev, quantity: false }))}
           />
           {type === 'seed' ? (
             <div className="flex gap-2 flex-wrap">

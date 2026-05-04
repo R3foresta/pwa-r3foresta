@@ -189,15 +189,6 @@ function RecoleccionesScreen() {
           )}
         </div>
       </div>
-
-      <button
-        type="button"
-        aria-label="Nueva recolección"
-        onClick={() => navigate('/app/collections/new')}
-        className="fixed bottom-24 right-6 mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-brand-500 text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.98]"
-      >
-        <Icon name="plus" className="h-6 w-6" />
-      </button>
     </div>
   )
 }

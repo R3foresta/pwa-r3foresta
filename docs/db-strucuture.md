@@ -22,7 +22,7 @@ erDiagram
     bigint id PK
     bigint pais_id FK
     bigint parent_id FK "self"
-    bigint tipo_id FK
+    bigint tipo_id FK "en MVP la comunidad usa DIVISION_TIPO = Comunidad - Localidad (id 4)"
     text nombre
     text codigo_externo
     boolean activo
@@ -127,8 +127,8 @@ erDiagram
     text nombre_cientifico
     text variedad
     timestamptz created_at
-    text nombre_comun_principal
-    text nombres_comunes
+    text nombre_comun_principal "fuente viva oficial de naming operativo para poblar nombre_comercial_snapshot"
+    text nombres_comunes "fuera de alcance funcional en MVP"
     text imagen_url
     text notas
     int tipo_planta_id FK
@@ -145,7 +145,7 @@ erDiagram
     date fecha
     ENUM(tipo_material_origen) tipo_material
     text nombre_cientifico_snapshot "NOT NULL - snapshot oficial se congela al VALIDAR"
-    text nombre_comercial_snapshot "NOT NULL - naming oficial; snapshot se congela al VALIDAR"
+    text nombre_comercial_snapshot "NOT NULL - snapshot se congela al VALIDAR; en MVP se alimenta desde PLANTA.nombre_comun_principal"
     text variedad_snapshot "NOT NULL - snapshot oficial se congela al VALIDARr"
     text nombre_comunidad_snapshot "NOT NULL - comunidad donde se recolectó; snapshot oficial se congela al VALIDAR"
     text nombre_recolector_snapshot "NOT NULL - snapshot oficial se congela al VALIDAR"
@@ -208,7 +208,7 @@ erDiagram
     bigint vivero_id FK "NOT NULL - vivero operativo seleccionado para este lote, no heredado desde Recolección"
     bigint responsable_id FK "NOT NULL"
     text nombre_cientifico_snapshot "NOT NULL - congelado al crear, heredado desde Recolección"
-    text nombre_comercial_snapshot "NOT NULL - congelado al crear, heredado desde Recolección"
+    text nombre_comercial_snapshot "NOT NULL - congelado al crear, heredado desde Recolección; su fuente original viva en MVP es PLANTA.nombre_comun_principal"
     ENUM(tipo_material_origen) tipo_material_snapshot "NOT NULL - congelado al crear, heredado desde Recolección"
     text variedad_snapshot "NOT NULL - congelado al crear, heredado desde Recolección"
     text nombre_comunidad_origen_snapshot "NOT NULL - congelado al crear y también lo hereda"
@@ -403,11 +403,11 @@ subetapa_adaptabilidad = [SOMBRA, MEDIA_SOMBRA, SOL_DIRECTO]
 
 causa_merma_vivero = [
   PLAGA, ENFERMEDAD, SEQUIA, DANO_FISICO,
-  MUERTE_NATURAL, DESCARTE_CALIDAD, OTRO
+  MUERTE_NATURAL, OTRO
 ]
 
 destino_tipo_vivero = [
-  PLANTACION_PROPIA, DONACION_COMUNIDAD, VENTA, OTRO
+  PLANTACION_PROPIA, PLANTACION_COMUNIDAD, DONACION, VENTA, OTRO
 ]
 
 motivo_cierre_lote = [DESPACHO_TOTAL, PERDIDA_TOTAL, MIXTO]

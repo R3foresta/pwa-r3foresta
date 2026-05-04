@@ -1,127 +1,113 @@
 import type { ViveroLotCardData } from '../types/view-models'
+import DotProgressBar from './DotProgressBar'
 
-const estadoLabel = {
-  ACTIVO: 'Activo',
+const ETAPA_LABEL: Record<string, string> = {
+  INICIO: 'Inicio',
+  EMBOLSADO: 'Embolsado',
+  ADAPTABILIDAD: 'Adaptabilidad',
   FINALIZADO: 'Finalizado',
-} as const
-
-const estadoBadgeStyle = {
-  ACTIVO: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
-  FINALIZADO: { bg: 'bg-slate-50', text: 'text-slate-700', border: 'border-slate-200' },
-} as const
-
-function formatDate(value?: string) {
-  if (!value) return '--'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-function formatQuantity(value: number | null, unit: string) {
-  if (value === null) return 'Pendiente'
-  return `${value} ${unit}`
+const ETAPA_BADGE: Record<string, string> = {
+  INICIO: 'bg-sky-50 text-sky-700 border-sky-200',
+  EMBOLSADO: 'bg-amber-50 text-amber-700 border-amber-200',
+  ADAPTABILIDAD: 'bg-blue-50 text-blue-700 border-blue-200',
+  FINALIZADO: 'bg-slate-50 text-slate-600 border-slate-200',
 }
 
-function getBalanceTone(ratio: number | null): string {
-  if (ratio === null) return 'bg-slate-200'
-  if (ratio >= 70) return 'bg-emerald-300'
-  if (ratio >= 40) return 'bg-amber-300'
-  return 'bg-red-300'
+function getEtapa(lot: ViveroLotCardData): string {
+  if (lot.estadoLote === 'FINALIZADO') return 'FINALIZADO'
+  if (lot.subetapaActual !== null) return 'ADAPTABILIDAD'
+  if (lot.plantasVivasIniciales !== null) return 'EMBOLSADO'
+  return 'INICIO'
 }
 
 type Props = {
   lot: ViveroLotCardData
   onClick?: () => void
+  cta?: { label: string; onClick: () => void }
+  compact?: boolean
 }
 
-function ViveroLotCard({ lot, onClick }: Props) {
-  const badgeTone = estadoBadgeStyle[lot.estadoLote]
-  const isClickable = Boolean(onClick)
-  const baseClass =
-    'w-full rounded-3xl bg-white px-4 py-4 text-left shadow-soft ring-1 ring-black/5'
-  const interactiveClass = isClickable ? ' transition hover:-translate-y-[2px] hover:shadow-md' : ''
-  const wrapperClassName = `${baseClass}${interactiveClass}`
+function ViveroLotCard({ lot, onClick, cta, compact }: Props) {
+  const etapa = getEtapa(lot)
+  const badgeClass = ETAPA_BADGE[etapa] ?? ETAPA_BADGE.INICIO
 
-  const progressRatio =
-    lot.cantidadActual !== null && lot.cantidadInicial > 0
-      ? Math.max(0, Math.min(100, Math.round((lot.cantidadActual / lot.cantidadInicial) * 100)))
-      : null
-
-  const content = (
-    <>
-      <div className="flex items-start justify-between gap-3">
-        <div className="space-y-1">
-          <h2 className="text-xl font-extrabold leading-tight">{lot.especie}</h2>
-          <p className="text-sm font-semibold text-brand-500">{lot.codigo}</p>
+  if (compact) {
+    const Wrapper = onClick ? 'button' : 'div'
+    return (
+      <Wrapper
+        {...(onClick ? { type: 'button' as const, onClick } : {})}
+        className="flex w-full items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3 text-left shadow-soft ring-1 ring-black/5 transition hover:shadow-md"
+      >
+        <div className="min-w-0">
+          <p className="truncate text-sm font-bold text-brand-700">{lot.especie}</p>
+          <p className="text-xs font-semibold text-brand-500">
+            {lot.codigo} · {lot.diasDesdeInicio}d · {lot.vivero}
+          </p>
         </div>
         <span
-          className={`whitespace-nowrap rounded-full border px-3 py-1 text-[11px] font-semibold ${badgeTone.bg} ${badgeTone.text} ${badgeTone.border}`}
+          className={`shrink-0 rounded-full border px-2.5 py-0.5 text-[10px] font-semibold ${badgeClass}`}
         >
-          {estadoLabel[lot.estadoLote]}
+          {ETAPA_LABEL[etapa]}
         </span>
-      </div>
-
-      <div className="mt-4 grid grid-cols-2 gap-3 text-sm font-semibold text-brand-600">
-        <div className="rounded-2xl bg-brand-50 px-3 py-3">
-          <p className="text-xs uppercase tracking-wide text-brand-500">Cantidad inicial</p>
-          <p className="mt-1 text-2xl font-extrabold text-brand-700">
-            {lot.cantidadInicial} {lot.unidadMedida}
-          </p>
-        </div>
-        <div className="rounded-2xl bg-brand-50 px-3 py-3">
-          <p className="text-xs uppercase tracking-wide text-brand-500">Días desde inicio</p>
-          <p className="mt-1 text-2xl font-extrabold text-brand-700">{lot.diasDesdeInicio}</p>
-        </div>
-        <div className="rounded-2xl bg-white px-3 py-3 ring-1 ring-brand-100">
-          <p className="text-xs uppercase tracking-wide text-brand-500">Saldo vivo actual</p>
-          <p className="mt-1 text-xl font-extrabold text-brand-700">
-            {formatQuantity(lot.cantidadActual, lot.unidadMedida)}
-          </p>
-        </div>
-        <div className="rounded-2xl bg-white px-3 py-3 ring-1 ring-brand-100">
-          <p className="text-xs uppercase tracking-wide text-brand-500">Subetapa</p>
-          <p className="mt-1 text-xl font-extrabold text-brand-700">
-            {lot.subetapaActual ?? 'Sin definir'}
-          </p>
-        </div>
-      </div>
-
-      <div className="mt-4 space-y-2">
-        <p className="text-sm font-semibold text-brand-700">
-          Balance vivo {progressRatio === null ? '(pendiente)' : `(${progressRatio}%)`}:
-        </p>
-        <div className="flex h-3 w-full overflow-hidden rounded-full bg-brand-50 ring-1 ring-black/5">
-          <div
-            className={`h-full ${getBalanceTone(progressRatio)}`}
-            style={{ width: `${progressRatio ?? 0}%` }}
-          />
-          <div className="h-full bg-slate-200" style={{ width: `${100 - (progressRatio ?? 0)}%` }} />
-        </div>
-      </div>
-
-      <div className="mt-4 grid grid-cols-3 gap-2 text-xs font-semibold text-brand-700">
-        <span className="flex items-center justify-center rounded-full bg-white px-3 py-2 shadow-sm ring-1 ring-brand-100">
-          {lot.fuente === 'SEMILLA' ? 'Semilla' : 'Esqueje'}
-        </span>
-        <span className="flex items-center justify-center rounded-full bg-white px-3 py-2 shadow-sm ring-1 ring-brand-100">
-          {formatDate(lot.fechaInicio)}
-        </span>
-        <span className="flex items-center justify-center rounded-full bg-white px-3 py-2 shadow-sm ring-1 ring-brand-100">
-          {lot.vivero}
-        </span>
-      </div>
-    </>
-  )
-
-  if (isClickable) {
-    return (
-      <button type="button" onClick={onClick} className={wrapperClassName}>
-        {content}
-      </button>
+      </Wrapper>
     )
   }
 
-  return <div className={wrapperClassName}>{content}</div>
+  return (
+    <div className="w-full rounded-3xl bg-white shadow-soft ring-1 ring-black/5">
+      <button
+        type="button"
+        onClick={onClick}
+        className={`w-full px-4 pt-4 text-left ${cta ? 'pb-3' : 'pb-4'} ${onClick ? 'transition hover:-translate-y-[2px] hover:shadow-md' : ''}`}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 space-y-0.5">
+            <h2 className="truncate text-xl font-extrabold leading-tight text-brand-700">
+              {lot.especie}
+            </h2>
+            <p className="text-sm font-semibold text-brand-500">{lot.codigo}</p>
+          </div>
+          <span
+            className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${badgeClass}`}
+          >
+            {ETAPA_LABEL[etapa]}
+            {lot.subetapaActual ? ` · ${lot.subetapaActual.replace('_', ' ')}` : ''}
+          </span>
+        </div>
+
+        <div className="mt-3 flex items-end justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold text-brand-500">
+              {lot.cantidadActual !== null
+                ? `${lot.cantidadActual} / ${lot.cantidadInicial} ${lot.unidadMedida}`
+                : `${lot.cantidadInicial} ${lot.unidadMedida} iniciales`}
+            </p>
+            <p className="text-xs font-semibold text-brand-400">
+              {lot.vivero} · {lot.diasDesdeInicio}d
+            </p>
+          </div>
+          <DotProgressBar value={lot.cantidadActual} total={lot.cantidadInicial} />
+        </div>
+      </button>
+
+      {cta && (
+        <div className="px-4 pb-4">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              cta.onClick()
+            }}
+            className="w-full rounded-2xl bg-brand-700 py-3 text-sm font-extrabold text-white transition hover:bg-brand-600 active:scale-[0.98]"
+          >
+            {cta.label}
+          </button>
+        </div>
+      )}
+    </div>
+  )
 }
 
 export default ViveroLotCard

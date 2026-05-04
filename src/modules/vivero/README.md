@@ -13,6 +13,12 @@ src/modules/vivero/
   types/             # Tipos y contratos del dominio vivero
   utils/             # Helpers especificos del modulo (fechas, estados, saldo, filtros)
   index.ts           # Barrel publico del modulo
+
+src/api/
+  lotes-vivero.api.ts # Capa HTTP pura (sin reglas de negocio)
+
+src/services/
+  lotes-vivero.service.ts # Caso de uso (orquesta filtros, parseo y mappers)
 ```
 
 ## Reglas de mantenimiento
@@ -23,6 +29,7 @@ src/modules/vivero/
 4. Componentes reutilizables se promueven a `src/components` solo si son cross-modulo.
 5. Mientras backend no habilite timeline/eventos completos, mantener placeholders en UI pero no acoplar mocks dentro de `screens/`.
 6. Los filtros por etapa se construyen en dos niveles: pre-filtro backend (`estado_lote`) y post-filtro local (`utils/stageFilters.ts`) para mantener consistencia de UX.
+7. Los hooks no deben conocer detalles de consulta backend; consumen solo métodos de service y exponen `refetch`.
 
 ## Siguiente paso recomendado
 
