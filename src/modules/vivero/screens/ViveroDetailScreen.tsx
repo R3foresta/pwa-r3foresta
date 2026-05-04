@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import Icon from '../../../components/Icon'
 import type { IconName } from '../../../components/Icon'
 import { LotesViveroService } from '../../../services/lotes-vivero.service'
-import CollapsibleSection from '../components/CollapsibleSection'
+import CollapsibleSection from '../components/CollapsibleSection';
 import StageTimeline from '../components/StageTimeline'
 import type { StageTimelineItem } from '../components/StageTimeline'
 import { mapLoteToDetailView } from '../mappers/lote.mapper'

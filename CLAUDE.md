@@ -95,3 +95,12 @@ Unimplemented routes (`/app/planting`, `/app/co2`, `/app/scan`) render `<Placeho
 Two modules have detailed architecture docs worth reading before modifying them:
 - [src/modules/vivero/README.md](src/modules/vivero/README.md) — layer responsibilities, maintenance rules, next steps
 - [src/modules/user_profile/README.md](src/modules/user_profile/README.md) — complete-profile flow, API contracts, validation, auth state machine
+
+## Other reference docs
+
+Top-level docs that are not loaded automatically but are authoritative when relevant:
+- [AGENTS.md](AGENTS.md) — agent workflow rules, what to read before coding, what not to break
+- [FRONTEND_GUIDE.md](FRONTEND_GUIDE.md) — frontend patterns, conventions, do/don't list
+- [FRONTEND_AUDIT.md](FRONTEND_AUDIT.md) — known tech debt and refactor targets (consult for cleanup tasks)
+- [DOMAIN_INDEX.md](DOMAIN_INDEX.md) — domain glossary and entity reference
+- [README.md](README.md) — DB ER diagram (Mermaid) for the backend schema; otherwise default Vite template
