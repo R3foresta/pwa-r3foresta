@@ -416,6 +416,7 @@ Mantener esta tabla actualizada.
 | ID | Severidad | Estado | Módulo | Tipo | Resumen | Ubicación |
 |---|---|---|---|---|---|---|
 | AUD-001 | `MEDIA` | `PENDIENTE` | `general` | `deuda` | Primera auditoría pendiente contra repo real. | `frontend/` |
+| AUD-002 | `ALTA` | `PENDIENTE` | `general` | `testing` | `build` no pasa por errores de TypeScript en módulos ajenos a Recolección. | `src/modules/recolecciones/components/CantidadInput.tsx`, `src/modules/vivero/screens/ViveroNewScreen.tsx` |
 
 ---
 
@@ -457,6 +458,36 @@ Cada módulo debe quedar marcado como `BIEN`, `MEJORABLE`, `RIESGO` o `CRITICO` 
 #### Notas
 
 Actualizar este hallazgo después de la primera revisión real.
+
+### AUD-002 — Build roto por errores de TypeScript fuera del flujo corregido
+
+- Estado: `PENDIENTE`
+- Severidad: `ALTA`
+- Módulo: `general`
+- Ubicación: `src/modules/recolecciones/components/CantidadInput.tsx`, `src/modules/vivero/screens/ViveroNewScreen.tsx`
+- Tipo: `testing`
+- Detectado por: `IA`
+- Fecha: `2026-05-04`
+
+#### Problema
+
+La verificación con `npm run build` falla por errores de TypeScript preexistentes fuera de los archivos corregidos en esta tarea.
+
+#### Riesgo
+
+El frontend no tiene una señal global limpia de compilación, lo que dificulta cerrar tareas con confianza y puede ocultar regresiones reales.
+
+#### Acción sugerida
+
+Corregir primero los errores de `CantidadInput.tsx` relacionados con `onErrorClear` y luego normalizar las unidades inválidas en `ViveroNewScreen.tsx`.
+
+#### Verificación esperada
+
+`npm run build` debe completar sin errores.
+
+#### Notas
+
+Durante esta tarea se verificó que los archivos modificados del flujo de Recolección pasan `eslint` focalizado; el bloqueo actual viene de deuda previa del repo.
 
 ---
 

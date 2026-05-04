@@ -40,7 +40,7 @@ function sanitizeQuantity(value: string, tipo: MaterialType, unidad: Unit): stri
 }
 
 
-function CantidadInput({ value, tipoMaterial, unidad, error, onChange, onErrorClear }: Props) {
+function CantidadInput({ value, tipoMaterial, unidad, error, onChange}: Props) {
   const requiresInteger = tipoMaterial === 'cutting' || unidad === 'units'
 
   const handleInput = (next: string) => {
