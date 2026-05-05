@@ -3,7 +3,10 @@ import {
   getEmbolsadoApi,
   getEmbolsadoContextApi,
   listLotesViveroApi,
+  registrarAdaptabilidadApi,
+  registrarDespachoApi,
   registrarEmbolsadoApi,
+  registrarMermaApi,
   uploadEvidenciasEmbolsadoApi,
   uploadEvidenciasPendientesViveroApi,
 } from '../api/lotes-vivero.api'
@@ -19,8 +22,12 @@ import type {
   ListLotesViveroResponse,
   LoteViveroItem,
   ObtenerEmbolsadoResponse,
+  RegistrarAdaptabilidadRequest,
+  RegistrarDespachoRequest,
   RegistrarEmbolsadoRequest,
   RegistrarEmbolsadoResponse,
+  RegistrarEventoGenericoResponse,
+  RegistrarMermaRequest,
   UploadEvidenciasPendientesInput,
   UploadEvidenciasPendientesResponse,
   UploadEvidenciasEmbolsadoInput,
@@ -259,6 +266,42 @@ export class LotesViveroService {
     return this.parseJsonResponse<ObtenerEmbolsadoResponse>(
       response,
       'Error al obtener el embolsado registrado.',
+    )
+  }
+
+  static async registrarAdaptabilidad(
+    loteId: number,
+    input: RegistrarAdaptabilidadRequest,
+    authId?: string,
+  ): Promise<RegistrarEventoGenericoResponse> {
+    const response = await registrarAdaptabilidadApi(loteId, input, authId)
+    return this.parseJsonResponse<RegistrarEventoGenericoResponse>(
+      response,
+      'Error al registrar la adaptabilidad.',
+    )
+  }
+
+  static async registrarMerma(
+    loteId: number,
+    input: RegistrarMermaRequest,
+    authId?: string,
+  ): Promise<RegistrarEventoGenericoResponse> {
+    const response = await registrarMermaApi(loteId, input, authId)
+    return this.parseJsonResponse<RegistrarEventoGenericoResponse>(
+      response,
+      'Error al registrar la merma.',
+    )
+  }
+
+  static async registrarDespacho(
+    loteId: number,
+    input: RegistrarDespachoRequest,
+    authId?: string,
+  ): Promise<RegistrarEventoGenericoResponse> {
+    const response = await registrarDespachoApi(loteId, input, authId)
+    return this.parseJsonResponse<RegistrarEventoGenericoResponse>(
+      response,
+      'Error al registrar el despacho.',
     )
   }
 }

@@ -286,3 +286,56 @@ export interface UploadEvidenciasEmbolsadoInput {
   tomado_en?: string
   es_principal?: boolean
 }
+
+// ─── Adaptabilidad / Merma / Despacho ──────────────────────────────────────────
+
+export type CausaMermaVivero =
+  | 'PLAGA'
+  | 'ENFERMEDAD'
+  | 'SEQUIA'
+  | 'DANO_FISICO'
+  | 'MUERTE_NATURAL'
+  | 'DESCARTE_CALIDAD'
+  | 'OTRO'
+
+export type DestinoTipoVivero =
+  | 'PLANTACION_PROPIA'
+  | 'DONACION_COMUNIDAD'
+  | 'VENTA'
+  | 'OTRO'
+
+export interface RegistrarAdaptabilidadRequest {
+  fecha_evento: string
+  subetapa_destino: SubetapaAdaptabilidad
+  observaciones?: string
+}
+
+export interface RegistrarMermaRequest {
+  fecha_evento: string
+  cantidad_afectada: number
+  causa_merma: CausaMermaVivero
+  observaciones?: string
+}
+
+export interface RegistrarDespachoRequest {
+  fecha_evento: string
+  cantidad_afectada: number
+  destino_tipo: DestinoTipoVivero
+  destino_referencia: string
+  comunidad_destino_id?: number
+  observaciones?: string
+}
+
+export interface RegistrarEventoGenericoResult {
+  evento_id: number
+  lote_vivero_id: number
+  saldo_vivo_antes: number | null
+  saldo_vivo_despues: number | null
+  lote_finalizado?: boolean
+  motivo_cierre?: MotivoCierreVivero | null
+}
+
+export interface RegistrarEventoGenericoResponse {
+  success: true
+  data: RegistrarEventoGenericoResult
+}

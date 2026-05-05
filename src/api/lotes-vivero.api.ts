@@ -1,7 +1,10 @@
 import type {
   CreateLoteViveroInput,
   ListLotesViveroQuery,
+  RegistrarAdaptabilidadRequest,
+  RegistrarDespachoRequest,
   RegistrarEmbolsadoRequest,
+  RegistrarMermaRequest,
   UploadEvidenciasPendientesInput,
   UploadEvidenciasEmbolsadoInput,
 } from '../modules/vivero/types/contracts'
@@ -141,5 +144,41 @@ export async function getEmbolsadoApi(loteId: number): Promise<Response> {
   return fetch(`${API_BASE_URL}/lotes-vivero/${loteId}/embolsado`, {
     method: 'GET',
     headers: getAuthHeaders({ includeContentType: false }),
+  })
+}
+
+export async function registrarAdaptabilidadApi(
+  loteId: number,
+  input: RegistrarAdaptabilidadRequest,
+  authId?: string,
+): Promise<Response> {
+  return fetch(`${API_BASE_URL}/lotes-vivero/${loteId}/adaptabilidad`, {
+    method: 'POST',
+    headers: getAuthHeaders({ authId, includeContentType: true }),
+    body: JSON.stringify(input),
+  })
+}
+
+export async function registrarMermaApi(
+  loteId: number,
+  input: RegistrarMermaRequest,
+  authId?: string,
+): Promise<Response> {
+  return fetch(`${API_BASE_URL}/lotes-vivero/${loteId}/merma`, {
+    method: 'POST',
+    headers: getAuthHeaders({ authId, includeContentType: true }),
+    body: JSON.stringify(input),
+  })
+}
+
+export async function registrarDespachoApi(
+  loteId: number,
+  input: RegistrarDespachoRequest,
+  authId?: string,
+): Promise<Response> {
+  return fetch(`${API_BASE_URL}/lotes-vivero/${loteId}/despacho`, {
+    method: 'POST',
+    headers: getAuthHeaders({ authId, includeContentType: true }),
+    body: JSON.stringify(input),
   })
 }

@@ -22,6 +22,7 @@ import { useAuth } from './contexts/AuthContext'
 import {
   ViveroDetailScreen,
   ViveroEmbolsadoScreen,
+  ViveroEventScreen,
   ViveroNewScreen,
   ViveroScreen,
 } from './modules/vivero'
@@ -97,7 +98,9 @@ function App() {
             <Route index element={<ViveroScreen />} />
             <Route path="new" element={<ViveroNewScreen />} />
             <Route path=":id" element={<ViveroDetailScreen />} />
+            <Route path=":id/event" element={<Navigate to="embolsado" replace />} />
             <Route path=":id/event/new" element={<ViveroEmbolsadoScreen />} />
+            <Route path=":id/event/:tipo" element={<ViveroEventScreen />} />
             <Route
               path=":id/update"
               element={<PlaceholderScreen title="Actualizar lote de vivero" />}
