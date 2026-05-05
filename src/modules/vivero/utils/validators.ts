@@ -21,8 +21,8 @@ export function countDecimals(value: number): number {
   return text.split('.')[1]?.length ?? 0
 }
 
-export function hasUpToSixDecimals(value: number): boolean {
-  return countDecimals(value) <= 6
+export function hasUpToOneDecimal(value: number): boolean {
+  return countDecimals(value) <= 1
 }
 
 export function isPositiveNumber(value: number): boolean {
@@ -53,8 +53,9 @@ export function validateCantidadInicial(options: {
   cantidad: number
   unidad: UnidadMedidaVivero
   recoleccionTipoMaterial: TipoMaterialVivero
+  maxCantidad?: number | null
 }): CantidadValidationResult {
-  const { cantidad, unidad, recoleccionTipoMaterial } = options
+  const { cantidad, unidad, recoleccionTipoMaterial, maxCantidad } = options
 
   if (!isPositiveNumber(cantidad)) {
     return {
@@ -63,10 +64,10 @@ export function validateCantidadInicial(options: {
     }
   }
 
-  if (!hasUpToSixDecimals(cantidad)) {
+  if (unidad === 'G' && !hasUpToOneDecimal(cantidad)) {
     return {
       isValid: false,
-      message: 'La cantidad inicial admite máximo 6 decimales.',
+      message: 'Cuando la unidad es G, la cantidad admite máximo 1 decimal.',
     }
   }
 
@@ -81,6 +82,13 @@ export function validateCantidadInicial(options: {
     return {
       isValid: false,
       message: 'Las recolecciones de ESQUEJE solo permiten unidad UNIDAD.',
+    }
+  }
+
+  if (typeof maxCantidad === 'number' && Number.isFinite(maxCantidad) && cantidad > maxCantidad) {
+    return {
+      isValid: false,
+      message: `La cantidad no puede superar el saldo disponible (${maxCantidad} ${unidad}).`,
     }
   }
 

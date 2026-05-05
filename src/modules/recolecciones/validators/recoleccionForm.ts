@@ -18,6 +18,9 @@ export type ValidationErrors = {
   tipoMaterial?: string
   ubicacion?: string
   planta?: string
+  vivero?: string
+  pais?: string
+  division?: string
 }
 
 export function validateRecoleccionForm(
@@ -66,9 +69,20 @@ export function validateRecoleccionForm(
   }
 
   if (options.stage !== 'datos') {
-    // Ubicación mínima: lat/long y país/división opcionales ya capturados en form
     if (!form.latitud?.trim() || !form.longitud?.trim()) {
       errors.ubicacion = 'Completa latitud y longitud'
+    }
+
+    if (!form.paisId?.trim()) {
+      errors.pais = 'Selecciona un país'
+    }
+
+    if (!form.divisionId?.trim()) {
+      errors.division = 'Selecciona una comunidad o localidad'
+    }
+
+    if (!form.vivero_id) {
+      errors.vivero = 'Selecciona un vivero'
     }
   }
 
@@ -86,18 +100,17 @@ export function mapFormToCreateDto(form: RecoleccionFormData): CreateRecoleccion
     cantidad_inicial_canonica,
     unidad_canonica,
     tipo_material,
-    // Eliminamos los ": 1" y convertimos directamente:
     planta_id: Number(form.planta_id), 
     metodo_id: Number(form.metodo_id),
-    vivero_id: form.vivero_id ? Number(form.vivero_id) : undefined, //  puede ser opcional según el contexto
+    vivero_id: Number(form.vivero_id),
     observaciones: form.notes || undefined,
     ubicacion: {
       nombre: form.ubicacionNombre || undefined,
       referencia: form.referencia || undefined,
       latitud: Number(form.latitud),
       longitud: Number(form.longitud),
-      pais_id: form.paisId ? Number(form.paisId) : 1,
-      division_id: form.divisionId ? Number(form.divisionId) : 1,
+      pais_id: form.paisId ? Number(form.paisId) : undefined,
+      division_id: form.divisionId ? Number(form.divisionId) : undefined,
       precision_m: form.precisionM ? Number(form.precisionM) : undefined,
       fuente: form.fuenteUbicacion,
     },

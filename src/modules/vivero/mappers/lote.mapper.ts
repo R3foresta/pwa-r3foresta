@@ -30,6 +30,7 @@ export function mapLoteToCardData(lot: LoteViveroItem): ViveroLotCardData {
     fuente: lot.tipo_material_snapshot ?? lot.recoleccion?.tipo_material ?? 'SEMILLA',
     estadoLote: lot.estado_lote,
     subetapaActual: lot.subetapa_actual ?? null,
+    plantasVivasIniciales: lot.plantas_vivas_iniciales,
     fechaInicio: lot.fecha_inicio,
     diasDesdeInicio: daysBetween(lot.fecha_inicio),
     cantidadInicial: lot.cantidad_inicial_en_proceso,

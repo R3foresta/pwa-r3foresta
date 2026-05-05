@@ -12,6 +12,7 @@ export interface ViveroLotCardData {
   fuente: TipoMaterialVivero
   estadoLote: EstadoLoteVivero
   subetapaActual: SubetapaAdaptabilidad | null
+  plantasVivasIniciales: number | null
   fechaInicio: string
   diasDesdeInicio: number
   cantidadInicial: number

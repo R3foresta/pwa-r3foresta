@@ -19,7 +19,13 @@ import LoginScreen from './modules/auth/LoginScreen'
 import RegisterScreen from './modules/auth/RegisterScreen'
 import RecoverScreen from './modules/auth/RecoverScreen'
 import { useAuth } from './contexts/AuthContext'
-import { ViveroDetailScreen, ViveroNewScreen, ViveroScreen } from './modules/vivero'
+import {
+  ViveroDetailScreen,
+  ViveroEmbolsadoScreen,
+  ViveroEventScreen,
+  ViveroNewScreen,
+  ViveroScreen,
+} from './modules/vivero'
 import MapScreen from './modules/map/MapScreen'
 import { CompleteProfileScreen, PerfilScreen } from './modules/user_profile'
 import ComunidadesScreen from './modules/comunidades/ComunidadesScreen'
@@ -92,10 +98,9 @@ function App() {
             <Route index element={<ViveroScreen />} />
             <Route path="new" element={<ViveroNewScreen />} />
             <Route path=":id" element={<ViveroDetailScreen />} />
-            <Route
-              path=":id/event/new"
-              element={<PlaceholderScreen title="Registrar evento de vivero" />}
-            />
+            <Route path=":id/event" element={<Navigate to="embolsado" replace />} />
+            <Route path=":id/event/new" element={<ViveroEmbolsadoScreen />} />
+            <Route path=":id/event/:tipo" element={<ViveroEventScreen />} />
             <Route
               path=":id/update"
               element={<PlaceholderScreen title="Actualizar lote de vivero" />}

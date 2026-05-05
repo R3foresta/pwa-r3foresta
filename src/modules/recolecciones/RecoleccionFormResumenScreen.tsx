@@ -39,21 +39,32 @@ function RecoleccionFormResumenScreen() {
   const { formData, resetForm } = useRecoleccionForm();
   const { user } = useAuth();
   const [showSuccess, setShowSuccess] = useState(false);
+  const [successMode, setSuccessMode] = useState<'borrador' | 'validacion' | null>(null);
   const [loadingType, setLoadingType] = useState<'borrador' | 'validacion' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [newDraftFiles, setNewDraftFiles] = useState<File[]>([]);
   const [newDraftPreviewUrls, setNewDraftPreviewUrls] = useState<string[]>([]);
   const dateRange = useMemo(() => buildPastRange(MAX_DIAS_RECOLECCION), []);
-  const [traceabilityCode] = useState(() => 
-    `REC-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`
-  );
   const typeLabel = formData.type === 'seed' ? 'Semilla' : 'Esqueje';
-  const unitLabel = formData.unit === 'kg' ? 'kg' : 'unidades';
-  const summaryText = `${formData.quantity} ${unitLabel} de ${formData.species || typeLabel}`;
-
-  const userRol = (user?.rol ?? '').toUpperCase();
-  const canSubmitForValidation = userRol === 'GENERAL';
+  const unitLabel = formData.unit === 'kg' ? 'kg' : formData.unit === 'g' ? 'g' : 'unidades';
+  const commercialName = formData.nombre_comercial || formData.species || 'Especie seleccionada';
+  const scientificName = formData.nombre_cientifico || 'No disponible';
+  const summaryText = `${formData.quantity} ${unitLabel} de ${commercialName}`;
   const isEditMode = Boolean(formData.editId);
+  const datosRoute = isEditMode && formData.editId
+    ? `/app/collections/new?editId=${formData.editId}`
+    : '/app/collections/new';
+  const ubicacionRoute = isEditMode && formData.editId
+    ? `/app/collections/new/location?editId=${formData.editId}`
+    : '/app/collections/new/location';
+  const successTitle =
+    successMode === 'validacion'
+      ? 'Recolección enviada a validación'
+      : 'Borrador guardado';
+  const successDescription =
+    successMode === 'validacion'
+      ? 'El registro quedó pendiente de revisión.'
+      : 'Puedes volver luego para completarlo o enviarlo a validación.';
 
   useEffect(() => {
     const urls = newDraftFiles.map((file) => URL.createObjectURL(file));
@@ -105,6 +116,11 @@ function RecoleccionFormResumenScreen() {
     navigate('/app/collections');
   };
 
+  const startNewCollection = () => {
+    resetForm();
+    navigate('/app/collections/new');
+  };
+
   const handleGuardar = async (enviarAValidacion: boolean) => {
     setLoadingType(enviarAValidacion ? 'validacion' : 'borrador');
     setError(null);
@@ -131,6 +147,16 @@ function RecoleccionFormResumenScreen() {
           vivero_id: formData.vivero_id,
           metodo_id: formData.metodo_id,
           planta_id: formData.planta_id,
+          ubicacion: {
+            nombre: formData.ubicacionNombre || undefined,
+            referencia: formData.referencia || undefined,
+            latitud: Number(formData.latitud),
+            longitud: Number(formData.longitud),
+            pais_id: formData.paisId ? Number(formData.paisId) : undefined,
+            division_id: formData.divisionId ? Number(formData.divisionId) : undefined,
+            precision_m: formData.precisionM ? Number(formData.precisionM) : undefined,
+            fuente: formData.fuenteUbicacion,
+          },
         };
 
         const currentPhotos = [...(formData.placePhotos || []), ...(formData.totalPhotos || [])];
@@ -170,9 +196,11 @@ function RecoleccionFormResumenScreen() {
       }
 
       setNewDraftFiles([]);
+      setSuccessMode(enviarAValidacion ? 'validacion' : 'borrador');
       setShowSuccess(true);
     } catch (err) {
       console.error('❌ Error al guardar recolección:', err);
+      setSuccessMode(null);
       setError(err instanceof Error ? err.message : 'Error desconocido al crear recolección');
     } finally {
       setLoadingType(null);
@@ -186,7 +214,7 @@ function RecoleccionFormResumenScreen() {
           <button
             type="button"
             aria-label="Volver"
-            onClick={() => navigate('/app/collections/new/location')}
+            onClick={() => navigate(ubicacionRoute)}
             className="mr-4 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
           >
             <Icon name="arrow-left" className="h-5 w-5" />
@@ -208,6 +236,7 @@ function RecoleccionFormResumenScreen() {
             </p>
             <button
               type="button"
+              onClick={() => navigate(datosRoute)}
               className="text-sm font-semibold text-slate-500 underline"
             >
               Revisar datos
@@ -257,8 +286,12 @@ function RecoleccionFormResumenScreen() {
                   <span className="font-bold text-slate-800">{typeLabel}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="font-semibold text-slate-600">Especie:</span>
-                  <span className="font-bold text-slate-800">{formData.species || 'No especificada'}</span>
+                  <span className="font-semibold text-slate-600">Nombre comercial:</span>
+                  <span className="ml-4 text-right font-bold text-slate-800">{commercialName}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="font-semibold text-slate-600">Nombre científico:</span>
+                  <span className="ml-4 text-right font-bold italic text-slate-800">{scientificName}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="font-semibold text-slate-600">Cantidad:</span>
@@ -360,11 +393,6 @@ function RecoleccionFormResumenScreen() {
                   Ubicación
                 </h3>
               </div>
-              {isEditMode && (
-                <p className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 border border-amber-200">
-                  La ubicación no puede modificarse al editar un borrador. Si necesitas cambiarla, crea una nueva recolección.
-                </p>
-              )}
               <div className="space-y-2">
                 {formData.ubicacionNombre && (
                   <div className="flex justify-between text-sm">
@@ -415,31 +443,18 @@ function RecoleccionFormResumenScreen() {
               </div>
             </div>
 
-            {/* Código de Trazabilidad */}
+            {/* Trazabilidad */}
             <div className="rounded-2xl bg-white px-4 py-4 shadow-soft">
               <div className="mb-3 flex items-center gap-2">
                 <Icon name="qr" className="h-5 w-5 text-brand-500" />
                 <h3 className="text-base font-extrabold text-brand-700">
-                  Código de Trazabilidad
+                  Trazabilidad
                 </h3>
               </div>
-              <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
-                <span className="font-bold text-slate-800">
-                  {traceabilityCode || 'Se generará al confirmar'}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (traceabilityCode) {
-                      navigator.clipboard.writeText(traceabilityCode);
-                      alert('Código copiado al portapapeles');
-                    }
-                  }}
-                  disabled={!traceabilityCode}
-                  className="text-xs font-semibold text-slate-400 underline hover:text-slate-600"
-                >
-                  Copiar
-                </button>
+              <div className="rounded-xl bg-slate-50 px-4 py-3">
+                <p className="text-sm font-semibold text-slate-700">
+                  El código de trazabilidad oficial se asignará automáticamente después de guardar la recolección.
+                </p>
               </div>
             </div>
 
@@ -475,61 +490,44 @@ function RecoleccionFormResumenScreen() {
                 <div className="flex items-start gap-3">
                   <Icon name="info" className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
                   <div className="flex-1">
-                    <h3 className="text-sm font-extrabold text-red-900 mb-1">Error al crear recolección</h3>
+                    <h3 className="text-sm font-extrabold text-red-900 mb-1">No se pudo completar la acción</h3>
                     <p className="text-xs font-semibold text-red-700">{error}</p>
                   </div>
                 </div>
               </div>
             )}
 
-            {canSubmitForValidation ? (
-              /* GENERAL → dos botones (enviar a validación / guardar borrador) */
-              <div className="flex flex-col gap-3">
-                <button
-                  type="button"
-                  onClick={() => void handleGuardar(true)}
-                  disabled={loadingType !== null}
-                  className="w-full rounded-2xl bg-brand-500 py-4 text-center text-lg font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-3"
-                >
-                  {loadingType === 'validacion' ? (
-                    <>
-                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
-                      <span>Enviando a validación...</span>
-                    </>
-                  ) : (
-                    'Enviar a Validación'
-                  )}
-                </button>
+            <div className="rounded-2xl border border-brand-100 bg-brand-50 px-4 py-3">
+              <p className="text-sm font-semibold text-brand-700">
+                Puedes guardar este registro como borrador o enviarlo directamente a validación cuando esté listo.
+              </p>
+            </div>
 
-                <button
-                  type="button"
-                  onClick={() => void handleGuardar(false)}
-                  disabled={loadingType !== null}
-                  className="w-full rounded-2xl border-2 border-brand-500 bg-white py-4 text-center text-lg font-extrabold text-brand-600 shadow-soft transition hover:bg-brand-50 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-3"
-                >
-                  {loadingType === 'borrador' ? (
-                    <>
-                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
-                      <span>Guardando borrador...</span>
-                    </>
-                  ) : (
-                    'Guardar Borrador'
-                  )}
-                </button>
-              </div>
-            ) : (
-              /* ADMIN / VALIDADOR / VOLUNTARIO → botón único, solo crea sin enviar a validación */
+            <div className="flex flex-col gap-3">
+              <button
+                type="button"
+                onClick={() => void handleGuardar(true)}
+                disabled={loadingType !== null}
+                className="w-full rounded-2xl bg-brand-500 py-4 text-center text-lg font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+              >
+                {loadingType === 'validacion' ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    <span>Enviando a validación...</span>
+                  </>
+                ) : (
+                  'Enviar a Validación'
+                )}
+              </button>
+
               <button
                 type="button"
                 onClick={() => void handleGuardar(false)}
                 disabled={loadingType !== null}
-                className="w-full rounded-2xl bg-brand-500 py-4 text-center text-lg font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                className="w-full rounded-2xl border-2 border-brand-500 bg-white py-4 text-center text-lg font-extrabold text-brand-600 shadow-soft transition hover:bg-brand-50 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-3"
               >
                 {loadingType === 'borrador' ? (
                   <>
@@ -537,29 +535,32 @@ function RecoleccionFormResumenScreen() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
-                    <span>Registrando recolección...</span>
+                    <span>Guardando borrador...</span>
                   </>
                 ) : (
-                  isEditMode ? 'Guardar Cambios' : 'Registrar Recolección'
+                  'Guardar Borrador'
                 )}
               </button>
-            )}
+            </div>
           </div>
         </div>
       </div>
 
       {showSuccess && (
         <RecoleccionSuccessModal
-          onViewBlockchain={() => {
-            // Aquí iría la lógica para ver el registro en blockchain
-            setShowSuccess(false);
-            finalize();
-          }}
-          onBackToMenu={() => {
-            setShowSuccess(false);
-            finalize();
-          }}
+          title={successTitle}
+          description={successDescription}
           summaryText={summaryText}
+          primaryLabel="Volver al listado"
+          secondaryLabel="Registrar otra recolección"
+          onPrimaryAction={() => {
+            setShowSuccess(false);
+            finalize();
+          }}
+          onSecondaryAction={() => {
+            setShowSuccess(false);
+            startNewCollection();
+          }}
         />
       )}
     </div>

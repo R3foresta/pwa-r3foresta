@@ -171,3 +171,171 @@ export interface CreateLoteViveroResponse {
   success: true
   data: CreateLoteViveroResult
 }
+
+// ─── Embolsado ───────────────────────────────────────────────────────────────
+
+export interface EmbolsadoEventoExistente {
+  id: number
+  tipo_evento: 'EMBOLSADO'
+  fecha_evento: string
+  cantidad_afectada: number
+  saldo_vivo_antes: number | null
+  saldo_vivo_despues: number
+  created_at: string
+}
+
+export interface EmbolsadoContextData {
+  lote_id: number
+  codigo_trazabilidad: string
+  nombre_cientifico_snapshot: string
+  nombre_comercial_snapshot: string
+  tipo_material_snapshot: string
+  cantidad_inicial_en_proceso: number
+  unidad_medida_inicial: UnidadMedidaVivero
+  fecha_inicio: string
+  estado_lote: EstadoLoteVivero
+  plantas_vivas_iniciales: number | null
+  saldo_vivo_actual: number | null
+  puede_registrar_embolsado: boolean
+  motivo_bloqueo: string | null
+  evento_embolsado_existente?: EmbolsadoEventoExistente
+}
+
+export interface EmbolsadoContextResponse {
+  success: true
+  data: EmbolsadoContextData
+}
+
+export interface RegistrarEmbolsadoRequest {
+  fecha_evento: string
+  plantas_vivas_iniciales: number
+  evidencia_ids: number[]
+  observaciones?: string
+}
+
+export interface RegistrarEmbolsadoResult {
+  message: string
+  evento_embolsado_id: number
+  lote_vivero_id: number
+  codigo_trazabilidad: string
+  plantas_vivas_iniciales: number
+  saldo_vivo_antes: number | null
+  saldo_vivo_despues: number
+  evidencia_ids_vinculadas: number[]
+}
+
+export interface RegistrarEmbolsadoResponse {
+  success: true
+  data: RegistrarEmbolsadoResult
+}
+
+export interface ObtenerEmbolsadoEvento {
+  id: number
+  tipo_evento: 'EMBOLSADO'
+  fecha_evento: string
+  cantidad_afectada: number
+  unidad_medida_evento: 'UNIDAD'
+  saldo_vivo_antes: number | null
+  saldo_vivo_despues: number
+  observaciones: string | null
+  responsable_id: number
+  created_at: string
+}
+
+export interface ObtenerEmbolsadoLoteRef {
+  id: number
+  codigo_trazabilidad: string
+  plantas_vivas_iniciales: number | null
+  saldo_vivo_actual: number | null
+}
+
+export interface ObtenerEmbolsadoEvidencia {
+  id: number
+  ruta_archivo: string
+  mime_type: string
+  tipo_archivo: string
+  es_principal: boolean
+  orden: number
+  public_url: string
+}
+
+export type ObtenerEmbolsadoResponse =
+  | { success: true; data: { registrado: true; evento: ObtenerEmbolsadoEvento; lote: ObtenerEmbolsadoLoteRef; evidencias: ObtenerEmbolsadoEvidencia[] } }
+  | { success: true; data: { registrado: false; evento: null } }
+
+export interface EvidenciasEmbolsadoItem {
+  id: number
+  codigo_trazabilidad: string
+  entidad_id: number
+  ruta_archivo: string
+  tipo_archivo: string
+}
+
+export interface EvidenciasEmbolsadoResponse {
+  success: true
+  data: {
+    evidencia_ids: number[]
+    evidencias: EvidenciasEmbolsadoItem[]
+  }
+}
+
+export interface UploadEvidenciasEmbolsadoInput {
+  fotos: File[]
+  titulo?: string
+  descripcion?: string
+  tomado_en?: string
+  es_principal?: boolean
+}
+
+// ─── Adaptabilidad / Merma / Despacho ──────────────────────────────────────────
+
+export type CausaMermaVivero =
+  | 'PLAGA'
+  | 'ENFERMEDAD'
+  | 'SEQUIA'
+  | 'DANO_FISICO'
+  | 'MUERTE_NATURAL'
+  | 'DESCARTE_CALIDAD'
+  | 'OTRO'
+
+export type DestinoTipoVivero =
+  | 'PLANTACION_PROPIA'
+  | 'DONACION_COMUNIDAD'
+  | 'VENTA'
+  | 'OTRO'
+
+export interface RegistrarAdaptabilidadRequest {
+  fecha_evento: string
+  subetapa_destino: SubetapaAdaptabilidad
+  observaciones?: string
+}
+
+export interface RegistrarMermaRequest {
+  fecha_evento: string
+  cantidad_afectada: number
+  causa_merma: CausaMermaVivero
+  observaciones?: string
+}
+
+export interface RegistrarDespachoRequest {
+  fecha_evento: string
+  cantidad_afectada: number
+  destino_tipo: DestinoTipoVivero
+  destino_referencia: string
+  comunidad_destino_id?: number
+  observaciones?: string
+}
+
+export interface RegistrarEventoGenericoResult {
+  evento_id: number
+  lote_vivero_id: number
+  saldo_vivo_antes: number | null
+  saldo_vivo_despues: number | null
+  lote_finalizado?: boolean
+  motivo_cierre?: MotivoCierreVivero | null
+}
+
+export interface RegistrarEventoGenericoResponse {
+  success: true
+  data: RegistrarEventoGenericoResult
+}
