@@ -104,7 +104,6 @@ export function useEmbolsado(): UseEmbolsadoResult {
       try {
         const evidenciasResp = await LotesViveroService.uploadEvidenciasEmbolsado(loteId, {
           fotos: [formValues.foto],
-          es_principal: true,
         })
         const evidenciaIds = evidenciasResp.data.evidencia_ids
 

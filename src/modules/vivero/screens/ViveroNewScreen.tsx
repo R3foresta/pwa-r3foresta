@@ -468,7 +468,6 @@ function ViveroNewScreen() {
             descripcion: observaciones.trim() || 'Evidencia de inicio del lote',
             metadata: { fuente: 'pwa-r3foresta', modulo: 'vivero', etapa: 'INICIO' },
             tomado_en: new Date().toISOString(),
-            es_principal: true,
           },
           authId,
         )

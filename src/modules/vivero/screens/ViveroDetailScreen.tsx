@@ -394,24 +394,6 @@ function ViveroDetailScreen() {
               )}
             </div>
           </CollapsibleSection>
-
-          {/* Acciones secundarias */}
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => navigate(`/app/vivero/${detail.id}/update`)}
-              className="rounded-2xl bg-white py-3 text-sm font-bold text-brand-700 shadow-soft ring-1 ring-brand-200 transition hover:ring-brand-300"
-            >
-              Editar lote
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate(`/app/vivero/${detail.id}/update`)}
-              className="rounded-2xl bg-white py-3 text-sm font-bold text-brand-700 shadow-soft ring-1 ring-brand-200 transition hover:ring-brand-300"
-            >
-              Subir imagen
-            </button>
-          </div>
         </div>
       </div>
     </div>
