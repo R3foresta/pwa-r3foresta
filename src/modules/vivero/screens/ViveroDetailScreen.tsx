@@ -3,9 +3,10 @@ import { useNavigate, useParams } from 'react-router-dom'
 import Icon from '../../../components/Icon'
 import type { IconName } from '../../../components/Icon'
 import { LotesViveroService } from '../../../services/lotes-vivero.service'
-import CollapsibleSection from '../components/CollapsibleSection'
+import CollapsibleSection from '../components/CollapsibleSection';
 import StageTimeline from '../components/StageTimeline'
 import type { StageTimelineItem } from '../components/StageTimeline'
+import SurvivalBar from '../components/SurvivalBar'
 import { mapLoteToDetailView } from '../mappers/lote.mapper'
 import type { LoteViveroItem } from '../types/contracts'
 import type { ViveroLotDetailView } from '../types/view-models'
@@ -163,15 +164,15 @@ function ViveroDetailScreen() {
     [detail],
   )
 
-  const saldoVivo = detail?.saldoVivoActual ?? detail?.plantasVivasIniciales ?? null
+  const plantasIniciales = detail?.plantasVivasIniciales ?? null
+  const saldoVivo = detail?.saldoVivoActual ?? plantasIniciales
+  const hasEmbolsado = plantasIniciales !== null
   const muertas =
-    saldoVivo !== null && detail ? detail.cantidadInicialEnProceso - saldoVivo : null
-  const supervivencia =
-    saldoVivo !== null && detail && detail.cantidadInicialEnProceso > 0
-      ? Math.round((saldoVivo / detail.cantidadInicialEnProceso) * 100)
+    hasEmbolsado && saldoVivo !== null
+      ? Math.max(0, plantasIniciales - saldoVivo)
       : null
-  const unidadLabel =
-    detail?.unidadMedidaInicial === 'UNIDAD' ? 'plantas' : (detail?.unidadMedidaInicial?.toLowerCase() ?? '')
+  const unidadOrigenLabel =
+    detail?.unidadMedidaInicial === 'UNIDAD' ? 'unidades' : (detail?.unidadMedidaInicial?.toLowerCase() ?? '')
 
   if (loading) {
     return (
@@ -236,59 +237,90 @@ function ViveroDetailScreen() {
             </div>
           )}
 
-          {/* Supervivencia */}
+          {/* Supervivencia / estado del lote */}
           <div className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
-            <p className="mb-3 text-sm font-semibold text-brand-700">Supervivencia</p>
-
-            {/* Hero: saldo vivo */}
-            <div className="mb-4 flex items-center justify-between rounded-2xl bg-emerald-50 px-4 py-3 ring-1 ring-emerald-200">
-              <div>
-                <p className="text-xs font-semibold text-emerald-600">Saldo Vivo Actual</p>
-                <p className="mt-0.5 text-3xl font-extrabold text-emerald-600">
-                  {saldoVivo !== null ? `${saldoVivo} ${unidadLabel}` : '—'}
-                </p>
-              </div>
-              <Icon name="leaf" className="h-10 w-10 text-emerald-200" />
-            </div>
-
-            {/* Stats: cantidad inicial | muertas | días */}
-            <div className="mb-4 flex items-center divide-x divide-brand-100">
-              <div className="flex-1 pr-3">
-                <p className="text-xs font-semibold text-brand-500">Cantidad inicial</p>
-                <p className="text-lg font-extrabold text-brand-700">
-                  {detail.cantidadInicialEnProceso}{' '}
-                  <span className="text-sm font-semibold text-brand-500">{unidadLabel}</span>
-                </p>
-              </div>
-              <div className="flex-1 px-3">
-                <p className="text-xs font-semibold text-brand-500">Muertas</p>
-                <p className="text-lg font-extrabold text-brand-700">
-                  {muertas !== null ? muertas : '—'}
-                </p>
-              </div>
-              <div className="flex-1 pl-3">
-                <p className="text-xs font-semibold text-brand-500">Días totales</p>
-                <p className="text-lg font-extrabold text-brand-700">{detail.diasDesdeInicio}</p>
-              </div>
-            </div>
-
-            {/* Barra de supervivencia */}
-            {supervivencia !== null ? (
-              <div>
-                <p className="mb-2 text-sm font-semibold text-brand-700">
-                  Supervivencia ({supervivencia}%):
-                </p>
-                <div className="h-3 w-full overflow-hidden rounded-full bg-slate-100 ring-1 ring-black/5">
-                  <div
-                    className="h-full rounded-full bg-emerald-400 transition-all duration-500"
-                    style={{ width: `${supervivencia}%` }}
-                  />
+            {hasEmbolsado ? (
+              <>
+                <div className="mb-3 flex items-center justify-between">
+                  <p className="text-sm font-extrabold text-brand-700">Supervivencia</p>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-brand-400">
+                    {detail.diasDesdeInicio} días
+                  </span>
                 </div>
-              </div>
+
+                {/* Hero: plantas vivas */}
+                <div className="mb-4 flex items-center justify-between rounded-2xl bg-emerald-50 px-4 py-3 ring-1 ring-emerald-200">
+                  <div>
+                    <p className="text-xs font-semibold text-emerald-700">Plantas vivas</p>
+                    <p className="mt-0.5 text-3xl font-extrabold leading-none text-emerald-700">
+                      {saldoVivo ?? 0}
+                      <span className="ml-1 text-base font-bold text-emerald-600">plantas</span>
+                    </p>
+                  </div>
+                  <Icon name="leaf" className="h-10 w-10 text-emerald-300" />
+                </div>
+
+                {/* Métricas: consumido | iniciales | muertas */}
+                <div className="mb-4 grid grid-cols-3 divide-x divide-brand-100">
+                  <div className="pr-2">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-brand-500">
+                      De recolección
+                    </p>
+                    <p className="mt-1 text-base font-extrabold leading-tight text-brand-700">
+                      {detail.cantidadInicialEnProceso}
+                      <span className="ml-1 text-xs font-bold text-brand-500">
+                        {unidadOrigenLabel}
+                      </span>
+                    </p>
+                  </div>
+                  <div className="px-2">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-brand-500">
+                      Embolsadas
+                    </p>
+                    <p className="mt-1 text-base font-extrabold leading-tight text-brand-700">
+                      {plantasIniciales ?? '—'}
+                      <span className="ml-1 text-xs font-bold text-brand-500">plantas</span>
+                    </p>
+                  </div>
+                  <div className="pl-2">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-brand-500">
+                      Muertas
+                    </p>
+                    <p className="mt-1 text-base font-extrabold leading-tight text-red-600">
+                      {muertas ?? 0}
+                      <span className="ml-1 text-xs font-bold text-red-400">plantas</span>
+                    </p>
+                  </div>
+                </div>
+
+                <SurvivalBar alive={saldoVivo} initial={plantasIniciales} showLabel />
+              </>
             ) : (
-              <p className="text-xs font-semibold text-brand-400">
-                Disponible tras el embolsado.
-              </p>
+              <>
+                <div className="mb-3 flex items-center justify-between">
+                  <p className="text-sm font-extrabold text-brand-700">Material en proceso</p>
+                  <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700 ring-1 ring-amber-200">
+                    Pendiente embolsado
+                  </span>
+                </div>
+
+                <div className="mb-4 flex items-center justify-between rounded-2xl bg-brand-50 px-4 py-3 ring-1 ring-brand-100">
+                  <div>
+                    <p className="text-xs font-semibold text-brand-500">De la recolección</p>
+                    <p className="mt-0.5 text-3xl font-extrabold leading-none text-brand-700">
+                      {detail.cantidadInicialEnProceso}
+                      <span className="ml-1 text-base font-bold text-brand-500">
+                        {unidadOrigenLabel}
+                      </span>
+                    </p>
+                  </div>
+                  <Icon name="package" className="h-10 w-10 text-brand-300" />
+                </div>
+
+                <p className="rounded-2xl bg-brand-50/60 px-3 py-2.5 text-xs font-semibold text-brand-600">
+                  El conteo oficial de plantas vivas se inaugura cuando se registre el embolsado.
+                </p>
+              </>
             )}
           </div>
 
@@ -311,7 +343,7 @@ function ViveroDetailScreen() {
             <div className="grid grid-cols-2 gap-2">
               <div className="rounded-2xl bg-brand-50 px-3 py-2">
                 <p className="text-[11px] uppercase tracking-wide text-brand-500">
-                  Cantidad inicial en proceso
+                  Material consumido
                 </p>
                 <p className="mt-0.5 font-extrabold text-brand-700">
                   {detail.cantidadInicialEnProceso} {detail.unidadMedidaInicial}
@@ -319,11 +351,11 @@ function ViveroDetailScreen() {
               </div>
               <div className="rounded-2xl bg-brand-50 px-3 py-2">
                 <p className="text-[11px] uppercase tracking-wide text-brand-500">
-                  Plantas vivas iniciales
+                  Plantas embolsadas
                 </p>
                 <p className="mt-0.5 font-extrabold text-brand-700">
                   {detail.plantasVivasIniciales !== null
-                    ? `${detail.plantasVivasIniciales} ${detail.unidadMedidaInicial}`
+                    ? `${detail.plantasVivasIniciales} plantas`
                     : 'Pendiente'}
                 </p>
               </div>
@@ -333,7 +365,7 @@ function ViveroDetailScreen() {
                 </p>
                 <p className="mt-0.5 font-extrabold text-brand-700">
                   {detail.saldoVivoActual !== null
-                    ? `${detail.saldoVivoActual} ${detail.unidadMedidaInicial}`
+                    ? `${detail.saldoVivoActual} plantas`
                     : 'Pendiente'}
                 </p>
               </div>
@@ -343,14 +375,14 @@ function ViveroDetailScreen() {
                 </p>
                 <p className="mt-0.5 font-extrabold text-brand-700">
                   {detail.stockVivoActual !== null
-                    ? `${detail.stockVivoActual} ${detail.unidadMedidaInicial}`
+                    ? `${detail.stockVivoActual} plantas`
                     : 'Pendiente'}
                 </p>
               </div>
             </div>
             {detail.estadoLote === 'ACTIVO' && detail.plantasVivasIniciales === null && (
               <p className="mt-2 text-xs font-semibold text-brand-400">
-                El saldo vivo se registra en el embolsado.
+                El conteo en plantas se inaugura en el embolsado.
               </p>
             )}
           </CollapsibleSection>
@@ -395,24 +427,6 @@ function ViveroDetailScreen() {
               )}
             </div>
           </CollapsibleSection>
-
-          {/* Acciones secundarias */}
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => navigate(`/app/vivero/${detail.id}/update`)}
-              className="rounded-2xl bg-white py-3 text-sm font-bold text-brand-700 shadow-soft ring-1 ring-brand-200 transition hover:ring-brand-300"
-            >
-              Editar lote
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate(`/app/vivero/${detail.id}/update`)}
-              className="rounded-2xl bg-white py-3 text-sm font-bold text-brand-700 shadow-soft ring-1 ring-brand-200 transition hover:ring-brand-300"
-            >
-              Subir imagen
-            </button>
-          </div>
         </div>
       </div>
     </div>

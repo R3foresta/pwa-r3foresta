@@ -1,5 +1,5 @@
 import type { ViveroLotCardData } from '../types/view-models'
-import DotProgressBar from './DotProgressBar'
+import SurvivalBar from './SurvivalBar'
 
 const ETAPA_LABEL: Record<string, string> = {
   INICIO: 'Inicio',
@@ -77,18 +77,47 @@ function ViveroLotCard({ lot, onClick, cta, compact }: Props) {
           </span>
         </div>
 
-        <div className="mt-3 flex items-end justify-between gap-3">
-          <div>
-            <p className="text-xs font-semibold text-brand-500">
-              {lot.cantidadActual !== null
-                ? `${lot.cantidadActual} / ${lot.cantidadInicial} ${lot.unidadMedida}`
-                : `${lot.cantidadInicial} ${lot.unidadMedida} iniciales`}
-            </p>
-            <p className="text-xs font-semibold text-brand-400">
-              {lot.vivero} · {lot.diasDesdeInicio}d
-            </p>
-          </div>
-          <DotProgressBar value={lot.cantidadActual} total={lot.cantidadInicial} />
+        <div className="mt-3 space-y-2">
+          {lot.plantasVivasIniciales !== null ? (
+            <>
+              <div className="flex items-end justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold text-brand-500">
+                    <span className="font-extrabold text-brand-700">
+                      {lot.cantidadActual ?? 0}
+                    </span>
+                    {' / '}
+                    {lot.plantasVivasIniciales} plantas vivas
+                  </p>
+                  <p className="text-[11px] font-semibold text-brand-400">
+                    {lot.vivero} · {lot.diasDesdeInicio}d
+                  </p>
+                </div>
+              </div>
+              <SurvivalBar
+                alive={lot.cantidadActual}
+                initial={lot.plantasVivasIniciales}
+                showLabel
+              />
+            </>
+          ) : (
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold text-brand-500">
+                  <span className="font-extrabold text-brand-700">
+                    {lot.cantidadInicial} {lot.unidadMedida}
+                  </span>{' '}
+                  en proceso
+                </p>
+                <p className="text-[11px] font-semibold text-brand-400">
+                  {lot.vivero} · {lot.diasDesdeInicio}d
+                </p>
+              </div>
+              <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700 ring-1 ring-amber-200">
+                Pendiente embolsado
+              </span>
+            </div>
+          )}
         </div>
       </button>
 
