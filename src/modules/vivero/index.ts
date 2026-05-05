@@ -2,6 +2,7 @@ export { default as ViveroScreen } from './screens/ViveroScreen'
 export { default as ViveroDetailScreen } from './screens/ViveroDetailScreen'
 export { default as ViveroNewScreen } from './screens/ViveroNewScreen'
 export { default as ViveroEmbolsadoScreen } from './screens/ViveroEmbolsadoScreen'
+export { default as ViveroEventScreen } from './screens/ViveroEventScreen'
 
 export { default as ViveroLotCard } from './components/ViveroLotCard'
 export { useViveroLots } from './hooks/useViveroLots'

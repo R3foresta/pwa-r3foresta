@@ -101,10 +101,22 @@ function getNextActionInfo(
 ): { label: string; iconName: IconName; path: string } | null {
   if (detail.estadoLote === 'FINALIZADO') return null
   if (detail.plantasVivasIniciales === null)
-    return { label: 'Registrar Embolsado', iconName: 'package', path: `/app/vivero/${detail.id}/event/new` }
+    return {
+      label: 'Registrar Embolsado',
+      iconName: 'package',
+      path: `/app/vivero/${detail.id}/event/embolsado`,
+    }
   if (detail.subetapaActual === null)
-    return { label: 'Registrar Adaptabilidad', iconName: 'leaf', path: `/app/vivero/${detail.id}` }
-  return { label: 'Registrar Despacho', iconName: 'planting', path: `/app/vivero/${detail.id}` }
+    return {
+      label: 'Registrar Adaptabilidad',
+      iconName: 'leaf',
+      path: `/app/vivero/${detail.id}/event/adaptabilidad`,
+    }
+  return {
+    label: 'Registrar Despacho',
+    iconName: 'planting',
+    path: `/app/vivero/${detail.id}/event/despacho`,
+  }
 }
 
 function InfoRow({ label, value }: { label: string; value: string }) {
