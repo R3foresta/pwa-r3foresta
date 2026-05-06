@@ -13,14 +13,30 @@ import type { ViveroLotDetailView } from '../types/view-models'
 
 function formatDate(value?: string | null) {
   if (!value) return 'Sin fecha'
-  const d = new Date(value)
-  if (Number.isNaN(d.getTime())) return value
-  return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
+  
+  // 1. Quitamos cualquier rastro de "T00:00:00Z" que mande el servidor
+  const datePart = value.includes('T') ? value.split('T')[0] : value;
+  
+  // 2. Dividimos el string YYYY-MM-DD
+  const parts = datePart.split('-').map(p => parseInt(p, 10));
+  
+  // 3. Verificamos que tengamos los 3 componentes (año, mes, día)
+  if (parts.length !== 3 || parts.some(isNaN)) return value;
+
+  // 4. Creamos el objeto Date como LOCAL (esto no resta horas)
+  const d = new Date(parts[0], parts[1] - 1, parts[2]); 
+  
+  return d.toLocaleDateString('es-ES', { 
+    day: 'numeric', 
+    month: 'short', 
+    year: 'numeric' 
+  })
 }
 
 function formatDateTime(value?: string | null) {
   if (!value) return 'Sin fecha'
-  const d = new Date(value)
+  const [year, month, day] = value.split('T')[0].split('-').map(Number);
+  const d = new Date(year, month - 1, day); 
   if (Number.isNaN(d.getTime())) return value
   return d.toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' })
 }
@@ -55,7 +71,7 @@ function buildTimeline(detail: ViveroLotDetailView): StageTimelineItem[] {
       label: 'Inicio',
       done: true,
       active: false,
-      date: detail.fechaInicio,
+      date: formatDate(detail.fechaInicio), // <--- AHORA SÍ SE VERÁ BIEN
     },
     {
       key: 'EMBOLSADO',

@@ -2,9 +2,21 @@ import type { LoteViveroItem } from '../types/contracts'
 import type { ViveroLotCardData, ViveroLotDetailView } from '../types/view-models'
 
 function daysBetween(start: string, end = new Date()): number {
-  const startDate = new Date(`${start}T00:00:00`)
-  if (Number.isNaN(startDate.getTime())) return 0
-  return Math.max(0, Math.round((end.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)))
+  if (!start) return 0;
+  // Aplicamos la misma lógica de limpieza
+  const datePart = start.includes('T') ? start.split('T')[0] : start;
+  const parts = datePart.split('-').map(Number);
+  
+  if (parts.length !== 3) return 0;
+  
+  // Seteamos la fecha de inicio a las 00:00:00 local
+  const startDate = new Date(parts[0], parts[1] - 1, parts[2], 0, 0, 0);
+  
+  // Seteamos la fecha de fin a las 00:00:00 local para comparar solo días
+  const endDate = new Date(end.getFullYear(), end.getMonth(), end.getDate(), 0, 0, 0);
+  
+  const diffTime = endDate.getTime() - startDate.getTime();
+  return Math.max(0, Math.round(diffTime / (1000 * 60 * 60 * 24)));
 }
 
 function getCurrentBalance(lot: LoteViveroItem): number | null {

@@ -254,9 +254,27 @@ function ViveroNewScreen() {
 
   const [cantidadInicio, setCantidadInicio] = useState('')
 
+  /*
   const fechaRange = useMemo(() => buildPastRange(MAX_DIAS_VIVERO), [])
   const [fechaInicio, setFechaInicio] = useState(() =>
     clampDateToRange(new Date().toISOString().slice(0, 10), fechaRange),
+  )*/
+
+  // 1. Calculamos la fecha de hoy en formato local YYYY-MM-DD
+  const hoyLocal = new Date().toLocaleDateString('en-CA'); // 'en-CA' genera YYYY-MM-DD de forma segura
+
+  // 2. Forzamos al rango a aceptar el día de hoy como máximo
+  const fechaRange = useMemo(() => {
+  const range = buildPastRange(MAX_DIAS_VIVERO);
+  return {
+    ...range,
+    max: hoyLocal // <--- Aquí rompemos la limitación del día anterior
+  };
+  }, [hoyLocal]);
+
+
+  const [fechaInicio, setFechaInicio] = useState(() =>
+    clampDateToRange(hoyLocal, fechaRange),
   )
 
   const [observaciones, setObservaciones] = useState('')
@@ -485,8 +503,8 @@ function ViveroNewScreen() {
         {
           recoleccion_id: selectedRecoleccion.id,
           vivero_id: selectedViveroId,
-          fecha_inicio: fechaInicioCheck.normalized,
-          fecha_evento: fechaInicioCheck.normalized,
+          fecha_inicio: fechaInicio,
+          fecha_evento: fechaInicio,
           cantidad_inicial_en_proceso: cantidadValue,
           unidad_medida_inicial: unidadMedida,
           evidencia_ids: evidenceIds,
