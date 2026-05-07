@@ -361,7 +361,6 @@ function ViveroNewScreen() {
   )
 
   const cantidadValue = Number(cantidadInicio)
-  const fechaInicioCheck = validateDateInRange(fechaInicio, fechaRange)
 
   const cantidadValidation =
     selectedRecoleccion && unidadMedida
@@ -378,7 +377,8 @@ function ViveroNewScreen() {
     vivero: !selectedViveroId,
     recoleccion: !selectedRecoleccion,
     cantidad: !cantidadValidation.isValid,
-    fecha: !fechaInicioCheck.isValid || !isValidYmdDate(fechaInicioCheck.normalized),
+    // ✅ USAR DIRECTAMENTE LA VARIABLE DE ESTADO
+    fecha: !fechaInicio || fechaInicio < fechaRange.min || fechaInicio > fechaRange.max,
     fotos: photos.length < 1 || photos.length > 5,
   }
 

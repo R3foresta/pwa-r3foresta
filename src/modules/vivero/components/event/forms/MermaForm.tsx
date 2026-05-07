@@ -9,6 +9,8 @@ import FechaCard from '../FechaCard'
 import FotosUploader from '../FotosUploader'
 import type { Photo } from '../FotosUploader'
 import ObservacionesCard from '../ObservacionesCard'
+import SurvivalBar from '../../SurvivalBar'
+
 
 type Props = {
   lote: LoteViveroItem
@@ -185,6 +187,8 @@ function MermaForm({ lote, onCompleted }: Props) {
           </div>
         </div>
 
+        
+
         {/* Cantidad perdida */}
         <section className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
           <CantidadStepper
@@ -200,6 +204,15 @@ function MermaForm({ lote, onCompleted }: Props) {
             disabled={submitting}
           />
         </section>
+
+        {/* ✅ BARRA DE SUPERVIVENCIA PROYECTADA */}
+        <div className="px-1 -mt-2"> 
+          <SurvivalBar 
+            initial={saldoVivo} 
+            alive={saldoDespues} 
+            showLabel={true}
+          />
+        </div>
 
         {/* Causa */}
         <section className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
