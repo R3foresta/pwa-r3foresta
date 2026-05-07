@@ -9,9 +9,9 @@ import type { Recoleccion } from '../../../services/recolecciones.service'
 import { RecoleccionesService } from '../../../services/recolecciones.service'
 import { LotesViveroService } from '../../../services/lotes-vivero.service'
 import { getUbicacionDisplay } from '../../../utils/ubicacion'
-import { buildPastRange, clampDateToRange, validateDateInRange } from '../../../utils/validations/date'
+import { buildPastRange, clampDateToRange } from '../../../utils/validations/date'
 import type { TipoMaterialVivero, UnidadMedidaVivero } from '../types/contracts'
-import { isValidYmdDate, validateCantidadInicial } from '../utils/validators'
+import { validateCantidadInicial } from '../utils/validators'
 
 type UploadPhase = 'idle' | 'uploading' | 'creating'
 type Photo = { file: File; previewUrl: string }
