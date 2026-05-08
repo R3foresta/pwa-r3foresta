@@ -186,8 +186,6 @@ function MermaForm({ lote, onCompleted }: Props) {
           </div>
         </div>
 
-        
-
         {/* Cantidad perdida */}
         <section className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
           <CantidadStepper
@@ -203,7 +201,6 @@ function MermaForm({ lote, onCompleted }: Props) {
             disabled={submitting}
           />
         </section>
-
 
         {/* Causa */}
         <section className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">

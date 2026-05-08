@@ -256,7 +256,6 @@ function ViveroNewScreen() {
 
   const fechaRange = useMemo(() => buildPastRange(MAX_DIAS_VIVERO), [])
 
-  //const hoyLocal = new Date().toLocaleDateString('en-CA');
   const [fechaInicio, setFechaInicio] = useState(() =>
     clampDateToRange(new Date().toLocaleDateString('en-CA'), fechaRange)
   )
@@ -488,8 +487,8 @@ function ViveroNewScreen() {
         {
           recoleccion_id: selectedRecoleccion.id,
           vivero_id: selectedViveroId,
-          fecha_inicio: fechaInicio,
-          fecha_evento: fechaInicio,
+          fecha_inicio: fechaInicioCheck.normalized,
+          fecha_evento: fechaInicioCheck.normalized,
           cantidad_inicial_en_proceso: cantidadValue,
           unidad_medida_inicial: unidadMedida,
           evidencia_ids: evidenceIds,
