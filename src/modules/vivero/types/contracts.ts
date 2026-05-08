@@ -366,3 +366,9 @@ export interface RegistrarMermaResponse {
     motivo_cierre: MotivoCierreVivero | null
   }
 }
+
+export type UploadEvidenciasAdaptabilidadInput = UploadEvidenciasEmbolsadoInput
+export type EvidenciasAdaptabilidadResponse = EvidenciasEmbolsadoResponse
+
+export type UploadEvidenciasMermaInput = UploadEvidenciasEmbolsadoInput
+export type EvidenciasMermaResponse = EvidenciasEmbolsadoResponse
