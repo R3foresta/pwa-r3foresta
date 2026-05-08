@@ -9,7 +9,6 @@ import FechaCard from '../FechaCard'
 import FotosUploader from '../FotosUploader'
 import type { Photo } from '../FotosUploader'
 import ObservacionesCard from '../ObservacionesCard'
-import SurvivalBar from '../../SurvivalBar'
 
 
 type Props = {
@@ -205,14 +204,6 @@ function MermaForm({ lote, onCompleted }: Props) {
           />
         </section>
 
-        {/* ✅ BARRA DE SUPERVIVENCIA PROYECTADA */}
-        <div className="px-1 -mt-2"> 
-          <SurvivalBar 
-            initial={saldoVivo} 
-            alive={saldoDespues} 
-            showLabel={true}
-          />
-        </div>
 
         {/* Causa */}
         <section className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">

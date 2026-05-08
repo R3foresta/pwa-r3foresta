@@ -8,7 +8,7 @@ function toDateInputValue(date: Date) {
 }
 
 export function buildPastRange(maxDaysPast: number, today = new Date()): DateRange {
-  const maxDate = toDateInputValue(today)
+  const maxDate = today.toLocaleDateString('en-CA')
   const minDateObj = new Date(today)
   minDateObj.setDate(minDateObj.getDate() - maxDaysPast)
   const minDate = toDateInputValue(minDateObj)

@@ -9,9 +9,9 @@ import type { Recoleccion } from '../../../services/recolecciones.service'
 import { RecoleccionesService } from '../../../services/recolecciones.service'
 import { LotesViveroService } from '../../../services/lotes-vivero.service'
 import { getUbicacionDisplay } from '../../../utils/ubicacion'
-import { buildPastRange, clampDateToRange } from '../../../utils/validations/date'
+import { buildPastRange, clampDateToRange, validateDateInRange } from '../../../utils/validations/date'
 import type { TipoMaterialVivero, UnidadMedidaVivero } from '../types/contracts'
-import { validateCantidadInicial } from '../utils/validators'
+import { isValidYmdDate, validateCantidadInicial } from '../utils/validators'
 
 type UploadPhase = 'idle' | 'uploading' | 'creating'
 type Photo = { file: File; previewUrl: string }
@@ -254,27 +254,11 @@ function ViveroNewScreen() {
 
   const [cantidadInicio, setCantidadInicio] = useState('')
 
-  /*
   const fechaRange = useMemo(() => buildPastRange(MAX_DIAS_VIVERO), [])
+
+  //const hoyLocal = new Date().toLocaleDateString('en-CA');
   const [fechaInicio, setFechaInicio] = useState(() =>
-    clampDateToRange(new Date().toISOString().slice(0, 10), fechaRange),
-  )*/
-
-  // 1. Calculamos la fecha de hoy en formato local YYYY-MM-DD
-  const hoyLocal = new Date().toLocaleDateString('en-CA'); // 'en-CA' genera YYYY-MM-DD de forma segura
-
-  // 2. Forzamos al rango a aceptar el día de hoy como máximo
-  const fechaRange = useMemo(() => {
-  const range = buildPastRange(MAX_DIAS_VIVERO);
-  return {
-    ...range,
-    max: hoyLocal // <--- Aquí rompemos la limitación del día anterior
-  };
-  }, [hoyLocal]);
-
-
-  const [fechaInicio, setFechaInicio] = useState(() =>
-    clampDateToRange(hoyLocal, fechaRange),
+    clampDateToRange(new Date().toLocaleDateString('en-CA'), fechaRange)
   )
 
   const [observaciones, setObservaciones] = useState('')
@@ -372,13 +356,14 @@ function ViveroNewScreen() {
         })
       : { isValid: false, message: 'Selecciona una recolección válida.' }
 
+
+  const fechaInicioCheck = validateDateInRange(fechaInicio, fechaRange)
   const validation = {
     auth: !authId,
     vivero: !selectedViveroId,
     recoleccion: !selectedRecoleccion,
     cantidad: !cantidadValidation.isValid,
-    // ✅ USAR DIRECTAMENTE LA VARIABLE DE ESTADO
-    fecha: !fechaInicio || fechaInicio < fechaRange.min || fechaInicio > fechaRange.max,
+    fecha: !fechaInicioCheck.isValid || !isValidYmdDate(fechaInicioCheck.normalized),
     fotos: photos.length < 1 || photos.length > 5,
   }
 
