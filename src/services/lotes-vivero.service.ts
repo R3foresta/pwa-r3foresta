@@ -23,11 +23,12 @@ import type {
   LoteViveroItem,
   ObtenerEmbolsadoResponse,
   RegistrarAdaptabilidadRequest,
+  RegistrarAdaptabilidadResponse,
   RegistrarDespachoRequest,
   RegistrarEmbolsadoRequest,
   RegistrarEmbolsadoResponse,
-  RegistrarEventoGenericoResponse,
   RegistrarMermaRequest,
+  RegistrarMermaResponse,
   UploadEvidenciasPendientesInput,
   UploadEvidenciasPendientesResponse,
   UploadEvidenciasEmbolsadoInput,
@@ -274,9 +275,9 @@ export class LotesViveroService {
     loteId: number,
     input: RegistrarAdaptabilidadRequest,
     authId?: string,
-  ): Promise<RegistrarEventoGenericoResponse> {
+  ): Promise<RegistrarAdaptabilidadResponse> {
     const response = await registrarAdaptabilidadApi(loteId, input, authId)
-    return this.parseJsonResponse<RegistrarEventoGenericoResponse>(
+    return this.parseJsonResponse<RegistrarAdaptabilidadResponse>(
       response,
       'Error al registrar la adaptabilidad.',
     )
@@ -286,21 +287,23 @@ export class LotesViveroService {
     loteId: number,
     input: RegistrarMermaRequest,
     authId?: string,
-  ): Promise<RegistrarEventoGenericoResponse> {
+  ): Promise<RegistrarMermaResponse> {
     const response = await registrarMermaApi(loteId, input, authId)
-    return this.parseJsonResponse<RegistrarEventoGenericoResponse>(
+    return this.parseJsonResponse<RegistrarMermaResponse>(
       response,
       'Error al registrar la merma.',
     )
   }
 
+  // TODO: el backend aún no expone RegistrarDespachoResponse en contracts.ts.
+  // Cuando lo defina, reemplazar `unknown` por el tipo correcto.
   static async registrarDespacho(
     loteId: number,
     input: RegistrarDespachoRequest,
     authId?: string,
-  ): Promise<RegistrarEventoGenericoResponse> {
+  ): Promise<unknown> {
     const response = await registrarDespachoApi(loteId, input, authId)
-    return this.parseJsonResponse<RegistrarEventoGenericoResponse>(
+    return this.parseJsonResponse<unknown>(
       response,
       'Error al registrar el despacho.',
     )

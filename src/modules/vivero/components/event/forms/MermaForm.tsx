@@ -114,14 +114,18 @@ function MermaForm({ lote, onCompleted }: Props) {
     setSubmitting(true)
     setSubmitError(null)
     try {
-      // TODO: subir evidencias cuando el backend exponga
-      // POST /lotes-vivero/:id/merma/evidencias-pendientes
+      // TODO: conectar subida real vía POST /lotes-vivero/:id/merma/evidencias-pendientes
+      // y reemplazar este array vacío por los evidencia_ids devueltos.
+      // El backend exigirá ≥1 evidencia, así que hoy esto va a fallar.
+      const evidenciaIds: number[] = []
+
       await LotesViveroService.registrarMerma(
         lote.id,
         {
           fecha_evento: fecha,
           cantidad_afectada: cantidadNum,
           causa_merma: causa as CausaMermaVivero,
+          evidencia_ids: evidenciaIds,
           observaciones: observaciones.trim() || undefined,
         },
         authId,
