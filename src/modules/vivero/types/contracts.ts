@@ -16,6 +16,14 @@ export type UnidadMedidaVivero = 'UNIDAD' | 'G'
 
 export type MotivoCierreVivero = 'DESPACHO_TOTAL' | 'PERDIDA_TOTAL' | 'MIXTO'
 
+export type EstadoRegistroRecoleccion =
+  | 'BORRADOR'
+  | 'PENDIENTE_VALIDACION'
+  | 'VALIDADO'
+  | 'RECHAZADO'
+
+export type EstadoOperativoRecoleccion = 'ABIERTO' | 'CERRADO'
+
 export interface ApiPagination {
   page: number
   limit: number
@@ -36,8 +44,8 @@ export interface LoteViveroRecoleccionRef {
   codigo_trazabilidad: string
   fecha: string
   tipo_material: TipoMaterialVivero
-  estado_registro: string | null
-  estado_operativo: 'ABIERTO' | 'CERRADO' | null
+  estado_registro: EstadoRegistroRecoleccion
+  estado_operativo: EstadoOperativoRecoleccion
   saldo_actual: number | null
   unidad_canonica: UnidadMedidaVivero | null
 }
@@ -65,12 +73,12 @@ export interface LoteViveroItem {
   estado_lote: EstadoLoteVivero
   motivo_cierre: MotivoCierreVivero | null
   recoleccion_id: number
-  planta_id: number | null
+  planta_id: number
   vivero_id: number
-  responsable_id: number | null
-  nombre_cientifico_snapshot: string | null
-  nombre_comercial_snapshot: string | null
-  tipo_material_snapshot: TipoMaterialVivero | null
+  responsable_id: number
+  nombre_cientifico_snapshot: string
+  nombre_comercial_snapshot: string
+  tipo_material_snapshot: TipoMaterialVivero
   variedad_snapshot: string | null
   nombre_comunidad_origen_snapshot: string | null
   nombre_responsable_snapshot: string | null
@@ -83,10 +91,10 @@ export interface LoteViveroItem {
   subetapa_actual: SubetapaAdaptabilidad | null
   created_at: string
   updated_at: string
-  vivero?: LoteViveroViveroRef | null
-  recoleccion?: LoteViveroRecoleccionRef | null
-  planta?: LoteViveroPlantaRef | null
-  responsable?: LoteViveroResponsableRef | null
+  vivero: LoteViveroViveroRef | null
+  recoleccion: LoteViveroRecoleccionRef | null
+  planta: LoteViveroPlantaRef | null
+  responsable: LoteViveroResponsableRef | null
 }
 
 export interface ListLotesViveroQuery {
@@ -189,7 +197,7 @@ export interface EmbolsadoContextData {
   codigo_trazabilidad: string
   nombre_cientifico_snapshot: string
   nombre_comercial_snapshot: string
-  tipo_material_snapshot: string
+  tipo_material_snapshot: TipoMaterialVivero
   cantidad_inicial_en_proceso: number
   unidad_medida_inicial: UnidadMedidaVivero
   fecha_inicio: string
@@ -285,6 +293,7 @@ export interface UploadEvidenciasEmbolsadoInput {
   descripcion?: string
   tomado_en?: string
   es_principal?: boolean
+  metadata?: Record<string, unknown>
 }
 
 // ─── Adaptabilidad / Merma / Despacho ──────────────────────────────────────────
@@ -308,9 +317,11 @@ export interface RegistrarAdaptabilidadRequest {
   fecha_evento: string
   subetapa_destino: SubetapaAdaptabilidad
   observaciones?: string
+  evidencia_ids?: number[]
 }
 
 export interface RegistrarMermaRequest {
+  evidencia_ids: number[]
   fecha_evento: string
   cantidad_afectada: number
   causa_merma: CausaMermaVivero
@@ -326,16 +337,32 @@ export interface RegistrarDespachoRequest {
   observaciones?: string
 }
 
-export interface RegistrarEventoGenericoResult {
-  evento_id: number
-  lote_vivero_id: number
-  saldo_vivo_antes: number | null
-  saldo_vivo_despues: number | null
-  lote_finalizado?: boolean
-  motivo_cierre?: MotivoCierreVivero | null
+export interface RegistrarAdaptabilidadResponse {
+  success: true
+  message: string
+  data: {
+    evento_adaptabilidad_id: number
+    lote_vivero_id: number
+    codigo_trazabilidad: string
+    subetapa_destino: SubetapaAdaptabilidad
+    saldo_vivo_actual: number
+    evidencia_ids_vinculadas: number[]
+  }
 }
 
-export interface RegistrarEventoGenericoResponse {
+export interface RegistrarMermaResponse {
   success: true
-  data: RegistrarEventoGenericoResult
+  data: {
+    message: string
+    evento_merma_id: number
+    lote_vivero_id: number
+    codigo_trazabilidad: string
+    cantidad_perdida: number
+    causa_merma: CausaMermaVivero
+    saldo_vivo_antes: number
+    saldo_vivo_despues: number
+    evidencia_ids_vinculadas: number[]
+    lote_finalizado: boolean
+    motivo_cierre: MotivoCierreVivero | null
+  }
 }

@@ -169,6 +169,7 @@ export class LotesViveroService {
     const response = await this.list(backendFilters)
     const stageScoped = response.data.filter((lot) => matchesStageFilter(lot, input.stageFilter))
     const cards = stageScoped.map(mapLoteToCardData)
+    console.log('LotesViveroService.listForUi - cards after stage filtering:', cards)
     const filteredCards = filterCardsBySearch(cards, input.searchQuery)
 
     return {
