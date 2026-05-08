@@ -242,28 +242,21 @@ function ViveroNewScreen() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const authId = user?.auth_id?.trim() || ''
-
   const { viveros, loading: viveroLoading, error: viveroError } = useViveros()
   const [selectedViveroId, setSelectedViveroId] = useState<number | null>(null)
-
   const [recolecciones, setRecolecciones] = useState<Recoleccion[]>([])
   const [recoleccionLoading, setRecoleccionLoading] = useState(false)
   const [recoleccionError, setRecoleccionError] = useState<string | null>(null)
   const [selectedRecoleccionId, setSelectedRecoleccionId] = useState<number | null>(null)
   const [pickingRecoleccion, setPickingRecoleccion] = useState(true)
-
   const [cantidadInicio, setCantidadInicio] = useState('')
-
   const fechaRange = useMemo(() => buildPastRange(MAX_DIAS_VIVERO), [])
-
   const [fechaInicio, setFechaInicio] = useState(() =>
     clampDateToRange(new Date().toLocaleDateString('en-CA'), fechaRange)
   )
-
   const [observaciones, setObservaciones] = useState('')
   const [photos, setPhotos] = useState<Photo[]>([])
   const [uploadedEvidenceIds, setUploadedEvidenceIds] = useState<number[] | null>(null)
-
   const [showErrors, setShowErrors] = useState(false)
   const [submitPhase, setSubmitPhase] = useState<UploadPhase>('idle')
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -354,7 +347,6 @@ function ViveroNewScreen() {
           maxCantidad: saldoDisponible,
         })
       : { isValid: false, message: 'Selecciona una recolección válida.' }
-
 
   const fechaInicioCheck = validateDateInRange(fechaInicio, fechaRange)
   const validation = {

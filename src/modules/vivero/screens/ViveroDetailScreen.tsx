@@ -21,12 +21,10 @@ function formatDate(value?: string | null) {
   return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-
 function formatDateTime(value?: string | null) {
   if (!value) return 'Sin fecha'
-  const d = new Date(value) 
+  const d = new Date(value)
   if (Number.isNaN(d.getTime())) return value
-
   return d.toLocaleString('es-ES', { 
     dateStyle: 'medium', 
     timeStyle: 'short' 

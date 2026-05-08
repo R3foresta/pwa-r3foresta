@@ -10,7 +10,6 @@ import FotosUploader from '../FotosUploader'
 import type { Photo } from '../FotosUploader'
 import ObservacionesCard from '../ObservacionesCard'
 
-
 type Props = {
   lote: LoteViveroItem
   onCompleted: () => void
