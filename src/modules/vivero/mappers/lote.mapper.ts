@@ -1,15 +1,6 @@
 import type { LoteViveroItem } from '../types/contracts'
 import type { ViveroLotCardData, ViveroLotDetailView } from '../types/view-models'
 
-// TODO(p0.1 — fallbacks obsoletos):
-//   El backend endureció a NO nullable los campos snapshot:
-//     • tipo_material_snapshot
-//     • nombre_cientifico_snapshot
-//     • nombre_comercial_snapshot
-//   Los `?? 'SEMILLA'` y `|| 'N/D'` que hay abajo ya son código muerto.
-//   Cuando trabajemos P0, sacarlos. Si TS deja de quejarse al borrarlos,
-//   está confirmado que el contrato los garantiza.
-//
 // TODO(p1 — datos no expuestos):
 //   Estos campos vienen del API pero no llegan a ningún view-model:
 //     • nombre_comunidad_origen_snapshot  → RF-VIV-07 lo exige visible.
@@ -38,11 +29,13 @@ function getCurrentBalance(lot: LoteViveroItem): number | null {
 }
 
 function getLotSpecies(lot: LoteViveroItem): string {
+  // `nombre_comercial_snapshot` y `nombre_cientifico_snapshot` están garantizados
+  // (el backend los hereda al crear el lote). `lot.planta?.especie` se prefiere
+  // si el catálogo está disponible.
   return (
     lot.planta?.especie ||
     lot.nombre_comercial_snapshot ||
-    lot.nombre_cientifico_snapshot ||
-    'Sin especie'
+    lot.nombre_cientifico_snapshot
   )
 }
 
@@ -51,7 +44,6 @@ export function mapLoteToCardData(lot: LoteViveroItem): ViveroLotCardData {
     id: lot.id,
     codigo: lot.codigo_trazabilidad || `VIV-${lot.id}`,
     especie: getLotSpecies(lot),
-    fuente: lot.tipo_material_snapshot ?? lot.recoleccion?.tipo_material ?? 'SEMILLA',
     estadoLote: lot.estado_lote,
     subetapaActual: lot.subetapa_actual ?? null,
     plantasVivasIniciales: lot.plantas_vivas_iniciales,
@@ -85,8 +77,8 @@ export function mapLoteToDetailView(lot: LoteViveroItem): ViveroLotDetailView {
     saldoVivoActual: lot.saldo_vivo_actual,
     stockVivoActual: lot.stock_vivo_actual,
     especie: getLotSpecies(lot),
-    nombreCientifico: lot.planta?.nombre_cientifico || lot.nombre_cientifico_snapshot || 'N/D',
-    nombreComercial: lot.planta?.nombre_comun_principal || lot.nombre_comercial_snapshot || 'N/D',
+    nombreCientifico: lot.planta?.nombre_cientifico || lot.nombre_cientifico_snapshot,
+    nombreComercial: lot.planta?.nombre_comun_principal || lot.nombre_comercial_snapshot,
     variedad: lot.planta?.variedad || lot.variedad_snapshot || null,
     plantaImagenUrl: lot.planta?.imagen_url || null,
     viveroNombre: lot.vivero?.nombre || `Vivero #${lot.vivero_id}`,
@@ -94,7 +86,7 @@ export function mapLoteToDetailView(lot: LoteViveroItem): ViveroLotDetailView {
     responsableNombre,
     responsableUsername: lot.responsable?.username || null,
     recoleccionCodigo: lot.recoleccion?.codigo_trazabilidad || `REC-${lot.recoleccion_id}`,
-    recoleccionTipoMaterial: lot.recoleccion?.tipo_material || lot.tipo_material_snapshot || 'SEMILLA',
+    recoleccionTipoMaterial: lot.recoleccion?.tipo_material || lot.tipo_material_snapshot,
     createdAt: lot.created_at,
     updatedAt: lot.updated_at,
   }

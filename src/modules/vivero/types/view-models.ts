@@ -9,11 +9,6 @@ export interface ViveroLotCardData {
   id: number
   codigo: string
   especie: string
-  // TODO(p0.2 — código zombi): `fuente` se popula en lote.mapper.ts pero
-  // ViveroLotCard.tsx nunca lo renderiza. Decisión pendiente:
-  //   a) borrar este campo + su línea en el mapper, o
-  //   b) renderizarlo como chip "SEMILLA"/"ESQUEJE" en la card.
-  fuente: TipoMaterialVivero
   estadoLote: EstadoLoteVivero
   subetapaActual: SubetapaAdaptabilidad | null
   plantasVivasIniciales: number | null
