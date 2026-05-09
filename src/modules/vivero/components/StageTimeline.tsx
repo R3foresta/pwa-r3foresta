@@ -73,8 +73,9 @@ const SUBETAPA_LABELS: Record<string, string> = {
 
 function formatDate(value?: string | null) {
   if (!value) return null
-  const d = new Date(value)
-  if (Number.isNaN(d.getTime())) return null
+  const parts = value.split('T')[0].split('-').map(Number)
+  if (parts.length !== 3 || parts.some(isNaN)) return null
+  const d = new Date(parts[0], parts[1] - 1, parts[2])
   return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
