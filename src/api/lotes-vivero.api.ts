@@ -182,3 +182,32 @@ export async function registrarDespachoApi(
     body: JSON.stringify(input),
   })
 }
+
+// ──────────────────────────────────────────────────────────────────────────────
+// TODO(backend-pendiente): funciones cliente faltantes — el backend ya las expone
+// pero todavía no las consumimos desde el frontend. Agregar cuando se conecte
+// la fase correspondiente:
+//
+//   • POST /lotes-vivero/:id/adaptabilidad/evidencias-pendientes
+//     → uploadEvidenciasAdaptabilidadApi (multipart, similar a embolsado)
+//
+//   • POST /lotes-vivero/:id/merma/evidencias-pendientes
+//     → uploadEvidenciasMermaApi (multipart, similar a embolsado)
+//
+//   • GET  /lotes-vivero/:id/adaptabilidad
+//     → listAdaptabilidadesApi (lista cronológica de eventos del lote)
+//
+//   • GET  /lotes-vivero/:id/merma
+//     → listMermasApi (lista cronológica con causa + cantidad + saldo antes/después)
+//
+//   • GET  /lotes-vivero/:id/timeline
+//     → getTimelineApi (RF-VIV-07, historial auditable unificado)
+//
+// Anomalía pendiente: NO existe POST /lotes-vivero/:id/despacho/evidencias-pendientes
+// en el contrato actual del backend, pero RF-VIV-05 exige evidencia obligatoria.
+// Confirmar con backend si es olvido o decisión.
+//
+// Ineficiencia: NO existe GET /lotes-vivero/:id (detalle por id). Hoy se simula
+// con `?lote_vivero_id=X&limit=1` en LotesViveroService.getById. Cuando exista,
+// agregar getLoteByIdApi y simplificar el service.
+// ──────────────────────────────────────────────────────────────────────────────

@@ -71,6 +71,10 @@ function defaultPagination(total = 0): ApiPagination {
   }
 }
 
+// TODO(deuda): doble filtrado de búsqueda. Backend ya filtra por `q` en
+// listLotesViveroApi. Acá refiltrarmos. Revisar si los campos cubiertos
+// son los mismos y unificar — hoy podríamos estar descartando resultados
+// válidos del backend o duplicando lógica.
 function filterCardsBySearch(cards: ViveroLotCardData[], searchQuery?: string): ViveroLotCardData[] {
   const normalized = searchQuery?.trim().toLowerCase() || ''
   if (!normalized) return cards
@@ -170,6 +174,7 @@ export class LotesViveroService {
     const response = await this.list(backendFilters)
     const stageScoped = response.data.filter((lot) => matchesStageFilter(lot, input.stageFilter))
     const cards = stageScoped.map(mapLoteToCardData)
+    // TODO(debug): console.log temporal para verificar mapeo, quitar cuando termine la auditoría.
     console.log('LotesViveroService.listForUi - cards after stage filtering:', cards)
     const filteredCards = filterCardsBySearch(cards, input.searchQuery)
 
@@ -179,6 +184,16 @@ export class LotesViveroService {
     }
   }
 
+  // TODO(backend-pendiente): el backend NO expone GET /lotes-vivero/:id dedicado.
+  // Hoy simulamos con un GET /lotes-vivero?lote_vivero_id=X&limit=1, lo que
+  // trae envelope completo de paginación que descartamos. Cuando el backend
+  // exponga el endpoint dedicado, reemplazar por una llamada directa a
+  // getLoteByIdApi (ver TODO en lotes-vivero.api.ts).
+  //
+  // TODO(p3-consistencia): este método devuelve `LoteViveroItem` (raw) mientras
+  // que listForUi devuelve view-models ya mapeados. Inconsistente. Considerar
+  // que getById ya devuelva ViveroLotDetailView aplicando mapLoteToDetailView,
+  // o renombrarlo para que quede claro que es raw.
   static async getById(loteId: number): Promise<LoteViveroItem> {
     if (!Number.isFinite(loteId) || loteId <= 0) {
       throw new Error('ID de lote de vivero inválido.')

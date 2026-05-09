@@ -328,6 +328,10 @@ export interface RegistrarMermaRequest {
   observaciones?: string
 }
 
+// TODO(backend-anomalía): según RF-VIV-05, el despacho exige al menos una
+// evidencia obligatoria. El contrato actual NO incluye `evidencia_ids`.
+// Confirmar con backend: ¿es olvido o decisión consciente?
+// Si se agrega, será `evidencia_ids: number[]` (obligatorio, mínimo 1).
 export interface RegistrarDespachoRequest {
   fecha_evento: string
   cantidad_afectada: number
@@ -372,3 +376,9 @@ export type EvidenciasAdaptabilidadResponse = EvidenciasEmbolsadoResponse
 
 export type UploadEvidenciasMermaInput = UploadEvidenciasEmbolsadoInput
 export type EvidenciasMermaResponse = EvidenciasEmbolsadoResponse
+
+// TODO(backend-pendiente): falta definir RegistrarDespachoResponse en el
+// contrato (existen RegistrarMermaResponse y RegistrarAdaptabilidadResponse).
+// Mientras tanto, LotesViveroService.registrarDespacho retorna `unknown`.
+// También faltan los aliases UploadEvidenciasDespacho* si finalmente se
+// agregan evidencias al despacho (ver TODO en RegistrarDespachoRequest).

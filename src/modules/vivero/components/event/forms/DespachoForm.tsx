@@ -122,8 +122,11 @@ function DespachoForm({ lote, onCompleted }: Props) {
     setSubmitting(true)
     setSubmitError(null)
     try {
-      // TODO: subir evidencias cuando el backend exponga
-      // POST /lotes-vivero/:id/despacho/evidencias-pendientes
+      // TODO(backend-anomalía): RF-VIV-05 exige evidencia obligatoria en despacho,
+      // pero el contrato actual de `RegistrarDespachoRequest` NO incluye
+      // `evidencia_ids`. Tampoco existe `POST /lotes-vivero/:id/despacho/evidencias-pendientes`.
+      // Por ahora las fotos del FotosUploader quedan en estado local y se descartan al confirmar.
+      // Confirmar con backend si es olvido o decisión.
       await LotesViveroService.registrarDespacho(
         lote.id,
         {

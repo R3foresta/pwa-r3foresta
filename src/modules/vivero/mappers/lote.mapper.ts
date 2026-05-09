@@ -1,6 +1,23 @@
 import type { LoteViveroItem } from '../types/contracts'
 import type { ViveroLotCardData, ViveroLotDetailView } from '../types/view-models'
 
+// TODO(p0.1 — fallbacks obsoletos):
+//   El backend endureció a NO nullable los campos snapshot:
+//     • tipo_material_snapshot
+//     • nombre_cientifico_snapshot
+//     • nombre_comercial_snapshot
+//   Los `?? 'SEMILLA'` y `|| 'N/D'` que hay abajo ya son código muerto.
+//   Cuando trabajemos P0, sacarlos. Si TS deja de quejarse al borrarlos,
+//   está confirmado que el contrato los garantiza.
+//
+// TODO(p1 — datos no expuestos):
+//   Estos campos vienen del API pero no llegan a ningún view-model:
+//     • nombre_comunidad_origen_snapshot  → RF-VIV-07 lo exige visible.
+//     • recoleccion.fecha                  → "origen recolectado el dd/mm".
+//     • recoleccion.saldo_actual           → si la recolección sigue abierta.
+//     • recoleccion.estado_operativo       → ABIERTO/CERRADO.
+//   Cuando rediseñemos ViveroDetailScreen, agregar al ViveroLotDetailView.
+
 function daysBetween(start: string, end = new Date()): number {
   const startDate = new Date(`${start}T00:00:00`)
   if (Number.isNaN(startDate.getTime())) return 0
