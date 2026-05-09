@@ -1,5 +1,6 @@
 import type {
   EstadoLoteVivero,
+  MotivoCierreVivero,
   SubetapaAdaptabilidad,
   TipoMaterialVivero,
   UnidadMedidaVivero,
@@ -25,7 +26,7 @@ export interface ViveroLotDetailView {
   codigo: string
   estadoLote: EstadoLoteVivero
   subetapaActual: SubetapaAdaptabilidad | null
-  motivoCierre: string | null
+  motivoCierre: MotivoCierreVivero | null
   fechaInicio: string
   diasDesdeInicio: number
   cantidadInicialEnProceso: number
@@ -43,7 +44,9 @@ export interface ViveroLotDetailView {
   responsableNombre: string
   responsableUsername: string | null
   recoleccionCodigo: string
+  recoleccionFecha: string | null
   recoleccionTipoMaterial: TipoMaterialVivero
+  nombreComunidadOrigen: string | null
   createdAt: string
   updatedAt: string
   // TODO(p0.2 — código zombi): este campo está declarado pero ningún mapper lo

@@ -1,13 +1,17 @@
 import type { LoteViveroItem } from '../types/contracts'
 import type { ViveroLotCardData, ViveroLotDetailView } from '../types/view-models'
 
-// TODO(p1 — datos no expuestos):
-//   Estos campos vienen del API pero no llegan a ningún view-model:
-//     • nombre_comunidad_origen_snapshot  → RF-VIV-07 lo exige visible.
-//     • recoleccion.fecha                  → "origen recolectado el dd/mm".
-//     • recoleccion.saldo_actual           → si la recolección sigue abierta.
-//     • recoleccion.estado_operativo       → ABIERTO/CERRADO.
-//   Cuando rediseñemos ViveroDetailScreen, agregar al ViveroLotDetailView.
+// TODO(p1 — datos no expuestos restantes):
+//   • recoleccion.saldo_actual     → si la recolección origen sigue con saldo.
+//   • recoleccion.estado_operativo → ABIERTO/CERRADO.
+//   Útiles para mostrar contexto del origen en ViveroDetailScreen.
+//
+// TODO(estructural — fuera de P1):
+//   La sección "Datos de origen" hoy mezcla campos de origen
+//   (recolección, comunidad) con metadatos del lote (vivero, responsable,
+//   fechas). Cuando se rediseñe el detail, separar en 2 secciones distintas:
+//   "Origen" (recolección + comunidad + tipo material) vs
+//   "Lote" (vivero + responsable + fechas).
 
 function daysBetween(start: string, end = new Date()): number {
   if (!start) return 0
@@ -86,7 +90,9 @@ export function mapLoteToDetailView(lot: LoteViveroItem): ViveroLotDetailView {
     responsableNombre,
     responsableUsername: lot.responsable?.username || null,
     recoleccionCodigo: lot.recoleccion?.codigo_trazabilidad || `REC-${lot.recoleccion_id}`,
+    recoleccionFecha: lot.recoleccion?.fecha ?? null,
     recoleccionTipoMaterial: lot.recoleccion?.tipo_material || lot.tipo_material_snapshot,
+    nombreComunidadOrigen: lot.nombre_comunidad_origen_snapshot,
     createdAt: lot.created_at,
     updatedAt: lot.updated_at,
   }

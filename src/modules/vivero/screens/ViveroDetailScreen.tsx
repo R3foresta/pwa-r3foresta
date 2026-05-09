@@ -406,10 +406,24 @@ function ViveroDetailScreen() {
           </CollapsibleSection>
 
           {/* Datos de origen */}
+          {/* TODO(estructural — fuera de P1): esta sección mezcla origen
+              (recolección, comunidad, tipo material) con metadatos del lote
+              (vivero, responsable, fechas). Cuando se rediseñe, partir en 2. */}
           <CollapsibleSection title="Datos de origen">
             <div className="divide-y divide-brand-50">
-              <InfoRow label="Recolección" value={detail.recoleccionCodigo} />
+              <InfoRow
+                label="Recolección"
+                value={
+                  detail.recoleccionFecha
+                    ? `${detail.recoleccionCodigo} · ${formatDate(detail.recoleccionFecha)}`
+                    : detail.recoleccionCodigo
+                }
+              />
               <InfoRow label="Tipo material" value={detail.recoleccionTipoMaterial} />
+              <InfoRow
+                label="Comunidad origen"
+                value={detail.nombreComunidadOrigen ?? 'Sin registrar'}
+              />
               <InfoRow label="Vivero" value={`${detail.viveroNombre} (${detail.viveroCodigo})`} />
               <InfoRow
                 label="Responsable"
@@ -425,6 +439,10 @@ function ViveroDetailScreen() {
           </CollapsibleSection>
 
           {/* Datos de planta */}
+          {/* TODO(p1.5 — banner de cierre): cuando el flujo de cierre del backend
+              esté completamente implementado, agregar arriba del scroll un banner
+              prominente con el motivoCierre cuando estadoLote === 'FINALIZADO'.
+              Color por tipo: emerald=DESPACHO_TOTAL · red=PERDIDA_TOTAL · amber=MIXTO. */}
           <CollapsibleSection title="Datos de planta">
             {detail.plantaImagenUrl && (
               <div className="mb-3 overflow-hidden rounded-2xl">
@@ -440,9 +458,6 @@ function ViveroDetailScreen() {
               <InfoRow label="Nombre científico" value={detail.nombreCientifico} />
               <InfoRow label="Nombre comercial" value={detail.nombreComercial} />
               <InfoRow label="Variedad" value={detail.variedad ?? 'N/D'} />
-              {detail.motivoCierre && (
-                <InfoRow label="Motivo cierre" value={detail.motivoCierre} />
-              )}
             </div>
           </CollapsibleSection>
         </div>
