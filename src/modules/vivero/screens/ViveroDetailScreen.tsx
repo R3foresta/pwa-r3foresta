@@ -13,8 +13,11 @@ import type { ViveroLotDetailView } from '../types/view-models'
 
 function formatDate(value?: string | null) {
   if (!value) return 'Sin fecha'
-  const d = new Date(value)
-  if (Number.isNaN(d.getTime())) return value
+  const datePart = value.includes('T') ? value.split('T')[0] : value
+  const parts = datePart.split('-').map(p => parseInt(p, 10))
+  if (parts.length !== 3 || parts.some(isNaN)) return value
+  
+  const d = new Date(parts[0], parts[1] - 1, parts[2])
   return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
@@ -22,7 +25,10 @@ function formatDateTime(value?: string | null) {
   if (!value) return 'Sin fecha'
   const d = new Date(value)
   if (Number.isNaN(d.getTime())) return value
-  return d.toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' })
+  return d.toLocaleString('es-ES', { 
+    dateStyle: 'medium', 
+    timeStyle: 'short' 
+  })
 }
 
 function buildTimeline(detail: ViveroLotDetailView): StageTimelineItem[] {

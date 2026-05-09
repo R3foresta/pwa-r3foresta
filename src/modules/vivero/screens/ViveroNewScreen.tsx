@@ -256,7 +256,7 @@ function ViveroNewScreen() {
 
   const fechaRange = useMemo(() => buildPastRange(MAX_DIAS_VIVERO), [])
   const [fechaInicio, setFechaInicio] = useState(() =>
-    clampDateToRange(new Date().toISOString().slice(0, 10), fechaRange),
+    clampDateToRange(new Date().toLocaleDateString('en-CA'), fechaRange)
   )
 
   const [observaciones, setObservaciones] = useState('')
@@ -343,7 +343,6 @@ function ViveroNewScreen() {
   )
 
   const cantidadValue = Number(cantidadInicio)
-  const fechaInicioCheck = validateDateInRange(fechaInicio, fechaRange)
 
   const cantidadValidation =
     selectedRecoleccion && unidadMedida
@@ -355,6 +354,7 @@ function ViveroNewScreen() {
         })
       : { isValid: false, message: 'Selecciona una recolección válida.' }
 
+  const fechaInicioCheck = validateDateInRange(fechaInicio, fechaRange)
   const validation = {
     auth: !authId,
     vivero: !selectedViveroId,
