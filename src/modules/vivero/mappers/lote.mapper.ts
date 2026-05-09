@@ -19,9 +19,16 @@ import type { ViveroLotCardData, ViveroLotDetailView } from '../types/view-model
 //   Cuando rediseñemos ViveroDetailScreen, agregar al ViveroLotDetailView.
 
 function daysBetween(start: string, end = new Date()): number {
-  const startDate = new Date(`${start}T00:00:00`)
-  if (Number.isNaN(startDate.getTime())) return 0
-  return Math.max(0, Math.round((end.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)))
+  if (!start) return 0
+  const datePart = start.includes('T') ? start.split('T')[0] : start
+  const parts = datePart.split('-').map(Number)
+  if (parts.length !== 3) return 0
+
+  const startDate = new Date(parts[0], parts[1] - 1, parts[2])
+  const endDate = new Date(end.getFullYear(), end.getMonth(), end.getDate())
+
+  const diffTime = endDate.getTime() - startDate.getTime()
+  return Math.max(0, Math.round(diffTime / (1000 * 60 * 60 * 24)))
 }
 
 function getCurrentBalance(lot: LoteViveroItem): number | null {
