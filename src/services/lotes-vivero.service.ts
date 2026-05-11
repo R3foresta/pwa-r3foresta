@@ -71,20 +71,15 @@ function defaultPagination(total = 0): ApiPagination {
   }
 }
 
-// TODO(deuda): doble filtrado de búsqueda. Backend ya filtra por `q` en
-// listLotesViveroApi. Acá refiltrarmos. Revisar si los campos cubiertos
-// son los mismos y unificar — hoy podríamos estar descartando resultados
-// válidos del backend o duplicando lógica.
-function filterCardsBySearch(cards: ViveroLotCardData[], searchQuery?: string): ViveroLotCardData[] {
-  const normalized = searchQuery?.trim().toLowerCase() || ''
-  if (!normalized) return cards
-
-  return cards.filter((lot) =>
-    [lot.codigo, lot.especie, lot.vivero, lot.subetapaActual ?? ''].some((field) =>
-      field.toLowerCase().includes(normalized),
-    ),
-  )
-}
+// La búsqueda libre por texto se delega completamente al backend (`q`), que
+// cubre `codigo_trazabilidad` + snapshots de texto. NO refiltramos en cliente
+// para evitar descartar hits válidos del backend cuando coinciden por un
+// snapshot que el view-model no expone (ej. nombre científico).
+//
+// TODO(futuro — filtros discretos): si en algún momento queremos filtrar por
+// `vivero.nombre` o `subetapaActual` (campos que el `q` del backend NO cubre),
+// exponerlos como filtros propios (dropdown / chips), no metiéndolos en el
+// campo libre.
 
 export class LotesViveroService {
   private static normalizeErrorMessage(payload: unknown, fallback: string): string {
@@ -174,12 +169,9 @@ export class LotesViveroService {
     const response = await this.list(backendFilters)
     const stageScoped = response.data.filter((lot) => matchesStageFilter(lot, input.stageFilter))
     const cards = stageScoped.map(mapLoteToCardData)
-    // TODO(debug): console.log temporal para verificar mapeo, quitar cuando termine la auditoría.
-    console.log('LotesViveroService.listForUi - cards after stage filtering:', cards)
-    const filteredCards = filterCardsBySearch(cards, input.searchQuery)
 
     return {
-      items: filteredCards,
+      items: cards,
       pagination: response.pagination,
     }
   }
