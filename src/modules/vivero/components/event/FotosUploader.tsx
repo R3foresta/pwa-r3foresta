@@ -1,6 +1,9 @@
+import { useState } from 'react'
 import Icon from '../../../../components/Icon'
 
 export type Photo = { file: File; previewUrl: string }
+
+const MAX_FILE_BYTES = 5 * 1024 * 1024 // 5 MB
 
 type Props = {
   photos: Photo[]
@@ -23,10 +26,23 @@ function FotosUploader({
   errorMessage,
   disabled = false,
 }: Props) {
+  const [sizeError, setSizeError] = useState<string | null>(null)
+
   const handleFiles = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files ?? [])
     if (files.length === 0) return
-    onAdd(files)
+
+    const oversized = files.filter((f) => f.size > MAX_FILE_BYTES)
+    if (oversized.length > 0) {
+      setSizeError(
+        `${oversized.length === 1 ? '1 archivo supera' : `${oversized.length} archivos superan`} los 5 MB máximos.`,
+      )
+    } else {
+      setSizeError(null)
+    }
+
+    const valid = files.filter((f) => f.size <= MAX_FILE_BYTES)
+    if (valid.length > 0) onAdd(valid)
     event.target.value = ''
   }
 
@@ -118,6 +134,9 @@ function FotosUploader({
         </div>
       )}
 
+      {sizeError && (
+        <p className="text-xs font-semibold text-red-500">{sizeError}</p>
+      )}
       {showError && errorMessage && (
         <p className="text-xs font-semibold text-red-500">{errorMessage}</p>
       )}

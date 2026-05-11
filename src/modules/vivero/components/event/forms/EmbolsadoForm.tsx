@@ -228,6 +228,7 @@ function EmbolsadoForm({ lote, onCompleted }: Props) {
           <ObservacionesCard
             value={observaciones}
             onChange={setObservaciones}
+            maxLength={1000}
             disabled={submitting}
           />
         </section>
