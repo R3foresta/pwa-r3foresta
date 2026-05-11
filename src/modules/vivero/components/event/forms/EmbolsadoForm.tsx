@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Icon from '../../../../../components/Icon'
 import { useAuth } from '../../../../../contexts/AuthContext'
 import { LotesViveroService } from '../../../../../services/lotes-vivero.service'
+import { formatUnidadCanonicaDisplay } from '../../../../../utils/recoleccionUnidad'
 import type { LoteViveroItem } from '../../../types/contracts'
 import CantidadStepper from '../CantidadStepper'
 import EventoCTABar from '../EventoCTABar'
@@ -156,7 +157,10 @@ function EmbolsadoForm({ lote, onCompleted }: Props) {
               <p className="text-base font-extrabold text-brand-700">
                 {lote.cantidad_inicial_en_proceso}{' '}
                 <span className="text-sm font-bold text-brand-500">
-                  {lote.unidad_medida_inicial === 'UNIDAD' ? 'unidades' : 'g'}
+                  {formatUnidadCanonicaDisplay(
+                    lote.unidad_medida_inicial,
+                    lote.cantidad_inicial_en_proceso,
+                  )}
                 </span>{' '}
                 <span className="text-xs font-semibold text-brand-400">· {tipoMaterial}</span>
               </p>

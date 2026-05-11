@@ -59,7 +59,7 @@ function RecoleccionCard({ recoleccion }: Props) {
   const estadoRegistro = resolveEstadoRegistro(recoleccionCompat)
   const estadoOperativo = resolveEstadoOperativo(recoleccion)
   const cantidadActual = recoleccion.saldo_actual ?? 0
-  const unidadDisplay = formatUnidadCanonicaDisplay(recoleccion.unidad_canonica)
+  const unidadDisplay = formatUnidadCanonicaDisplay(recoleccion.unidad_canonica, cantidadActual)
   const evidenciasCount = recoleccion.evidencias?.length ?? recoleccion.fotos?.length ?? 0
 
   return (

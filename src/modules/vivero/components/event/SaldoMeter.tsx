@@ -1,3 +1,4 @@
+import { formatUnidadCanonicaDisplay } from '../../../../utils/recoleccionUnidad'
 import type { UnidadMedidaVivero } from '../../types/contracts'
 import { formatCantidadVivero } from '../../utils/format'
 
@@ -25,7 +26,7 @@ function SaldoMeter({ saldo, cantidad, unidad }: Props) {
         <span>{overLimit ? 'Excede el saldo disponible' : `Usando ${pct}% del saldo`}</span>
         <span className="text-brand-700">
           {formatCantidadVivero(Math.min(cantidad, saldo), unidad)} /{' '}
-          {formatCantidadVivero(saldo, unidad)} {unidad}
+          {formatCantidadVivero(saldo, unidad)} {formatUnidadCanonicaDisplay(unidad, saldo)}
         </span>
       </div>
       <div className="h-2 w-full overflow-hidden rounded-full bg-brand-50">

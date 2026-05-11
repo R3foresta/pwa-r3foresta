@@ -7,6 +7,7 @@ import { useViveros } from '../../../hooks/useViveros'
 import type { Recoleccion } from '../../../services/recolecciones.service'
 import { RecoleccionesService } from '../../../services/recolecciones.service'
 import { LotesViveroService } from '../../../services/lotes-vivero.service'
+import { formatUnidadCanonicaDisplay } from '../../../utils/recoleccionUnidad'
 import { getUbicacionDisplay } from '../../../utils/ubicacion'
 import { buildPastRange, clampDateToRange, validateDateInRange } from '../../../utils/validations/date'
 import FechaCard from '../components/event/FechaCard'
@@ -542,7 +543,7 @@ function ViveroNewScreen() {
                   </p>
                   <p className="mt-1 text-base font-extrabold text-brand-700">
                     {saldoDisponible !== null
-                      ? `${formatCantidadVivero(saldoDisponible, unidadMedida)} ${unidadMedida}`
+                      ? `${formatCantidadVivero(saldoDisponible, unidadMedida)} ${formatUnidadCanonicaDisplay(unidadMedida, saldoDisponible)}`
                       : '—'}
                   </p>
                 </div>
@@ -569,7 +570,7 @@ function ViveroNewScreen() {
                   : null
                 const saldoItem =
                   typeof item.saldo_actual === 'number' && unidadItem
-                    ? `${formatCantidadVivero(item.saldo_actual, unidadItem)} ${unidadItem}`
+                    ? `${formatCantidadVivero(item.saldo_actual, unidadItem)} ${formatUnidadCanonicaDisplay(unidadItem, item.saldo_actual)}`
                     : '—'
 
                 return (
@@ -625,13 +626,6 @@ function ViveroNewScreen() {
           status={stepStatus(3)}
           icon="balance"
           title="Cantidad inicial"
-          badge={
-            unidadMedida ? (
-              <span className="rounded-full bg-brand-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-brand-700 ring-1 ring-brand-100">
-                {unidadMedida}
-              </span>
-            ) : undefined
-          }
         >
           {!unidadMedida || saldoDisponible === null ? (
             <p className="rounded-2xl bg-brand-50 px-3 py-3 text-sm font-semibold text-brand-600">
@@ -643,7 +637,7 @@ function ViveroNewScreen() {
                 <div className="flex items-end justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <p className="text-[10px] font-extrabold uppercase tracking-wider text-brand-500">
-                      Cantidad
+                      Cantidad inicial en proceso
                     </p>
                     <input
                       type="text"
@@ -657,7 +651,7 @@ function ViveroNewScreen() {
                     />
                   </div>
                   <span className="pb-2 text-base font-extrabold text-brand-500">
-                    {unidadMedida}
+                    {formatUnidadCanonicaDisplay(unidadMedida)}
                   </span>
                 </div>
                 <p className="mt-1 text-[11px] font-semibold text-brand-500">

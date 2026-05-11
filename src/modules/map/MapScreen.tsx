@@ -365,7 +365,7 @@ function MapScreen() {
               const ubicacionTexto = getUbicacionDisplay(recoleccion.ubicacion)
               const divisionTexto = getUbicacionDivision(recoleccion.ubicacion)
               const cantidadActual = recoleccion.saldo_actual ?? 0
-              const unidadDisplay = formatUnidadCanonicaDisplay(recoleccion.unidad_canonica)
+              const unidadDisplay = formatUnidadCanonicaDisplay(recoleccion.unidad_canonica, cantidadActual)
               
               return (
                 <Marker

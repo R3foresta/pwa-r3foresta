@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import Icon from '../../../components/Icon'
 import type { IconName } from '../../../components/Icon'
 import { LotesViveroService } from '../../../services/lotes-vivero.service'
+import { formatUnidadCanonicaDisplay } from '../../../utils/recoleccionUnidad'
 import CollapsibleSection from '../components/CollapsibleSection';
 import StageTimeline from '../components/StageTimeline'
 import type { StageTimelineItem } from '../components/StageTimeline'
@@ -185,8 +186,10 @@ function ViveroDetailScreen() {
     hasEmbolsado && saldoVivo !== null
       ? Math.max(0, plantasIniciales - saldoVivo)
       : null
-  const unidadOrigenLabel =
-    detail?.unidadMedidaInicial === 'UNIDAD' ? 'unidades' : (detail?.unidadMedidaInicial?.toLowerCase() ?? '')
+  const unidadOrigenLabel = formatUnidadCanonicaDisplay(
+    detail?.unidadMedidaInicial,
+    detail?.cantidadInicialEnProceso,
+  )
 
   if (loading) {
     return (

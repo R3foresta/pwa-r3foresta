@@ -40,10 +40,18 @@ export function normalizeUnidadCanonica(
   return null
 }
 
-export function formatUnidadCanonicaDisplay(value: string | null | undefined): string {
+/**
+ * Display label for a canonical unit returned by the backend ('G' | 'UNIDAD').
+ * - 'G' → 'gr'
+ * - 'UNIDAD' → 'Unidad' when count === 1, otherwise 'Unidades' (default plural)
+ */
+export function formatUnidadCanonicaDisplay(
+  value: string | null | undefined,
+  count?: number,
+): string {
   const unidadCanonica = normalizeUnidadCanonica(value)
   if (unidadCanonica === 'UNIDAD') {
-    return 'unidades'
+    return count === 1 ? 'Unidad' : 'Unidades'
   }
   if (unidadCanonica === 'G') {
     return 'gr'

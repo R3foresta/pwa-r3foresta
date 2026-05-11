@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Icon from '../../../components/Icon'
+import { formatUnidadCanonicaDisplay } from '../../../utils/recoleccionUnidad'
 import { useEmbolsado } from '../hooks/useEmbolsado'
 
 const STAGE_TABS = ['Embolsado', 'Adaptabilidad', 'Merma', 'Despacho']
@@ -320,7 +321,8 @@ function ViveroEmbolsadoScreen() {
             </div>
             {context && (
               <p className="mt-1.5 text-right text-xs font-semibold text-brand-400">
-                máx. {maxPlantas} {context.unidad_medida_inicial}
+                máx. {maxPlantas}{' '}
+                {formatUnidadCanonicaDisplay(context.unidad_medida_inicial, maxPlantas)}
               </p>
             )}
           </div>
