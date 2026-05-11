@@ -14,6 +14,8 @@ type Props = {
   showError?: boolean
   errorMessage?: string
   disabled?: boolean
+  /** Skip the component's own label/count header. Use when wrapping in another card (e.g. SectionCard) that already provides the title and badge. */
+  headerless?: boolean
 }
 
 function FotosUploader({
@@ -25,6 +27,7 @@ function FotosUploader({
   showError = false,
   errorMessage,
   disabled = false,
+  headerless = false,
 }: Props) {
   const [sizeError, setSizeError] = useState<string | null>(null)
 
@@ -50,21 +53,23 @@ function FotosUploader({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-extrabold text-brand-700">
-          Evidencia fotográfica
-          {required && (
-            <span className="ml-2 text-[10px] font-bold uppercase tracking-wider text-red-500">
-              Obligatorio
+      {!headerless && (
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-extrabold text-brand-700">
+            Evidencia fotográfica
+            {required && (
+              <span className="ml-2 text-[10px] font-bold uppercase tracking-wider text-red-500">
+                Obligatorio
+              </span>
+            )}
+          </p>
+          {photos.length > 0 && (
+            <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
+              {photos.length}/{max}
             </span>
           )}
-        </p>
-        {photos.length > 0 && (
-          <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
-            {photos.length}/{max}
-          </span>
-        )}
-      </div>
+        </div>
+      )}
 
       {empty ? (
         <label

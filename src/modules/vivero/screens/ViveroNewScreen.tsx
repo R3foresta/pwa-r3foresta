@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Icon from '../../../components/Icon'
-import type { IconName } from '../../../components/Icon'
 import { MAX_DIAS_VIVERO } from '../../../config/vivero'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useViveros } from '../../../hooks/useViveros'
@@ -10,12 +9,19 @@ import { RecoleccionesService } from '../../../services/recolecciones.service'
 import { LotesViveroService } from '../../../services/lotes-vivero.service'
 import { getUbicacionDisplay } from '../../../utils/ubicacion'
 import { buildPastRange, clampDateToRange, validateDateInRange } from '../../../utils/validations/date'
+import FechaCard from '../components/event/FechaCard'
+import FotosUploader from '../components/event/FotosUploader'
+import type { Photo } from '../components/event/FotosUploader'
+import ObservacionesCard from '../components/event/ObservacionesCard'
+import ProgressHeader from '../components/event/ProgressHeader'
+import SaldoMeter from '../components/event/SaldoMeter'
+import SectionCard from '../components/event/SectionCard'
+import type { StepStatus } from '../components/event/SectionCard'
 import type { TipoMaterialVivero, UnidadMedidaVivero } from '../types/contracts'
+import { formatCantidadVivero } from '../utils/format'
 import { isValidYmdDate, validateCantidadInicial } from '../utils/validators'
 
 type UploadPhase = 'idle' | 'uploading' | 'creating'
-type Photo = { file: File; previewUrl: string }
-type StepStatus = { done: boolean; active: boolean }
 
 const QUICK_PERCENTAGES = [25, 50, 80, 100] as const
 
@@ -47,11 +53,6 @@ const isTipoMaterialVivero = (value: string | null | undefined): value is TipoMa
 const isUnidadMedidaVivero = (value: string | null | undefined): value is UnidadMedidaVivero =>
   value === 'UNIDAD' || value === 'G'
 
-const formatCantidad = (value: number, unidad: UnidadMedidaVivero) => {
-  if (unidad === 'UNIDAD') return String(Math.trunc(value))
-  return String(Number(value.toFixed(1)))
-}
-
 function sanitizeCantidad(value: string, unidad: UnidadMedidaVivero | null): string {
   if (!value) return ''
   let clean = value.trim().replace(',', '.')
@@ -77,11 +78,11 @@ function getCantidadSugerida(saldo: number, unidad: UnidadMedidaVivero, pct: num
   const raw = (saldo * pct) / 100
   if (unidad === 'UNIDAD') {
     const rounded = Math.round(raw)
-    return formatCantidad(Math.min(saldo, Math.max(1, rounded)), unidad)
+    return formatCantidadVivero(Math.min(saldo, Math.max(1, rounded)), unidad)
   }
   const rounded = Math.round(raw * 10) / 10
   const normalized = rounded > 0 ? rounded : 0.1
-  return formatCantidad(Math.min(saldo, normalized), unidad)
+  return formatCantidadVivero(Math.min(saldo, normalized), unidad)
 }
 
 const getRecoleccionLabel = (item: Recoleccion) =>
@@ -101,140 +102,6 @@ const isRecoleccionElegible = (item: Recoleccion) => {
     estadoOperativo === 'ABIERTO' &&
     saldoActual > 0 &&
     isUnidadMedidaVivero(item.unidad_canonica)
-  )
-}
-
-type SectionCardProps = {
-  index: number
-  total: number
-  status: StepStatus
-  icon: IconName
-  title: string
-  hint?: string
-  badge?: React.ReactNode
-  children: React.ReactNode
-}
-
-function SectionCard({ index, total, status, icon, title, hint, badge, children }: SectionCardProps) {
-  const ringTone = status.done
-    ? 'ring-emerald-100'
-    : status.active
-      ? 'ring-brand-200'
-      : 'ring-black/5'
-  const badgeTone = status.done
-    ? 'bg-emerald-500 text-white'
-    : status.active
-      ? 'bg-brand-500 text-white'
-      : 'bg-brand-50 text-brand-600'
-
-  return (
-    <section className={`overflow-hidden rounded-3xl bg-white shadow-soft ring-1 ${ringTone}`}>
-      <header className="flex items-start gap-3 px-4 pt-4">
-        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${badgeTone}`}>
-          <Icon name={status.done ? 'check' : icon} className="h-5 w-5" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
-            Paso {index} · {total}
-          </p>
-          <h2 className="text-base font-extrabold leading-tight text-brand-700">{title}</h2>
-          {hint && <p className="mt-0.5 text-xs font-semibold text-brand-500">{hint}</p>}
-        </div>
-        {badge ? <div className="shrink-0">{badge}</div> : null}
-      </header>
-      <div className="px-4 pb-4 pt-3">{children}</div>
-    </section>
-  )
-}
-
-function ProgressHeader({
-  steps,
-  onBack,
-}: {
-  steps: StepStatus[]
-  onBack: () => void
-}) {
-  const completed = steps.filter((s) => s.done).length
-  return (
-    <div className="sticky top-0 z-30 bg-[#eef2ed]/95 px-5 pb-4 pt-6 backdrop-blur">
-      <div className="mx-auto flex w-full max-w-md flex-col gap-3">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            aria-label="Volver"
-            onClick={onBack}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-brand-700 shadow-soft transition hover:bg-brand-50"
-          >
-            <Icon name="arrow-left" className="h-5 w-5" />
-          </button>
-          <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-brand-500">
-              Nuevo lote · vivero
-            </p>
-            <h1 className="truncate text-xl font-extrabold leading-tight text-brand-700">
-              Inicio de lote
-            </h1>
-          </div>
-          <div className="flex flex-col items-end leading-none">
-            <span className="text-base font-extrabold text-brand-700">
-              {completed}
-              <span className="text-brand-400">/{steps.length}</span>
-            </span>
-            <span className="mt-1 text-[10px] font-bold uppercase tracking-wider text-brand-400">
-              listos
-            </span>
-          </div>
-        </div>
-        <div className="flex gap-1.5">
-          {steps.map((s, i) => (
-            <div
-              key={i}
-              className={`h-1.5 flex-1 rounded-full transition-colors ${
-                s.done ? 'bg-emerald-500' : s.active ? 'bg-brand-500' : 'bg-brand-100'
-              }`}
-            />
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function SaldoMeter({
-  saldo,
-  cantidad,
-  unidad,
-}: {
-  saldo: number
-  cantidad: number
-  unidad: UnidadMedidaVivero
-}) {
-  const ratio = saldo > 0 ? Math.max(0, cantidad / saldo) : 0
-  const pct = Math.round(Math.min(1, ratio) * 100)
-  const overLimit = ratio > 1
-  const tone = overLimit
-    ? 'bg-red-500'
-    : ratio >= 0.9
-      ? 'bg-amber-400'
-      : ratio > 0
-        ? 'bg-emerald-500'
-        : 'bg-brand-200'
-
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-end justify-between text-[11px] font-bold text-brand-500">
-        <span>{overLimit ? 'Excede el saldo disponible' : `Usando ${pct}% del saldo`}</span>
-        <span className="text-brand-700">
-          {formatCantidad(Math.min(cantidad, saldo), unidad)} / {formatCantidad(saldo, unidad)} {unidad}
-        </span>
-      </div>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-brand-50">
-        <div
-          className={`h-full rounded-full transition-all duration-300 ${tone}`}
-          style={{ width: `${Math.min(100, pct)}%` }}
-        />
-      </div>
-    </div>
   )
 }
 
@@ -427,13 +294,10 @@ function ViveroNewScreen() {
     setCantidadInicio(getCantidadSugerida(saldoDisponible, unidadMedida, pct))
   }
 
-  const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files ?? [])
-    if (files.length === 0) return
+  const addPhotos = (files: File[]) => {
     const next = files.map((file) => ({ file, previewUrl: URL.createObjectURL(file) }))
     setPhotos((prev) => [...prev, ...next].slice(0, 5))
     setUploadedEvidenceIds(null)
-    event.target.value = ''
   }
 
   const removePhoto = (index: number) => {
@@ -504,18 +368,17 @@ function ViveroNewScreen() {
   }
 
   const pendingCount = steps.filter((s) => !s.done).length
-  const ctaLabel =
-    submitPhase === 'uploading'
-      ? 'Subiendo evidencias…'
-      : submitPhase === 'creating'
-        ? 'Creando lote…'
-        : canSubmit
-          ? 'Registrar inicio de lote'
-          : 'Completa los pasos pendientes'
+  const submittingLabel =
+    submitPhase === 'uploading' ? 'Subiendo evidencias…' : 'Creando lote…'
 
   return (
     <div className="relative min-h-screen bg-[#eef2ed] text-brand-700">
-      <ProgressHeader steps={steps} onBack={() => navigate('/app/vivero')} />
+      <ProgressHeader
+        steps={steps}
+        onBack={() => navigate('/app/vivero')}
+        eyebrow="Nuevo lote · vivero"
+        title="Inicio de lote"
+      />
 
       <form
         id="vivero-new-form"
@@ -531,28 +394,16 @@ function ViveroNewScreen() {
           title="Fecha de inicio"
           hint={`Entre ${formatShortDate(fechaRange.min)} y ${formatShortDate(fechaRange.max)}.`}
         >
-          <div
-            className={`flex items-center gap-3 rounded-2xl border px-4 transition ${
-              showErrors && validation.fecha
-                ? 'border-red-300 bg-red-50'
-                : 'border-brand-100 bg-brand-50'
-            }`}
-          >
-            <Icon name="date" className="h-5 w-5 shrink-0 text-brand-500" />
-            <input
-              type="date"
-              value={fechaInicio}
-              min={fechaRange.min}
-              max={fechaRange.max}
-              onChange={(event) => setFechaInicio(event.target.value)}
-              className="w-full border-none bg-transparent py-3.5 text-base font-bold text-brand-700 outline-none"
-            />
-          </div>
-          {showErrors && validation.fecha && (
-            <p className="mt-2 text-xs font-semibold text-red-500">
-              Selecciona una fecha en el rango permitido.
-            </p>
-          )}
+          <FechaCard
+            headerless
+            value={fechaInicio}
+            onChange={setFechaInicio}
+            min={fechaRange.min}
+            max={fechaRange.max}
+            showError={showErrors && validation.fecha}
+            errorMessage="Selecciona una fecha en el rango permitido."
+            disabled={isSubmitting}
+          />
         </SectionCard>
 
         {/* PASO 2 — VIVERO */}
@@ -685,7 +536,7 @@ function ViveroNewScreen() {
                   </p>
                   <p className="mt-1 text-base font-extrabold text-brand-700">
                     {saldoDisponible !== null
-                      ? `${formatCantidad(saldoDisponible, unidadMedida)} ${unidadMedida}`
+                      ? `${formatCantidadVivero(saldoDisponible, unidadMedida)} ${unidadMedida}`
                       : '—'}
                   </p>
                 </div>
@@ -712,7 +563,7 @@ function ViveroNewScreen() {
                   : null
                 const saldoItem =
                   typeof item.saldo_actual === 'number' && unidadItem
-                    ? `${formatCantidad(item.saldo_actual, unidadItem)} ${unidadItem}`
+                    ? `${formatCantidadVivero(item.saldo_actual, unidadItem)} ${unidadItem}`
                     : '—'
 
                 return (
@@ -864,66 +715,15 @@ function ViveroNewScreen() {
             ) : undefined
           }
         >
-          {photos.length === 0 ? (
-            <label className="flex min-h-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-brand-200 bg-brand-50/60 px-4 py-5 text-center text-brand-700 transition hover:border-brand-300 hover:bg-brand-50">
-              <Icon name="photo" className="h-7 w-7" />
-              <span className="text-sm font-extrabold">Agregar fotos</span>
-              <span className="text-[11px] font-semibold text-brand-500">
-                JPG o PNG · hasta 5 archivos
-              </span>
-              <input
-                type="file"
-                multiple
-                accept="image/jpeg,image/jpg,image/png"
-                onChange={handlePhotoUpload}
-                className="hidden"
-              />
-            </label>
-          ) : (
-            <div className="-mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-1">
-              {photos.map((photo, index) => (
-                <div
-                  key={photo.previewUrl}
-                  className="relative h-24 w-24 shrink-0 snap-start overflow-hidden rounded-2xl ring-1 ring-black/5"
-                >
-                  <img
-                    src={photo.previewUrl}
-                    alt={photo.file.name}
-                    className="h-full w-full object-cover"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removePhoto(index)}
-                    className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow-md ring-2 ring-white transition hover:bg-red-600"
-                    aria-label="Quitar foto"
-                  >
-                    <Icon name="x" className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              ))}
-              {photos.length < 5 && (
-                <label className="flex h-24 w-24 shrink-0 cursor-pointer flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-brand-200 bg-brand-50/60 text-brand-600 transition hover:border-brand-300 hover:bg-brand-50">
-                  <Icon name="plus" className="h-6 w-6" />
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider">
-                    Añadir
-                  </span>
-                  <input
-                    type="file"
-                    multiple
-                    accept="image/jpeg,image/jpg,image/png"
-                    onChange={handlePhotoUpload}
-                    className="hidden"
-                  />
-                </label>
-              )}
-            </div>
-          )}
-
-          {showErrors && validation.fotos && (
-            <p className="mt-2 text-xs font-semibold text-red-500">
-              Debes cargar entre 1 y 5 fotos para crear el lote.
-            </p>
-          )}
+          <FotosUploader
+            headerless
+            photos={photos}
+            onAdd={addPhotos}
+            onRemove={removePhoto}
+            showError={showErrors && validation.fotos}
+            errorMessage="Debes cargar entre 1 y 5 fotos para crear el lote."
+            disabled={isSubmitting}
+          />
 
           {uploadedEvidenceIds && uploadedEvidenceIds.length > 0 && (
             <div className="mt-2 flex items-center gap-2 rounded-2xl bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 ring-1 ring-emerald-100">
@@ -935,23 +735,13 @@ function ViveroNewScreen() {
 
         {/* OBSERVACIONES (opcional, fuera del flujo principal) */}
         <section className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
-          <div className="flex items-center gap-2">
-            <Icon name="report" className="h-4 w-4 text-brand-500" />
-            <p className="text-sm font-extrabold text-brand-700">Observaciones</p>
-            <span className="ml-auto text-[10px] font-bold uppercase tracking-wider text-brand-400">
-              Opcional
-            </span>
-          </div>
-          <textarea
+          <ObservacionesCard
             value={observaciones}
-            onChange={(event) => setObservaciones(event.target.value.slice(0, 500))}
+            onChange={setObservaciones}
+            maxLength={500}
             placeholder="Notas adicionales del inicio del lote…"
-            rows={3}
-            className="mt-3 w-full resize-none rounded-2xl border border-brand-100 bg-white px-3 py-2 text-sm font-semibold text-brand-700 outline-none transition focus:border-brand-300"
+            disabled={isSubmitting}
           />
-          <p className="mt-1 text-right text-[10px] font-semibold text-brand-400">
-            {observaciones.length}/500
-          </p>
         </section>
 
         {showErrors && validation.auth && (
@@ -969,27 +759,29 @@ function ViveroNewScreen() {
 
       <div className="pointer-events-none fixed inset-x-0 bottom-[112px] z-40 px-5">
         <div className="pointer-events-auto mx-auto w-full max-w-md space-y-2 rounded-3xl bg-white/95 px-4 py-3 shadow-soft ring-1 ring-black/5 backdrop-blur">
-          <button
-            type="submit"
-            form="vivero-new-form"
-            aria-disabled={!canSubmit}
-            disabled={!canSubmit}
-            className={`flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3.5 text-base font-extrabold text-white shadow-soft transition ${
-              canSubmit
-                ? 'bg-emerald-600 hover:bg-emerald-700'
-                : 'cursor-not-allowed bg-brand-200 text-white/90'
-            }`}
-          >
-            {isSubmitting ? (
-              <span
-                className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"
-                aria-hidden
-              />
-            ) : (
-              <Icon name="check" className="h-4 w-4" />
-            )}
-            <span>{ctaLabel}</span>
-          </button>
+          {canSubmit || isSubmitting ? (
+            <button
+              type="submit"
+              form="vivero-new-form"
+              disabled={isSubmitting}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-3.5 text-base font-extrabold text-white shadow-soft transition hover:bg-emerald-700 disabled:cursor-progress disabled:opacity-90"
+            >
+              {isSubmitting ? (
+                <>
+                  <span
+                    className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"
+                    aria-hidden
+                  />
+                  <span>{submittingLabel}</span>
+                </>
+              ) : (
+                <>
+                  <Icon name="check" className="h-4 w-4" />
+                  <span>Registrar inicio de lote</span>
+                </>
+              )}
+            </button>
+          ) : null}
           {!isSubmitting && pendingCount > 0 && (
             <p className="text-center text-[11px] font-semibold text-brand-500">
               Falta{pendingCount === 1 ? '' : 'n'} {pendingCount} paso
