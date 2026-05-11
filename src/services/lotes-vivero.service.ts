@@ -10,7 +10,7 @@ import {
   uploadEvidenciasEmbolsadoApi,
   uploadEvidenciasPendientesViveroApi,
 } from '../api/lotes-vivero.api'
-import { mapLoteToCardData } from '../modules/vivero/mappers/lote.mapper'
+import { mapLoteToCardData, mapLoteToDetailView } from '../modules/vivero/mappers/lote.mapper'
 import type {
   ApiPagination,
   CreateLoteViveroInput,
@@ -33,7 +33,7 @@ import type {
   UploadEvidenciasPendientesResponse,
   UploadEvidenciasEmbolsadoInput,
 } from '../modules/vivero/types/contracts'
-import type { ViveroLotCardData } from '../modules/vivero/types/view-models'
+import type { ViveroLotCardData, ViveroLotDetailView } from '../modules/vivero/types/view-models'
 import {
   buildBackendQueryForStageFilter,
   matchesStageFilter,
@@ -197,6 +197,11 @@ export class LotesViveroService {
       throw new Error('Lote de vivero no encontrado.')
     }
     return lot
+  }
+
+  static async getDetail(loteId: number): Promise<ViveroLotDetailView> {
+    const lot = await this.getById(loteId)
+    return mapLoteToDetailView(lot)
   }
 
   static async uploadEvidenciasPendientes(

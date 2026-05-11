@@ -7,8 +7,6 @@ import CollapsibleSection from '../components/CollapsibleSection';
 import StageTimeline from '../components/StageTimeline'
 import type { StageTimelineItem } from '../components/StageTimeline'
 import SurvivalBar from '../components/SurvivalBar'
-import { mapLoteToDetailView } from '../mappers/lote.mapper'
-import type { LoteViveroItem } from '../types/contracts'
 import type { ViveroLotDetailView } from '../types/view-models'
 
 function formatDate(value?: string | null) {
@@ -137,10 +135,9 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 function ViveroDetailScreen() {
   const navigate = useNavigate()
   const { id } = useParams()
-  const [lot, setLot] = useState<LoteViveroItem | null>(null)
+  const [detail, setDetail] = useState<ViveroLotDetailView | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  
 
   useEffect(() => {
     if (!id) {
@@ -160,8 +157,8 @@ function ViveroDetailScreen() {
       try {
         setLoading(true)
         setError(null)
-        const data = await LotesViveroService.getById(lotId)
-        if (isMounted) setLot(data)
+        const data = await LotesViveroService.getDetail(lotId)
+        if (isMounted) setDetail(data)
       } catch (err) {
         if (isMounted) setError(err instanceof Error ? err.message : 'Error al cargar el lote.')
       } finally {
@@ -174,7 +171,6 @@ function ViveroDetailScreen() {
     }
   }, [id])
 
-  const detail = useMemo(() => (lot ? mapLoteToDetailView(lot) : null), [lot])
   const timeline = useMemo(() => (detail ? buildTimeline(detail) : []), [detail])
   const nextActionInfo = useMemo(() => (detail ? getNextActionInfo(detail) : null), [detail])
   const canRegisterMerma = useMemo(
