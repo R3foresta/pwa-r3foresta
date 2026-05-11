@@ -231,6 +231,12 @@ function ViveroNewScreen() {
     fotos: photos.length < 1 || photos.length > 5,
   }
 
+  const overSaldo =
+    unidadMedida !== null &&
+    saldoDisponible !== null &&
+    Number.isFinite(cantidadValue) &&
+    cantidadValue > saldoDisponible
+
   const stepFlags = [
     !validation.fecha,
     !validation.vivero,
@@ -665,6 +671,17 @@ function ViveroNewScreen() {
                 unidad={unidadMedida}
               />
 
+              {overSaldo && (
+                <div className="flex items-start gap-2 rounded-2xl bg-red-50 px-3 py-2.5 text-xs font-bold text-red-700 ring-1 ring-red-200">
+                  <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span>
+                    La cantidad supera el saldo disponible (
+                    {formatCantidadVivero(saldoDisponible, unidadMedida)} {unidadMedida}). Ajustá el
+                    valor para continuar.
+                  </span>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <p className="text-[11px] font-extrabold uppercase tracking-wider text-brand-500">
                   Atajos rápidos
@@ -684,7 +701,7 @@ function ViveroNewScreen() {
                 </div>
               </div>
 
-              {showErrors && validation.cantidad && (
+              {showErrors && validation.cantidad && !overSaldo && (
                 <p className="text-xs font-semibold text-red-500">
                   {cantidadValidation.message ?? 'Cantidad inválida.'}
                 </p>
