@@ -253,36 +253,29 @@ function ViveroEmbolsadoScreen() {
             </p>
           </div>
 
-          {/* Antes / Después */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-2xl bg-white px-4 py-3 shadow-soft ring-1 ring-black/5">
-              <p className="text-xs font-semibold text-brand-500">Plantas Antes</p>
-              <p className="mt-0.5 text-2xl font-extrabold text-brand-700">0</p>
-              <p className="text-[11px] font-semibold text-brand-400">{unidadLabel}</p>
-            </div>
-            <div
-              className={`rounded-2xl px-4 py-3 shadow-soft ring-1 transition-all ${
-                plantasDespues > 0
-                  ? 'bg-emerald-50 ring-emerald-200'
-                  : 'bg-white ring-black/5'
-              }`}
+          {/* Plantas Después */}
+          <div
+            className={`rounded-2xl px-4 py-3 shadow-soft ring-1 transition-all ${
+              plantasDespues > 0
+                ? 'bg-emerald-50 ring-emerald-200'
+                : 'bg-white ring-black/5'
+            }`}
+          >
+            <p
+              className={`text-xs font-semibold ${plantasDespues > 0 ? 'text-emerald-600' : 'text-brand-500'}`}
             >
-              <p
-                className={`text-xs font-semibold ${plantasDespues > 0 ? 'text-emerald-600' : 'text-brand-500'}`}
-              >
-                Plantas Después
-              </p>
-              <p
-                className={`mt-0.5 text-2xl font-extrabold ${plantasDespues > 0 ? 'text-emerald-700' : 'text-brand-300'}`}
-              >
-                {plantasDespues > 0 ? plantasDespues : '—'}
-              </p>
-              <p
-                className={`text-[11px] font-semibold ${plantasDespues > 0 ? 'text-emerald-500' : 'text-brand-300'}`}
-              >
-                {unidadLabel}
-              </p>
-            </div>
+              Plantas Después
+            </p>
+            <p
+              className={`mt-0.5 text-2xl font-extrabold ${plantasDespues > 0 ? 'text-emerald-700' : 'text-brand-300'}`}
+            >
+              {plantasDespues > 0 ? plantasDespues : '—'}
+            </p>
+            <p
+              className={`text-[11px] font-semibold ${plantasDespues > 0 ? 'text-emerald-500' : 'text-brand-300'}`}
+            >
+              {unidadLabel}
+            </p>
           </div>
 
           {/* Stepper */}
