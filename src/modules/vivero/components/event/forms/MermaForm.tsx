@@ -9,6 +9,7 @@ import FechaCard from '../FechaCard'
 import FotosUploader from '../FotosUploader'
 import type { Photo } from '../FotosUploader'
 import ObservacionesCard from '../ObservacionesCard'
+import SurvivalBar from '../../SurvivalBar'
 
 type Props = {
   lote: LoteViveroItem
@@ -199,6 +200,14 @@ function MermaForm({ lote, onCompleted }: Props) {
             errorMessage={cantidadError ?? undefined}
             disabled={submitting}
           />
+          {/* LA BARRA de supervivencia */}
+          <div className="mt-4 px-1">
+            <SurvivalBar 
+              initial={saldoVivo} 
+              alive={cantidadValid ? saldoDespues : null} 
+              showLabel={true}
+            />
+          </div>
         </section>
 
         {/* Causa */}
