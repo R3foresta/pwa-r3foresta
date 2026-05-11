@@ -25,21 +25,28 @@ function maxOfDates(a: string, b: string): string {
   return a > b ? a : b
 }
 
+function subtractDays(ymd: string, days: number): string {
+  const d = new Date(`${ymd}T12:00:00`)
+  d.setDate(d.getDate() - days)
+  return d.toISOString().slice(0, 10)
+}
+
 function EmbolsadoForm({ lote, onCompleted }: Props) {
   const { user } = useAuth()
   const authId = user?.auth_id?.trim() || ''
 
   const today = todayYmd()
-  const tipoMaterial = lote.tipo_material_snapshot ?? lote.recoleccion?.tipo_material ?? 'SEMILLA'
+  const tipoMaterial = lote.tipo_material_snapshot
   const cap = tipoMaterial === 'ESQUEJE' ? lote.cantidad_inicial_en_proceso : null
   const softWarningThreshold =
     tipoMaterial === 'SEMILLA' ? lote.cantidad_inicial_en_proceso * 10 : null
 
-  const fechaMin = lote.fecha_inicio
+  // fechaMin: no antes del inicio del lote NI más de 10 días antes de hoy
+  const fechaMin = maxOfDates(lote.fecha_inicio, subtractDays(today, 10))
   const fechaMax = today
 
   const [cantidad, setCantidad] = useState('')
-  const [fecha, setFecha] = useState(maxOfDates(fechaMin, today) > today ? today : maxOfDates(fechaMin, today))
+  const [fecha, setFecha] = useState(today)
   const [photos, setPhotos] = useState<Photo[]>([])
   const [observaciones, setObservaciones] = useState('')
   const [showErrors, setShowErrors] = useState(false)
@@ -198,7 +205,7 @@ function EmbolsadoForm({ lote, onCompleted }: Props) {
             min={fechaMin}
             max={fechaMax}
             showError={showErrors && !fechaValid}
-            errorMessage="Fecha fuera de rango."
+            errorMessage={`Fecha entre ${fechaMin} y hoy (máx. 10 días atrás).`}
             disabled={submitting}
           />
         </section>
