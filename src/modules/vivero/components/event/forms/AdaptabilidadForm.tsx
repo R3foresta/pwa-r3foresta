@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import Icon from '../../../../../components/Icon'
 import { useAuth } from '../../../../../contexts/AuthContext'
 import { LotesViveroService } from '../../../../../services/lotes-vivero.service'
+import { todayLocalISO } from '../../../../../utils/validations/date'
 import type { LoteViveroItem, SubetapaAdaptabilidad } from '../../../types/contracts'
 import EventoCTABar from '../EventoCTABar'
 import FechaCard from '../FechaCard'
@@ -22,15 +23,11 @@ const SUBETAPAS: { key: SubetapaAdaptabilidad; label: string; hint: string }[] =
   { key: 'SOL_DIRECTO', label: 'Sol directo', hint: 'Exposición plena' },
 ]
 
-function todayYmd(): string {
-  return new Date().toISOString().slice(0, 10)
-}
-
 function AdaptabilidadForm({ lote, onCompleted }: Props) {
   const { user } = useAuth()
   const authId = user?.auth_id?.trim() || ''
 
-  const today = todayYmd()
+  const today = todayLocalISO()
   const fechaMin = lote.fecha_inicio
   const fechaMax = today
 

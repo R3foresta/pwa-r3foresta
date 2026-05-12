@@ -3,6 +3,7 @@ import Icon from '../../../../../components/Icon'
 import { useAuth } from '../../../../../contexts/AuthContext'
 import { LotesViveroService } from '../../../../../services/lotes-vivero.service'
 import { formatUnidadCanonicaDisplay } from '../../../../../utils/recoleccionUnidad'
+import { addDaysLocalISO, todayLocalISO } from '../../../../../utils/validations/date'
 import type { LoteViveroItem } from '../../../types/contracts'
 import CantidadStepper from '../CantidadStepper'
 import EventoCTABar from '../EventoCTABar'
@@ -18,32 +19,22 @@ type Props = {
 
 const FORM_ID = 'vivero-embolsado-form'
 
-function todayYmd(): string {
-  return new Date().toISOString().slice(0, 10)
-}
-
 function maxOfDates(a: string, b: string): string {
   return a > b ? a : b
-}
-
-function subtractDays(ymd: string, days: number): string {
-  const d = new Date(`${ymd}T12:00:00`)
-  d.setDate(d.getDate() - days)
-  return d.toISOString().slice(0, 10)
 }
 
 function EmbolsadoForm({ lote, onCompleted }: Props) {
   const { user } = useAuth()
   const authId = user?.auth_id?.trim() || ''
 
-  const today = todayYmd()
+  const today = todayLocalISO()
   const tipoMaterial = lote.tipo_material_snapshot
   const cap = tipoMaterial === 'ESQUEJE' ? lote.cantidad_inicial_en_proceso : null
   const softWarningThreshold =
     tipoMaterial === 'SEMILLA' ? lote.cantidad_inicial_en_proceso * 10 : null
 
   // fechaMin: no antes del inicio del lote NI más de 10 días antes de hoy
-  const fechaMin = maxOfDates(lote.fecha_inicio, subtractDays(today, 10))
+  const fechaMin = maxOfDates(lote.fecha_inicio, addDaysLocalISO(today, -10))
   const fechaMax = today
 
   const [cantidad, setCantidad] = useState('')

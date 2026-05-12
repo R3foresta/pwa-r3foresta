@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 import { LotesViveroService } from '../../../services/lotes-vivero.service'
+import { todayLocalISO } from '../../../utils/validations/date'
 import type { EmbolsadoContextData, RegistrarEmbolsadoResult } from '../types/contracts'
 import { computeMaxPlantasEmbolsado } from '../utils/validators'
 
@@ -33,7 +34,7 @@ export function useEmbolsado(): UseEmbolsadoResult {
   const [result, setResult] = useState<RegistrarEmbolsadoResult | null>(null)
   const [formValues, setFormValues] = useState<EmbolsadoFormValues>({
     plantasVivasIniciales: '',
-    fechaEvento: new Date().toISOString().split('T')[0],
+    fechaEvento: todayLocalISO(),
     foto: null,
     observaciones: '',
   })
@@ -61,7 +62,7 @@ export function useEmbolsado(): UseEmbolsadoResult {
         setFormValues((prev) => ({
           ...prev,
           plantasVivasIniciales: prefillPlantas,
-          fechaEvento: new Date().toISOString().split('T')[0],
+          fechaEvento: todayLocalISO(),
         }))
       }
     } catch (err) {

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Icon from '../../../components/Icon'
 import { formatUnidadCanonicaDisplay } from '../../../utils/recoleccionUnidad'
+import { todayLocalISO } from '../../../utils/validations/date'
 import CantidadInputCard from '../components/event/CantidadInputCard'
 import QuickPercentages from '../components/event/QuickPercentages'
 import SaldoMeter from '../components/event/SaldoMeter'
@@ -19,7 +20,7 @@ function ViveroEmbolsadoScreen() {
 
 
   const { step, context, formValues, submitError, result, updateForm, loadContext, submit } =
-    useEmbolsado()
+  useEmbolsado()
 
   useEffect(() => {
     if (!Number.isFinite(loteId) || loteId <= 0) return
@@ -47,14 +48,17 @@ function ViveroEmbolsadoScreen() {
 
   const unidadInicial = context?.unidad_medida_inicial ?? null
   const unidadInicialDisplay = formatUnidadCanonicaDisplay(
-  context?.unidad_medida_inicial,
-  context?.cantidad_inicial_en_proceso
-)
+    context?.unidad_medida_inicial,
+    context?.cantidad_inicial_en_proceso
+  )
   const cantidadInicial = context?.cantidad_inicial_en_proceso ?? 0
-  const maxPlantas = context ? computeMaxPlantasEmbolsado(cantidadInicial, context.unidad_medida_inicial) : 0
-  const plantasDespues = Math.max(0, parseInt(formValues.plantasVivasIniciales) || 0)
+  const maxPlantas = context 
+    ? computeMaxPlantasEmbolsado(cantidadInicial, context.unidad_medida_inicial) 
+    : 0
+  const plantasDespues = Math.max(0, parseInt(formValues.plantasVivasIniciales, 10) || 0)
   const overMax = unidadInicial === 'UNIDAD' && plantasDespues > maxPlantas
   const overSuggestedMax = unidadInicial === 'G' && plantasDespues > maxPlantas
+  const hasPhoto = Boolean(formValues.foto)
   // Atajos % solo tienen sentido cuando el cap es 1:1 con la cantidad inicial (UNIDAD).
   // Para G el cap es orientativo (cantidad×1000) y aplicar 25/50% de eso da números absurdos.
   const showQuickPercentages = unidadInicial === 'UNIDAD' && maxPlantas > 0
@@ -328,7 +332,7 @@ function ViveroEmbolsadoScreen() {
               value={formValues.fechaEvento}
               onChange={(e) => updateForm({ fechaEvento: e.target.value })}
               min={context?.fecha_inicio}
-              max={new Date().toISOString().split('T')[0]}
+              max={todayLocalISO()}
               required
               disabled={step === 'submitting'}
               className="flex-1 border-none bg-transparent py-4 text-base font-semibold text-brand-700 outline-none disabled:opacity-50"
@@ -403,7 +407,7 @@ function ViveroEmbolsadoScreen() {
 
           <button
             type="submit"
-            disabled={submitting || overMax || plantasDespues <= 0}
+            disabled={submitting || overMax || plantasDespues <= 0 || !hasPhoto}
             className="w-full rounded-2xl bg-emerald-500 py-4 text-base font-extrabold text-white shadow-soft transition hover:bg-emerald-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {submitting ? 'Registrando...' : 'Confirmar embolsado'}

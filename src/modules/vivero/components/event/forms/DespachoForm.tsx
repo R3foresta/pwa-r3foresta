@@ -4,6 +4,7 @@ import { useAuth } from '../../../../../contexts/AuthContext'
 import { LotesViveroService } from '../../../../../services/lotes-vivero.service'
 import SelectorComunidad from '../../../../comunidades/SelectorComunidad'
 import type { ComunidadCard } from '../../../../../tipos/comunidades'
+import { todayLocalISO } from '../../../../../utils/validations/date'
 import type { DestinoTipoVivero, LoteViveroItem } from '../../../types/contracts'
 import CantidadStepper from '../CantidadStepper'
 import EventoCTABar from '../EventoCTABar'
@@ -27,15 +28,11 @@ const DESTINOS: { key: DestinoTipoVivero; label: string; hint: string }[] = [
 const FORM_ID = 'vivero-despacho-form'
 const DEFAULT_PAIS_ID = 1
 
-function todayYmd(): string {
-  return new Date().toISOString().slice(0, 10)
-}
-
 function DespachoForm({ lote, onCompleted }: Props) {
   const { user } = useAuth()
   const authId = user?.auth_id?.trim() || ''
 
-  const today = todayYmd()
+  const today = todayLocalISO()
   const fechaMin = lote.fecha_inicio
   const fechaMax = today
   const saldoVivo = lote.saldo_vivo_actual ?? 0

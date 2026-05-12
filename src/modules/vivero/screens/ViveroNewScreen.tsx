@@ -9,7 +9,12 @@ import { RecoleccionesService } from '../../../services/recolecciones.service'
 import { LotesViveroService } from '../../../services/lotes-vivero.service'
 import { formatUnidadCanonicaDisplay } from '../../../utils/recoleccionUnidad'
 import { getUbicacionDisplay } from '../../../utils/ubicacion'
-import { buildPastRange, clampDateToRange, validateDateInRange } from '../../../utils/validations/date'
+import {
+  buildPastRange,
+  clampDateToRange,
+  todayLocalISO,
+  validateDateInRange,
+} from '../../../utils/validations/date'
 import CantidadInputCard from '../components/event/CantidadInputCard'
 import FechaCard from '../components/event/FechaCard'
 import FotosUploader from '../components/event/FotosUploader'
@@ -126,7 +131,7 @@ function ViveroNewScreen() {
 
   const fechaRange = useMemo(() => buildPastRange(MAX_DIAS_VIVERO), [])
   const [fechaInicio, setFechaInicio] = useState(() =>
-    clampDateToRange(new Date().toLocaleDateString('en-CA'), fechaRange)
+    clampDateToRange(todayLocalISO(), fechaRange)
   )
 
   const [observaciones, setObservaciones] = useState('')

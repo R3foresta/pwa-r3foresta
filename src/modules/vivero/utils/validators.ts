@@ -1,16 +1,22 @@
 import type { TipoMaterialVivero, UnidadMedidaVivero } from '../types/contracts'
+import { todayLocalISO } from '../../../utils/validations/date'
 
 const YMD_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 
 export function isValidYmdDate(value: string): boolean {
   if (!YMD_PATTERN.test(value)) return false
-  const date = new Date(`${value}T00:00:00`)
+  const [year, month, day] = value.split('-').map(Number)
+  const date = new Date(year, month - 1, day)
   if (Number.isNaN(date.getTime())) return false
-  return date.toISOString().slice(0, 10) === value
+  return (
+    date.getFullYear() === year &&
+    date.getMonth() === month - 1 &&
+    date.getDate() === day
+  )
 }
 
 export function isFutureDateYmd(value: string, today = new Date()): boolean {
-  const todayYmd = today.toISOString().slice(0, 10)
+  const todayYmd = todayLocalISO(today)
   return value > todayYmd
 }
 
