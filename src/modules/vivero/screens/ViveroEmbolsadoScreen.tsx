@@ -2,7 +2,11 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Icon from '../../../components/Icon'
 import { formatUnidadCanonicaDisplay } from '../../../utils/recoleccionUnidad'
+import CantidadInputCard from '../components/event/CantidadInputCard'
+import QuickPercentages from '../components/event/QuickPercentages'
+import SaldoMeter from '../components/event/SaldoMeter'
 import { useEmbolsado } from '../hooks/useEmbolsado'
+import { computeMaxPlantasEmbolsado } from '../utils/validators'
 
 const STAGE_TABS = ['Embolsado', 'Adaptabilidad', 'Merma', 'Despacho']
 
@@ -12,6 +16,7 @@ function ViveroEmbolsadoScreen() {
   const loteId = Number(id)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null)
+
 
   const { step, context, formValues, submitError, result, updateForm, loadContext, submit } =
     useEmbolsado()
@@ -40,16 +45,33 @@ function ViveroEmbolsadoScreen() {
     void submit(loteId)
   }
 
-  const maxPlantas = context?.cantidad_inicial_en_proceso ?? 0
+  const unidadInicial = context?.unidad_medida_inicial ?? null
+  const unidadInicialDisplay = formatUnidadCanonicaDisplay(
+  context?.unidad_medida_inicial,
+  context?.cantidad_inicial_en_proceso
+)
+  const cantidadInicial = context?.cantidad_inicial_en_proceso ?? 0
+  const maxPlantas = context ? computeMaxPlantasEmbolsado(cantidadInicial, context.unidad_medida_inicial) : 0
   const plantasDespues = Math.max(0, parseInt(formValues.plantasVivasIniciales) || 0)
-  const unidadLabel =
-    context?.unidad_medida_inicial === 'UNIDAD'
-      ? 'plantas vivas'
-      : (context?.unidad_medida_inicial?.toLowerCase() ?? 'plantas vivas')
+  const overMax = unidadInicial === 'UNIDAD' && plantasDespues > maxPlantas
+  const overSuggestedMax = unidadInicial === 'G' && plantasDespues > maxPlantas
+  // Atajos % solo tienen sentido cuando el cap es 1:1 con la cantidad inicial (UNIDAD).
+  // Para G el cap es orientativo (cantidad×1000) y aplicar 25/50% de eso da números absurdos.
+  const showQuickPercentages = unidadInicial === 'UNIDAD' && maxPlantas > 0
+  const submitting = step === 'submitting'
 
-  function stepCount(delta: number) {
-    const next = Math.max(0, Math.min(maxPlantas, plantasDespues + delta))
-    updateForm({ plantasVivasIniciales: String(next) })
+  function sanitizePlantasInput(raw: string): string {
+    return raw.replace(/[^\d]/g, '').replace(/^0+(?=\d)/, '')
+  }
+
+  function handlePlantasChange(next: string) {
+    updateForm({ plantasVivasIniciales: sanitizePlantasInput(next) })
+  }
+
+  function applyQuickPercentage(pct: number) {
+    if (maxPlantas <= 0) return
+    const next = Math.max(1, Math.round((maxPlantas * pct) / 100))
+    updateForm({ plantasVivasIniciales: String(Math.min(maxPlantas, next)) })
   }
 
   if (step === 'loading') {
@@ -239,7 +261,7 @@ function ViveroEmbolsadoScreen() {
                   {context.nombre_comercial_snapshot}
                 </p>
                 <p className="truncate text-xs font-semibold text-brand-500">
-                  {context.cantidad_inicial_en_proceso} {context.tipo_material_snapshot}
+                  {context.cantidad_inicial_en_proceso} {unidadInicialDisplay} {context.tipo_material_snapshot}
                 </p>
               </div>
             </div>
@@ -253,70 +275,48 @@ function ViveroEmbolsadoScreen() {
             </p>
           </div>
 
-          {/* Plantas Después */}
-          <div
-            className={`rounded-2xl px-4 py-3 shadow-soft ring-1 transition-all ${
-              plantasDespues > 0
-                ? 'bg-emerald-50 ring-emerald-200'
-                : 'bg-white ring-black/5'
-            }`}
-          >
-            <p
-              className={`text-xs font-semibold ${plantasDespues > 0 ? 'text-emerald-600' : 'text-brand-500'}`}
-            >
-              Plantas Después
-            </p>
-            <p
-              className={`mt-0.5 text-2xl font-extrabold ${plantasDespues > 0 ? 'text-emerald-700' : 'text-brand-300'}`}
-            >
-              {plantasDespues > 0 ? plantasDespues : '—'}
-            </p>
-            <p
-              className={`text-[11px] font-semibold ${plantasDespues > 0 ? 'text-emerald-500' : 'text-brand-300'}`}
-            >
-              {unidadLabel}
-            </p>
-          </div>
-
-          {/* Stepper */}
-          <div>
-            <p className="mb-2 text-[11px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
+          {/* Plantas vivas iniciales */}
+          <div className="space-y-3">
+            <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
               Plantas vivas iniciales
             </p>
-            <div className="flex items-stretch overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-black/5">
-              <button
-                type="button"
-                onClick={() => stepCount(-1)}
-                disabled={step === 'submitting' || plantasDespues <= 0}
-                className="flex w-14 items-center justify-center border-r border-slate-100 text-2xl font-bold text-brand-500 transition hover:bg-slate-50 disabled:opacity-30"
-              >
-                <Icon name="minus" className="h-5 w-5" />
-              </button>
-              <input
-                type="number"
-                inputMode="numeric"
-                value={formValues.plantasVivasIniciales}
-                onChange={(e) => updateForm({ plantasVivasIniciales: e.target.value })}
-                min={0}
-                max={maxPlantas}
-                required
-                disabled={step === 'submitting'}
-                className="min-w-0 flex-1 border-none bg-transparent py-4 text-center text-2xl font-extrabold text-brand-700 outline-none disabled:opacity-50 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+
+            <CantidadInputCard
+              value={formValues.plantasVivasIniciales}
+              onChange={handlePlantasChange}
+              unidadDisplay={formatUnidadCanonicaDisplay('UNIDAD', plantasDespues)}
+              label="Plantas embolsadas"
+              inputMode="numeric"
+              placeholder="0"
+              hint={
+                unidadInicial === 'G'
+                  ? `Sin tope literal. Máx orientativo: ${maxPlantas} plantas para ${cantidadInicial} gr de semilla.`
+                  : 'Solo enteros. 1 semilla / esqueje = máx 1 planta.'
+              }
+              disabled={submitting}
+            />
+
+            {unidadInicial === 'UNIDAD' && maxPlantas > 0 && (
+              <SaldoMeter saldo={maxPlantas} cantidad={plantasDespues} unidad="UNIDAD" />
+            )}
+
+            {(overMax || overSuggestedMax) && (
+              <div className="flex items-start gap-2 rounded-2xl bg-red-50 px-3 py-2.5 text-xs font-bold text-red-700 ring-1 ring-red-200">
+                <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>
+                  {overSuggestedMax
+                    ? `Supera el tope orientativo de ${maxPlantas} plantas para ${cantidadInicial} gr de semilla. Revisá el conteo.`
+                    : `No podés registrar más de ${maxPlantas} plantas (1:1 con la cantidad inicial).`}
+                </span>
+              </div>
+            )}
+
+            {showQuickPercentages && (
+              <QuickPercentages
+                percentages={[25, 50, 80, 100]}
+                onApply={applyQuickPercentage}
+                disabled={submitting}
               />
-              <button
-                type="button"
-                onClick={() => stepCount(1)}
-                disabled={step === 'submitting' || plantasDespues >= maxPlantas}
-                className="flex w-14 items-center justify-center border-l border-slate-100 text-2xl font-bold text-brand-500 transition hover:bg-slate-50 disabled:opacity-30"
-              >
-                <Icon name="plus" className="h-5 w-5" />
-              </button>
-            </div>
-            {context && (
-              <p className="mt-1.5 text-right text-xs font-semibold text-brand-400">
-                máx. {maxPlantas}{' '}
-                {formatUnidadCanonicaDisplay(context.unidad_medida_inicial, maxPlantas)}
-              </p>
             )}
           </div>
 
@@ -403,10 +403,10 @@ function ViveroEmbolsadoScreen() {
 
           <button
             type="submit"
-            disabled={step === 'submitting'}
+            disabled={submitting || overMax || plantasDespues <= 0}
             className="w-full rounded-2xl bg-emerald-500 py-4 text-base font-extrabold text-white shadow-soft transition hover:bg-emerald-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {step === 'submitting' ? 'Registrando...' : 'Confirmar embolsado'}
+            {submitting ? 'Registrando...' : 'Confirmar embolsado'}
           </button>
         </form>
       </div>

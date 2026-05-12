@@ -94,3 +94,23 @@ export function validateCantidadInicial(options: {
 
   return { isValid: true }
 }
+
+/**
+ * Tope orientativo de plantas embolsadas a partir de un lote en gramos.
+ * 1 mg ≈ 1 planta como ceiling teórico: bloquea entradas absurdas (p.ej. 1000 plantas por 1g)
+ * sin restringir flujos reales de siembra densa.
+ */
+const PLANTAS_POR_GRAMO_TOPE = 1000
+
+/**
+ * Calcula el tope máximo de plantas embolsadas para un lote vivero.
+ * - UNIDAD (semilla o esqueje): cap 1:1 con la cantidad inicial.
+ * - G (semilla en gramos): cap orientativo = cantidad × PLANTAS_POR_GRAMO_TOPE.
+ */
+export function computeMaxPlantasEmbolsado(
+  cantidadInicial: number,
+  unidad: UnidadMedidaVivero,
+): number {
+  if (unidad === 'G') return cantidadInicial * PLANTAS_POR_GRAMO_TOPE
+  return cantidadInicial
+}

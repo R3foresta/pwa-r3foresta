@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react'
 import { LotesViveroService } from '../../../services/lotes-vivero.service'
 import type { EmbolsadoContextData, RegistrarEmbolsadoResult } from '../types/contracts'
+import { computeMaxPlantasEmbolsado } from '../utils/validators'
 
 type Step = 'loading' | 'blocked' | 'form' | 'submitting' | 'success' | 'error'
 
@@ -52,9 +53,14 @@ export function useEmbolsado(): UseEmbolsadoResult {
         setStep('blocked')
       } else {
         setStep('form')
+        // Solo prefilleamos 1:1 cuando la unidad origen es UNIDAD (semilla o esqueje
+        // contado por piezas). Para G no hay traducción literal a plantas, así que
+        // dejamos el input vacío para que el usuario declare el conteo real.
+        const prefillPlantas =
+          ctx.unidad_medida_inicial === 'UNIDAD' ? String(ctx.cantidad_inicial_en_proceso) : ''
         setFormValues((prev) => ({
           ...prev,
-          plantasVivasIniciales: String(ctx.cantidad_inicial_en_proceso),
+          plantasVivasIniciales: prefillPlantas,
           fechaEvento: new Date().toISOString().split('T')[0],
         }))
       }
@@ -73,11 +79,19 @@ export function useEmbolsado(): UseEmbolsadoResult {
         setSubmitError('Ingresá una cantidad de plantas vivas válida (mínimo 1).')
         return
       }
-      if (context && plantasNum > context.cantidad_inicial_en_proceso) {
-        setSubmitError(
-          `Las plantas vivas no pueden superar la cantidad inicial (${context.cantidad_inicial_en_proceso}).`,
+      if (context) {
+        const maxPlantas = computeMaxPlantasEmbolsado(
+          context.cantidad_inicial_en_proceso,
+          context.unidad_medida_inicial,
         )
-        return
+        if (plantasNum > maxPlantas) {
+          const mensajeTope =
+            context.unidad_medida_inicial === 'G'
+              ? `Las plantas embolsadas no pueden superar el tope orientativo de ${maxPlantas} plantas para ${context.cantidad_inicial_en_proceso} gr de semilla.`
+              : `Las plantas embolsadas no pueden superar la cantidad inicial (${maxPlantas}).`
+          setSubmitError(mensajeTope)
+          return
+        }
       }
       if (!formValues.foto) {
         setSubmitError('La foto del embolsado es obligatoria.')

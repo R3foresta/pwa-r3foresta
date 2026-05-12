@@ -10,11 +10,13 @@ import { LotesViveroService } from '../../../services/lotes-vivero.service'
 import { formatUnidadCanonicaDisplay } from '../../../utils/recoleccionUnidad'
 import { getUbicacionDisplay } from '../../../utils/ubicacion'
 import { buildPastRange, clampDateToRange, validateDateInRange } from '../../../utils/validations/date'
+import CantidadInputCard from '../components/event/CantidadInputCard'
 import FechaCard from '../components/event/FechaCard'
 import FotosUploader from '../components/event/FotosUploader'
 import type { Photo } from '../components/event/FotosUploader'
 import ObservacionesCard from '../components/event/ObservacionesCard'
 import ProgressHeader from '../components/event/ProgressHeader'
+import QuickPercentages from '../components/event/QuickPercentages'
 import SaldoMeter from '../components/event/SaldoMeter'
 import SectionCard from '../components/event/SectionCard'
 import type { StepStatus } from '../components/event/SectionCard'
@@ -633,31 +635,17 @@ function ViveroNewScreen() {
             </p>
           ) : (
             <div className="space-y-4">
-              <div className="rounded-2xl bg-gradient-to-br from-brand-50 to-white p-4 ring-1 ring-brand-100">
-                <div className="flex items-end justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-brand-500">
-                      Cantidad inicial en proceso
-                    </p>
-                    <input
-                      type="text"
-                      inputMode={unidadMedida === 'UNIDAD' ? 'numeric' : 'decimal'}
-                      value={cantidadInicio}
-                      onChange={(event) => handleCantidadChange(event.target.value)}
-                      onBlur={handleCantidadBlur}
-                      placeholder={unidadMedida === 'G' ? '0.0' : '0'}
-                      disabled={isSubmitting}
-                      className="mt-1 w-full border-none bg-transparent text-4xl font-extrabold text-brand-700 outline-none placeholder:text-brand-200 disabled:opacity-50"
-                    />
-                  </div>
-                  <span className="pb-2 text-base font-extrabold text-brand-500">
-                    {formatUnidadCanonicaDisplay(unidadMedida)}
-                  </span>
-                </div>
-                <p className="mt-1 text-[11px] font-semibold text-brand-500">
-                  {unidadMedida === 'UNIDAD' ? 'Solo enteros.' : 'Máximo 1 decimal.'}
-                </p>
-              </div>
+              <CantidadInputCard
+                value={cantidadInicio}
+                onChange={handleCantidadChange}
+                onBlur={handleCantidadBlur}
+                unidadDisplay={formatUnidadCanonicaDisplay(unidadMedida)}
+                label="Cantidad inicial en proceso"
+                inputMode={unidadMedida === 'UNIDAD' ? 'numeric' : 'decimal'}
+                placeholder={unidadMedida === 'G' ? '0.0' : '0'}
+                hint={unidadMedida === 'UNIDAD' ? 'Solo enteros.' : 'Máximo 1 decimal.'}
+                disabled={isSubmitting}
+              />
 
               <SaldoMeter
                 saldo={saldoDisponible}
@@ -676,24 +664,11 @@ function ViveroNewScreen() {
                 </div>
               )}
 
-              <div className="space-y-2">
-                <p className="text-[11px] font-extrabold uppercase tracking-wider text-brand-500">
-                  Atajos rápidos
-                </p>
-                <div className="grid grid-cols-4 gap-2">
-                  {QUICK_PERCENTAGES.map((pct) => (
-                    <button
-                      key={pct}
-                      type="button"
-                      onClick={() => applyQuickPercentage(pct)}
-                      disabled={isSubmitting}
-                      className="rounded-2xl bg-white py-2.5 text-sm font-extrabold text-brand-700 ring-1 ring-brand-100 transition hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {pct}%
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <QuickPercentages
+                percentages={QUICK_PERCENTAGES}
+                onApply={applyQuickPercentage}
+                disabled={isSubmitting}
+              />
 
               {showErrors && validation.cantidad && !overSaldo && (
                 <p className="text-xs font-semibold text-red-500">
