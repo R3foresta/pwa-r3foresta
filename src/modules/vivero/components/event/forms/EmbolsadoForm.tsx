@@ -107,9 +107,16 @@ function EmbolsadoForm({ lote, onCompleted }: Props) {
     setSubmitting(true)
     setSubmitError(null)
     try {
-      const upload = await LotesViveroService.uploadEvidenciasEmbolsado(
+      const upload = await LotesViveroService.uploadEvidenciasEvento(
         lote.id,
-        { fotos: photos.map((p) => p.file) },
+        'EMBOLSADO',
+        {
+          fotos: photos.map((p) => p.file),
+          titulo: 'Embolsado de lote vivero',
+          descripcion: observaciones.trim() || 'Evidencia de embolsado',
+          metadata: { fuente: 'pwa-r3foresta', modulo: 'vivero', etapa: 'EMBOLSADO' },
+          tomado_en: new Date().toISOString(),
+        },
         authId,
       )
       await LotesViveroService.registrarEmbolsado(

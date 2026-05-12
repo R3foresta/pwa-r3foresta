@@ -154,6 +154,33 @@ export interface UploadEvidenciasPendientesResponse {
   evidencia_ids: number[]
 }
 
+export type EvidenciaEventoVivero = 'EMBOLSADO' | 'ADAPTABILIDAD' | 'MERMA'
+
+export interface UploadEvidenciasEventoInput {
+  fotos: File[]
+  titulo?: string
+  descripcion?: string
+  tomado_en?: string
+  es_principal?: boolean
+  metadata?: Record<string, unknown>
+}
+
+export interface EvidenciaEventoViveroItem {
+  id: number
+  codigo_trazabilidad: string
+  entidad_id: number
+  ruta_archivo: string
+  tipo_archivo: string
+}
+
+export interface UploadEvidenciasEventoResponse {
+  success: true
+  data: {
+    evidencia_ids: number[]
+    evidencias: EvidenciaEventoViveroItem[]
+  }
+}
+
 export interface CreateLoteViveroInput {
   recoleccion_id: number
   vivero_id: number
@@ -271,31 +298,6 @@ export type ObtenerEmbolsadoResponse =
   | { success: true; data: { registrado: true; evento: ObtenerEmbolsadoEvento; lote: ObtenerEmbolsadoLoteRef; evidencias: ObtenerEmbolsadoEvidencia[] } }
   | { success: true; data: { registrado: false; evento: null } }
 
-export interface EvidenciasEmbolsadoItem {
-  id: number
-  codigo_trazabilidad: string
-  entidad_id: number
-  ruta_archivo: string
-  tipo_archivo: string
-}
-
-export interface EvidenciasEmbolsadoResponse {
-  success: true
-  data: {
-    evidencia_ids: number[]
-    evidencias: EvidenciasEmbolsadoItem[]
-  }
-}
-
-export interface UploadEvidenciasEmbolsadoInput {
-  fotos: File[]
-  titulo?: string
-  descripcion?: string
-  tomado_en?: string
-  es_principal?: boolean
-  metadata?: Record<string, unknown>
-}
-
 // ─── Adaptabilidad / Merma / Despacho ──────────────────────────────────────────
 
 export type CausaMermaVivero =
@@ -371,14 +373,6 @@ export interface RegistrarMermaResponse {
   }
 }
 
-export type UploadEvidenciasAdaptabilidadInput = UploadEvidenciasEmbolsadoInput
-export type EvidenciasAdaptabilidadResponse = EvidenciasEmbolsadoResponse
-
-export type UploadEvidenciasMermaInput = UploadEvidenciasEmbolsadoInput
-export type EvidenciasMermaResponse = EvidenciasEmbolsadoResponse
-
 // TODO(backend-pendiente): falta definir RegistrarDespachoResponse en el
 // contrato (existen RegistrarMermaResponse y RegistrarAdaptabilidadResponse).
 // Mientras tanto, LotesViveroService.registrarDespacho retorna `unknown`.
-// También faltan los aliases UploadEvidenciasDespacho* si finalmente se
-// agregan evidencias al despacho (ver TODO en RegistrarDespachoRequest).

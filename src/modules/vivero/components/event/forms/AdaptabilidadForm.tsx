@@ -78,13 +78,32 @@ function AdaptabilidadForm({ lote, onCompleted }: Props) {
     setSubmitting(true)
     setSubmitError(null)
     try {
-      // TODO: subir evidencias cuando el backend exponga
-      // POST /lotes-vivero/:id/adaptabilidad/evidencias-pendientes
+      const upload =
+        photos.length > 0
+          ? await LotesViveroService.uploadEvidenciasEvento(
+              lote.id,
+              'ADAPTABILIDAD',
+              {
+                fotos: photos.map((photo) => photo.file),
+                titulo: 'Adaptabilidad de lote vivero',
+                descripcion: observaciones.trim() || 'Evidencia de adaptabilidad',
+                metadata: {
+                  fuente: 'pwa-r3foresta',
+                  modulo: 'vivero',
+                  etapa: 'ADAPTABILIDAD',
+                },
+                tomado_en: new Date().toISOString(),
+              },
+              authId,
+            )
+          : null
+
       await LotesViveroService.registrarAdaptabilidad(
         lote.id,
         {
           fecha_evento: fecha,
           subetapa_destino: subetapa as SubetapaAdaptabilidad,
+          evidencia_ids: upload?.data.evidencia_ids,
           observaciones: observaciones.trim() || undefined,
         },
         authId,

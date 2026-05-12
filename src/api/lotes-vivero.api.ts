@@ -6,7 +6,8 @@ import type {
   RegistrarEmbolsadoRequest,
   RegistrarMermaRequest,
   UploadEvidenciasPendientesInput,
-  UploadEvidenciasEmbolsadoInput,
+  EvidenciaEventoVivero,
+  UploadEvidenciasEventoInput,
 } from '../modules/vivero/types/contracts'
 
 const RAW_API_URL = import.meta.env.VITE_API_URL as string | undefined
@@ -54,17 +55,13 @@ function getAuthHeaders(options?: {
   return headers
 }
 
-export async function listLotesViveroApi(filters?: ListLotesViveroQuery): Promise<Response> {
-  return fetch(`${API_BASE_URL}/lotes-vivero${buildQuery(filters)}`, {
-    method: 'GET',
-    headers: getAuthHeaders({ includeContentType: false }),
-  })
+const EVENT_EVIDENCE_PATH: Record<EvidenciaEventoVivero, string> = {
+  EMBOLSADO: 'embolsado',
+  ADAPTABILIDAD: 'adaptabilidad',
+  MERMA: 'merma',
 }
 
-export async function uploadEvidenciasPendientesViveroApi(
-  input: UploadEvidenciasPendientesInput,
-  authId?: string,
-): Promise<Response> {
+function buildEvidenceFormData(input: UploadEvidenciasEventoInput): FormData {
   const formData = new FormData()
   input.fotos.forEach((file) => formData.append('fotos', file))
 
@@ -84,10 +81,24 @@ export async function uploadEvidenciasPendientesViveroApi(
     formData.append('es_principal', String(input.es_principal))
   }
 
+  return formData
+}
+
+export async function listLotesViveroApi(filters?: ListLotesViveroQuery): Promise<Response> {
+  return fetch(`${API_BASE_URL}/lotes-vivero${buildQuery(filters)}`, {
+    method: 'GET',
+    headers: getAuthHeaders({ includeContentType: false }),
+  })
+}
+
+export async function uploadEvidenciasPendientesViveroApi(
+  input: UploadEvidenciasPendientesInput,
+  authId?: string,
+): Promise<Response> {
   return fetch(`${API_BASE_URL}/lotes-vivero/evidencias-pendientes`, {
     method: 'POST',
     headers: getAuthHeaders({ authId, includeContentType: false }),
-    body: formData,
+    body: buildEvidenceFormData(input),
   })
 }
 
@@ -109,22 +120,17 @@ export async function getEmbolsadoContextApi(loteId: number): Promise<Response> 
   })
 }
 
-export async function uploadEvidenciasEmbolsadoApi(
+export async function uploadEvidenciasEventoViveroApi(
   loteId: number,
-  input: UploadEvidenciasEmbolsadoInput,
+  tipoEvento: EvidenciaEventoVivero,
+  input: UploadEvidenciasEventoInput,
   authId?: string,
 ): Promise<Response> {
-  const formData = new FormData()
-  input.fotos.forEach((file) => formData.append('fotos', file))
-  if (input.titulo?.trim()) formData.append('titulo', input.titulo.trim())
-  if (input.descripcion?.trim()) formData.append('descripcion', input.descripcion.trim())
-  if (input.tomado_en) formData.append('tomado_en', input.tomado_en)
-  if (input.es_principal !== undefined) formData.append('es_principal', String(input.es_principal))
-
-  return fetch(`${API_BASE_URL}/lotes-vivero/${loteId}/embolsado/evidencias-pendientes`, {
+  const path = EVENT_EVIDENCE_PATH[tipoEvento]
+  return fetch(`${API_BASE_URL}/lotes-vivero/${loteId}/${path}/evidencias-pendientes`, {
     method: 'POST',
     headers: getAuthHeaders({ authId, includeContentType: false }),
-    body: formData,
+    body: buildEvidenceFormData(input),
   })
 }
 
@@ -187,12 +193,6 @@ export async function registrarDespachoApi(
 // TODO(backend-pendiente): funciones cliente faltantes — el backend ya las expone
 // pero todavía no las consumimos desde el frontend. Agregar cuando se conecte
 // la fase correspondiente:
-//
-//   • POST /lotes-vivero/:id/adaptabilidad/evidencias-pendientes
-//     → uploadEvidenciasAdaptabilidadApi (multipart, similar a embolsado)
-//
-//   • POST /lotes-vivero/:id/merma/evidencias-pendientes
-//     → uploadEvidenciasMermaApi (multipart, similar a embolsado)
 //
 //   • GET  /lotes-vivero/:id/adaptabilidad
 //     → listAdaptabilidadesApi (lista cronológica de eventos del lote)

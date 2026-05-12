@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import Icon from '../../../../../components/Icon'
 import { useAuth } from '../../../../../contexts/AuthContext'
 import { LotesViveroService } from '../../../../../services/lotes-vivero.service'
@@ -9,8 +9,6 @@ import type { DestinoTipoVivero, LoteViveroItem } from '../../../types/contracts
 import CantidadStepper from '../CantidadStepper'
 import EventoCTABar from '../EventoCTABar'
 import FechaCard from '../FechaCard'
-import FotosUploader from '../FotosUploader'
-import type { Photo } from '../FotosUploader'
 import ObservacionesCard from '../ObservacionesCard'
 
 type Props = {
@@ -27,6 +25,7 @@ const DESTINOS: { key: DestinoTipoVivero; label: string; hint: string }[] = [
 
 const FORM_ID = 'vivero-despacho-form'
 const DEFAULT_PAIS_ID = 1
+const DESPACHO_EVIDENCE_ENDPOINT_READY = false
 
 function DespachoForm({ lote, onCompleted }: Props) {
   const { user } = useAuth()
@@ -42,22 +41,10 @@ function DespachoForm({ lote, onCompleted }: Props) {
   const [referencia, setReferencia] = useState('')
   const [comunidad, setComunidad] = useState<ComunidadCard | null>(null)
   const [fecha, setFecha] = useState(today)
-  const [photos, setPhotos] = useState<Photo[]>([])
   const [observaciones, setObservaciones] = useState('')
   const [showErrors, setShowErrors] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
-
-  const photosRef = useRef(photos)
-  useEffect(() => {
-    photosRef.current = photos
-  }, [photos])
-  useEffect(
-    () => () => {
-      photosRef.current.forEach((p) => URL.revokeObjectURL(p.previewUrl))
-    },
-    [],
-  )
 
   const cantidadNum = Number(cantidad)
   const cantidadValid =
@@ -74,7 +61,6 @@ function DespachoForm({ lote, onCompleted }: Props) {
   const requiereComunidad = destino === 'DONACION_COMUNIDAD'
   const comunidadValid = !requiereComunidad || comunidad !== null
   const fechaValid = fecha >= fechaMin && fecha <= fechaMax
-  const fotosValid = photos.length >= 1 && photos.length <= 5
 
   const canSubmit =
     cantidadValid &&
@@ -82,7 +68,7 @@ function DespachoForm({ lote, onCompleted }: Props) {
     referenciaValid &&
     comunidadValid &&
     fechaValid &&
-    fotosValid &&
+    DESPACHO_EVIDENCE_ENDPOINT_READY &&
     !!authId &&
     !submitting
 
@@ -96,20 +82,6 @@ function DespachoForm({ lote, onCompleted }: Props) {
           ? `Máx ${saldoVivo} plantas (saldo vivo).`
           : null
 
-  const addPhotos = (files: File[]) => {
-    const next = files.map((file) => ({ file, previewUrl: URL.createObjectURL(file) }))
-    setPhotos((prev) => [...prev, ...next].slice(0, 5))
-  }
-
-  const removePhoto = (index: number) => {
-    setPhotos((prev) => {
-      const next = [...prev]
-      const [removed] = next.splice(index, 1)
-      if (removed) URL.revokeObjectURL(removed.previewUrl)
-      return next
-    })
-  }
-
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!canSubmit) {
@@ -119,11 +91,6 @@ function DespachoForm({ lote, onCompleted }: Props) {
     setSubmitting(true)
     setSubmitError(null)
     try {
-      // TODO(backend-anomalía): RF-VIV-05 exige evidencia obligatoria en despacho,
-      // pero el contrato actual de `RegistrarDespachoRequest` NO incluye
-      // `evidencia_ids`. Tampoco existe `POST /lotes-vivero/:id/despacho/evidencias-pendientes`.
-      // Por ahora las fotos del FotosUploader quedan en estado local y se descartan al confirmar.
-      // Confirmar con backend si es olvido o decisión.
       await LotesViveroService.registrarDespacho(
         lote.id,
         {
@@ -144,7 +111,13 @@ function DespachoForm({ lote, onCompleted }: Props) {
     }
   }
 
-  const pendingMsg = !canSubmit && !submitting ? 'Completá los campos obligatorios' : undefined
+  const datosObligatoriosValidos =
+    cantidadValid && destinoValid && referenciaValid && comunidadValid && fechaValid && !!authId
+  const pendingMsg = !canSubmit && !submitting
+    ? datosObligatoriosValidos
+      ? 'Falta habilitar el endpoint de evidencias para despacho.'
+      : 'Completá los campos obligatorios'
+    : undefined
 
   return (
     <>
@@ -320,17 +293,15 @@ function DespachoForm({ lote, onCompleted }: Props) {
           />
         </section>
 
-        {/* Fotos */}
-        <section className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
-          <FotosUploader
-            photos={photos}
-            onAdd={addPhotos}
-            onRemove={removePhoto}
-            required
-            showError={showErrors && !fotosValid}
-            errorMessage="Adjuntá al menos una foto del despacho."
-            disabled={submitting}
-          />
+        {/* Evidencia pendiente de contrato */}
+        <section className="rounded-3xl bg-amber-50 px-4 py-4 text-xs font-semibold text-amber-800 shadow-soft ring-1 ring-amber-200">
+          <div className="flex items-start gap-2">
+            <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+            <span>
+              Despacho requiere evidencia obligatoria, pero el contrato actual no permite enviar
+              `evidencia_ids`. El registro queda bloqueado para no perder fotos ni trazabilidad.
+            </span>
+          </div>
         </section>
 
         {/* Observaciones */}

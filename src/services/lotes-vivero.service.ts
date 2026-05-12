@@ -7,7 +7,7 @@ import {
   registrarDespachoApi,
   registrarEmbolsadoApi,
   registrarMermaApi,
-  uploadEvidenciasEmbolsadoApi,
+  uploadEvidenciasEventoViveroApi,
   uploadEvidenciasPendientesViveroApi,
 } from '../api/lotes-vivero.api'
 import { mapLoteToCardData, mapLoteToDetailView } from '../modules/vivero/mappers/lote.mapper'
@@ -17,7 +17,7 @@ import type {
   CreateLoteViveroResponse,
   EmbolsadoContextData,
   EmbolsadoContextResponse,
-  EvidenciasEmbolsadoResponse,
+  EvidenciaEventoVivero,
   ListLotesViveroQuery,
   ListLotesViveroResponse,
   LoteViveroItem,
@@ -31,7 +31,8 @@ import type {
   RegistrarMermaResponse,
   UploadEvidenciasPendientesInput,
   UploadEvidenciasPendientesResponse,
-  UploadEvidenciasEmbolsadoInput,
+  UploadEvidenciasEventoInput,
+  UploadEvidenciasEventoResponse,
 } from '../modules/vivero/types/contracts'
 import type { ViveroLotCardData, ViveroLotDetailView } from '../modules/vivero/types/view-models'
 import {
@@ -47,6 +48,10 @@ type ApiEnvelope<T> = {
   message?: string | string[]
   error?: string
 }
+
+const MAX_EVENT_EVIDENCE_PHOTOS = 5
+const MAX_EVENT_EVIDENCE_BYTES = 5 * 1024 * 1024
+const ALLOWED_EVENT_EVIDENCE_MIME = new Set(['image/jpeg', 'image/png'])
 
 export type ListViveroLotsForUiInput = {
   stageFilter: StageFilter
@@ -68,6 +73,21 @@ function defaultPagination(total = 0): ApiPagination {
     totalPages: total > 0 ? 1 : 0,
     hasNextPage: false,
     hasPrevPage: false,
+  }
+}
+
+function validateEvidencePhotos(fotos: File[], contextLabel = 'evento') {
+  if (!Array.isArray(fotos) || fotos.length < 1) {
+    throw new Error(`Debes adjuntar al menos una foto del ${contextLabel}.`)
+  }
+  if (fotos.length > MAX_EVENT_EVIDENCE_PHOTOS) {
+    throw new Error(`Solo se permiten hasta ${MAX_EVENT_EVIDENCE_PHOTOS} fotos por evento.`)
+  }
+  if (fotos.some((foto) => !ALLOWED_EVENT_EVIDENCE_MIME.has(foto.type))) {
+    throw new Error('Solo se aceptan fotos JPG o PNG.')
+  }
+  if (fotos.some((foto) => foto.size > MAX_EVENT_EVIDENCE_BYTES)) {
+    throw new Error('Cada foto no puede superar 5 MB.')
   }
 }
 
@@ -208,12 +228,7 @@ export class LotesViveroService {
     input: UploadEvidenciasPendientesInput,
     authId?: string,
   ): Promise<UploadEvidenciasPendientesResponse> {
-    if (!Array.isArray(input.fotos) || input.fotos.length < 1) {
-      throw new Error('Debes adjuntar al menos una foto.')
-    }
-    if (input.fotos.length > 5) {
-      throw new Error('Solo se permiten hasta 5 fotos por evento.')
-    }
+    validateEvidencePhotos(input.fotos, 'inicio del lote')
 
     const response = await uploadEvidenciasPendientesViveroApi(input, authId)
     const payload = await this.parseJsonResponse<UploadEvidenciasPendientesResponse>(
@@ -248,22 +263,31 @@ export class LotesViveroService {
     return payload.data
   }
 
-  static async uploadEvidenciasEmbolsado(
+  static async uploadEvidenciasEvento(
     loteId: number,
-    input: UploadEvidenciasEmbolsadoInput,
+    tipoEvento: EvidenciaEventoVivero,
+    input: UploadEvidenciasEventoInput,
     authId?: string,
-  ): Promise<EvidenciasEmbolsadoResponse> {
-    if (!Array.isArray(input.fotos) || input.fotos.length < 1) {
-      throw new Error('Debes adjuntar al menos una foto del embolsado.')
-    }
-    if (input.fotos.length > 5) {
-      throw new Error('Solo se permiten hasta 5 fotos por evento.')
-    }
-    const response = await uploadEvidenciasEmbolsadoApi(loteId, input, authId)
-    return this.parseJsonResponse<EvidenciasEmbolsadoResponse>(
+  ): Promise<UploadEvidenciasEventoResponse> {
+    validateEvidencePhotos(input.fotos, tipoEvento.toLowerCase())
+    const response = await uploadEvidenciasEventoViveroApi(loteId, tipoEvento, input, authId)
+    const payload = await this.parseJsonResponse<UploadEvidenciasEventoResponse>(
       response,
-      'Error al subir la foto del embolsado.',
+      'Error al subir evidencias del evento.',
     )
+    const evidenciaIds = Array.isArray(payload.data?.evidencia_ids)
+      ? payload.data.evidencia_ids
+      : []
+    if (evidenciaIds.length < 1) {
+      throw new Error('No se recibieron IDs de evidencia para registrar el evento.')
+    }
+    return {
+      success: true,
+      data: {
+        evidencia_ids: evidenciaIds,
+        evidencias: Array.isArray(payload.data?.evidencias) ? payload.data.evidencias : [],
+      },
+    }
   }
 
   static async registrarEmbolsado(
