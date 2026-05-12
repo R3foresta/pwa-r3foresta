@@ -12,6 +12,7 @@ import { useEmbolsado } from '../hooks/useEmbolsado'
 import { computeMaxPlantasEmbolsado } from '../utils/validators'
 
 const STAGE_TABS = ['Embolsado', 'Adaptabilidad', 'Merma', 'Despacho']
+const FORM_ID = 'vivero-embolsado-form'
 
 function ViveroEmbolsadoScreen() {
   const { id } = useParams()
@@ -58,10 +59,18 @@ function ViveroEmbolsadoScreen() {
   const overMax = unidadInicial === 'UNIDAD' && plantasDespues > maxPlantas
   const overSuggestedMax = unidadInicial === 'G' && plantasDespues > maxPlantas
   const hasPhoto = formValues.fotos.length > 0
+  const submitting = step === 'submitting'
+  const today = todayLocalISO()
+  const fechaValid =
+    Boolean(formValues.fechaEvento) &&
+    (!context?.fecha_inicio || formValues.fechaEvento >= context.fecha_inicio) &&
+    formValues.fechaEvento <= today
+  const cantidadValid = plantasDespues > 0 && !overMax && !overSuggestedMax
+  const canSubmit = cantidadValid && fechaValid && hasPhoto
+  const pendingMsg = !submitting && !canSubmit ? 'Completá los campos obligatorios.' : undefined
   // Atajos % solo tienen sentido cuando el cap es 1:1 con la cantidad inicial (UNIDAD).
   // Para G el cap es orientativo (cantidad×1000) y aplicar 25/50% de eso da números absurdos.
   const showQuickPercentages = unidadInicial === 'UNIDAD' && maxPlantas > 0
-  const submitting = step === 'submitting'
 
   function sanitizePlantasInput(raw: string): string {
     return raw.replace(/[^\d]/g, '').replace(/^0+(?=\d)/, '')
@@ -264,7 +273,7 @@ function ViveroEmbolsadoScreen() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-4 space-y-4 px-5">
+        <form id={FORM_ID} onSubmit={handleSubmit} className="mt-4 space-y-4 px-5 pb-[118px]">
           {/* Lote info card */}
           {context && (
             <div className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-soft ring-1 ring-black/5">
@@ -346,7 +355,7 @@ function ViveroEmbolsadoScreen() {
               value={formValues.fechaEvento}
               onChange={(e) => updateForm({ fechaEvento: e.target.value })}
               min={context?.fecha_inicio}
-              max={todayLocalISO()}
+              max={today}
               required
               disabled={step === 'submitting'}
               className="flex-1 border-none bg-transparent py-4 text-base font-semibold text-brand-700 outline-none disabled:opacity-50"
@@ -386,14 +395,38 @@ function ViveroEmbolsadoScreen() {
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={submitting || overMax || plantasDespues <= 0 || !hasPhoto}
-            className="w-full rounded-2xl bg-emerald-500 py-4 text-base font-extrabold text-white shadow-soft transition hover:bg-emerald-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {submitting ? 'Registrando...' : 'Confirmar embolsado'}
-          </button>
         </form>
+      </div>
+
+      <div className="pointer-events-none fixed inset-x-0 bottom-[112px] z-40 px-5">
+        <div className="pointer-events-auto mx-auto w-full max-w-md space-y-2 rounded-3xl bg-white/95 px-4 py-3 shadow-soft ring-1 ring-black/5 backdrop-blur">
+          {canSubmit || submitting ? (
+            <button
+              type="submit"
+              form={FORM_ID}
+              disabled={submitting}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-3.5 text-base font-extrabold text-white shadow-soft transition hover:bg-emerald-700 disabled:cursor-progress disabled:opacity-90"
+            >
+              {submitting ? (
+                <>
+                  <span
+                    className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"
+                    aria-hidden
+                  />
+                  <span>Registrando embolsado...</span>
+                </>
+              ) : (
+                <>
+                  <Icon name="check" className="h-4 w-4" />
+                  <span>Registrar embolsado</span>
+                </>
+              )}
+            </button>
+          ) : null}
+          {pendingMsg && (
+            <p className="text-center text-[11px] font-semibold text-brand-500">{pendingMsg}</p>
+          )}
+        </div>
       </div>
     </div>
   )
