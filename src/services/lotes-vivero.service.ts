@@ -254,7 +254,10 @@ export class LotesViveroService {
     authId?: string,
   ): Promise<EvidenciasEmbolsadoResponse> {
     if (!Array.isArray(input.fotos) || input.fotos.length < 1) {
-      throw new Error('Debes adjuntar la foto del embolsado.')
+      throw new Error('Debes adjuntar al menos una foto del embolsado.')
+    }
+    if (input.fotos.length > 5) {
+      throw new Error('Solo se permiten hasta 5 fotos por evento.')
     }
     const response = await uploadEvidenciasEmbolsadoApi(loteId, input, authId)
     return this.parseJsonResponse<EvidenciasEmbolsadoResponse>(

@@ -4,6 +4,8 @@ import Icon from '../../../components/Icon'
 import { formatUnidadCanonicaDisplay } from '../../../utils/recoleccionUnidad'
 import { todayLocalISO } from '../../../utils/validations/date'
 import CantidadInputCard from '../components/event/CantidadInputCard'
+import FotosUploader from '../components/event/FotosUploader'
+import type { Photo } from '../components/event/FotosUploader'
 import QuickPercentages from '../components/event/QuickPercentages'
 import SaldoMeter from '../components/event/SaldoMeter'
 import { useEmbolsado } from '../hooks/useEmbolsado'
@@ -15,8 +17,8 @@ function ViveroEmbolsadoScreen() {
   const { id } = useParams()
   const navigate = useNavigate()
   const loteId = Number(id)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null)
+  const [photos, setPhotos] = useState<Photo[]>([])
+  const photosRef = useRef(photos)
 
 
   const { step, context, formValues, submitError, result, updateForm, loadContext, submit } =
@@ -28,18 +30,15 @@ function ViveroEmbolsadoScreen() {
   }, [loteId, loadContext])
 
   useEffect(() => {
-    if (!formValues.foto) {
-      setPhotoPreviewUrl(null)
-      return
-    }
-    const url = URL.createObjectURL(formValues.foto)
-    setPhotoPreviewUrl(url)
-    return () => URL.revokeObjectURL(url)
-  }, [formValues.foto])
+    photosRef.current = photos
+  }, [photos])
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    updateForm({ foto: e.target.files?.[0] ?? null })
-  }
+  useEffect(
+    () => () => {
+      photosRef.current.forEach((photo) => URL.revokeObjectURL(photo.previewUrl))
+    },
+    [],
+  )
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -58,7 +57,7 @@ function ViveroEmbolsadoScreen() {
   const plantasDespues = Math.max(0, parseInt(formValues.plantasVivasIniciales, 10) || 0)
   const overMax = unidadInicial === 'UNIDAD' && plantasDespues > maxPlantas
   const overSuggestedMax = unidadInicial === 'G' && plantasDespues > maxPlantas
-  const hasPhoto = Boolean(formValues.foto)
+  const hasPhoto = formValues.fotos.length > 0
   // Atajos % solo tienen sentido cuando el cap es 1:1 con la cantidad inicial (UNIDAD).
   // Para G el cap es orientativo (cantidad×1000) y aplicar 25/50% de eso da números absurdos.
   const showQuickPercentages = unidadInicial === 'UNIDAD' && maxPlantas > 0
@@ -76,6 +75,21 @@ function ViveroEmbolsadoScreen() {
     if (maxPlantas <= 0) return
     const next = Math.max(1, Math.round((maxPlantas * pct) / 100))
     updateForm({ plantasVivasIniciales: String(Math.min(maxPlantas, next)) })
+  }
+
+  function addPhotos(files: File[]) {
+    const nextPhotos = files.map((file) => ({ file, previewUrl: URL.createObjectURL(file) }))
+    const next = [...photos, ...nextPhotos].slice(0, 5)
+    setPhotos(next)
+    updateForm({ fotos: next.map((photo) => photo.file) })
+  }
+
+  function removePhoto(index: number) {
+    const next = [...photos]
+    const [removed] = next.splice(index, 1)
+    if (removed) URL.revokeObjectURL(removed.previewUrl)
+    setPhotos(next)
+    updateForm({ fotos: next.map((photo) => photo.file) })
   }
 
   if (step === 'loading') {
@@ -339,50 +353,17 @@ function ViveroEmbolsadoScreen() {
             />
           </div>
 
-          {/* Photo */}
-          <div>
-            <div className="mb-2 flex items-center gap-2">
-              <p className="text-sm font-bold text-brand-700">Evidencia Fotográfica</p>
-              <span className="text-xs font-extrabold text-red-500">Obligatorio</span>
-            </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png,.jpg,.jpeg,.png"
-              onChange={handleFileChange}
-              className="hidden"
-              disabled={step === 'submitting'}
+          {/* Photos */}
+          <div className="rounded-2xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
+            <FotosUploader
+              photos={photos}
+              onAdd={addPhotos}
+              onRemove={removePhoto}
+              required
+              showError={Boolean(submitError) && !hasPhoto}
+              errorMessage="Debes cargar entre 1 y 5 fotos para registrar el embolsado."
+              disabled={submitting}
             />
-            {photoPreviewUrl ? (
-              <div className="relative overflow-hidden rounded-2xl shadow-soft ring-1 ring-black/5">
-                <img
-                  src={photoPreviewUrl}
-                  alt="Vista previa del embolsado"
-                  className="h-52 w-full object-cover"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    updateForm({ foto: null })
-                    if (fileInputRef.current) fileInputRef.current.value = ''
-                  }}
-                  disabled={step === 'submitting'}
-                  className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-brand-700 shadow-soft"
-                >
-                  <Icon name="x" className="h-4 w-4" />
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={step === 'submitting'}
-                className="flex h-36 w-full flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-slate-300 bg-white text-slate-400 transition hover:border-brand-300 hover:bg-brand-50 hover:text-brand-500 disabled:opacity-50"
-              >
-                <Icon name="photo" className="h-10 w-10" />
-                <span className="text-sm font-semibold">Añadir fotos</span>
-              </button>
-            )}
           </div>
 
           {/* Observaciones */}

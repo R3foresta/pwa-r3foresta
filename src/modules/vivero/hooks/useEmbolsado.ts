@@ -9,7 +9,7 @@ type Step = 'loading' | 'blocked' | 'form' | 'submitting' | 'success' | 'error'
 export type EmbolsadoFormValues = {
   plantasVivasIniciales: string
   fechaEvento: string
-  foto: File | null
+  fotos: File[]
   observaciones: string
 }
 
@@ -24,6 +24,7 @@ type UseEmbolsadoResult = {
   submit: (loteId: number) => Promise<void>
 }
 
+const MAX_PHOTOS = 5
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024
 const ALLOWED_MIME = ['image/jpeg', 'image/png']
 
@@ -35,7 +36,7 @@ export function useEmbolsado(): UseEmbolsadoResult {
   const [formValues, setFormValues] = useState<EmbolsadoFormValues>({
     plantasVivasIniciales: '',
     fechaEvento: todayLocalISO(),
-    foto: null,
+    fotos: [],
     observaciones: '',
   })
 
@@ -63,6 +64,7 @@ export function useEmbolsado(): UseEmbolsadoResult {
           ...prev,
           plantasVivasIniciales: prefillPlantas,
           fechaEvento: todayLocalISO(),
+          fotos: [],
         }))
       }
     } catch (err) {
@@ -94,16 +96,20 @@ export function useEmbolsado(): UseEmbolsadoResult {
           return
         }
       }
-      if (!formValues.foto) {
-        setSubmitError('La foto del embolsado es obligatoria.')
+      if (formValues.fotos.length < 1) {
+        setSubmitError('La evidencia fotográfica del embolsado es obligatoria.')
         return
       }
-      if (!ALLOWED_MIME.includes(formValues.foto.type)) {
+      if (formValues.fotos.length > MAX_PHOTOS) {
+        setSubmitError(`Solo se permiten hasta ${MAX_PHOTOS} fotos por evento.`)
+        return
+      }
+      if (formValues.fotos.some((foto) => !ALLOWED_MIME.includes(foto.type))) {
         setSubmitError('Solo se aceptan fotos JPG o PNG.')
         return
       }
-      if (formValues.foto.size > MAX_PHOTO_BYTES) {
-        setSubmitError('La foto no puede superar 5 MB.')
+      if (formValues.fotos.some((foto) => foto.size > MAX_PHOTO_BYTES)) {
+        setSubmitError('Cada foto no puede superar 5 MB.')
         return
       }
       if (!formValues.fechaEvento) {
@@ -118,7 +124,7 @@ export function useEmbolsado(): UseEmbolsadoResult {
       setStep('submitting')
       try {
         const evidenciasResp = await LotesViveroService.uploadEvidenciasEmbolsado(loteId, {
-          fotos: [formValues.foto],
+          fotos: formValues.fotos,
         })
         const evidenciaIds = evidenciasResp.data.evidencia_ids
 
