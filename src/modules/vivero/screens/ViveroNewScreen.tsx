@@ -663,8 +663,9 @@ function ViveroNewScreen() {
                   <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0" />
                   <span>
                     La cantidad supera el saldo disponible (
-                    {formatCantidadVivero(saldoDisponible, unidadMedida)} {unidadMedida}). Ajustá el
-                    valor para continuar.
+                    {formatCantidadVivero(saldoDisponible, unidadMedida)}{' '}
+                    {formatUnidadCanonicaDisplay(unidadMedida, saldoDisponible)}). Ajustá el valor
+                    para continuar.
                   </span>
                 </div>
               )}
