@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useAuth } from '../../../contexts/AuthContext'
 import { LotesViveroService } from '../../../services/lotes-vivero.service'
 import { todayLocalISO } from '../../../utils/validations/date'
 import type { Photo } from '../components/event/FotosUploader'
@@ -30,6 +31,9 @@ type UseEmbolsadoResult = {
 }
 
 export function useEmbolsado(): UseEmbolsadoResult {
+  const { user } = useAuth()
+  const authId = user?.auth_id?.trim() || ''
+
   const [step, setStep] = useState<Step>('loading')
   const [context, setContext] = useState<EmbolsadoContextData | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -165,15 +169,20 @@ export function useEmbolsado(): UseEmbolsadoResult {
             metadata: { fuente: 'pwa-r3foresta', modulo: 'vivero', etapa: 'EMBOLSADO' },
             tomado_en: new Date().toISOString(),
           },
+          authId,
         )
         const evidenciaIds = evidenciasResp.data.evidencia_ids
 
-        const embolsadoResp = await LotesViveroService.registrarEmbolsado(loteId, {
-          fecha_evento: formValues.fechaEvento,
-          plantas_vivas_iniciales: plantasNum,
-          evidencia_ids: evidenciaIds,
-          observaciones: formValues.observaciones.trim() || undefined,
-        })
+        const embolsadoResp = await LotesViveroService.registrarEmbolsado(
+          loteId,
+          {
+            fecha_evento: formValues.fechaEvento,
+            plantas_vivas_iniciales: plantasNum,
+            evidencia_ids: evidenciaIds,
+            observaciones: formValues.observaciones.trim() || undefined,
+          },
+          authId,
+        )
 
         setResult(embolsadoResp.data)
         setStep('success')
@@ -182,7 +191,7 @@ export function useEmbolsado(): UseEmbolsadoResult {
         setStep('form')
       }
     },
-    [context, formValues, photos],
+    [authId, context, formValues, photos],
   )
 
   return {
