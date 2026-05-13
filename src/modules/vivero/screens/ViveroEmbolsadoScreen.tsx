@@ -217,7 +217,11 @@ function ViveroEmbolsadoScreen() {
   return (
     <div className="relative min-h-screen bg-[#eef2ed] text-brand-700">
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-28">
-        {/* Header */}
+        {/* Header propio del screen, distinto del ProgressHeader compartido
+            (components/event/ProgressHeader.tsx) porque acá no hay barras de
+            progreso por pasos — solo un indicador de stage tab. Si esta
+            pantalla se reconvierte en un wizard multi-step, evaluar usar
+            ProgressHeader para unificar. */}
         <div className="px-5 pt-10">
           <div className="flex items-start gap-3">
             <button

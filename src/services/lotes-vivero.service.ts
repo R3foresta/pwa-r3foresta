@@ -55,6 +55,13 @@ const ALLOWED_EVENT_EVIDENCE_MIME = new Set(['image/jpeg', 'image/png'])
 
 export type ListViveroLotsForUiInput = {
   stageFilter: StageFilter
+  /**
+   * Texto de búsqueda libre. Se delega 100% al backend mediante el parámetro
+   * `q` y este decide los matches (snapshots, código de trazabilidad, etc.).
+   * El front NO hace filtrado de texto en cliente; solo aplica el filtrado
+   * fino de sub-etapa (matchesStageFilter) sobre los resultados ya filtrados
+   * por backend.
+   */
   searchQuery?: string
   page?: number
   limit?: number

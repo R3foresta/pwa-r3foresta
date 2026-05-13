@@ -36,10 +36,14 @@ function getLotSpecies(lot: LoteViveroItem): string {
   // `nombre_comercial_snapshot` y `nombre_cientifico_snapshot` están garantizados
   // (el backend los hereda al crear el lote). `lot.planta?.especie` se prefiere
   // si el catálogo está disponible.
+  // Fallback final 'Sin especie' como red de seguridad: si los tres vienen
+  // como string vacío (caso improbable según contrato pero posible si llega
+  // data legacy o un endpoint distinto), evita devolver "" y romper labels UI.
   return (
     lot.planta?.especie ||
     lot.nombre_comercial_snapshot ||
-    lot.nombre_cientifico_snapshot
+    lot.nombre_cientifico_snapshot ||
+    'Sin especie'
   )
 }
 
