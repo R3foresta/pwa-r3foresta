@@ -111,7 +111,7 @@ export interface ListLotesViveroQuery {
 }
 
 export interface ListLotesViveroResponse {
-  success: boolean
+  success: true
   data: LoteViveroItem[]
   pagination: ApiPagination
 }
@@ -125,6 +125,16 @@ export interface UploadEvidenciasPendientesInput {
   es_principal?: boolean
 }
 
+// Nota backend: en los endpoints de evidencias el campo `tipo_archivo` viene
+// poblado con el MIME (p. ej. "image/jpeg"), no con un identificador propio.
+// El nombre del campo es engañoso pero está fijado por contrato backend.
+// Para clasificar visualmente conviene leer `mime_type` (mismo valor, nombre
+// menos ambiguo).
+//
+// Campos hoy siempre poblados por backend pero declarados nullable a propósito,
+// por defensa ante storage/firmas que pueden expirar o migraciones legacy:
+//   tamano_bytes, titulo, creado_por_usuario_id, public_url.
+// Si en el futuro se confirma que backend los garantiza forever, endurecer.
 export interface EvidenciaPendienteVivero {
   id: number
   tipo_entidad_id: number
@@ -149,7 +159,7 @@ export interface EvidenciaPendienteVivero {
 }
 
 export interface UploadEvidenciasPendientesResponse {
-  success: boolean
+  success: true
   data: EvidenciaPendienteVivero[]
   evidencia_ids: number[]
 }
@@ -170,6 +180,8 @@ export interface EvidenciaEventoViveroItem {
   codigo_trazabilidad: string
   entidad_id: number
   ruta_archivo: string
+  // Nota backend: en evidencias de eventos, `tipo_archivo` también trae el MIME
+  // (p. ej. "image/jpeg"). Mismo idiom que EvidenciaPendienteVivero.
   tipo_archivo: string
 }
 
@@ -383,3 +395,27 @@ export interface RegistrarMermaResponse {
 // TODO(backend-pendiente): falta definir RegistrarDespachoResponse en el
 // contrato (existen RegistrarMermaResponse y RegistrarAdaptabilidadResponse).
 // Mientras tanto, LotesViveroService.registrarDespacho retorna `unknown`.
+// Bloqueante real: ver TODO(despacho-bloqueado) más arriba — el método del
+// service queda inalcanzable desde la UI hasta que se levante el flag.
+
+// ─── Endpoints disponibles pero todavía no consumidos ────────────────────────
+//
+// TODO(backend-disponible): el backend ya expone estos endpoints pero el front
+// no los consume todavía. Cuando aparezca el consumer (pantalla, hook, etc.),
+// tipar la respuesta acá en lugar de inventarla en el call site:
+//
+//   GET /api/lotes-vivero/:id/adaptabilidad
+//     → listado de eventos de adaptabilidad del lote.
+//     → tipo sugerido: ObtenerAdaptabilidadesResponse
+//
+//   GET /api/lotes-vivero/:id/merma
+//     → listado de eventos de merma del lote.
+//     → tipo sugerido: ObtenerMermasResponse
+//
+//   GET /api/lotes-vivero/:id/timeline
+//     → línea de tiempo consolidada de eventos del lote (todas las etapas).
+//     → tipo sugerido: TimelineLoteResponse
+//
+// Hoy el `ViveroDetailScreen` arma la timeline desde el detalle del lote, así
+// que esto no bloquea ninguna pantalla actual. Migrar cuando el front necesite
+// historial granular o paginado de eventos.

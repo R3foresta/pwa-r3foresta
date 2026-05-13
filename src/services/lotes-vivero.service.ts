@@ -153,8 +153,11 @@ export class LotesViveroService {
     const items = Array.isArray(envelope.data) ? envelope.data : []
     const fallback = defaultPagination(items.length)
 
+    // Backend siempre responde success: true en este endpoint (contrato fijo).
+    // Si alguna vez devuelve false en un 2xx, parseJsonResponse no lo detecta
+    // hoy; ese caso quedaría como deuda separada de validación de envelope.
     return {
-      success: Boolean(envelope.success ?? true),
+      success: true,
       data: items,
       pagination: {
         page: Number(envelope.pagination?.page ?? fallback.page),
@@ -236,8 +239,9 @@ export class LotesViveroService {
       'Error al subir evidencias pendientes.',
     )
 
+    // Backend siempre responde success: true en este endpoint (contrato fijo).
     return {
-      success: Boolean(payload.success ?? true),
+      success: true,
       data: Array.isArray(payload.data) ? payload.data : [],
       evidencia_ids: Array.isArray(payload.evidencia_ids) ? payload.evidencia_ids : [],
     }
