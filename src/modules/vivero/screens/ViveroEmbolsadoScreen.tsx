@@ -1,11 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Icon from '../../../components/Icon'
 import { formatUnidadCanonicaDisplay } from '../../../utils/recoleccionUnidad'
 import { todayLocalISO } from '../../../utils/validations/date'
 import CantidadInputCard from '../components/event/CantidadInputCard'
 import FotosUploader from '../components/event/FotosUploader'
-import type { Photo } from '../components/event/FotosUploader'
 import QuickPercentages from '../components/event/QuickPercentages'
 import SaldoMeter from '../components/event/SaldoMeter'
 import { useEmbolsado } from '../hooks/useEmbolsado'
@@ -18,28 +17,25 @@ function ViveroEmbolsadoScreen() {
   const { id } = useParams()
   const navigate = useNavigate()
   const loteId = Number(id)
-  const [photos, setPhotos] = useState<Photo[]>([])
-  const photosRef = useRef(photos)
 
-
-  const { step, context, formValues, submitError, result, updateForm, loadContext, submit } =
-  useEmbolsado()
+  const {
+    step,
+    context,
+    formValues,
+    photos,
+    submitError,
+    result,
+    updateForm,
+    addPhotos,
+    removePhoto,
+    loadContext,
+    submit,
+  } = useEmbolsado()
 
   useEffect(() => {
     if (!Number.isFinite(loteId) || loteId <= 0) return
     void loadContext(loteId)
   }, [loteId, loadContext])
-
-  useEffect(() => {
-    photosRef.current = photos
-  }, [photos])
-
-  useEffect(
-    () => () => {
-      photosRef.current.forEach((photo) => URL.revokeObjectURL(photo.previewUrl))
-    },
-    [],
-  )
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -58,7 +54,7 @@ function ViveroEmbolsadoScreen() {
   const plantasDespues = Math.max(0, parseInt(formValues.plantasVivasIniciales, 10) || 0)
   const overMax = unidadInicial === 'UNIDAD' && plantasDespues > maxPlantas
   const overSuggestedMax = unidadInicial === 'G' && plantasDespues > maxPlantas
-  const hasPhoto = formValues.fotos.length > 0
+  const hasPhoto = photos.length > 0
   const submitting = step === 'submitting'
   const today = todayLocalISO()
   const fechaValid =
@@ -84,21 +80,6 @@ function ViveroEmbolsadoScreen() {
     if (maxPlantas <= 0) return
     const next = Math.max(1, Math.round((maxPlantas * pct) / 100))
     updateForm({ plantasVivasIniciales: String(Math.min(maxPlantas, next)) })
-  }
-
-  function addPhotos(files: File[]) {
-    const nextPhotos = files.map((file) => ({ file, previewUrl: URL.createObjectURL(file) }))
-    const next = [...photos, ...nextPhotos].slice(0, 5)
-    setPhotos(next)
-    updateForm({ fotos: next.map((photo) => photo.file) })
-  }
-
-  function removePhoto(index: number) {
-    const next = [...photos]
-    const [removed] = next.splice(index, 1)
-    if (removed) URL.revokeObjectURL(removed.previewUrl)
-    setPhotos(next)
-    updateForm({ fotos: next.map((photo) => photo.file) })
   }
 
   if (step === 'loading') {

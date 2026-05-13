@@ -51,7 +51,7 @@ export function formatUnidadCanonicaDisplay(
 ): string {
   const unidadCanonica = normalizeUnidadCanonica(value)
   if (unidadCanonica === 'UNIDAD') {
-    return count === 1 ? 'Unidad' : 'Unidad(es)'
+    return count === 1 ? 'Unidad' : 'Unidades'
   }
   if (unidadCanonica === 'G') {
     return 'gr'

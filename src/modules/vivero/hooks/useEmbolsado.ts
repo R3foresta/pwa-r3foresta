@@ -1,15 +1,17 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { LotesViveroService } from '../../../services/lotes-vivero.service'
 import { todayLocalISO } from '../../../utils/validations/date'
+import type { Photo } from '../components/event/FotosUploader'
 import type { EmbolsadoContextData, RegistrarEmbolsadoResult } from '../types/contracts'
 import { computeMaxPlantasEmbolsado } from '../utils/validators'
 
 type Step = 'loading' | 'blocked' | 'form' | 'submitting' | 'success' | 'error'
 
+const MAX_PHOTOS = 5
+
 export type EmbolsadoFormValues = {
   plantasVivasIniciales: string
   fechaEvento: string
-  fotos: File[]
   observaciones: string
 }
 
@@ -17,9 +19,12 @@ type UseEmbolsadoResult = {
   step: Step
   context: EmbolsadoContextData | null
   formValues: EmbolsadoFormValues
+  photos: Photo[]
   submitError: string | null
   result: RegistrarEmbolsadoResult | null
   updateForm: (patch: Partial<EmbolsadoFormValues>) => void
+  addPhotos: (files: File[]) => void
+  removePhoto: (index: number) => void
   loadContext: (loteId: number) => Promise<void>
   submit: (loteId: number) => Promise<void>
 }
@@ -29,45 +34,88 @@ export function useEmbolsado(): UseEmbolsadoResult {
   const [context, setContext] = useState<EmbolsadoContextData | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [result, setResult] = useState<RegistrarEmbolsadoResult | null>(null)
+  const [photos, setPhotos] = useState<Photo[]>([])
   const [formValues, setFormValues] = useState<EmbolsadoFormValues>({
     plantasVivasIniciales: '',
     fechaEvento: todayLocalISO(),
-    fotos: [],
     observaciones: '',
   })
+
+  // Mantener un ref al último photos[] para poder revocar previewUrls al desmontar
+  // el consumidor sin meter `photos` en el deps del cleanup effect.
+  const photosRef = useRef(photos)
+  useEffect(() => {
+    photosRef.current = photos
+  }, [photos])
+  useEffect(
+    () => () => {
+      photosRef.current.forEach((p) => URL.revokeObjectURL(p.previewUrl))
+    },
+    [],
+  )
 
   const updateForm = useCallback((patch: Partial<EmbolsadoFormValues>) => {
     setFormValues((prev) => ({ ...prev, ...patch }))
   }, [])
 
-  const loadContext = useCallback(async (loteId: number) => {
-    setStep('loading')
-    setSubmitError(null)
-    setResult(null)
-    try {
-      const ctx = await LotesViveroService.getEmbolsadoContext(loteId)
-      setContext(ctx)
-      if (!ctx.puede_registrar_embolsado) {
-        setStep('blocked')
-      } else {
-        setStep('form')
-        // Solo prefilleamos 1:1 cuando la unidad origen es UNIDAD (semilla o esqueje
-        // contado por piezas). Para G no hay traducción literal a plantas, así que
-        // dejamos el input vacío para que el usuario declare el conteo real.
-        const prefillPlantas =
-          ctx.unidad_medida_inicial === 'UNIDAD' ? String(ctx.cantidad_inicial_en_proceso) : ''
-        setFormValues((prev) => ({
-          ...prev,
-          plantasVivasIniciales: prefillPlantas,
-          fechaEvento: todayLocalISO(),
-          fotos: [],
-        }))
-      }
-    } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : 'Error al verificar el lote.')
-      setStep('error')
-    }
+  const addPhotos = useCallback((files: File[]) => {
+    setPhotos((prev) => {
+      const available = MAX_PHOTOS - prev.length
+      if (available <= 0) return prev
+      const next = files
+        .slice(0, available)
+        .map((file) => ({ file, previewUrl: URL.createObjectURL(file) }))
+      return [...prev, ...next]
+    })
   }, [])
+
+  const removePhoto = useCallback((index: number) => {
+    setPhotos((prev) => {
+      const next = [...prev]
+      const [removed] = next.splice(index, 1)
+      if (removed) URL.revokeObjectURL(removed.previewUrl)
+      return next
+    })
+  }, [])
+
+  const clearPhotos = useCallback(() => {
+    setPhotos((prev) => {
+      prev.forEach((p) => URL.revokeObjectURL(p.previewUrl))
+      return []
+    })
+  }, [])
+
+  const loadContext = useCallback(
+    async (loteId: number) => {
+      setStep('loading')
+      setSubmitError(null)
+      setResult(null)
+      try {
+        const ctx = await LotesViveroService.getEmbolsadoContext(loteId)
+        setContext(ctx)
+        if (!ctx.puede_registrar_embolsado) {
+          setStep('blocked')
+        } else {
+          setStep('form')
+          // Solo prefilleamos 1:1 cuando la unidad origen es UNIDAD (semilla o esqueje
+          // contado por piezas). Para G no hay traducción literal a plantas, así que
+          // dejamos el input vacío para que el usuario declare el conteo real.
+          const prefillPlantas =
+            ctx.unidad_medida_inicial === 'UNIDAD' ? String(ctx.cantidad_inicial_en_proceso) : ''
+          setFormValues({
+            plantasVivasIniciales: prefillPlantas,
+            fechaEvento: todayLocalISO(),
+            observaciones: '',
+          })
+          clearPhotos()
+        }
+      } catch (err) {
+        setSubmitError(err instanceof Error ? err.message : 'Error al verificar el lote.')
+        setStep('error')
+      }
+    },
+    [clearPhotos],
+  )
 
   const submit = useCallback(
     async (loteId: number) => {
@@ -92,7 +140,7 @@ export function useEmbolsado(): UseEmbolsadoResult {
           return
         }
       }
-      if (formValues.fotos.length < 1) {
+      if (photos.length < 1) {
         setSubmitError('La evidencia fotográfica del embolsado es obligatoria.')
         return
       }
@@ -111,7 +159,7 @@ export function useEmbolsado(): UseEmbolsadoResult {
           loteId,
           'EMBOLSADO',
           {
-            fotos: formValues.fotos,
+            fotos: photos.map((p) => p.file),
             titulo: 'Embolsado de lote vivero',
             descripcion: formValues.observaciones.trim() || 'Evidencia de embolsado',
             metadata: { fuente: 'pwa-r3foresta', modulo: 'vivero', etapa: 'EMBOLSADO' },
@@ -134,8 +182,20 @@ export function useEmbolsado(): UseEmbolsadoResult {
         setStep('form')
       }
     },
-    [context, formValues],
+    [context, formValues, photos],
   )
 
-  return { step, context, formValues, submitError, result, updateForm, loadContext, submit }
+  return {
+    step,
+    context,
+    formValues,
+    photos,
+    submitError,
+    result,
+    updateForm,
+    addPhotos,
+    removePhoto,
+    loadContext,
+    submit,
+  }
 }
