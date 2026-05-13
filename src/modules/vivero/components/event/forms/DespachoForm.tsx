@@ -25,6 +25,19 @@ const DESTINOS: { key: DestinoTipoVivero; label: string; hint: string }[] = [
 
 const FORM_ID = 'vivero-despacho-form'
 const DEFAULT_PAIS_ID = 1
+
+// TODO(despacho-bloqueado): mantener en `false` mientras existan estos dos bloqueos:
+//   1. Backend no expone el endpoint de evidencias para despacho (RF-VIV-05 exige
+//      mínimo 1 evidencia, pero `RegistrarDespachoRequest` no acepta `evidencia_ids`
+//      todavía — ver TODO en contracts.ts).
+//   2. El flujo end-to-end depende del Módulo 3 (Plantación) que aún no tiene
+//      backend; sin él, despachar no cierra el ciclo trazabilidad → plantación,
+//      así que aunque el form funcionara no habría dónde despachar realmente.
+// Estado pre-producción: ningún usuario real está despachando lotes, por eso
+// dejamos la pantalla deshabilitada en vez de mantener la deuda anterior de
+// enviar despacho sin evidencias. Cuando backend de evidencias + Módulo 3 estén,
+// quitar este flag (y posiblemente reemplazarlo por una validación de fotos
+// equivalente a la de embolsado).
 const DESPACHO_EVIDENCE_ENDPOINT_READY = false
 
 function DespachoForm({ lote, onCompleted }: Props) {
@@ -122,6 +135,21 @@ function DespachoForm({ lote, onCompleted }: Props) {
   return (
     <>
       <form id={FORM_ID} onSubmit={handleSubmit} className="flex flex-col gap-4 pb-[230px]">
+        {/* Aviso de bloqueo: pre-producción, sin usuarios reales. Despacho queda
+            inoperable a propósito hasta que (1) backend exponga endpoint de
+            evidencias y (2) Módulo 3 (Plantación) esté listo. Ver TODO en
+            DESPACHO_EVIDENCE_ENDPOINT_READY. */}
+        {!DESPACHO_EVIDENCE_ENDPOINT_READY && (
+          <div className="flex items-start gap-2 rounded-2xl bg-amber-100 px-3 py-2.5 text-xs font-semibold text-amber-900 ring-1 ring-amber-300">
+            <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
+            <span>
+              <strong>Despacho no operativo aún.</strong> Pendiente backend de
+              evidencias y módulo de Plantación. El formulario está visible para
+              QA del diseño; el botón se mantendrá inhabilitado.
+            </span>
+          </div>
+        )}
+
         {/* Warning destructivo */}
         <div className="flex items-start gap-2 rounded-2xl bg-amber-50 px-3 py-2.5 text-xs font-semibold text-amber-800 ring-1 ring-amber-200">
           <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />

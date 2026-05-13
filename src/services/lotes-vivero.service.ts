@@ -334,8 +334,11 @@ export class LotesViveroService {
     )
   }
 
-  // TODO: el backend aún no expone RegistrarDespachoResponse en contracts.ts.
-  // Cuando lo defina, reemplazar `unknown` por el tipo correcto.
+  // TODO(despacho-bloqueado): este método queda inalcanzable desde la UI hasta
+  // que se levante el flag DESPACHO_EVIDENCE_ENDPOINT_READY en DespachoForm.tsx
+  // (depende del endpoint de evidencias backend + Módulo 3 Plantación). Cuando
+  // se reactive, además reemplazar `unknown` por RegistrarDespachoResponse —
+  // hoy ese tipo tampoco existe en contracts.ts.
   static async registrarDespacho(
     loteId: number,
     input: RegistrarDespachoRequest,

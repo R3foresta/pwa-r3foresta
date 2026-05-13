@@ -330,10 +330,17 @@ export interface RegistrarMermaRequest {
   observaciones?: string
 }
 
-// TODO(backend-anomalía): según RF-VIV-05, el despacho exige al menos una
-// evidencia obligatoria. El contrato actual NO incluye `evidencia_ids`.
-// Confirmar con backend: ¿es olvido o decisión consciente?
-// Si se agrega, será `evidencia_ids: number[]` (obligatorio, mínimo 1).
+// TODO(despacho-bloqueado): la pantalla de despacho está deshabilitada en el
+// front (DespachoForm.tsx → DESPACHO_EVIDENCE_ENDPOINT_READY = false) por dos
+// motivos cruzados:
+//   1. RF-VIV-05 exige mínimo 1 evidencia obligatoria, pero este contrato NO
+//      incluye `evidencia_ids` todavía. Cuando backend lo agregue, será
+//      `evidencia_ids: number[]` (obligatorio, mínimo 1).
+//   2. El destino real del despacho conecta con Módulo 3 (Plantación), que aún
+//      no tiene backend. Sin él no hay dónde despachar, así que reactivar el
+//      form requiere coordinar ambas piezas.
+// No es bloqueante para producción mientras no haya usuarios reales operando
+// despacho (estado pre-producción).
 export interface RegistrarDespachoRequest {
   fecha_evento: string
   cantidad_afectada: number
