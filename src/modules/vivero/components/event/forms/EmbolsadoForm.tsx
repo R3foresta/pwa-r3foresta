@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Icon from '../../../../../components/Icon'
 import { useAuth } from '../../../../../contexts/AuthContext'
 import { LotesViveroService } from '../../../../../services/lotes-vivero.service'
+import { formatUnidadCanonicaDisplay } from '../../../../../utils/recoleccionUnidad'
+import { addDaysLocalISO, todayLocalISO } from '../../../../../utils/validations/date'
 import type { LoteViveroItem } from '../../../types/contracts'
 import CantidadStepper from '../CantidadStepper'
 import EventoCTABar from '../EventoCTABar'
@@ -17,10 +19,6 @@ type Props = {
 
 const FORM_ID = 'vivero-embolsado-form'
 
-function todayYmd(): string {
-  return new Date().toISOString().slice(0, 10)
-}
-
 function maxOfDates(a: string, b: string): string {
   return a > b ? a : b
 }
@@ -29,17 +27,18 @@ function EmbolsadoForm({ lote, onCompleted }: Props) {
   const { user } = useAuth()
   const authId = user?.auth_id?.trim() || ''
 
-  const today = todayYmd()
-  const tipoMaterial = lote.tipo_material_snapshot ?? lote.recoleccion?.tipo_material ?? 'SEMILLA'
+  const today = todayLocalISO()
+  const tipoMaterial = lote.tipo_material_snapshot
   const cap = tipoMaterial === 'ESQUEJE' ? lote.cantidad_inicial_en_proceso : null
   const softWarningThreshold =
     tipoMaterial === 'SEMILLA' ? lote.cantidad_inicial_en_proceso * 10 : null
 
-  const fechaMin = lote.fecha_inicio
+  // fechaMin: no antes del inicio del lote NI más de 10 días antes de hoy
+  const fechaMin = maxOfDates(lote.fecha_inicio, addDaysLocalISO(today, -10))
   const fechaMax = today
 
   const [cantidad, setCantidad] = useState('')
-  const [fecha, setFecha] = useState(maxOfDates(fechaMin, today) > today ? today : maxOfDates(fechaMin, today))
+  const [fecha, setFecha] = useState(today)
   const [photos, setPhotos] = useState<Photo[]>([])
   const [observaciones, setObservaciones] = useState('')
   const [showErrors, setShowErrors] = useState(false)
@@ -108,9 +107,16 @@ function EmbolsadoForm({ lote, onCompleted }: Props) {
     setSubmitting(true)
     setSubmitError(null)
     try {
-      const upload = await LotesViveroService.uploadEvidenciasEmbolsado(
+      const upload = await LotesViveroService.uploadEvidenciasEvento(
         lote.id,
-        { fotos: photos.map((p) => p.file) },
+        'EMBOLSADO',
+        {
+          fotos: photos.map((p) => p.file),
+          titulo: 'Embolsado de lote vivero',
+          descripcion: observaciones.trim() || 'Evidencia de embolsado',
+          metadata: { fuente: 'pwa-r3foresta', modulo: 'vivero', etapa: 'EMBOLSADO' },
+          tomado_en: new Date().toISOString(),
+        },
         authId,
       )
       await LotesViveroService.registrarEmbolsado(
@@ -149,7 +155,10 @@ function EmbolsadoForm({ lote, onCompleted }: Props) {
               <p className="text-base font-extrabold text-brand-700">
                 {lote.cantidad_inicial_en_proceso}{' '}
                 <span className="text-sm font-bold text-brand-500">
-                  {lote.unidad_medida_inicial === 'UNIDAD' ? 'unidades' : 'g'}
+                  {formatUnidadCanonicaDisplay(
+                    lote.unidad_medida_inicial,
+                    lote.cantidad_inicial_en_proceso,
+                  )}
                 </span>{' '}
                 <span className="text-xs font-semibold text-brand-400">· {tipoMaterial}</span>
               </p>
@@ -198,7 +207,7 @@ function EmbolsadoForm({ lote, onCompleted }: Props) {
             min={fechaMin}
             max={fechaMax}
             showError={showErrors && !fechaValid}
-            errorMessage="Fecha fuera de rango."
+            errorMessage={`Fecha entre ${fechaMin} y hoy (máx. 10 días atrás).`}
             disabled={submitting}
           />
         </section>
@@ -221,6 +230,7 @@ function EmbolsadoForm({ lote, onCompleted }: Props) {
           <ObservacionesCard
             value={observaciones}
             onChange={setObservaciones}
+            maxLength={1000}
             disabled={submitting}
           />
         </section>

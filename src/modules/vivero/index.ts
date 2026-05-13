@@ -22,6 +22,9 @@ export type {
   ListLotesViveroResponse,
   UploadEvidenciasPendientesInput,
   UploadEvidenciasPendientesResponse,
+  EvidenciaEventoVivero,
+  UploadEvidenciasEventoInput,
+  UploadEvidenciasEventoResponse,
   CreateLoteViveroInput,
   CreateLoteViveroResponse,
 } from './types/contracts'

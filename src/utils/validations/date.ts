@@ -1,10 +1,25 @@
 export type DateRange = { min: string; max: string }
 
+export function toLocalISODate(date = new Date()): string {
+  return date.toLocaleDateString('en-CA')
+}
+
+export function todayLocalISO(today = new Date()): string {
+  return toLocalISODate(today)
+}
+
+export function addDaysLocalISO(value: string, days: number): string {
+  const [year, month, day] = value.split('-').map(Number)
+  const date = new Date(year, month - 1, day)
+  date.setDate(date.getDate() + days)
+  return toLocalISODate(date)
+}
+
 export function buildPastRange(maxDaysPast: number, today = new Date()): DateRange {
-  const maxDate = today.toLocaleDateString('en-CA')
+  const maxDate = todayLocalISO(today)
   const minDateObj = new Date(today)
   minDateObj.setDate(minDateObj.getDate() - maxDaysPast)
-  const minDate = minDateObj.toLocaleDateString('en-CA')
+  const minDate = toLocalISODate(minDateObj)
   return { min: minDate, max: maxDate }
 }
 

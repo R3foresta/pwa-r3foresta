@@ -10,6 +10,8 @@ type Props = {
   hint?: string
   label?: string
   disabled?: boolean
+  /** Skip the component's own label/hint header. Use when wrapping in another card (e.g. SectionCard) that already provides the title. */
+  headerless?: boolean
 }
 
 function FechaCard({
@@ -22,17 +24,20 @@ function FechaCard({
   hint,
   label = 'Fecha del evento',
   disabled = false,
+  headerless = false,
 }: Props) {
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-extrabold text-brand-700">{label}</p>
-        {hint && (
-          <span className="text-[10px] font-bold uppercase tracking-wider text-brand-400">
-            {hint}
-          </span>
-        )}
-      </div>
+      {!headerless && (
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-extrabold text-brand-700">{label}</p>
+          {hint && (
+            <span className="text-[10px] font-bold uppercase tracking-wider text-brand-400">
+              {hint}
+            </span>
+          )}
+        </div>
+      )}
       <div
         className={`flex items-center gap-3 rounded-2xl border px-4 transition ${
           showError ? 'border-red-300 bg-red-50' : 'border-brand-100 bg-brand-50'

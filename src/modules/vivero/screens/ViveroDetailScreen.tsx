@@ -3,12 +3,11 @@ import { useNavigate, useParams } from 'react-router-dom'
 import Icon from '../../../components/Icon'
 import type { IconName } from '../../../components/Icon'
 import { LotesViveroService } from '../../../services/lotes-vivero.service'
+import { formatUnidadCanonicaDisplay } from '../../../utils/recoleccionUnidad'
 import CollapsibleSection from '../components/CollapsibleSection';
 import StageTimeline from '../components/StageTimeline'
 import type { StageTimelineItem } from '../components/StageTimeline'
 import SurvivalBar from '../components/SurvivalBar'
-import { mapLoteToDetailView } from '../mappers/lote.mapper'
-import type { LoteViveroItem } from '../types/contracts'
 import type { ViveroLotDetailView } from '../types/view-models'
 
 function formatDate(value?: string | null) {
@@ -137,10 +136,9 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 function ViveroDetailScreen() {
   const navigate = useNavigate()
   const { id } = useParams()
-  const [lot, setLot] = useState<LoteViveroItem | null>(null)
+  const [detail, setDetail] = useState<ViveroLotDetailView | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  
 
   useEffect(() => {
     if (!id) {
@@ -160,8 +158,8 @@ function ViveroDetailScreen() {
       try {
         setLoading(true)
         setError(null)
-        const data = await LotesViveroService.getById(lotId)
-        if (isMounted) setLot(data)
+        const data = await LotesViveroService.getDetail(lotId)
+        if (isMounted) setDetail(data)
       } catch (err) {
         if (isMounted) setError(err instanceof Error ? err.message : 'Error al cargar el lote.')
       } finally {
@@ -174,7 +172,6 @@ function ViveroDetailScreen() {
     }
   }, [id])
 
-  const detail = useMemo(() => (lot ? mapLoteToDetailView(lot) : null), [lot])
   const timeline = useMemo(() => (detail ? buildTimeline(detail) : []), [detail])
   const nextActionInfo = useMemo(() => (detail ? getNextActionInfo(detail) : null), [detail])
   const canRegisterMerma = useMemo(
@@ -189,8 +186,10 @@ function ViveroDetailScreen() {
     hasEmbolsado && saldoVivo !== null
       ? Math.max(0, plantasIniciales - saldoVivo)
       : null
-  const unidadOrigenLabel =
-    detail?.unidadMedidaInicial === 'UNIDAD' ? 'unidades' : (detail?.unidadMedidaInicial?.toLowerCase() ?? '')
+  const unidadOrigenLabel = formatUnidadCanonicaDisplay(
+    detail?.unidadMedidaInicial,
+    detail?.cantidadInicialEnProceso,
+  )
 
   if (loading) {
     return (
@@ -406,10 +405,24 @@ function ViveroDetailScreen() {
           </CollapsibleSection>
 
           {/* Datos de origen */}
+          {/* TODO(estructural — fuera de P1): esta sección mezcla origen
+              (recolección, comunidad, tipo material) con metadatos del lote
+              (vivero, responsable, fechas). Cuando se rediseñe, partir en 2. */}
           <CollapsibleSection title="Datos de origen">
             <div className="divide-y divide-brand-50">
-              <InfoRow label="Recolección" value={detail.recoleccionCodigo} />
+              <InfoRow
+                label="Recolección"
+                value={
+                  detail.recoleccionFecha
+                    ? `${detail.recoleccionCodigo} · ${formatDate(detail.recoleccionFecha)}`
+                    : detail.recoleccionCodigo
+                }
+              />
               <InfoRow label="Tipo material" value={detail.recoleccionTipoMaterial} />
+              <InfoRow
+                label="Comunidad origen"
+                value={detail.nombreComunidadOrigen ?? 'Sin registrar'}
+              />
               <InfoRow label="Vivero" value={`${detail.viveroNombre} (${detail.viveroCodigo})`} />
               <InfoRow
                 label="Responsable"
@@ -425,6 +438,10 @@ function ViveroDetailScreen() {
           </CollapsibleSection>
 
           {/* Datos de planta */}
+          {/* TODO(p1.5 — banner de cierre): cuando el flujo de cierre del backend
+              esté completamente implementado, agregar arriba del scroll un banner
+              prominente con el motivoCierre cuando estadoLote === 'FINALIZADO'.
+              Color por tipo: emerald=DESPACHO_TOTAL · red=PERDIDA_TOTAL · amber=MIXTO. */}
           <CollapsibleSection title="Datos de planta">
             {detail.plantaImagenUrl && (
               <div className="mb-3 overflow-hidden rounded-2xl">
@@ -440,9 +457,6 @@ function ViveroDetailScreen() {
               <InfoRow label="Nombre científico" value={detail.nombreCientifico} />
               <InfoRow label="Nombre comercial" value={detail.nombreComercial} />
               <InfoRow label="Variedad" value={detail.variedad ?? 'N/D'} />
-              {detail.motivoCierre && (
-                <InfoRow label="Motivo cierre" value={detail.motivoCierre} />
-              )}
             </div>
           </CollapsibleSection>
         </div>

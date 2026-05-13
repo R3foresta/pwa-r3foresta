@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import Icon from '../../../../../components/Icon'
 import { useAuth } from '../../../../../contexts/AuthContext'
 import { LotesViveroService } from '../../../../../services/lotes-vivero.service'
+import { addDaysLocalISO, todayLocalISO } from '../../../../../utils/validations/date'
 import type { CausaMermaVivero, LoteViveroItem } from '../../../types/contracts'
 import CantidadStepper from '../CantidadStepper'
 import EventoCTABar from '../EventoCTABar'
@@ -27,22 +28,13 @@ const CAUSAS: { key: CausaMermaVivero; label: string }[] = [
 
 const FORM_ID = 'vivero-merma-form'
 
-function todayYmd(): string {
-  return new Date().toISOString().slice(0, 10)
-}
-
-function tenDaysAgoYmd(): string {
-  const d = new Date()
-  d.setDate(d.getDate() - 10)
-  return d.toISOString().slice(0, 10)
-}
-
 function MermaForm({ lote, onCompleted }: Props) {
   const { user } = useAuth()
   const authId = user?.auth_id?.trim() || ''
 
-  const today = todayYmd()
-  const fechaMin = tenDaysAgoYmd() > lote.fecha_inicio ? tenDaysAgoYmd() : lote.fecha_inicio
+  const today = todayLocalISO()
+  const tenDaysAgo = addDaysLocalISO(today, -10)
+  const fechaMin = tenDaysAgo > lote.fecha_inicio ? tenDaysAgo : lote.fecha_inicio
   const fechaMax = today
 
   const saldoVivo = lote.saldo_vivo_actual ?? 0
@@ -114,14 +106,26 @@ function MermaForm({ lote, onCompleted }: Props) {
     setSubmitting(true)
     setSubmitError(null)
     try {
-      // TODO: subir evidencias cuando el backend exponga
-      // POST /lotes-vivero/:id/merma/evidencias-pendientes
+      const upload = await LotesViveroService.uploadEvidenciasEvento(
+        lote.id,
+        'MERMA',
+        {
+          fotos: photos.map((photo) => photo.file),
+          titulo: 'Merma de lote vivero',
+          descripcion: observaciones.trim() || 'Evidencia de merma',
+          metadata: { fuente: 'pwa-r3foresta', modulo: 'vivero', etapa: 'MERMA' },
+          tomado_en: new Date().toISOString(),
+        },
+        authId,
+      )
+
       await LotesViveroService.registrarMerma(
         lote.id,
         {
           fecha_evento: fecha,
           cantidad_afectada: cantidadNum,
           causa_merma: causa as CausaMermaVivero,
+          evidencia_ids: upload.data.evidencia_ids,
           observaciones: observaciones.trim() || undefined,
         },
         authId,

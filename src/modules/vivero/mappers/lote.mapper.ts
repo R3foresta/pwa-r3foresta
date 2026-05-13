@@ -1,6 +1,18 @@
 import type { LoteViveroItem } from '../types/contracts'
 import type { ViveroLotCardData, ViveroLotDetailView } from '../types/view-models'
 
+// TODO(p1 — datos no expuestos restantes):
+//   • recoleccion.saldo_actual     → si la recolección origen sigue con saldo.
+//   • recoleccion.estado_operativo → ABIERTO/CERRADO.
+//   Útiles para mostrar contexto del origen en ViveroDetailScreen.
+//
+// TODO(estructural — fuera de P1):
+//   La sección "Datos de origen" hoy mezcla campos de origen
+//   (recolección, comunidad) con metadatos del lote (vivero, responsable,
+//   fechas). Cuando se rediseñe el detail, separar en 2 secciones distintas:
+//   "Origen" (recolección + comunidad + tipo material) vs
+//   "Lote" (vivero + responsable + fechas).
+
 function daysBetween(start: string, end = new Date()): number {
   if (!start) return 0
   const datePart = start.includes('T') ? start.split('T')[0] : start
@@ -21,6 +33,12 @@ function getCurrentBalance(lot: LoteViveroItem): number | null {
 }
 
 function getLotSpecies(lot: LoteViveroItem): string {
+  // `nombre_comercial_snapshot` y `nombre_cientifico_snapshot` están garantizados
+  // (el backend los hereda al crear el lote). `lot.planta?.especie` se prefiere
+  // si el catálogo está disponible.
+  // Fallback final 'Sin especie' como red de seguridad: si los tres vienen
+  // como string vacío (caso improbable según contrato pero posible si llega
+  // data legacy o un endpoint distinto), evita devolver "" y romper labels UI.
   return (
     lot.planta?.especie ||
     lot.nombre_comercial_snapshot ||
@@ -34,7 +52,6 @@ export function mapLoteToCardData(lot: LoteViveroItem): ViveroLotCardData {
     id: lot.id,
     codigo: lot.codigo_trazabilidad || `VIV-${lot.id}`,
     especie: getLotSpecies(lot),
-    fuente: lot.tipo_material_snapshot ?? lot.recoleccion?.tipo_material ?? 'SEMILLA',
     estadoLote: lot.estado_lote,
     subetapaActual: lot.subetapa_actual ?? null,
     plantasVivasIniciales: lot.plantas_vivas_iniciales,
@@ -68,8 +85,8 @@ export function mapLoteToDetailView(lot: LoteViveroItem): ViveroLotDetailView {
     saldoVivoActual: lot.saldo_vivo_actual,
     stockVivoActual: lot.stock_vivo_actual,
     especie: getLotSpecies(lot),
-    nombreCientifico: lot.planta?.nombre_cientifico || lot.nombre_cientifico_snapshot || 'N/D',
-    nombreComercial: lot.planta?.nombre_comun_principal || lot.nombre_comercial_snapshot || 'N/D',
+    nombreCientifico: lot.planta?.nombre_cientifico || lot.nombre_cientifico_snapshot,
+    nombreComercial: lot.planta?.nombre_comun_principal || lot.nombre_comercial_snapshot,
     variedad: lot.planta?.variedad || lot.variedad_snapshot || null,
     plantaImagenUrl: lot.planta?.imagen_url || null,
     viveroNombre: lot.vivero?.nombre || `Vivero #${lot.vivero_id}`,
@@ -77,7 +94,9 @@ export function mapLoteToDetailView(lot: LoteViveroItem): ViveroLotDetailView {
     responsableNombre,
     responsableUsername: lot.responsable?.username || null,
     recoleccionCodigo: lot.recoleccion?.codigo_trazabilidad || `REC-${lot.recoleccion_id}`,
-    recoleccionTipoMaterial: lot.recoleccion?.tipo_material || lot.tipo_material_snapshot || 'SEMILLA',
+    recoleccionFecha: lot.recoleccion?.fecha ?? null,
+    recoleccionTipoMaterial: lot.recoleccion?.tipo_material || lot.tipo_material_snapshot,
+    nombreComunidadOrigen: lot.nombre_comunidad_origen_snapshot,
     createdAt: lot.created_at,
     updatedAt: lot.updated_at,
   }

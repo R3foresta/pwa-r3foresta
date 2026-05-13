@@ -168,7 +168,7 @@ function RecoleccionDetailScreen() {
   const estadoRegistro = resolveEstadoRegistro(recoleccion)
   const estadoOperativo = resolveEstadoOperativo(recoleccion)
   const cantidadActual = recoleccion.saldo_actual ?? 0
-  const unidadDisplay = formatUnidadCanonicaDisplay(recoleccion.unidad_canonica)
+  const unidadDisplay = formatUnidadCanonicaDisplay(recoleccion.unidad_canonica, cantidadActual)
   const isBorrador = estadoRegistro === 'BORRADOR'
 
   return (

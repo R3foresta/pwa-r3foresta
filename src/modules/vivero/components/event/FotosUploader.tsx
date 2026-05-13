@@ -1,6 +1,10 @@
+import { useState } from 'react'
 import Icon from '../../../../components/Icon'
 
 export type Photo = { file: File; previewUrl: string }
+
+const MAX_FILE_BYTES = 5 * 1024 * 1024 // 5 MB
+const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png'])
 
 type Props = {
   photos: Photo[]
@@ -11,6 +15,8 @@ type Props = {
   showError?: boolean
   errorMessage?: string
   disabled?: boolean
+  /** Skip the component's own label/count header. Use when wrapping in another card (e.g. SectionCard) that already provides the title and badge. */
+  headerless?: boolean
 }
 
 function FotosUploader({
@@ -22,11 +28,48 @@ function FotosUploader({
   showError = false,
   errorMessage,
   disabled = false,
+  headerless = false,
 }: Props) {
+  const [fileError, setFileError] = useState<string | null>(null)
+
   const handleFiles = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files ?? [])
     if (files.length === 0) return
-    onAdd(files)
+
+    const availableSlots = Math.max(0, max - photos.length)
+    if (availableSlots === 0) {
+      setFileError(`Ya alcanzaste el máximo de ${max} fotos.`)
+      event.target.value = ''
+      return
+    }
+
+    const invalidType = files.filter((f) => !ALLOWED_MIME_TYPES.has(f.type))
+    const oversized = files.filter((f) => f.size > MAX_FILE_BYTES)
+    const accepted = files
+      .filter((f) => ALLOWED_MIME_TYPES.has(f.type) && f.size <= MAX_FILE_BYTES)
+      .slice(0, availableSlots)
+
+    const errors: string[] = []
+    if (invalidType.length > 0) {
+      errors.push(
+        `${invalidType.length === 1 ? '1 archivo no es JPG o PNG' : `${invalidType.length} archivos no son JPG o PNG`}.`,
+      )
+    }
+    if (oversized.length > 0) {
+      errors.push(
+        `${oversized.length === 1 ? '1 archivo supera' : `${oversized.length} archivos superan`} los 5 MB máximos.`,
+      )
+    }
+    if (files.length > availableSlots) {
+      errors.push(
+        accepted.length > 0
+          ? `Solo se agregaron ${accepted.length} de ${files.length} fotos por el límite de ${max}.`
+          : `No se agregaron fotos porque se alcanzó el límite de ${max}.`,
+      )
+    }
+
+    setFileError(errors.length > 0 ? errors.join(' ') : null)
+    if (accepted.length > 0) onAdd(accepted)
     event.target.value = ''
   }
 
@@ -34,21 +77,23 @@ function FotosUploader({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-extrabold text-brand-700">
-          Evidencia fotográfica
-          {required && (
-            <span className="ml-2 text-[10px] font-bold uppercase tracking-wider text-red-500">
-              Obligatorio
+      {!headerless && (
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-extrabold text-brand-700">
+            Evidencia fotográfica
+            {required && (
+              <span className="ml-2 text-[10px] font-bold uppercase tracking-wider text-red-500">
+                Obligatorio
+              </span>
+            )}
+          </p>
+          {photos.length > 0 && (
+            <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
+              {photos.length}/{max}
             </span>
           )}
-        </p>
-        {photos.length > 0 && (
-          <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
-            {photos.length}/{max}
-          </span>
-        )}
-      </div>
+        </div>
+      )}
 
       {empty ? (
         <label
@@ -61,7 +106,7 @@ function FotosUploader({
           <Icon name="photo" className="h-7 w-7" />
           <span className="text-sm font-extrabold">Añadir fotos</span>
           <span className="text-[11px] font-semibold text-brand-500">
-            JPG o PNG · hasta {max} archivos
+            JPG o PNG · hasta {max} archivos · 5 MB c/u
           </span>
           <input
             type="file"
@@ -118,6 +163,9 @@ function FotosUploader({
         </div>
       )}
 
+      {fileError && (
+        <p className="text-xs font-semibold text-red-500">{fileError}</p>
+      )}
       {showError && errorMessage && (
         <p className="text-xs font-semibold text-red-500">{errorMessage}</p>
       )}

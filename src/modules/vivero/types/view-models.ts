@@ -1,5 +1,6 @@
 import type {
   EstadoLoteVivero,
+  MotivoCierreVivero,
   SubetapaAdaptabilidad,
   TipoMaterialVivero,
   UnidadMedidaVivero,
@@ -9,7 +10,6 @@ export interface ViveroLotCardData {
   id: number
   codigo: string
   especie: string
-  fuente: TipoMaterialVivero
   estadoLote: EstadoLoteVivero
   subetapaActual: SubetapaAdaptabilidad | null
   plantasVivasIniciales: number | null
@@ -26,7 +26,7 @@ export interface ViveroLotDetailView {
   codigo: string
   estadoLote: EstadoLoteVivero
   subetapaActual: SubetapaAdaptabilidad | null
-  motivoCierre: string | null
+  motivoCierre: MotivoCierreVivero | null
   fechaInicio: string
   diasDesdeInicio: number
   cantidadInicialEnProceso: number
@@ -44,14 +44,9 @@ export interface ViveroLotDetailView {
   responsableNombre: string
   responsableUsername: string | null
   recoleccionCodigo: string
+  recoleccionFecha: string | null
   recoleccionTipoMaterial: TipoMaterialVivero
+  nombreComunidadOrigen: string | null
   createdAt: string
   updatedAt: string
-  // AGREGA ESTO:
-  evidencias?: Array<{
-    id: number;
-    url: string;
-    fecha: string;
-  }>;
-  
 }

@@ -1,16 +1,22 @@
 import type { TipoMaterialVivero, UnidadMedidaVivero } from '../types/contracts'
+import { todayLocalISO } from '../../../utils/validations/date'
 
 const YMD_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 
 export function isValidYmdDate(value: string): boolean {
   if (!YMD_PATTERN.test(value)) return false
-  const date = new Date(`${value}T00:00:00`)
+  const [year, month, day] = value.split('-').map(Number)
+  const date = new Date(year, month - 1, day)
   if (Number.isNaN(date.getTime())) return false
-  return date.toISOString().slice(0, 10) === value
+  return (
+    date.getFullYear() === year &&
+    date.getMonth() === month - 1 &&
+    date.getDate() === day
+  )
 }
 
 export function isFutureDateYmd(value: string, today = new Date()): boolean {
-  const todayYmd = today.toISOString().slice(0, 10)
+  const todayYmd = todayLocalISO(today)
   return value > todayYmd
 }
 
@@ -93,4 +99,24 @@ export function validateCantidadInicial(options: {
   }
 
   return { isValid: true }
+}
+
+/**
+ * Tope orientativo de plantas embolsadas a partir de un lote en gramos.
+ * 1 mg ≈ 1 planta como ceiling teórico: bloquea entradas absurdas (p.ej. 1000 plantas por 1g)
+ * sin restringir flujos reales de siembra densa.
+ */
+const PLANTAS_POR_GRAMO_TOPE = 1000
+
+/**
+ * Calcula el tope máximo de plantas embolsadas para un lote vivero.
+ * - UNIDAD (semilla o esqueje): cap 1:1 con la cantidad inicial.
+ * - G (semilla en gramos): cap orientativo = cantidad × PLANTAS_POR_GRAMO_TOPE.
+ */
+export function computeMaxPlantasEmbolsado(
+  cantidadInicial: number,
+  unidad: UnidadMedidaVivero,
+): number {
+  if (unidad === 'G') return cantidadInicial * PLANTAS_POR_GRAMO_TOPE
+  return cantidadInicial
 }

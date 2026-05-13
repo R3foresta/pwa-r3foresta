@@ -124,7 +124,7 @@ function PendingCard({ item, onApprove, onReject, isActioning }: PendingCardProp
   const estadoRegistro = resolveEstadoRegistro(item)
   const estadoOperativo = resolveEstadoOperativo(item)
   const cantidadActual = item.saldo_actual ?? 0
-  const unidadDisplay = formatUnidadCanonicaDisplay(item.unidad_canonica)
+  const unidadDisplay = formatUnidadCanonicaDisplay(item.unidad_canonica, cantidadActual)
 
   const evidencias = item.fotos ?? []
   const fotoPrincipal = evidencias.find((f) => f.es_principal) ?? evidencias[0] ?? null

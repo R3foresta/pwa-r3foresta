@@ -7,32 +7,34 @@ import {
   registrarDespachoApi,
   registrarEmbolsadoApi,
   registrarMermaApi,
-  uploadEvidenciasEmbolsadoApi,
+  uploadEvidenciasEventoViveroApi,
   uploadEvidenciasPendientesViveroApi,
 } from '../api/lotes-vivero.api'
-import { mapLoteToCardData } from '../modules/vivero/mappers/lote.mapper'
+import { mapLoteToCardData, mapLoteToDetailView } from '../modules/vivero/mappers/lote.mapper'
 import type {
   ApiPagination,
   CreateLoteViveroInput,
   CreateLoteViveroResponse,
   EmbolsadoContextData,
   EmbolsadoContextResponse,
-  EvidenciasEmbolsadoResponse,
+  EvidenciaEventoVivero,
   ListLotesViveroQuery,
   ListLotesViveroResponse,
   LoteViveroItem,
   ObtenerEmbolsadoResponse,
   RegistrarAdaptabilidadRequest,
+  RegistrarAdaptabilidadResponse,
   RegistrarDespachoRequest,
   RegistrarEmbolsadoRequest,
   RegistrarEmbolsadoResponse,
-  RegistrarEventoGenericoResponse,
   RegistrarMermaRequest,
+  RegistrarMermaResponse,
   UploadEvidenciasPendientesInput,
   UploadEvidenciasPendientesResponse,
-  UploadEvidenciasEmbolsadoInput,
+  UploadEvidenciasEventoInput,
+  UploadEvidenciasEventoResponse,
 } from '../modules/vivero/types/contracts'
-import type { ViveroLotCardData } from '../modules/vivero/types/view-models'
+import type { ViveroLotCardData, ViveroLotDetailView } from '../modules/vivero/types/view-models'
 import {
   buildBackendQueryForStageFilter,
   matchesStageFilter,
@@ -47,8 +49,19 @@ type ApiEnvelope<T> = {
   error?: string
 }
 
+const MAX_EVENT_EVIDENCE_PHOTOS = 5
+const MAX_EVENT_EVIDENCE_BYTES = 5 * 1024 * 1024
+const ALLOWED_EVENT_EVIDENCE_MIME = new Set(['image/jpeg', 'image/png'])
+
 export type ListViveroLotsForUiInput = {
   stageFilter: StageFilter
+  /**
+   * Texto de búsqueda libre. Se delega 100% al backend mediante el parámetro
+   * `q` y este decide los matches (snapshots, código de trazabilidad, etc.).
+   * El front NO hace filtrado de texto en cliente; solo aplica el filtrado
+   * fino de sub-etapa (matchesStageFilter) sobre los resultados ya filtrados
+   * por backend.
+   */
   searchQuery?: string
   page?: number
   limit?: number
@@ -70,16 +83,30 @@ function defaultPagination(total = 0): ApiPagination {
   }
 }
 
-function filterCardsBySearch(cards: ViveroLotCardData[], searchQuery?: string): ViveroLotCardData[] {
-  const normalized = searchQuery?.trim().toLowerCase() || ''
-  if (!normalized) return cards
-
-  return cards.filter((lot) =>
-    [lot.codigo, lot.especie, lot.vivero, lot.subetapaActual ?? ''].some((field) =>
-      field.toLowerCase().includes(normalized),
-    ),
-  )
+function validateEvidencePhotos(fotos: File[], contextLabel = 'evento') {
+  if (!Array.isArray(fotos) || fotos.length < 1) {
+    throw new Error(`Debes adjuntar al menos una foto del ${contextLabel}.`)
+  }
+  if (fotos.length > MAX_EVENT_EVIDENCE_PHOTOS) {
+    throw new Error(`Solo se permiten hasta ${MAX_EVENT_EVIDENCE_PHOTOS} fotos por evento.`)
+  }
+  if (fotos.some((foto) => !ALLOWED_EVENT_EVIDENCE_MIME.has(foto.type))) {
+    throw new Error('Solo se aceptan fotos JPG o PNG.')
+  }
+  if (fotos.some((foto) => foto.size > MAX_EVENT_EVIDENCE_BYTES)) {
+    throw new Error('Cada foto no puede superar 5 MB.')
+  }
 }
+
+// La búsqueda libre por texto se delega completamente al backend (`q`), que
+// cubre `codigo_trazabilidad` + snapshots de texto. NO refiltramos en cliente
+// para evitar descartar hits válidos del backend cuando coinciden por un
+// snapshot que el view-model no expone (ej. nombre científico).
+//
+// TODO(futuro — filtros discretos): si en algún momento queremos filtrar por
+// `vivero.nombre` o `subetapaActual` (campos que el `q` del backend NO cubre),
+// exponerlos como filtros propios (dropdown / chips), no metiéndolos en el
+// campo libre.
 
 export class LotesViveroService {
   private static normalizeErrorMessage(payload: unknown, fallback: string): string {
@@ -133,8 +160,11 @@ export class LotesViveroService {
     const items = Array.isArray(envelope.data) ? envelope.data : []
     const fallback = defaultPagination(items.length)
 
+    // Backend siempre responde success: true en este endpoint (contrato fijo).
+    // Si alguna vez devuelve false en un 2xx, parseJsonResponse no lo detecta
+    // hoy; ese caso quedaría como deuda separada de validación de envelope.
     return {
-      success: Boolean(envelope.success ?? true),
+      success: true,
       data: items,
       pagination: {
         page: Number(envelope.pagination?.page ?? fallback.page),
@@ -169,14 +199,23 @@ export class LotesViveroService {
     const response = await this.list(backendFilters)
     const stageScoped = response.data.filter((lot) => matchesStageFilter(lot, input.stageFilter))
     const cards = stageScoped.map(mapLoteToCardData)
-    const filteredCards = filterCardsBySearch(cards, input.searchQuery)
 
     return {
-      items: filteredCards,
+      items: cards,
       pagination: response.pagination,
     }
   }
 
+  // TODO(backend-pendiente): el backend NO expone GET /lotes-vivero/:id dedicado.
+  // Hoy simulamos con un GET /lotes-vivero?lote_vivero_id=X&limit=1, lo que
+  // trae envelope completo de paginación que descartamos. Cuando el backend
+  // exponga el endpoint dedicado, reemplazar por una llamada directa a
+  // getLoteByIdApi (ver TODO en lotes-vivero.api.ts).
+  //
+  // TODO(p3-consistencia): este método devuelve `LoteViveroItem` (raw) mientras
+  // que listForUi devuelve view-models ya mapeados. Inconsistente. Considerar
+  // que getById ya devuelva ViveroLotDetailView aplicando mapLoteToDetailView,
+  // o renombrarlo para que quede claro que es raw.
   static async getById(loteId: number): Promise<LoteViveroItem> {
     if (!Number.isFinite(loteId) || loteId <= 0) {
       throw new Error('ID de lote de vivero inválido.')
@@ -190,16 +229,16 @@ export class LotesViveroService {
     return lot
   }
 
+  static async getDetail(loteId: number): Promise<ViveroLotDetailView> {
+    const lot = await this.getById(loteId)
+    return mapLoteToDetailView(lot)
+  }
+
   static async uploadEvidenciasPendientes(
     input: UploadEvidenciasPendientesInput,
     authId?: string,
   ): Promise<UploadEvidenciasPendientesResponse> {
-    if (!Array.isArray(input.fotos) || input.fotos.length < 1) {
-      throw new Error('Debes adjuntar al menos una foto.')
-    }
-    if (input.fotos.length > 5) {
-      throw new Error('Solo se permiten hasta 5 fotos por evento.')
-    }
+    validateEvidencePhotos(input.fotos, 'inicio del lote')
 
     const response = await uploadEvidenciasPendientesViveroApi(input, authId)
     const payload = await this.parseJsonResponse<UploadEvidenciasPendientesResponse>(
@@ -207,8 +246,9 @@ export class LotesViveroService {
       'Error al subir evidencias pendientes.',
     )
 
+    // Backend siempre responde success: true en este endpoint (contrato fijo).
     return {
-      success: Boolean(payload.success ?? true),
+      success: true,
       data: Array.isArray(payload.data) ? payload.data : [],
       evidencia_ids: Array.isArray(payload.evidencia_ids) ? payload.evidencia_ids : [],
     }
@@ -234,19 +274,31 @@ export class LotesViveroService {
     return payload.data
   }
 
-  static async uploadEvidenciasEmbolsado(
+  static async uploadEvidenciasEvento(
     loteId: number,
-    input: UploadEvidenciasEmbolsadoInput,
+    tipoEvento: EvidenciaEventoVivero,
+    input: UploadEvidenciasEventoInput,
     authId?: string,
-  ): Promise<EvidenciasEmbolsadoResponse> {
-    if (!Array.isArray(input.fotos) || input.fotos.length < 1) {
-      throw new Error('Debes adjuntar la foto del embolsado.')
-    }
-    const response = await uploadEvidenciasEmbolsadoApi(loteId, input, authId)
-    return this.parseJsonResponse<EvidenciasEmbolsadoResponse>(
+  ): Promise<UploadEvidenciasEventoResponse> {
+    validateEvidencePhotos(input.fotos, tipoEvento.toLowerCase())
+    const response = await uploadEvidenciasEventoViveroApi(loteId, tipoEvento, input, authId)
+    const payload = await this.parseJsonResponse<UploadEvidenciasEventoResponse>(
       response,
-      'Error al subir la foto del embolsado.',
+      'Error al subir evidencias del evento.',
     )
+    const evidenciaIds = Array.isArray(payload.data?.evidencia_ids)
+      ? payload.data.evidencia_ids
+      : []
+    if (evidenciaIds.length < 1) {
+      throw new Error('No se recibieron IDs de evidencia para registrar el evento.')
+    }
+    return {
+      success: true,
+      data: {
+        evidencia_ids: evidenciaIds,
+        evidencias: Array.isArray(payload.data?.evidencias) ? payload.data.evidencias : [],
+      },
+    }
   }
 
   static async registrarEmbolsado(
@@ -273,9 +325,9 @@ export class LotesViveroService {
     loteId: number,
     input: RegistrarAdaptabilidadRequest,
     authId?: string,
-  ): Promise<RegistrarEventoGenericoResponse> {
+  ): Promise<RegistrarAdaptabilidadResponse> {
     const response = await registrarAdaptabilidadApi(loteId, input, authId)
-    return this.parseJsonResponse<RegistrarEventoGenericoResponse>(
+    return this.parseJsonResponse<RegistrarAdaptabilidadResponse>(
       response,
       'Error al registrar la adaptabilidad.',
     )
@@ -285,21 +337,26 @@ export class LotesViveroService {
     loteId: number,
     input: RegistrarMermaRequest,
     authId?: string,
-  ): Promise<RegistrarEventoGenericoResponse> {
+  ): Promise<RegistrarMermaResponse> {
     const response = await registrarMermaApi(loteId, input, authId)
-    return this.parseJsonResponse<RegistrarEventoGenericoResponse>(
+    return this.parseJsonResponse<RegistrarMermaResponse>(
       response,
       'Error al registrar la merma.',
     )
   }
 
+  // TODO(despacho-bloqueado): este método queda inalcanzable desde la UI hasta
+  // que se levante el flag DESPACHO_EVIDENCE_ENDPOINT_READY en DespachoForm.tsx
+  // (depende del endpoint de evidencias backend + Módulo 3 Plantación). Cuando
+  // se reactive, además reemplazar `unknown` por RegistrarDespachoResponse —
+  // hoy ese tipo tampoco existe en contracts.ts.
   static async registrarDespacho(
     loteId: number,
     input: RegistrarDespachoRequest,
     authId?: string,
-  ): Promise<RegistrarEventoGenericoResponse> {
+  ): Promise<unknown> {
     const response = await registrarDespachoApi(loteId, input, authId)
-    return this.parseJsonResponse<RegistrarEventoGenericoResponse>(
+    return this.parseJsonResponse<unknown>(
       response,
       'Error al registrar el despacho.',
     )

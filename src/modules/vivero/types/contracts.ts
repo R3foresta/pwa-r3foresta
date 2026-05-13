@@ -16,6 +16,14 @@ export type UnidadMedidaVivero = 'UNIDAD' | 'G'
 
 export type MotivoCierreVivero = 'DESPACHO_TOTAL' | 'PERDIDA_TOTAL' | 'MIXTO'
 
+export type EstadoRegistroRecoleccion =
+  | 'BORRADOR'
+  | 'PENDIENTE_VALIDACION'
+  | 'VALIDADO'
+  | 'RECHAZADO'
+
+export type EstadoOperativoRecoleccion = 'ABIERTO' | 'CERRADO'
+
 export interface ApiPagination {
   page: number
   limit: number
@@ -36,8 +44,8 @@ export interface LoteViveroRecoleccionRef {
   codigo_trazabilidad: string
   fecha: string
   tipo_material: TipoMaterialVivero
-  estado_registro: string | null
-  estado_operativo: 'ABIERTO' | 'CERRADO' | null
+  estado_registro: EstadoRegistroRecoleccion
+  estado_operativo: EstadoOperativoRecoleccion
   saldo_actual: number | null
   unidad_canonica: UnidadMedidaVivero | null
 }
@@ -65,12 +73,12 @@ export interface LoteViveroItem {
   estado_lote: EstadoLoteVivero
   motivo_cierre: MotivoCierreVivero | null
   recoleccion_id: number
-  planta_id: number | null
+  planta_id: number
   vivero_id: number
-  responsable_id: number | null
-  nombre_cientifico_snapshot: string | null
-  nombre_comercial_snapshot: string | null
-  tipo_material_snapshot: TipoMaterialVivero | null
+  responsable_id: number
+  nombre_cientifico_snapshot: string
+  nombre_comercial_snapshot: string
+  tipo_material_snapshot: TipoMaterialVivero
   variedad_snapshot: string | null
   nombre_comunidad_origen_snapshot: string | null
   nombre_responsable_snapshot: string | null
@@ -83,10 +91,10 @@ export interface LoteViveroItem {
   subetapa_actual: SubetapaAdaptabilidad | null
   created_at: string
   updated_at: string
-  vivero?: LoteViveroViveroRef | null
-  recoleccion?: LoteViveroRecoleccionRef | null
-  planta?: LoteViveroPlantaRef | null
-  responsable?: LoteViveroResponsableRef | null
+  vivero: LoteViveroViveroRef | null
+  recoleccion: LoteViveroRecoleccionRef | null
+  planta: LoteViveroPlantaRef | null
+  responsable: LoteViveroResponsableRef | null
 }
 
 export interface ListLotesViveroQuery {
@@ -103,7 +111,7 @@ export interface ListLotesViveroQuery {
 }
 
 export interface ListLotesViveroResponse {
-  success: boolean
+  success: true
   data: LoteViveroItem[]
   pagination: ApiPagination
 }
@@ -117,6 +125,16 @@ export interface UploadEvidenciasPendientesInput {
   es_principal?: boolean
 }
 
+// Nota backend: en los endpoints de evidencias el campo `tipo_archivo` viene
+// poblado con el MIME (p. ej. "image/jpeg"), no con un identificador propio.
+// El nombre del campo es engañoso pero está fijado por contrato backend.
+// Para clasificar visualmente conviene leer `mime_type` (mismo valor, nombre
+// menos ambiguo).
+//
+// Campos hoy siempre poblados por backend pero declarados nullable a propósito,
+// por defensa ante storage/firmas que pueden expirar o migraciones legacy:
+//   tamano_bytes, titulo, creado_por_usuario_id, public_url.
+// Si en el futuro se confirma que backend los garantiza forever, endurecer.
 export interface EvidenciaPendienteVivero {
   id: number
   tipo_entidad_id: number
@@ -141,9 +159,38 @@ export interface EvidenciaPendienteVivero {
 }
 
 export interface UploadEvidenciasPendientesResponse {
-  success: boolean
+  success: true
   data: EvidenciaPendienteVivero[]
   evidencia_ids: number[]
+}
+
+export type EvidenciaEventoVivero = 'EMBOLSADO' | 'ADAPTABILIDAD' | 'MERMA'
+
+export interface UploadEvidenciasEventoInput {
+  fotos: File[]
+  titulo?: string
+  descripcion?: string
+  tomado_en?: string
+  es_principal?: boolean
+  metadata?: Record<string, unknown>
+}
+
+export interface EvidenciaEventoViveroItem {
+  id: number
+  codigo_trazabilidad: string
+  entidad_id: number
+  ruta_archivo: string
+  // Nota backend: en evidencias de eventos, `tipo_archivo` también trae el MIME
+  // (p. ej. "image/jpeg"). Mismo idiom que EvidenciaPendienteVivero.
+  tipo_archivo: string
+}
+
+export interface UploadEvidenciasEventoResponse {
+  success: true
+  data: {
+    evidencia_ids: number[]
+    evidencias: EvidenciaEventoViveroItem[]
+  }
 }
 
 export interface CreateLoteViveroInput {
@@ -189,7 +236,7 @@ export interface EmbolsadoContextData {
   codigo_trazabilidad: string
   nombre_cientifico_snapshot: string
   nombre_comercial_snapshot: string
-  tipo_material_snapshot: string
+  tipo_material_snapshot: TipoMaterialVivero
   cantidad_inicial_en_proceso: number
   unidad_medida_inicial: UnidadMedidaVivero
   fecha_inicio: string
@@ -263,30 +310,6 @@ export type ObtenerEmbolsadoResponse =
   | { success: true; data: { registrado: true; evento: ObtenerEmbolsadoEvento; lote: ObtenerEmbolsadoLoteRef; evidencias: ObtenerEmbolsadoEvidencia[] } }
   | { success: true; data: { registrado: false; evento: null } }
 
-export interface EvidenciasEmbolsadoItem {
-  id: number
-  codigo_trazabilidad: string
-  entidad_id: number
-  ruta_archivo: string
-  tipo_archivo: string
-}
-
-export interface EvidenciasEmbolsadoResponse {
-  success: true
-  data: {
-    evidencia_ids: number[]
-    evidencias: EvidenciasEmbolsadoItem[]
-  }
-}
-
-export interface UploadEvidenciasEmbolsadoInput {
-  fotos: File[]
-  titulo?: string
-  descripcion?: string
-  tomado_en?: string
-  es_principal?: boolean
-}
-
 // ─── Adaptabilidad / Merma / Despacho ──────────────────────────────────────────
 
 export type CausaMermaVivero =
@@ -308,15 +331,28 @@ export interface RegistrarAdaptabilidadRequest {
   fecha_evento: string
   subetapa_destino: SubetapaAdaptabilidad
   observaciones?: string
+  evidencia_ids?: number[]
 }
 
 export interface RegistrarMermaRequest {
+  evidencia_ids: number[]
   fecha_evento: string
   cantidad_afectada: number
   causa_merma: CausaMermaVivero
   observaciones?: string
 }
 
+// TODO(despacho-bloqueado): la pantalla de despacho está deshabilitada en el
+// front (DespachoForm.tsx → DESPACHO_EVIDENCE_ENDPOINT_READY = false) por dos
+// motivos cruzados:
+//   1. RF-VIV-05 exige mínimo 1 evidencia obligatoria, pero este contrato NO
+//      incluye `evidencia_ids` todavía. Cuando backend lo agregue, será
+//      `evidencia_ids: number[]` (obligatorio, mínimo 1).
+//   2. El destino real del despacho conecta con Módulo 3 (Plantación), que aún
+//      no tiene backend. Sin él no hay dónde despachar, así que reactivar el
+//      form requiere coordinar ambas piezas.
+// No es bloqueante para producción mientras no haya usuarios reales operando
+// despacho (estado pre-producción).
 export interface RegistrarDespachoRequest {
   fecha_evento: string
   cantidad_afectada: number
@@ -326,16 +362,60 @@ export interface RegistrarDespachoRequest {
   observaciones?: string
 }
 
-export interface RegistrarEventoGenericoResult {
-  evento_id: number
-  lote_vivero_id: number
-  saldo_vivo_antes: number | null
-  saldo_vivo_despues: number | null
-  lote_finalizado?: boolean
-  motivo_cierre?: MotivoCierreVivero | null
+export interface RegistrarAdaptabilidadResponse {
+  success: true
+  message: string
+  data: {
+    evento_adaptabilidad_id: number
+    lote_vivero_id: number
+    codigo_trazabilidad: string
+    subetapa_destino: SubetapaAdaptabilidad
+    saldo_vivo_actual: number
+    evidencia_ids_vinculadas: number[]
+  }
 }
 
-export interface RegistrarEventoGenericoResponse {
+export interface RegistrarMermaResponse {
   success: true
-  data: RegistrarEventoGenericoResult
+  data: {
+    message: string
+    evento_merma_id: number
+    lote_vivero_id: number
+    codigo_trazabilidad: string
+    cantidad_perdida: number
+    causa_merma: CausaMermaVivero
+    saldo_vivo_antes: number
+    saldo_vivo_despues: number
+    evidencia_ids_vinculadas: number[]
+    lote_finalizado: boolean
+    motivo_cierre: MotivoCierreVivero | null
+  }
 }
+
+// TODO(backend-pendiente): falta definir RegistrarDespachoResponse en el
+// contrato (existen RegistrarMermaResponse y RegistrarAdaptabilidadResponse).
+// Mientras tanto, LotesViveroService.registrarDespacho retorna `unknown`.
+// Bloqueante real: ver TODO(despacho-bloqueado) más arriba — el método del
+// service queda inalcanzable desde la UI hasta que se levante el flag.
+
+// ─── Endpoints disponibles pero todavía no consumidos ────────────────────────
+//
+// TODO(backend-disponible): el backend ya expone estos endpoints pero el front
+// no los consume todavía. Cuando aparezca el consumer (pantalla, hook, etc.),
+// tipar la respuesta acá en lugar de inventarla en el call site:
+//
+//   GET /api/lotes-vivero/:id/adaptabilidad
+//     → listado de eventos de adaptabilidad del lote.
+//     → tipo sugerido: ObtenerAdaptabilidadesResponse
+//
+//   GET /api/lotes-vivero/:id/merma
+//     → listado de eventos de merma del lote.
+//     → tipo sugerido: ObtenerMermasResponse
+//
+//   GET /api/lotes-vivero/:id/timeline
+//     → línea de tiempo consolidada de eventos del lote (todas las etapas).
+//     → tipo sugerido: TimelineLoteResponse
+//
+// Hoy el `ViveroDetailScreen` arma la timeline desde el detalle del lote, así
+// que esto no bloquea ninguna pantalla actual. Migrar cuando el front necesite
+// historial granular o paginado de eventos.
