@@ -30,6 +30,8 @@ import MapScreen from './modules/map/MapScreen'
 import { CompleteProfileScreen, PerfilScreen } from './modules/user_profile'
 import ComunidadesScreen from './modules/comunidades/ComunidadesScreen'
 import PlantasScreen from './modules/plantas/PlantasScreen'
+import NuevaPlantaScreen from './modules/plantas/NuevaPlantaScreen'
+import EditarPlantaScreen from './modules/plantas/EditarPlantaScreen'
 import NuevaComunidadScreen from './modules/comunidades/NuevaComunidadScreen'
 import EditarComunidadScreen from './modules/comunidades/EditarComunidadScreen'
 
@@ -114,6 +116,8 @@ function App() {
           <Route path="comunidades/nueva" element={<NuevaComunidadScreen />} />
           <Route path="comunidades/:id/editar" element={<EditarComunidadScreen />} />
           <Route path="plantas" element={<PlantasScreen />} />
+          <Route path="plantas/nueva" element={<NuevaPlantaScreen />} />
+          <Route path="plantas/:id/editar" element={<EditarPlantaScreen />} />
           <Route path="scan" element={<PlaceholderScreen title="Escanear" />} />
           <Route path="report" element={<MapScreen />} />
           <Route path="profile" element={<PerfilScreen />} />

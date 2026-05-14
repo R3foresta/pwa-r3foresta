@@ -34,6 +34,7 @@ function ViveroEventScreen() {
   const [lote, setLote] = useState<LoteViveroItem | null>(null)
   const [loading, setLoading] = useState(isValidId)
   const [error, setError] = useState<string | null>(isValidId ? null : 'Lote inválido')
+  const [fechaEmbolsado, setFechaEmbolsado] = useState<string | null>(null)
 
   useEffect(() => {
     if (!isValidId) return
@@ -53,6 +54,27 @@ function ViveroEventScreen() {
       mounted = false
     }
   }, [loteId, isValidId])
+
+  // La merma requiere fecha >= fecha de embolsado (regla backend). Cargamos solo
+  // cuando el lote tiene embolsado registrado; si falla, el form cae al min
+  // defensivo (lote.fecha_inicio).
+  useEffect(() => {
+    if (!isValidId || !lote || lote.plantas_vivas_iniciales === null) return
+    let mounted = true
+    LotesViveroService.getEmbolsado(loteId)
+      .then((resp) => {
+        if (!mounted) return
+        if (resp.data.registrado) {
+          setFechaEmbolsado(resp.data.evento.fecha_evento)
+        }
+      })
+      .catch(() => {
+        // Silencio: el form fallback ya cubre el caso.
+      })
+    return () => {
+      mounted = false
+    }
+  }, [isValidId, loteId, lote])
 
   const tabs: StageTab[] = useMemo(() => {
     if (!lote) return []
@@ -202,7 +224,11 @@ function ViveroEventScreen() {
           <AdaptabilidadForm lote={lote} onCompleted={handleCompleted} />
         )}
         {currentKey === 'merma' && (
-          <MermaForm lote={lote} onCompleted={handleCompleted} />
+          <MermaForm
+            lote={lote}
+            fechaEmbolsado={fechaEmbolsado}
+            onCompleted={handleCompleted}
+          />
         )}
         {currentKey === 'despacho' && (
           <DespachoForm lote={lote} onCompleted={handleCompleted} />

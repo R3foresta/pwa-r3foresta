@@ -22,6 +22,11 @@ function getEtapa(lot: ViveroLotCardData): string {
   return 'INICIO'
 }
 
+// TODO(sprint-badge-cierre): diferenciar visualmente los lotes finalizados por
+// `motivo_cierre` (PERDIDA_TOTAL → badge rojo "Pérdida total", DESPACHO_TOTAL →
+// emerald "Despachado", MIXTO → ámbar "Cerrado"). Requiere agregar
+// `motivoCierre` al `ViveroLotCardData` view-model.
+
 type Props = {
   lot: ViveroLotCardData
   onClick?: () => void

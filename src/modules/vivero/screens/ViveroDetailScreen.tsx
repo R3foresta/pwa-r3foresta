@@ -254,6 +254,20 @@ function ViveroDetailScreen() {
             </div>
           )}
 
+          {/* CTA secundario destructivo: visible solo cuando el lote tiene
+              saldo vivo. Color rojo para comunicar al usuario de campo que
+              es una acción que reduce inventario. */}
+          {canRegisterMerma && saldoVivo !== null && saldoVivo > 0 && (
+            <button
+              type="button"
+              onClick={() => navigate(`/app/vivero/${detail.id}/event/merma`)}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-red-300 bg-red-50 py-3 text-sm font-extrabold text-red-700 transition hover:bg-red-100 active:scale-[0.98]"
+            >
+              <Icon name="info" className="h-4 w-4" />
+              <span>Registrar Merma</span>
+            </button>
+          )}
+
           {/* Supervivencia / estado del lote */}
           <div className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
             {hasEmbolsado ? (
@@ -347,13 +361,14 @@ function ViveroDetailScreen() {
             <StageTimeline
               stages={timeline}
               imagenUrl={detail.plantaImagenUrl}
-              mermaAction={
-                canRegisterMerma
-                  ? { onClick: () => navigate(`/app/vivero/${detail.id}/event/merma`) }
-                  : null
-              }
+              mermaAction={null}
             />
           </div>
+
+          {/* TODO(sprint-historial): seccion "Historial de mermas" que consume
+              GET /api/lotes-vivero/:id/merma (existe en backend, falta consumer
+              en frontend — ver lotes-vivero.api.ts). Idealmente migrar al
+              endpoint unificado GET /:id/timeline cuando se implemente. */}
 
           {/* Cantidades detalle */}
           <CollapsibleSection title="Cantidades" defaultOpen>

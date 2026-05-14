@@ -1,9 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
+import ConfirmDialog from '../../../../../components/ConfirmDialog'
 import Icon from '../../../../../components/Icon'
 import { useAuth } from '../../../../../contexts/AuthContext'
 import { LotesViveroService } from '../../../../../services/lotes-vivero.service'
+import { clearDraft, loadDraft, saveDraft } from '../../../../../utils/formDraft'
 import { addDaysLocalISO, todayLocalISO } from '../../../../../utils/validations/date'
-import type { CausaMermaVivero, LoteViveroItem } from '../../../types/contracts'
+import type {
+  CausaMermaVivero,
+  LoteViveroItem,
+  RegistrarMermaResponse,
+} from '../../../types/contracts'
+import SurvivalBar from '../../SurvivalBar'
 import CantidadStepper from '../CantidadStepper'
 import EventoCTABar from '../EventoCTABar'
 import FechaCard from '../FechaCard'
@@ -11,42 +18,111 @@ import FotosUploader from '../FotosUploader'
 import type { Photo } from '../FotosUploader'
 import ObservacionesCard from '../ObservacionesCard'
 
+// Retry solo para registrarMerma cuando el upload de evidencias ya quedó OK:
+// las evidencia_ids existen en backend y reintentar el POST con los mismos ids
+// no genera duplicados. El primer intento es inmediato; los reintentos van con
+// backoff 1s y 3s (decisión de sprint).
+const REGISTRAR_MERMA_RETRY_DELAYS_MS = [1000, 3000] as const
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
 type Props = {
   lote: LoteViveroItem
+  /**
+   * Fecha del evento EMBOLSADO del lote. El backend rechaza mermas con
+   * fecha anterior al embolsado, así que la usamos como límite inferior
+   * del rango. Si llega null (carga aún en curso o lote sin embolsado),
+   * caemos a `lote.fecha_inicio` como fallback defensivo.
+   */
+  fechaEmbolsado: string | null
   onCompleted: () => void
 }
 
-const CAUSAS: { key: CausaMermaVivero; label: string }[] = [
-  { key: 'PLAGA', label: 'Plaga' },
-  { key: 'ENFERMEDAD', label: 'Enfermedad' },
-  { key: 'SEQUIA', label: 'Sequía' },
-  { key: 'DANO_FISICO', label: 'Daño físico' },
-  { key: 'MUERTE_NATURAL', label: 'Muerte natural' },
-  { key: 'DESCARTE_CALIDAD', label: 'Descarte calidad' },
-  { key: 'OTRO', label: 'Otro' },
+const CAUSAS: { key: CausaMermaVivero; label: string; icon: string }[] = [
+  { key: 'PLAGA', label: 'Plaga', icon: '🐛' },
+  { key: 'ENFERMEDAD', label: 'Enfermedad', icon: '🦠' },
+  { key: 'SEQUIA', label: 'Sequía', icon: '☀️' },
+  { key: 'DANO_FISICO', label: 'Daño físico', icon: '🔨' },
+  { key: 'MUERTE_NATURAL', label: 'Muerte natural', icon: '🥀' },
+  { key: 'OTRO', label: 'Otro', icon: '❓' },
 ]
+
+const SUBETAPA_LABEL: Record<NonNullable<LoteViveroItem['subetapa_actual']>, string> = {
+  SOMBRA: 'Sombra',
+  MEDIA_SOMBRA: 'Media sombra',
+  SOL_DIRECTO: 'Sol directo',
+}
+
+function getEtapaLabel(lote: LoteViveroItem): string {
+  if (lote.subetapa_actual) {
+    return `Adaptabilidad · ${SUBETAPA_LABEL[lote.subetapa_actual]}`
+  }
+  return 'Embolsado'
+}
 
 const FORM_ID = 'vivero-merma-form'
 
-function MermaForm({ lote, onCompleted }: Props) {
+type MermaDraft = {
+  cantidad: string
+  causa: CausaMermaVivero | ''
+  fecha: string
+  observaciones: string
+}
+
+const draftKey = (loteId: number) => `r3foresta:merma-draft:${loteId}`
+
+function MermaForm({ lote, fechaEmbolsado, onCompleted }: Props) {
   const { user } = useAuth()
   const authId = user?.auth_id?.trim() || ''
 
   const today = todayLocalISO()
   const tenDaysAgo = addDaysLocalISO(today, -10)
-  const fechaMin = tenDaysAgo > lote.fecha_inicio ? tenDaysAgo : lote.fecha_inicio
+  // fechaMin = max(today-10, fechaEmbolsado ?? lote.fecha_inicio).
+  // Backend rechaza si la merma es anterior al embolsado y a su vez exige
+  // que no pase de 10 días en el pasado.
+  const fechaPiso = fechaEmbolsado ?? lote.fecha_inicio
+  const fechaMin = tenDaysAgo > fechaPiso ? tenDaysAgo : fechaPiso
   const fechaMax = today
 
-  const saldoVivo = lote.saldo_vivo_actual ?? 0
+  // El total embolsado: referencia "100%" para la barra de supervivencia.
+  // Si por algún motivo viene null (no debería ya que MERMA exige embolsado
+  // previo), caemos a saldoVivo para que ratio = 1.
+  const plantasIniciales = lote.plantas_vivas_iniciales ?? lote.saldo_vivo_actual ?? 0
 
-  const [cantidad, setCantidad] = useState('')
-  const [causa, setCausa] = useState<CausaMermaVivero | ''>('')
-  const [fecha, setFecha] = useState(today)
+  // saldoOverride: tras una merma exitosa parcial, evitamos un refetch al backend
+  // usando `saldo_vivo_despues` que ya viene en la respuesta. Si no hay override,
+  // usamos el saldo del lote que recibimos del padre.
+  const [saldoOverride, setSaldoOverride] = useState<number | null>(null)
+  const saldoVivo = saldoOverride ?? lote.saldo_vivo_actual ?? 0
+
+  // Hidratación desde localStorage. Si el saldo del backend cambió desde que
+  // se guardó el borrador (otra persona registró merma desde otro dispositivo,
+  // por ejemplo), clampamos `cantidad` al máximo actual de forma silenciosa —
+  // el stepper ya muestra "Máx N" como guía visual.
+  const initialSaldoVivo = lote.saldo_vivo_actual ?? 0
+  const initialDraft = loadDraft<MermaDraft>(draftKey(lote.id))
+  const clampedDraftCantidad = (() => {
+    if (!initialDraft) return ''
+    const n = Number(initialDraft.cantidad)
+    if (!Number.isFinite(n) || n <= 0) return ''
+    return String(Math.min(Math.trunc(n), initialSaldoVivo))
+  })()
+
+  const [cantidad, setCantidad] = useState(clampedDraftCantidad)
+  const [causa, setCausa] = useState<CausaMermaVivero | ''>(initialDraft?.causa ?? '')
+  const [fecha, setFecha] = useState(initialDraft?.fecha ?? today)
   const [photos, setPhotos] = useState<Photo[]>([])
-  const [observaciones, setObservaciones] = useState('')
+  const [observaciones, setObservaciones] = useState(initialDraft?.observaciones ?? '')
   const [showErrors, setShowErrors] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+
+  type Step = 'form' | 'confirming' | 'submitting' | 'retrying' | 'success' | 'closed'
+  const [step, setStep] = useState<Step>('form')
+  const [retryAttempt, setRetryAttempt] = useState(0)
+  type MermaResultData = RegistrarMermaResponse['data']
+  const [lastResult, setLastResult] = useState<MermaResultData | null>(null)
+
+  const submitting = step === 'submitting' || step === 'retrying'
 
   const photosRef = useRef(photos)
   useEffect(() => {
@@ -59,6 +135,21 @@ function MermaForm({ lote, onCompleted }: Props) {
     [],
   )
 
+  // Persistencia del borrador. Solo guardamos campos textuales (las fotos
+  // necesitan IndexedDB; ver TODO en utils/formDraft.ts). Si el form quedó
+  // totalmente vacío, borramos la clave para no dejar ruido.
+  useEffect(() => {
+    if (step !== 'form') return
+    const key = draftKey(lote.id)
+    const isEmpty =
+      cantidad === '' && causa === '' && observaciones === '' && fecha === today
+    if (isEmpty) {
+      clearDraft(key)
+      return
+    }
+    saveDraft<MermaDraft>(key, { cantidad, causa, fecha, observaciones })
+  }, [cantidad, causa, fecha, observaciones, step, today, lote.id])
+
   const cantidadNum = Number(cantidad)
   const cantidadValid =
     Number.isFinite(cantidadNum) &&
@@ -70,8 +161,20 @@ function MermaForm({ lote, onCompleted }: Props) {
   const causaValid = causa !== ''
   const fechaValid = fecha >= fechaMin && fecha <= fechaMax
   const fotosValid = photos.length >= 1 && photos.length <= 5
+  // Cuando la causa es OTRO no podemos identificar el motivo desde el enum;
+  // exigimos observaciones para que el registro quede trazable. El backend
+  // solo lo recomienda; nosotros lo forzamos en cliente.
+  const requiereObservaciones = causa === 'OTRO'
+  const observacionesValid = !requiereObservaciones || observaciones.trim().length > 0
 
-  const canSubmit = cantidadValid && causaValid && fechaValid && fotosValid && !!authId && !submitting
+  const canSubmit =
+    cantidadValid &&
+    causaValid &&
+    fechaValid &&
+    fotosValid &&
+    observacionesValid &&
+    !!authId &&
+    !submitting
 
   const cantidadError = !cantidad
     ? 'Ingresá las plantas perdidas.'
@@ -97,14 +200,40 @@ function MermaForm({ lote, onCompleted }: Props) {
     })
   }
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const resetForm = () => {
+    setCantidad('')
+    setCausa('')
+    setFecha(today)
+    setPhotos((prev) => {
+      prev.forEach((p) => URL.revokeObjectURL(p.previewUrl))
+      return []
+    })
+    setObservaciones('')
+    setShowErrors(false)
+    setSubmitError(null)
+    setRetryAttempt(0)
+  }
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    if (submitting) return
     if (!canSubmit) {
       setShowErrors(true)
       return
     }
-    setSubmitting(true)
+    // Abrir dialog de confirmación; el POST se dispara solo si confirma.
     setSubmitError(null)
+    setStep('confirming')
+  }
+
+  const runSubmit = async () => {
+    setStep('submitting')
+    setSubmitError(null)
+
+    // Paso 1: upload de evidencias. Si falla, NO reintentamos automáticamente
+    // (puede ser problema de archivo, no de red). El usuario ve el error y
+    // decide manualmente.
+    let evidenciaIds: number[]
     try {
       const upload = await LotesViveroService.uploadEvidenciasEvento(
         lote.id,
@@ -118,31 +247,98 @@ function MermaForm({ lote, onCompleted }: Props) {
         },
         authId,
       )
-
-      await LotesViveroService.registrarMerma(
-        lote.id,
-        {
-          fecha_evento: fecha,
-          cantidad_afectada: cantidadNum,
-          causa_merma: causa as CausaMermaVivero,
-          evidencia_ids: upload.data.evidencia_ids,
-          observaciones: observaciones.trim() || undefined,
-        },
-        authId,
-      )
-      onCompleted()
+      evidenciaIds = upload.data.evidencia_ids
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : 'Error al registrar la merma.')
-    } finally {
-      setSubmitting(false)
+      setSubmitError(
+        err instanceof Error ? err.message : 'No pudimos subir las fotos. Probá de nuevo.',
+      )
+      setStep('form')
+      return
     }
+
+    // Paso 2: registrar la merma con retry. Las evidencia_ids ya existen, así
+    // que reintentar el POST es seguro (no genera duplicados ni evidencias
+    // huérfanas extra).
+    const causaMerma = causa as CausaMermaVivero
+    const payload = {
+      fecha_evento: fecha,
+      cantidad_afectada: cantidadNum,
+      causa_merma: causaMerma,
+      evidencia_ids: evidenciaIds,
+      observaciones: observaciones.trim() || undefined,
+    }
+
+    let attempt = 0
+    let lastError: unknown = null
+    const maxAttempts = 1 + REGISTRAR_MERMA_RETRY_DELAYS_MS.length
+
+    while (attempt < maxAttempts) {
+      try {
+        const response = await LotesViveroService.registrarMerma(lote.id, payload, authId)
+        const data = response.data
+        setLastResult(data)
+        // Submit exitoso: el borrador ya no es útil y se limpia para que la
+        // próxima apertura del form arranque limpia.
+        clearDraft(draftKey(lote.id))
+        if (data.lote_finalizado) {
+          setStep('closed')
+        } else {
+          setSaldoOverride(data.saldo_vivo_despues)
+          setStep('success')
+        }
+        return
+      } catch (err) {
+        lastError = err
+        attempt += 1
+        if (attempt < maxAttempts) {
+          setStep('retrying')
+          setRetryAttempt(attempt)
+          await sleep(REGISTRAR_MERMA_RETRY_DELAYS_MS[attempt - 1])
+        }
+      }
+    }
+
+    setSubmitError(
+      lastError instanceof Error
+        ? lastError.message
+        : 'No pudimos registrar la merma. Probá de nuevo.',
+    )
+    setStep('form')
+    setRetryAttempt(0)
   }
 
+  // Auto-redirección tras cierre del lote (1.5 s) para que el usuario lea el
+  // mensaje sin tener que tocar nada.
+  useEffect(() => {
+    if (step !== 'closed') return
+    const timer = setTimeout(onCompleted, 1500)
+    return () => clearTimeout(timer)
+  }, [step, onCompleted])
+
+  const handleRegistrarOtra = () => {
+    resetForm()
+    setLastResult(null)
+    setStep('form')
+  }
+
+  const causaLabel = causa ? CAUSAS.find((c) => c.key === causa)?.label : ''
+  const willCloseLote = cantidadValid && saldoDespues === 0
+
   const pendingMsg = !canSubmit && !submitting ? 'Completá los campos obligatorios' : undefined
+
+  const etapaLabel = getEtapaLabel(lote)
 
   return (
     <>
       <form id={FORM_ID} onSubmit={handleSubmit} className="flex flex-col gap-4 pb-[230px]">
+        {/* Header de etapa: ubica al usuario sobre dónde está mermando */}
+        <div className="flex items-center gap-2 rounded-2xl bg-brand-50 px-3 py-2.5 text-xs font-bold text-brand-700 ring-1 ring-brand-100">
+          <Icon name="leaf" className="h-4 w-4 shrink-0 text-brand-500" />
+          <span>
+            Mermando en <span className="font-extrabold">{etapaLabel}</span>
+          </span>
+        </div>
+
         {/* Warning destructivo */}
         <div className="flex items-start gap-2 rounded-2xl bg-amber-50 px-3 py-2.5 text-xs font-semibold text-amber-800 ring-1 ring-amber-200">
           <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
@@ -189,7 +385,7 @@ function MermaForm({ lote, onCompleted }: Props) {
           </div>
         </div>
 
-        {/* Cantidad perdida */}
+        {/* Cantidad perdida + barra de supervivencia dinámica */}
         <section className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
           <CantidadStepper
             value={cantidad}
@@ -198,11 +394,39 @@ function MermaForm({ lote, onCompleted }: Props) {
             min={0}
             label="Plantas perdidas"
             unit="plantas"
-            quickPercentages={[25, 50, 80, 100]}
+            quickPercentages={[10, 25, 50, 100]}
+            bigStepSize={saldoVivo >= 50 ? 10 : undefined}
             showError={showErrors && !cantidadValid}
             errorMessage={cantidadError ?? undefined}
             disabled={submitting}
           />
+
+          {/* Barra animada: refleja el saldo *después* de la merma. Sigue la
+              regla "efecto/causa" — el stepper modifica, la barra responde. */}
+          {plantasIniciales > 0 && (
+            <div className="mt-4">
+              <SurvivalBar
+                alive={cantidadValid ? saldoDespues : saldoVivo}
+                initial={plantasIniciales}
+                showLabel
+              />
+              <div className="mt-1 flex items-center justify-between text-[11px] font-bold text-brand-500">
+                <span>{cantidadValid ? saldoDespues : saldoVivo} vivas</span>
+                <span>de {plantasIniciales} embolsadas</span>
+              </div>
+            </div>
+          )}
+
+          {/* Warning: la merma vaciaría el lote. Aparece solo cuando la
+              cantidad ingresada coincide con el saldo actual. */}
+          {cantidadValid && saldoDespues === 0 && (
+            <div className="mt-3 flex items-start gap-2 rounded-2xl bg-red-50 px-3 py-2.5 text-xs font-extrabold text-red-700 ring-1 ring-red-200">
+              <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
+              <span>
+                Esta merma cerrará el lote definitivamente. No quedarán plantas vivas.
+              </span>
+            </div>
+          )}
         </section>
 
         {/* Causa */}
@@ -222,13 +446,16 @@ function MermaForm({ lote, onCompleted }: Props) {
                   type="button"
                   onClick={() => setCausa(c.key)}
                   disabled={submitting}
-                  className={`rounded-2xl border px-3 py-2.5 text-sm font-extrabold transition ${
+                  className={`flex items-center gap-2 rounded-2xl border px-3 py-2.5 text-sm font-extrabold transition ${
                     isSelected
                       ? 'border-red-300 bg-red-50 text-red-700 shadow-soft'
                       : 'border-brand-100 bg-white text-brand-700 hover:border-brand-200'
                   }`}
                 >
-                  {c.label}
+                  <span className="text-base leading-none" aria-hidden>
+                    {c.icon}
+                  </span>
+                  <span className="flex-1 text-left">{c.label}</span>
                 </button>
               )
             })}
@@ -272,6 +499,14 @@ function MermaForm({ lote, onCompleted }: Props) {
             value={observaciones}
             onChange={setObservaciones}
             disabled={submitting}
+            required={requiereObservaciones}
+            placeholder={
+              requiereObservaciones
+                ? 'Describí brevemente la causa (ej: heladas, robo, daño accidental, etc.)'
+                : 'Notas adicionales del evento…'
+            }
+            showError={showErrors && !observacionesValid}
+            errorMessage="Contá brevemente la causa para que quede registrada."
           />
         </section>
 
@@ -286,11 +521,88 @@ function MermaForm({ lote, onCompleted }: Props) {
         formId={FORM_ID}
         label="Confirmar merma"
         loading={submitting}
-        loadingLabel="Registrando…"
+        loadingLabel={
+          step === 'retrying'
+            ? `Reintentando… (intento ${retryAttempt + 1})`
+            : 'Registrando…'
+        }
         disabled={!canSubmit}
         hint={pendingMsg}
         variant="red"
       />
+
+      {/* Dialog de confirmación previo al POST. Distingue entre merma parcial
+          y merma total (que cerrará el lote). */}
+      <ConfirmDialog
+        open={step === 'confirming'}
+        variant={willCloseLote ? 'danger' : 'default'}
+        iconName="info"
+        title={
+          willCloseLote
+            ? '⚠ Esta merma cerrará el lote definitivamente.'
+            : `¿Registrar merma de ${cantidadNum} ${cantidadNum === 1 ? 'planta' : 'plantas'} por ${causaLabel}?`
+        }
+        description={
+          willCloseLote
+            ? 'Quedarán 0 plantas vivas y el lote pasará a finalizado.'
+            : 'Esta acción no se puede deshacer.'
+        }
+        confirmLabel={willCloseLote ? 'Sí, cerrar el lote' : 'Confirmar'}
+        cancelLabel="Cancelar"
+        onConfirm={runSubmit}
+        onCancel={() => setStep('form')}
+      />
+
+      {/* Overlay de éxito tras merma parcial: ofrece registrar otra sin
+          navegar al detalle. */}
+      {step === 'success' && lastResult && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-4 pb-4 pt-8 backdrop-blur-sm sm:items-center">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-5 shadow-soft ring-1 ring-black/5">
+            <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+              <Icon name="check" className="h-5 w-5" />
+            </div>
+            <h2 className="text-base font-extrabold text-brand-700">Merma registrada</h2>
+            <p className="mt-1 text-sm font-semibold text-brand-500">
+              Se perdieron {lastResult.cantidad_perdida}{' '}
+              {lastResult.cantidad_perdida === 1 ? 'planta' : 'plantas'}. Quedan{' '}
+              {lastResult.saldo_vivo_despues}{' '}
+              {lastResult.saldo_vivo_despues === 1 ? 'viva' : 'vivas'}.
+            </p>
+            <div className="mt-5 flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={onCompleted}
+                className="flex h-11 items-center justify-center rounded-2xl bg-brand-700 text-sm font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:bg-brand-800"
+              >
+                Listo
+              </button>
+              <button
+                type="button"
+                onClick={handleRegistrarOtra}
+                className="flex h-11 items-center justify-center rounded-2xl bg-white text-sm font-extrabold text-brand-700 ring-1 ring-brand-100 transition hover:bg-brand-50"
+              >
+                Registrar otra merma
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Overlay cálido tras cierre automático por pérdida total. Auto-
+          redirige al detalle a los 1.5 s; sin botones para no interrumpir. */}
+      {step === 'closed' && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-4 pb-4 pt-8 backdrop-blur-sm sm:items-center">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-5 text-center shadow-soft ring-1 ring-black/5">
+            <div className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-full bg-brand-50 text-brand-600">
+              <Icon name="leaf" className="h-6 w-6" />
+            </div>
+            <h2 className="text-base font-extrabold text-brand-700">Lote finalizado</h2>
+            <p className="mt-1 text-sm font-semibold text-brand-500">
+              Ya no quedan plantas vivas. Gracias por mantener el registro al día.
+            </p>
+          </div>
+        </div>
+      )}
     </>
   )
 }
