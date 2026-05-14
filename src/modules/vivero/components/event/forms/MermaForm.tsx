@@ -18,13 +18,10 @@ import FotosUploader from '../FotosUploader'
 import type { Photo } from '../FotosUploader'
 import ObservacionesCard from '../ObservacionesCard'
 
-// Retry solo para registrarMerma cuando el upload de evidencias ya quedó OK:
-// las evidencia_ids existen en backend y reintentar el POST con los mismos ids
-// no genera duplicados. El primer intento es inmediato; los reintentos van con
-// backoff 1s y 3s (decisión de sprint).
-const REGISTRAR_MERMA_RETRY_DELAYS_MS = [1000, 3000] as const
-
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+// No se reintenta automáticamente registrarMerma: el endpoint es append-only
+// sin Idempotency-Key, así que un retry tras respuesta perdida crearía una
+// segunda merma y descontaría saldo dos veces. El usuario espera con el
+// overlay; si falla, decide manualmente si reintenta.
 
 type Props = {
   lote: LoteViveroItem
@@ -116,13 +113,12 @@ function MermaForm({ lote, fechaEmbolsado, onCompleted }: Props) {
   const [showErrors, setShowErrors] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
-  type Step = 'form' | 'confirming' | 'submitting' | 'retrying' | 'success' | 'closed'
+  type Step = 'form' | 'confirming' | 'submitting' | 'success' | 'closed'
   const [step, setStep] = useState<Step>('form')
-  const [retryAttempt, setRetryAttempt] = useState(0)
   type MermaResultData = RegistrarMermaResponse['data']
   const [lastResult, setLastResult] = useState<MermaResultData | null>(null)
 
-  const submitting = step === 'submitting' || step === 'retrying'
+  const submitting = step === 'submitting'
 
   const photosRef = useRef(photos)
   useEffect(() => {
@@ -211,7 +207,6 @@ function MermaForm({ lote, fechaEmbolsado, onCompleted }: Props) {
     setObservaciones('')
     setShowErrors(false)
     setSubmitError(null)
-    setRetryAttempt(0)
   }
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -256,9 +251,10 @@ function MermaForm({ lote, fechaEmbolsado, onCompleted }: Props) {
       return
     }
 
-    // Paso 2: registrar la merma con retry. Las evidencia_ids ya existen, así
-    // que reintentar el POST es seguro (no genera duplicados ni evidencias
-    // huérfanas extra).
+    // Paso 2: registrar la merma. Una sola llamada — sin retry automático.
+    // El endpoint es append-only y no acepta Idempotency-Key todavía, así que
+    // reintentar tras una respuesta perdida crearía una segunda merma y
+    // descontaría saldo dos veces. Si falla, el usuario decide manualmente.
     const causaMerma = causa as CausaMermaVivero
     const payload = {
       fecha_evento: fecha,
@@ -268,43 +264,25 @@ function MermaForm({ lote, fechaEmbolsado, onCompleted }: Props) {
       observaciones: observaciones.trim() || undefined,
     }
 
-    let attempt = 0
-    let lastError: unknown = null
-    const maxAttempts = 1 + REGISTRAR_MERMA_RETRY_DELAYS_MS.length
-
-    while (attempt < maxAttempts) {
-      try {
-        const response = await LotesViveroService.registrarMerma(lote.id, payload, authId)
-        const data = response.data
-        setLastResult(data)
-        // Submit exitoso: el borrador ya no es útil y se limpia para que la
-        // próxima apertura del form arranque limpia.
-        clearDraft(draftKey(lote.id))
-        if (data.lote_finalizado) {
-          setStep('closed')
-        } else {
-          setSaldoOverride(data.saldo_vivo_despues)
-          setStep('success')
-        }
-        return
-      } catch (err) {
-        lastError = err
-        attempt += 1
-        if (attempt < maxAttempts) {
-          setStep('retrying')
-          setRetryAttempt(attempt)
-          await sleep(REGISTRAR_MERMA_RETRY_DELAYS_MS[attempt - 1])
-        }
+    try {
+      const response = await LotesViveroService.registrarMerma(lote.id, payload, authId)
+      const data = response.data
+      setLastResult(data)
+      clearDraft(draftKey(lote.id))
+      if (data.lote_finalizado) {
+        setStep('closed')
+      } else {
+        setSaldoOverride(data.saldo_vivo_despues)
+        setStep('success')
       }
+    } catch (err) {
+      setSubmitError(
+        err instanceof Error
+          ? err.message
+          : 'No pudimos registrar la merma. Revisá tu conexión y volvé a intentar.',
+      )
+      setStep('form')
     }
-
-    setSubmitError(
-      lastError instanceof Error
-        ? lastError.message
-        : 'No pudimos registrar la merma. Probá de nuevo.',
-    )
-    setStep('form')
-    setRetryAttempt(0)
   }
 
   // Auto-redirección tras cierre del lote (1.5 s) para que el usuario lea el
@@ -521,11 +499,7 @@ function MermaForm({ lote, fechaEmbolsado, onCompleted }: Props) {
         formId={FORM_ID}
         label="Confirmar merma"
         loading={submitting}
-        loadingLabel={
-          step === 'retrying'
-            ? `Reintentando… (intento ${retryAttempt + 1})`
-            : 'Registrando…'
-        }
+        loadingLabel="Registrando…"
         disabled={!canSubmit}
         hint={pendingMsg}
         variant="red"
@@ -552,6 +526,29 @@ function MermaForm({ lote, fechaEmbolsado, onCompleted }: Props) {
         onConfirm={runSubmit}
         onCancel={() => setStep('form')}
       />
+
+      {/* Overlay bloqueante durante el POST: previene doble submit y deja
+          claro que el sistema está procesando. Sin Idempotency-Key en el
+          backend, no podemos reintentar automáticamente sin riesgo de
+          duplicar la merma. */}
+      {step === 'submitting' && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm"
+          role="status"
+          aria-live="polite"
+          aria-busy="true"
+        >
+          <div className="w-full max-w-sm rounded-3xl bg-white p-6 text-center shadow-soft ring-1 ring-black/5">
+            <div className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center">
+              <div className="h-10 w-10 animate-spin rounded-full border-4 border-brand-100 border-t-brand-600" />
+            </div>
+            <h2 className="text-base font-extrabold text-brand-700">Registrando merma…</h2>
+            <p className="mt-1 text-sm font-semibold text-brand-500">
+              No cierres la pantalla. Estamos guardando los datos.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Overlay de éxito tras merma parcial: ofrece registrar otra sin
           navegar al detalle. */}
