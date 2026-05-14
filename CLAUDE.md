@@ -103,4 +103,5 @@ Top-level docs that are not loaded automatically but are authoritative when rele
 - [FRONTEND_GUIDE.md](FRONTEND_GUIDE.md) — frontend patterns, conventions, do/don't list
 - [FRONTEND_AUDIT.md](FRONTEND_AUDIT.md) — known tech debt and refactor targets (consult for cleanup tasks)
 - [DOMAIN_INDEX.md](DOMAIN_INDEX.md) — domain glossary and entity reference
+- [TODO.md](TODO.md) — open work items and pending tasks
 - [README.md](README.md) — DB ER diagram (Mermaid) for the backend schema; otherwise default Vite template

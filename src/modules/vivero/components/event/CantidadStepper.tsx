@@ -8,6 +8,11 @@ type Props = {
   label: string
   unit: string
   quickPercentages?: number[]
+  /**
+   * Si se pasa, aparecen dos botones extra (−N y +N) que saltan en grupos
+   * de `bigStepSize` unidades. Útil para lotes grandes donde +1 es lento.
+   */
+  bigStepSize?: number
   showError?: boolean
   errorMessage?: string
   hint?: string
@@ -32,6 +37,7 @@ function CantidadStepper({
   label,
   unit,
   quickPercentages,
+  bigStepSize,
   showError = false,
   errorMessage,
   hint,
@@ -72,11 +78,11 @@ function CantidadStepper({
           onClick={() => step(-1)}
           disabled={disabled || safeNumeric <= min}
           aria-label="Restar 1"
-          className="flex w-12 items-center justify-center text-brand-700 transition hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-40"
+          className="flex w-14 items-center justify-center text-brand-700 transition hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          <Icon name="minus" className="h-5 w-5" />
+          <Icon name="minus" className="h-6 w-6" />
         </button>
-        <div className="flex flex-1 items-center justify-center border-x border-brand-100 px-2 py-2">
+        <div className="flex flex-1 items-center justify-center border-x border-brand-100 px-2 py-3">
           <input
             type="text"
             inputMode="numeric"
@@ -84,7 +90,7 @@ function CantidadStepper({
             onChange={(event) => handleChange(event.target.value)}
             disabled={disabled}
             placeholder="0"
-            className="w-full border-none bg-transparent text-center text-2xl font-extrabold text-brand-700 outline-none placeholder:text-brand-200 disabled:opacity-50"
+            className="w-full border-none bg-transparent text-center text-3xl font-extrabold text-brand-700 outline-none placeholder:text-brand-200 disabled:opacity-50"
           />
           <span className="ml-1 text-xs font-bold uppercase tracking-wider text-brand-500">
             {unit}
@@ -95,11 +101,34 @@ function CantidadStepper({
           onClick={() => step(1)}
           disabled={disabled || (max !== null && safeNumeric >= max)}
           aria-label="Sumar 1"
-          className="flex w-12 items-center justify-center text-brand-700 transition hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-40"
+          className="flex w-14 items-center justify-center text-brand-700 transition hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          <Icon name="plus" className="h-5 w-5" />
+          <Icon name="plus" className="h-6 w-6" />
         </button>
       </div>
+
+      {bigStepSize && bigStepSize > 1 && (
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => step(-bigStepSize)}
+            disabled={disabled || safeNumeric <= min}
+            aria-label={`Restar ${bigStepSize}`}
+            className="rounded-2xl bg-white py-2 text-xs font-extrabold text-brand-700 ring-1 ring-brand-100 transition hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            − {bigStepSize}
+          </button>
+          <button
+            type="button"
+            onClick={() => step(bigStepSize)}
+            disabled={disabled || (max !== null && safeNumeric >= max)}
+            aria-label={`Sumar ${bigStepSize}`}
+            className="rounded-2xl bg-white py-2 text-xs font-extrabold text-brand-700 ring-1 ring-brand-100 transition hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            + {bigStepSize}
+          </button>
+        </div>
+      )}
 
       {quickPercentages && max !== null && max > 0 && (
         <div className="grid grid-cols-4 gap-2">

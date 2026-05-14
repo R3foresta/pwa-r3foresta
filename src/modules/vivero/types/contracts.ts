@@ -318,7 +318,6 @@ export type CausaMermaVivero =
   | 'SEQUIA'
   | 'DANO_FISICO'
   | 'MUERTE_NATURAL'
-  | 'DESCARTE_CALIDAD'
   | 'OTRO'
 
 export type DestinoTipoVivero =
