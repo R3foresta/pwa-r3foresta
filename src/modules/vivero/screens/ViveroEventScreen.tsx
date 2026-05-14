@@ -170,12 +170,16 @@ function ViveroEventScreen() {
     )
   }
 
-  // Si el tab actual no es válido, redirigir al primero disponible
+  // Si el tab actual no es válido, redirigir al primero disponible.
+  // Si no hay ninguno (lote finalizado, sin saldo, tipo desconocido), volvemos
+  // al detalle: sin este return el render de abajo igual monta el form del
+  // `currentKey`, exponiendo el flujo aunque el backend lo termine rechazando.
   if (!currentTab || currentTab.hidden || !currentTab.available) {
     const fallback = tabs.find((t) => !t.hidden && t.available)
     if (fallback && fallback.key !== currentKey) {
       return <Navigate to={`/app/vivero/${loteId}/event/${fallback.key}`} replace />
     }
+    return <Navigate to={`/app/vivero/${loteId}`} replace />
   }
 
   const especie = getLotEspecie(lote)
