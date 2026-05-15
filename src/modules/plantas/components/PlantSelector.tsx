@@ -15,11 +15,19 @@ function PlantSelector({ plantas, loading, onSelect, onCreateNew }: Props) {
   const filtered = useMemo(() => {
     if (!searchTerm.trim()) return plantas
     const term = searchTerm.toLowerCase()
-    return plantas.filter(
-      (p) =>
-        (p.nombre_comun_principal?.toLowerCase() || p.especie?.toLowerCase() || '').includes(term) ||
-        p.nombre_cientifico?.toLowerCase().includes(term),
-    )
+    return plantas.filter((p) => {
+      const haystack = [
+        p.nombre_comun_principal,
+        p.especie,
+        p.nombre_cientifico,
+        p.nombres_comunes,
+        p.variedad,
+      ]
+        .filter((value): value is string => typeof value === 'string' && value.length > 0)
+        .join(' ')
+        .toLowerCase()
+      return haystack.includes(term)
+    })
   }, [plantas, searchTerm])
 
   return (

@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { listarComunidades } from '../../api/comunidades.api'
+import CrudHeader from '../../components/crud/CrudHeader'
+import FlashMessage from '../../components/crud/FlashMessage'
+import SearchBar from '../../components/crud/SearchBar'
 import Icon from '../../components/Icon'
 import type { ApiListComunidades, ComunidadCard } from '../../tipos/comunidades'
 
@@ -31,23 +34,24 @@ type CardProps = {
   onEdit: (id: number) => void
 }
 
-type ComunidadesLocationState = {
-  successMessage?: string
-}
-
 function ComunidadCardItem({ comunidad, onEdit }: CardProps) {
   const ruta = buildRuta(comunidad)
   const isActive = comunidad.activo
-
   return (
-    <article className="rounded-2xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
+    <button
+      type="button"
+      onClick={() => onEdit(comunidad.id)}
+      className="w-full rounded-2xl bg-white px-4 py-4 text-left shadow-soft ring-1 ring-black/5 transition active:scale-[0.99]"
+    >
       <div className="flex items-start justify-between gap-3">
-        <div className="space-y-1">
-          <h3 className="text-base font-extrabold text-brand-700">{comunidad.nombre}</h3>
-          <p className="text-xs font-medium text-brand-500">{ruta || 'Sin ruta disponible'}</p>
+        <div className="space-y-1 overflow-hidden">
+          <h3 className="truncate text-base font-extrabold text-brand-700">{comunidad.nombre}</h3>
+          <p className="truncate text-xs font-medium text-brand-500">
+            {ruta || 'Sin ruta disponible'}
+          </p>
         </div>
         <span
-          className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${
+          className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ring-1 ${
             isActive
               ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
               : 'bg-slate-100 text-slate-600 ring-slate-200'
@@ -56,28 +60,23 @@ function ComunidadCardItem({ comunidad, onEdit }: CardProps) {
           {isActive ? 'Activa' : 'Inactiva'}
         </span>
       </div>
-
-      <div className="mt-3 flex items-center justify-end gap-2">
-        <button
-          type="button"
-          onClick={() => onEdit(comunidad.id)}
-          className="rounded-xl bg-brand-50 px-3 py-2 text-xs font-semibold text-brand-700 ring-1 ring-brand-100 transition hover:bg-brand-100"
-        >
-          Editar
-        </button>
+      <div className="mt-3 flex items-center justify-end gap-1.5 text-xs font-semibold text-brand-600">
+        <span>{isActive ? 'Editar' : 'Editar / reactivar'}</span>
+        <Icon name="chevron-down" className="h-3.5 w-3.5 -rotate-90" />
       </div>
-    </article>
+    </button>
   )
 }
 
 function ComunidadesScreen() {
   const navigate = useNavigate()
-  const location = useLocation()
   const sentinelRef = useRef<HTMLDivElement | null>(null)
   const requestCounterRef = useRef(0)
 
   const [q, setQ] = useState('')
   const [qDebounced, setQDebounced] = useState('')
+  const [incluirInactivas, setIncluirInactivas] = useState(false)
+
   const [items, setItems] = useState<ComunidadCard[]>([])
   const [pagination, setPagination] =
     useState<ApiListComunidades['pagination']>(DEFAULT_PAGINATION)
@@ -85,39 +84,13 @@ function ComunidadesScreen() {
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loadMoreError, setLoadMoreError] = useState<string | null>(null)
-  const [flashMessage, setFlashMessage] = useState<string | null>(null)
 
   useEffect(() => {
-    const state = location.state as ComunidadesLocationState | null
-    if (!state?.successMessage) {
-      return
-    }
-
-    setFlashMessage(state.successMessage)
-    navigate(location.pathname, { replace: true, state: null })
-  }, [location.pathname, location.state, navigate])
-
-  useEffect(() => {
-    if (!flashMessage) {
-      return
-    }
-
-    const timer = setTimeout(() => {
-      setFlashMessage(null)
-    }, 4000)
-
+    const timer = setTimeout(() => setQDebounced(q.trim()), 300)
     return () => clearTimeout(timer)
-  }, [flashMessage])
-
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      setQDebounced(q.trim())
-    }, 300)
-
-    return () => clearTimeout(timeoutId)
   }, [q])
 
-  const cargarComunidades = useCallback(
+  const cargar = useCallback(
     async (pageToLoad: number, mode: 'replace' | 'append') => {
       const requestId = ++requestCounterRef.current
 
@@ -136,35 +109,22 @@ function ComunidadesScreen() {
           q: qDebounced || undefined,
           page: pageToLoad,
           limit: DEFAULT_LIMIT,
-          incluirInactivas: false,
+          incluirInactivas,
         })
 
-        if (requestId !== requestCounterRef.current) {
-          return
-        }
+        if (requestId !== requestCounterRef.current) return
 
-        const incoming = response.data ?? []
-        const nextPagination = response.pagination ?? DEFAULT_PAGINATION
-
-        setPagination(nextPagination)
+        setPagination(response.pagination ?? DEFAULT_PAGINATION)
         setItems((prev) => {
-          if (mode === 'replace') {
-            return incoming
-          }
-
+          if (mode === 'replace') return response.data ?? []
           const map = new Map<number, ComunidadCard>()
           prev.forEach((item) => map.set(item.id, item))
-          incoming.forEach((item) => map.set(item.id, item))
+          ;(response.data ?? []).forEach((item) => map.set(item.id, item))
           return Array.from(map.values())
         })
       } catch (err) {
-        if (requestId !== requestCounterRef.current) {
-          return
-        }
-
-        const message =
-          err instanceof Error ? err.message : 'Error al cargar comunidades.'
-
+        if (requestId !== requestCounterRef.current) return
+        const message = err instanceof Error ? err.message : 'Error al cargar comunidades.'
         if (mode === 'replace') {
           setError(message)
           setItems([])
@@ -173,69 +133,45 @@ function ComunidadesScreen() {
           setLoadMoreError(message)
         }
       } finally {
-        if (requestId !== requestCounterRef.current) {
-          return
-        }
-
-        if (mode === 'replace') {
-          setLoading(false)
-        } else {
-          setLoadingMore(false)
+        if (requestId === requestCounterRef.current) {
+          if (mode === 'replace') setLoading(false)
+          else setLoadingMore(false)
         }
       }
     },
-    [qDebounced],
+    [qDebounced, incluirInactivas],
   )
 
   useEffect(() => {
-    void cargarComunidades(1, 'replace')
-  }, [cargarComunidades])
+    void cargar(1, 'replace')
+  }, [cargar])
 
   useEffect(() => {
     const node = sentinelRef.current
-    if (!node || loading || loadingMore || Boolean(error) || !pagination.hasNextPage) {
-      return
-    }
+    if (!node || loading || loadingMore || Boolean(error) || !pagination.hasNextPage) return
 
     const observer = new IntersectionObserver(
       (entries) => {
         const first = entries[0]
         if (first?.isIntersecting) {
-          void cargarComunidades(pagination.page + 1, 'append')
+          void cargar(pagination.page + 1, 'append')
         }
       },
       { root: null, rootMargin: '160px 0px', threshold: 0.1 },
     )
-
     observer.observe(node)
     return () => observer.disconnect()
-  }, [cargarComunidades, error, loading, loadingMore, pagination.hasNextPage, pagination.page])
+  }, [cargar, error, loading, loadingMore, pagination.hasNextPage, pagination.page])
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-28 pt-6 text-brand-700">
-      <header className="relative mb-4 flex items-center gap-4">
-        <button
-          type="button"
-          aria-label="Volver"
-          onClick={() => navigate('/app')}
-          className="left-0 top-0 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-brand-700 shadow-soft transition hover:bg-white"
-        >
-          <Icon name="arrow-left" className="h-5 w-5" />
-        </button>
-        <div className="flex flex-col">
-          <p className="text-xs uppercase tracking-[0.2em] text-brand-500">Sección</p>
-          <div className="text-2xl font-semibold tracking-tight text-brand-700">Comunidades/Localidades</div>
-          <p className="text-xs font-medium text-brand-500">
-            Listado de comunidades/localidades registradas
-          </p>
-        </div>
-      </header>
+      <CrudHeader
+        title="Comunidades"
+        subtitle="Listado de comunidades registradas"
+        backTo="/app/home"
+      />
 
-      {flashMessage && (
-        <section className="mb-4 rounded-2xl bg-emerald-50 px-4 py-3 shadow-soft ring-1 ring-emerald-200">
-          <p className="text-sm font-semibold text-emerald-700">{flashMessage}</p>
-        </section>
-      )}
+      <FlashMessage />
 
       <div className="mb-4 space-y-3">
         <button
@@ -244,24 +180,29 @@ function ComunidadesScreen() {
           className="flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-500 px-4 py-3 text-sm font-semibold text-white shadow-soft transition hover:bg-brand-600"
         >
           <Icon name="plus" className="h-4 w-4" />
-          Nueva comunidades/localidades
+          Nueva comunidad
         </button>
 
-        <label className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-soft ring-1 ring-black/5">
-          <Icon name="search" className="h-5 w-5 text-slate-400" />
+        <SearchBar
+          value={q}
+          onChange={setQ}
+          placeholder="Buscar comunidad por nombre..."
+        />
+
+        <label className="flex items-center gap-2 rounded-2xl bg-white px-4 py-2.5 text-sm font-semibold text-brand-700 shadow-soft ring-1 ring-black/5">
           <input
-            type="search"
-            value={q}
-            onChange={(event) => setQ(event.target.value)}
-            placeholder="Buscar comunidades/localidades..."
-            className="w-full border-none bg-transparent text-sm font-semibold text-slate-700 outline-none placeholder:font-medium placeholder:text-slate-400"
+            type="checkbox"
+            checked={incluirInactivas}
+            onChange={(event) => setIncluirInactivas(event.target.checked)}
+            className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-400"
           />
+          Mostrar comunidades inactivas
         </label>
       </div>
 
       {loading && (
         <section className="rounded-2xl bg-white px-4 py-6 text-center text-sm font-semibold text-brand-600 shadow-soft ring-1 ring-black/5">
-          Cargando comunidades/localidades...
+          Cargando comunidades...
         </section>
       )}
 
@@ -270,7 +211,7 @@ function ComunidadesScreen() {
           <p className="text-sm font-semibold text-red-700">{error}</p>
           <button
             type="button"
-            onClick={() => void cargarComunidades(1, 'replace')}
+            onClick={() => void cargar(1, 'replace')}
             className="mt-3 rounded-xl bg-red-100 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-200"
           >
             Reintentar
@@ -279,11 +220,23 @@ function ComunidadesScreen() {
       )}
 
       {!loading && !error && items.length === 0 && (
-        <section className="rounded-2xl bg-white px-4 py-6 text-center shadow-soft ring-1 ring-black/5">
-          <p className="text-sm font-semibold text-brand-700">No hay comunidades registradas</p>
+        <section className="rounded-2xl bg-white px-4 py-8 text-center shadow-soft ring-1 ring-black/5">
+          <p className="text-sm font-semibold text-brand-700">
+            {qDebounced
+              ? 'No hay comunidades que coincidan con tu búsqueda.'
+              : 'Sin comunidades registradas todavía.'}
+          </p>
+          {!qDebounced && (
+            <button
+              type="button"
+              onClick={() => navigate('/app/comunidades/nueva')}
+              className="mt-4 rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-600"
+            >
+              Registrar la primera comunidad
+            </button>
+          )}
         </section>
       )}
-
 
       {!loading && !error && items.length > 0 && (
         <>
@@ -299,7 +252,7 @@ function ComunidadesScreen() {
 
           {loadingMore && (
             <p className="py-4 text-center text-xs font-semibold text-brand-500">
-              Cargando mas comunidades...
+              Cargando más comunidades...
             </p>
           )}
 
@@ -308,7 +261,7 @@ function ComunidadesScreen() {
               <p className="text-xs font-semibold text-red-700">{loadMoreError}</p>
               <button
                 type="button"
-                onClick={() => void cargarComunidades(pagination.page + 1, 'append')}
+                onClick={() => void cargar(pagination.page + 1, 'append')}
                 className="mt-2 rounded-xl bg-red-100 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-200"
               >
                 Reintentar carga

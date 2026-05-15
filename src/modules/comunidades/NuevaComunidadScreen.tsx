@@ -1,6 +1,9 @@
 import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { crearComunidad } from '../../api/comunidades.api'
+import CrudHeader from '../../components/crud/CrudHeader'
+import FormField from '../../components/crud/FormField'
+import { inputClasses, selectWrapperClasses } from '../../components/crud/form-classes'
 import Icon from '../../components/Icon'
 import {
   UbicacionesService,
@@ -46,10 +49,7 @@ function NuevaComunidadScreen() {
   const nombreLimpio = comunidadNombre.trim()
 
   const municipioSeleccionado = useMemo(() => {
-    if (!selectedMunicipioId) {
-      return null
-    }
-
+    if (!selectedMunicipioId) return null
     const nivelMunicipio = divisionLevels[2]
     return nivelMunicipio?.options.find((option) => option.id === selectedMunicipioId) ?? null
   }, [divisionLevels, selectedMunicipioId])
@@ -66,23 +66,16 @@ function NuevaComunidadScreen() {
     try {
       setLoadingPaises(true)
       setCatalogoError(null)
-
       const nextPaises = await UbicacionesService.getPaises()
       setPaises(nextPaises)
-
-      if (selectedPaisId !== null || nextPaises.length === 0) {
-        return
-      }
-
+      if (selectedPaisId !== null || nextPaises.length === 0) return
       const bolivia = nextPaises.find(
         (pais) => pais.codigo_iso2?.toLocaleUpperCase('en-US') === 'BO',
       )
-      if (bolivia) {
-        setSelectedPaisId(bolivia.id)
-      }
+      if (bolivia) setSelectedPaisId(bolivia.id)
     } catch (error) {
-      console.error('Error cargando paises:', error)
-      setCatalogoError('No se pudo cargar el catalogo de paises.')
+      console.error('Error cargando países:', error)
+      setCatalogoError('No se pudo cargar el catálogo de países.')
     } finally {
       setLoadingPaises(false)
     }
@@ -90,22 +83,15 @@ function NuevaComunidadScreen() {
 
   const loadRootDivisiones = async (paisId: number) => {
     const requestId = ++divisionRequestRef.current
-
     try {
       setLoadingDivisiones(true)
       setCatalogoError(null)
-
       const rootOptions = await UbicacionesService.getDivisiones(paisId)
-
-      if (requestId !== divisionRequestRef.current) {
-        return
-      }
-
+      if (requestId !== divisionRequestRef.current) return
       if (rootOptions.length === 0) {
         setDivisionLevels([])
         return
       }
-
       setDivisionLevels([
         {
           parentId: null,
@@ -115,12 +101,9 @@ function NuevaComunidadScreen() {
         },
       ])
     } catch (error) {
-      if (requestId !== divisionRequestRef.current) {
-        return
-      }
-
-      console.error('Error cargando nivel raiz:', error)
-      setCatalogoError('No se pudo cargar la division administrativa.')
+      if (requestId !== divisionRequestRef.current) return
+      console.error('Error cargando nivel raíz:', error)
+      setCatalogoError('No se pudo cargar la división administrativa.')
       setDivisionLevels([])
     } finally {
       if (requestId === divisionRequestRef.current) {
@@ -152,20 +135,13 @@ function NuevaComunidadScreen() {
     setDivisionLevels(nextLevels)
     setSubmitError(null)
 
-    if (!selectedPaisId || selectedId === null || levelIndex >= MAX_LEVELS - 1) {
-      return
-    }
+    if (!selectedPaisId || selectedId === null || levelIndex >= MAX_LEVELS - 1) return
 
     try {
       setLoadingDivisiones(true)
       setCatalogoError(null)
-
       const children = await UbicacionesService.getDivisiones(selectedPaisId, selectedId)
-
-      if (requestId !== divisionRequestRef.current || children.length === 0) {
-        return
-      }
-
+      if (requestId !== divisionRequestRef.current || children.length === 0) return
       setDivisionLevels([
         ...nextLevels,
         {
@@ -176,10 +152,7 @@ function NuevaComunidadScreen() {
         },
       ])
     } catch (error) {
-      if (requestId !== divisionRequestRef.current) {
-        return
-      }
-
+      if (requestId !== divisionRequestRef.current) return
       console.error('Error cargando sub-divisiones:', error)
       setCatalogoError('No se pudieron cargar los niveles administrativos.')
     } finally {
@@ -191,10 +164,7 @@ function NuevaComunidadScreen() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (submitting) {
-      return
-    }
-
+    if (submitting) return
     setShowErrors(true)
     setSubmitError(null)
 
@@ -207,21 +177,16 @@ function NuevaComunidadScreen() {
     ) {
       return
     }
-
-    if (!selectedPaisId || !selectedMunicipioId) {
-      return
-    }
+    if (!selectedPaisId || !selectedMunicipioId) return
 
     try {
       setSubmitting(true)
-
       await crearComunidad({
         pais_id: selectedPaisId,
         municipio_id: selectedMunicipioId,
         nombre: nombreLimpio,
         activo,
       })
-
       navigate('/app/comunidades', {
         state: { successMessage: 'Comunidad creada correctamente.' },
       })
@@ -232,14 +197,13 @@ function NuevaComunidadScreen() {
         return
       }
       if (apiError?.status === 400) {
-        setSubmitError('Revisa campos obligatorios.')
+        setSubmitError('Revisa los campos obligatorios.')
         return
       }
       if (apiError?.status === 500) {
-        setSubmitError('Error interno, intenta mas tarde.')
+        setSubmitError('Error interno, intenta más tarde.')
         return
       }
-
       setSubmitError(apiError?.message || 'No se pudo crear la comunidad.')
     } finally {
       setSubmitting(false)
@@ -256,31 +220,16 @@ function NuevaComunidadScreen() {
       setDivisionLevels([])
       return
     }
-
     void loadRootDivisiones(selectedPaisId)
   }, [selectedPaisId])
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-28 pt-6 text-brand-700">
-      <header className="relative mb-4 flex items-center gap-4">
-        <button
-          type="button"
-          aria-label="Volver a comunidades"
-          onClick={() => navigate('/app/comunidades')}
-          className="left-0 top-0 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-brand-700 shadow-soft transition hover:bg-white"
-        >
-          <Icon name="arrow-left" className="h-5 w-5" />
-        </button>
-        <div className="flex flex-col">
-          <p className="text-xs uppercase tracking-[0.2em] text-brand-500">Seccion</p>
-          <h1 className="text-2xl font-semibold tracking-tight text-brand-700">
-            Nueva comunidad
-          </h1>
-          <p className="text-xs font-medium text-brand-500">
-            Registra una comunidad/localidad bajo un municipio
-          </p>
-        </div>
-      </header>
+      <CrudHeader
+        title="Nueva comunidad"
+        subtitle="Registra una comunidad dentro de un municipio"
+        backTo="/app/comunidades"
+      />
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {submitError && (
@@ -290,17 +239,12 @@ function NuevaComunidadScreen() {
         )}
 
         <section className="space-y-4 rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
-          <div className="space-y-2">
-            <p className="text-sm font-semibold text-brand-700">
-              Pais <span className="text-red-500">*</span>
-            </p>
-            <div
-              className={`flex items-center rounded-2xl border px-4 shadow-soft focus-within:ring-2 ${
-                showErrors && validation.pais
-                  ? 'border-red-400 bg-red-50 focus-within:border-red-400 focus-within:ring-red-200'
-                  : 'border-slate-200 bg-white focus-within:border-brand-400 focus-within:ring-brand-200'
-              }`}
-            >
+          <FormField
+            label="País"
+            required
+            error={showErrors && validation.pais ? 'Selecciona un país.' : null}
+          >
+            <div className={selectWrapperClasses(showErrors && validation.pais)}>
               <select
                 value={selectedPaisId ?? ''}
                 onChange={(event) => handlePaisChange(event.target.value)}
@@ -308,7 +252,7 @@ function NuevaComunidadScreen() {
                 className="w-full bg-transparent py-3 text-sm font-semibold text-slate-700 outline-none"
               >
                 <option value="">
-                  {loadingPaises ? 'Cargando paises...' : 'Selecciona un pais'}
+                  {loadingPaises ? 'Cargando países...' : 'Selecciona un país'}
                 </option>
                 {paises.map((pais) => (
                   <option key={pais.id} value={pais.id}>
@@ -318,58 +262,42 @@ function NuevaComunidadScreen() {
               </select>
               <Icon name="chevron-down" className="h-4 w-4 text-slate-400" />
             </div>
-            {showErrors && validation.pais && (
-              <p className="text-xs font-semibold text-red-500">Selecciona un pais.</p>
-            )}
-          </div>
+          </FormField>
 
           {selectedPaisId !== null &&
-            divisionLevels.slice(0, MAX_LEVELS).map((level, index) => (
-              <div key={`${level.parentId ?? 'root'}-${index}`} className="space-y-2">
-                <p className="text-sm font-semibold text-brand-700">
-                  {level.label || `Nivel ${index + 1}`} <span className="text-red-500">*</span>
-                </p>
-                <div
-                  className={`flex items-center rounded-2xl border px-4 shadow-soft focus-within:ring-2 ${
-                    showErrors &&
-                    ((index === 0 && validation.nivel1) ||
-                      (index === 1 && validation.nivel2) ||
-                      (index === 2 && validation.nivel3))
-                      ? 'border-red-400 bg-red-50 focus-within:border-red-400 focus-within:ring-red-200'
-                      : 'border-slate-200 bg-white focus-within:border-brand-400 focus-within:ring-brand-200'
-                  }`}
+            divisionLevels.slice(0, MAX_LEVELS).map((level, index) => {
+              const validationKey = (['nivel1', 'nivel2', 'nivel3'] as const)[index]
+              const hasError = showErrors && validation[validationKey]
+              return (
+                <FormField
+                  key={`${level.parentId ?? 'root'}-${index}`}
+                  label={level.label || `Nivel ${index + 1}`}
+                  required
+                  error={hasError ? `Completa ${level.label || `el nivel ${index + 1}`}.` : null}
                 >
-                  <select
-                    value={level.selectedId ?? ''}
-                    onChange={(event) => {
-                      void handleDivisionSelect(index, event.target.value)
-                    }}
-                    disabled={loadingDivisiones || submitting}
-                    className="w-full bg-transparent py-3 text-sm font-semibold text-slate-700 outline-none"
-                  >
-                    <option value="">
-                      {loadingDivisiones ? 'Cargando...' : `Selecciona ${level.label || 'nivel'}`}
-                    </option>
-                    {level.options.map((division) => (
-                      <option key={division.id} value={division.id}>
-                        {division.nombre}
+                  <div className={selectWrapperClasses(hasError)}>
+                    <select
+                      value={level.selectedId ?? ''}
+                      onChange={(event) => {
+                        void handleDivisionSelect(index, event.target.value)
+                      }}
+                      disabled={loadingDivisiones || submitting}
+                      className="w-full bg-transparent py-3 text-sm font-semibold text-slate-700 outline-none"
+                    >
+                      <option value="">
+                        {loadingDivisiones ? 'Cargando...' : `Selecciona ${level.label || 'nivel'}`}
                       </option>
-                    ))}
-                  </select>
-                  <Icon name="chevron-down" className="h-4 w-4 text-slate-400" />
-                </div>
-              </div>
-            ))}
-
-          {showErrors && validation.nivel1 && (
-            <p className="text-xs font-semibold text-red-500">Completa el Nivel 1.</p>
-          )}
-          {showErrors && !validation.nivel1 && validation.nivel2 && (
-            <p className="text-xs font-semibold text-red-500">Completa el Nivel 2.</p>
-          )}
-          {showErrors && !validation.nivel2 && validation.nivel3 && (
-            <p className="text-xs font-semibold text-red-500">Selecciona un municipio.</p>
-          )}
+                      {level.options.map((division) => (
+                        <option key={division.id} value={division.id}>
+                          {division.nombre}
+                        </option>
+                      ))}
+                    </select>
+                    <Icon name="chevron-down" className="h-4 w-4 text-slate-400" />
+                  </div>
+                </FormField>
+              )
+            })}
 
           {catalogoError && (
             <p className="text-xs font-semibold text-red-500">{catalogoError}</p>
@@ -378,10 +306,20 @@ function NuevaComunidadScreen() {
 
         {showNombreInput ? (
           <section className="space-y-4 rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
-            <div className="space-y-2">
-              <p className="text-sm font-semibold text-brand-700">
-                Nombre comunidad/localidad <span className="text-red-500">*</span>
-              </p>
+            <FormField
+              label="Nombre de la comunidad"
+              required
+              error={
+                showErrors && validation.nombre
+                  ? 'El nombre de la comunidad es obligatorio.'
+                  : null
+              }
+              hint={
+                municipioSeleccionado
+                  ? `Municipio seleccionado: ${municipioSeleccionado.nombre}`
+                  : undefined
+              }
+            >
               <input
                 type="text"
                 value={comunidadNombre}
@@ -389,25 +327,11 @@ function NuevaComunidadScreen() {
                   setComunidadNombre(event.target.value)
                   setSubmitError(null)
                 }}
-                placeholder="Ingresa el nombre de la comunidad/localidad"
+                placeholder="Ingresa el nombre de la comunidad"
                 disabled={submitting}
-                className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-slate-700 shadow-soft outline-none transition focus:ring-2 ${
-                  showErrors && validation.nombre
-                    ? 'border-red-400 bg-red-50 focus:border-red-400 focus:ring-red-200'
-                    : 'border-slate-200 bg-white focus:border-brand-400 focus:ring-brand-200'
-                }`}
+                className={inputClasses(showErrors && validation.nombre)}
               />
-              {showErrors && validation.nombre && (
-                <p className="text-xs font-semibold text-red-500">
-                  El nombre de la comunidad/localidad es obligatorio.
-                </p>
-              )}
-              {municipioSeleccionado && (
-                <p className="text-xs font-semibold text-brand-500">
-                  Municipio seleccionado: {municipioSeleccionado.nombre}
-                </p>
-              )}
-            </div>
+            </FormField>
 
             <label className="flex items-center gap-2 text-sm font-semibold text-brand-700">
               <input
@@ -423,7 +347,7 @@ function NuevaComunidadScreen() {
         ) : (
           <section className="rounded-3xl bg-brand-50 px-4 py-4 shadow-soft ring-1 ring-brand-100">
             <p className="text-sm font-semibold text-brand-700">
-              Selecciona pais, nivel 1, nivel 2 y municipio para habilitar el nombre de comunidad.
+              Completa la ubicación administrativa para habilitar el nombre de la comunidad.
             </p>
           </section>
         )}
@@ -433,7 +357,7 @@ function NuevaComunidadScreen() {
           disabled={submitting || loadingPaises || loadingDivisiones}
           className="w-full rounded-2xl bg-brand-500 px-4 py-3 text-sm font-semibold text-white shadow-soft transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {submitting ? 'Guardando comunidad...' : 'Guardar comunidad'}
+          {submitting ? 'Creando comunidad...' : 'Crear comunidad'}
         </button>
       </form>
     </div>

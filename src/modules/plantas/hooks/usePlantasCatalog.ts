@@ -1,59 +1,43 @@
-import { useEffect, useState, useCallback } from 'react'
-import { PlantasService } from '../../../services/plantas.service' // Cambiado
+import { useCallback, useEffect, useState } from 'react'
+import { PlantasService } from '../../../services/plantas.service'
 import type { PlantaCatalogo, TipoPlantaCatalogo } from '../../../types/plantas.types'
 
+const SELECTOR_LIMIT = 200
+
+/**
+ * Carga el catálogo de plantas activas + tipos. Pensado para selectores
+ * (p. ej. en el flujo de recolecciones). Para administración usar el
+ * servicio directamente con paginación.
+ */
 export function usePlantasCatalog() {
   const [plantas, setPlantas] = useState<PlantaCatalogo[]>([])
   const [tiposPlantas, setTiposPlantas] = useState<TipoPlantaCatalogo[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const cargarDatos = useCallback(async () => {
-  try {
-    setLoading(true)
-    const [resPlantas, resTipos] = await Promise.all([
-      PlantasService.getPlantas(),
-      PlantasService.getTiposPlantas()
-    ])
+    try {
+      setLoading(true)
+      setError(null)
+      const [listResponse, tipos] = await Promise.all([
+        PlantasService.listPlantas({ limit: SELECTOR_LIMIT, incluir_inactivas: false }),
+        PlantasService.getTiposPlantas(),
+      ])
+      setPlantas(listResponse.data ?? [])
+      setTiposPlantas(tipos ?? [])
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error cargando catálogo de plantas.'
+      setError(message)
+      setPlantas([])
+      setTiposPlantas([])
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
-    // ✅ CORRECCIÓN: Extraemos el array del campo .data
-    const arrayPlantas = (resPlantas as any).data || (Array.isArray(resPlantas) ? resPlantas : []);
-    const arrayTipos = (resTipos as any).data || (Array.isArray(resTipos) ? resTipos : []);
+  useEffect(() => {
+    void cargarDatos()
+  }, [cargarDatos])
 
-    setPlantas(arrayPlantas);
-    setTiposPlantas(arrayTipos);
-
-    console.log("🌱 Plantas cargadas:", arrayPlantas); // Agrega esto para estar seguro
-  } catch (error) {
-    console.error("Error al cargar datos botánicos:", error)
-  } finally {
-    setLoading(false)
-  }
-}, [])
-
-  useEffect(() => { void cargarDatos() }, [cargarDatos])
-
-  const registrarPlanta = async (dto: any) => {
-    const res = await PlantasService.createPlanta(dto)
-    if (res) await cargarDatos()
-    return res
-  }
-
-  const actualizarPlanta = async (id: number, dto: any) => {
-    const res = await PlantasService.updatePlanta(id, dto)
-    if (res) await cargarDatos()
-    return res
-  }
-
-  const eliminarPlanta = async (id: number) => {
-  try {
-    const ok = await PlantasService.deletePlanta(id);
-    if (ok) await cargarDatos();
-    return ok; // Esto devuelve true o false
-  } catch (error) {
-    console.error(error);
-    return false;
-  }
-};
-
-  return { plantas, tiposPlantas, loading, registrarPlanta, actualizarPlanta, eliminarPlanta, refresh: cargarDatos }
+  return { plantas, tiposPlantas, loading, error, refresh: cargarDatos }
 }
