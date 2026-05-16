@@ -1,6 +1,7 @@
 import type {
   CreateLoteViveroInput,
   ListLotesViveroQuery,
+  LoteTimelineQuery,
   RegistrarAdaptabilidadRequest,
   RegistrarDespachoRequest,
   RegistrarEmbolsadoRequest,
@@ -13,7 +14,7 @@ import type {
 const RAW_API_URL = import.meta.env.VITE_API_URL as string | undefined
 const API_BASE_URL = `${(RAW_API_URL || '').replace(/\/$/, '')}/api`
 
-function buildQuery(filters?: ListLotesViveroQuery): string {
+function buildQuery<T extends object>(filters?: T): string {
   const params = new URLSearchParams()
   if (filters) {
     Object.entries(filters).forEach(([key, value]) => {
@@ -96,6 +97,19 @@ export async function listLotesViveroApi(filters?: ListLotesViveroQuery): Promis
 // para no romper cuando lo cierren detrás de x-auth-id.
 export async function getLoteViveroDetalleApi(loteId: number): Promise<Response> {
   return fetch(`${API_BASE_URL}/lotes-vivero/${loteId}`, {
+    method: 'GET',
+    headers: getAuthHeaders({ includeContentType: false }),
+  })
+}
+
+// Timeline cronológico (RF-VIV-07). Backend lo recomienda sobre los endpoints
+// por tipo (`/:id/adaptabilidad`, `/:id/merma`) porque trae `responsable_nombre`
+// embebido y `payload` discriminado. Filtros nativos via query string.
+export async function getLoteTimelineApi(
+  loteId: number,
+  query?: LoteTimelineQuery,
+): Promise<Response> {
+  return fetch(`${API_BASE_URL}/lotes-vivero/${loteId}/timeline${buildQuery(query)}`, {
     method: 'GET',
     headers: getAuthHeaders({ includeContentType: false }),
   })

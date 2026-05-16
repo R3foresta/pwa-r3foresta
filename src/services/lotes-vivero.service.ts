@@ -2,6 +2,7 @@ import {
   createLoteViveroApi,
   getEmbolsadoApi,
   getEmbolsadoContextApi,
+  getLoteTimelineApi,
   getLoteViveroDetalleApi,
   listLotesViveroApi,
   registrarAdaptabilidadApi,
@@ -21,6 +22,7 @@ import type {
   EvidenciaEventoVivero,
   ListLotesViveroQuery,
   ListLotesViveroResponse,
+  LoteTimelineAdaptabilidadResponse,
   LoteViveroDetalle,
   LoteViveroDetalleResponse,
   LoteViveroItem,
@@ -338,6 +340,26 @@ export class LotesViveroService {
       response,
       'Error al registrar la adaptabilidad.',
     )
+  }
+
+  // Historial cronológico de adaptabilidad para el detalle del lote. Consume
+  // `/timeline?tipo_evento=ADAPTABILIDAD` (recomendado por backend sobre el
+  // dump `/adaptabilidad`) porque trae `responsable_nombre` y `payload`
+  // discriminado en una sola request. Devuelve `data.eventos` directo —
+  // resto del envelope (lote_id, codigo_trazabilidad, etc.) ya lo conoce el
+  // caller desde el detalle.
+  static async listAdaptabilidadTimeline(
+    loteId: number,
+  ): Promise<LoteTimelineAdaptabilidadResponse['data']> {
+    if (!Number.isFinite(loteId) || loteId <= 0) {
+      throw new Error('ID de lote de vivero inválido.')
+    }
+    const response = await getLoteTimelineApi(loteId, { tipo_evento: 'ADAPTABILIDAD' })
+    const payload = await this.parseJsonResponse<LoteTimelineAdaptabilidadResponse>(
+      response,
+      'Error al cargar el historial de adaptabilidad.',
+    )
+    return payload.data
   }
 
   static async registrarMerma(

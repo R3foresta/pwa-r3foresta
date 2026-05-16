@@ -4,6 +4,7 @@ import Icon from '../../../components/Icon'
 import type { IconName } from '../../../components/Icon'
 import { LotesViveroService } from '../../../services/lotes-vivero.service'
 import { formatUnidadCanonicaDisplay } from '../../../utils/recoleccionUnidad'
+import AdaptabilidadTimeline from '../components/AdaptabilidadTimeline'
 import CollapsibleSection from '../components/CollapsibleSection';
 import StageTimeline from '../components/StageTimeline'
 import type { StageTimelineItem } from '../components/StageTimeline'
@@ -361,6 +362,15 @@ function ViveroDetailScreen() {
               mermaAction={null}
             />
           </div>
+
+          {/* Historial cronológico de adaptabilidad. Solo se monta cuando el
+              lote ya tuvo al menos una adaptabilidad (subetapa_actual !== null)
+              para no fetchear de gusto en lotes que aún están en embolsado. */}
+          {detail.subetapaActual !== null && (
+            <CollapsibleSection title="Historial de adaptabilidad" defaultOpen>
+              <AdaptabilidadTimeline loteId={detail.id} />
+            </CollapsibleSection>
+          )}
 
           {/* TODO(sprint-historial): seccion "Historial de mermas" que consume
               GET /api/lotes-vivero/:id/merma (existe en backend, falta consumer

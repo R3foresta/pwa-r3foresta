@@ -445,24 +445,85 @@ export interface LoteViveroDetalleResponse {
   data: LoteViveroDetalle
 }
 
+// ─── Timeline cronológico (GET /api/lotes-vivero/:id/timeline) ───────────────
+//
+// Endpoint unificado de auditoría (RF-VIV-07): devuelve todos los eventos del
+// lote ordenados ASC por (fecha_evento, created_at, id), con responsable_nombre
+// embebido y `payload` discriminado por tipo (solo trae los campos que aplican
+// al evento, no `null` everywhere como hace `ultimo_evento_por_tipo`).
+//
+// Acepta filtros opcionales por query string: `tipo_evento`, `responsable_id`,
+// `fecha_inicio`, `fecha_fin`. No paginado — backend devuelve todo el historial.
+//
+// Tipado actual: solo la variante ADAPTABILIDAD del payload está implementada
+// (consumida por `AdaptabilidadTimeline` en el detalle del lote). Cuando
+// aparezcan consumers de otros tipos, sumar variantes al union y reusar la
+// estructura del response.
+
+export interface LoteTimelineQuery {
+  tipo_evento?: TipoEventoVivero
+  responsable_id?: number
+  fecha_inicio?: string
+  fecha_fin?: string
+}
+
+export interface LoteTimelinePayloadAdaptabilidad {
+  tipo: 'ADAPTABILIDAD'
+  subetapa_destino: SubetapaAdaptabilidad
+  saldo_vivo_antes: number | null
+  saldo_vivo_despues: number | null
+}
+
+// TODO(backend-disponible): completar variantes del payload cuando aparezca
+// consumer en el front. Backend ya las devuelve, pero no las consumimos:
+//   - LoteTimelinePayloadInicio
+//   - LoteTimelinePayloadEmbolsado
+//   - LoteTimelinePayloadMerma
+//   - LoteTimelinePayloadDespacho
+//   - LoteTimelinePayloadCierreAutomatico
+
+/**
+ * Variante del evento del timeline filtrada por `tipo_evento=ADAPTABILIDAD`.
+ * Como el filtro garantiza el tipo, el campo `tipo_evento` queda discriminado
+ * en la propia interface. El `payload` adentro mantiene su propio discriminator
+ * (`payload.tipo`) por consistencia con la forma que devuelve el backend.
+ *
+ * `responsable_nombre` viene como "Nombre Apellido" ya armado; nullable como
+ * red de seguridad si el usuario responsable fue eliminado.
+ */
+export interface LoteTimelineEventoAdaptabilidad {
+  id: number
+  lote_vivero_id: number
+  tipo_evento: 'ADAPTABILIDAD'
+  fecha_evento: string
+  created_at: string
+  responsable_id: number
+  responsable_nombre: string | null
+  observaciones: string | null
+  payload: LoteTimelinePayloadAdaptabilidad
+  evidencias: ObtenerEmbolsadoEvidencia[]
+}
+
+export interface LoteTimelineAdaptabilidadResponse {
+  success: true
+  data: {
+    lote_id: number
+    codigo_trazabilidad: string
+    estado_lote: EstadoLoteVivero
+    total_eventos: number
+    eventos: LoteTimelineEventoAdaptabilidad[]
+  }
+}
+
 // ─── Endpoints disponibles pero todavía no consumidos ────────────────────────
 //
-// TODO(backend-disponible): el backend ya expone estos endpoints pero el front
-// no los consume todavía. Cuando aparezca el consumer (pantalla, hook, etc.),
-// tipar la respuesta acá en lugar de inventarla en el call site:
+// TODO(backend-disponible): el backend expone estos endpoints alternativos pero
+// el front no los consume hoy. Para ADAPTABILIDAD usamos `/timeline` filtrado
+// (ver bloque anterior) — preferido por el backend. Estos quedan como
+// alternativa para pantallas admin/debugging si hicieran falta:
 //
 //   GET /api/lotes-vivero/:id/adaptabilidad
-//     → listado de eventos de adaptabilidad del lote.
-//     → tipo sugerido: ObtenerAdaptabilidadesResponse
+//     → dump crudo del tipo (sin responsable_nombre, sin filtros, full payload).
 //
 //   GET /api/lotes-vivero/:id/merma
-//     → listado de eventos de merma del lote.
-//     → tipo sugerido: ObtenerMermasResponse
-//
-//   GET /api/lotes-vivero/:id/timeline
-//     → línea de tiempo consolidada de eventos del lote (todas las etapas).
-//     → tipo sugerido: TimelineLoteResponse
-//
-// Hoy el `ViveroDetailScreen` arma la timeline desde el detalle del lote, así
-// que esto no bloquea ninguna pantalla actual. Migrar cuando el front necesite
-// historial granular o paginado de eventos.
+//     → equivalente para MERMA; mismo trade-off vs `/timeline?tipo_evento=MERMA`.
