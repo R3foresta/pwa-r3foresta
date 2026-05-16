@@ -397,6 +397,50 @@ export interface RegistrarMermaResponse {
 // Bloqueante real: ver TODO(despacho-bloqueado) más arriba — el método del
 // service queda inalcanzable desde la UI hasta que se levante el flag.
 
+// TODO(vivero-destino-enum): backend evalúa migrar DestinoTipoVivero del set
+// actual (4 valores) al set spec (5 valores, con PLANTACION_COMUNIDAD +
+// DONACION separadas). Cuando se concrete, ampliar la unión arriba y los
+// radios de DespachoForm. No bloquea: la UI de despacho hoy está deshabilitada
+// vía DESPACHO_EVIDENCE_ENDPOINT_READY = false.
+
+// ─── Detalle de lote (GET /api/lotes-vivero/:id) ─────────────────────────────
+//
+// Endpoint dedicado de detalle: superset del shape de list + un mapa
+// `ultimo_evento_por_tipo` con el último evento registrado de cada tipo.
+// Reemplaza el patrón N+1 calls que antes hacía falta para conocer la fecha
+// de embolsado (y elimina la race condition entre el mount del form y la
+// resolución de ese segundo GET).
+//
+// Solo trae el ÚLTIMO evento por tipo y SIN evidencias. Para historial
+// completo o evidencias hay endpoints dedicados (ver bloque siguiente).
+
+export interface EventoSnapshot {
+  id: number
+  fecha_evento: string
+  created_at: string
+  responsable_id: number
+  cantidad_afectada: number | null
+  unidad_medida_evento: UnidadMedidaVivero | null
+  saldo_vivo_antes: number | null
+  saldo_vivo_despues: number | null
+  subetapa_destino: SubetapaAdaptabilidad | null
+  causa_merma: CausaMermaVivero | null
+  destino_tipo: DestinoTipoVivero | null
+  destino_referencia: string | null
+  motivo_cierre_calculado: MotivoCierreVivero | null
+}
+
+export type UltimoEventoPorTipo = Record<TipoEventoVivero, EventoSnapshot | null>
+
+export interface LoteViveroDetalle extends LoteViveroItem {
+  ultimo_evento_por_tipo: UltimoEventoPorTipo
+}
+
+export interface LoteViveroDetalleResponse {
+  success: true
+  data: LoteViveroDetalle
+}
+
 // ─── Endpoints disponibles pero todavía no consumidos ────────────────────────
 //
 // TODO(backend-disponible): el backend ya expone estos endpoints pero el front

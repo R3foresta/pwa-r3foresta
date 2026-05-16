@@ -2,6 +2,7 @@ import {
   createLoteViveroApi,
   getEmbolsadoApi,
   getEmbolsadoContextApi,
+  getLoteViveroDetalleApi,
   listLotesViveroApi,
   registrarAdaptabilidadApi,
   registrarDespachoApi,
@@ -20,6 +21,8 @@ import type {
   EvidenciaEventoVivero,
   ListLotesViveroQuery,
   ListLotesViveroResponse,
+  LoteViveroDetalle,
+  LoteViveroDetalleResponse,
   LoteViveroItem,
   ObtenerEmbolsadoResponse,
   RegistrarAdaptabilidadRequest,
@@ -206,27 +209,24 @@ export class LotesViveroService {
     }
   }
 
-  // TODO(backend-pendiente): el backend NO expone GET /lotes-vivero/:id dedicado.
-  // Hoy simulamos con un GET /lotes-vivero?lote_vivero_id=X&limit=1, lo que
-  // trae envelope completo de paginación que descartamos. Cuando el backend
-  // exponga el endpoint dedicado, reemplazar por una llamada directa a
-  // getLoteByIdApi (ver TODO en lotes-vivero.api.ts).
-  //
-  // TODO(p3-consistencia): este método devuelve `LoteViveroItem` (raw) mientras
-  // que listForUi devuelve view-models ya mapeados. Inconsistente. Considerar
-  // que getById ya devuelva ViveroLotDetailView aplicando mapLoteToDetailView,
-  // o renombrarlo para que quede claro que es raw.
-  static async getById(loteId: number): Promise<LoteViveroItem> {
+  // TODO(p3-consistencia): este método devuelve `LoteViveroDetalle` (raw)
+  // mientras que listForUi devuelve view-models ya mapeados. Inconsistente.
+  // Considerar que getById ya devuelva ViveroLotDetailView aplicando
+  // mapLoteToDetailView, o renombrarlo para que quede claro que es raw.
+  static async getById(loteId: number): Promise<LoteViveroDetalle> {
     if (!Number.isFinite(loteId) || loteId <= 0) {
       throw new Error('ID de lote de vivero inválido.')
     }
 
-    const response = await this.list({ lote_vivero_id: loteId, page: 1, limit: 1 })
-    const lot = response.data[0]
-    if (!lot) {
+    const response = await getLoteViveroDetalleApi(loteId)
+    const payload = await this.parseJsonResponse<LoteViveroDetalleResponse>(
+      response,
+      'Error al cargar el lote de vivero.',
+    )
+    if (!payload.data) {
       throw new Error('Lote de vivero no encontrado.')
     }
-    return lot
+    return payload.data
   }
 
   static async getDetail(loteId: number): Promise<ViveroLotDetailView> {

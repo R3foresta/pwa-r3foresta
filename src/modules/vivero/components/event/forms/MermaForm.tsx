@@ -26,10 +26,12 @@ import ObservacionesCard from '../ObservacionesCard'
 type Props = {
   lote: LoteViveroItem
   /**
-   * Fecha del evento EMBOLSADO del lote. El backend rechaza mermas con
-   * fecha anterior al embolsado, así que la usamos como límite inferior
-   * del rango. Si llega null (carga aún en curso o lote sin embolsado),
-   * caemos a `lote.fecha_inicio` como fallback defensivo.
+   * Fecha del último EMBOLSADO del lote (de
+   * `lote.ultimo_evento_por_tipo.EMBOLSADO?.fecha_evento` en el detalle).
+   * Backend rechaza mermas con fecha anterior al embolsado (RN-VIV-10), así
+   * que la usamos como límite inferior del rango. Null solo si el lote aún
+   * no fue embolsado — en ese caso el tab MERMA no debería estar disponible;
+   * caemos a `lote.fecha_inicio` como red de seguridad.
    */
   fechaEmbolsado: string | null
   onCompleted: () => void

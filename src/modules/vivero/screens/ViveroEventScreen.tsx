@@ -8,7 +8,7 @@ import EmbolsadoForm from '../components/event/forms/EmbolsadoForm'
 import AdaptabilidadForm from '../components/event/forms/AdaptabilidadForm'
 import MermaForm from '../components/event/forms/MermaForm'
 import DespachoForm from '../components/event/forms/DespachoForm'
-import type { LoteViveroItem } from '../types/contracts'
+import type { LoteViveroDetalle } from '../types/contracts'
 
 const SUBETAPA_LABEL: Record<string, string> = {
   SOMBRA: 'Sombra',
@@ -16,7 +16,7 @@ const SUBETAPA_LABEL: Record<string, string> = {
   SOL_DIRECTO: 'Sol directo',
 }
 
-function getLotEspecie(lot: LoteViveroItem): string {
+function getLotEspecie(lot: LoteViveroDetalle): string {
   return (
     lot.planta?.especie ||
     lot.nombre_comercial_snapshot ||
@@ -31,10 +31,9 @@ function ViveroEventScreen() {
 
   const loteId = Number(id)
   const isValidId = Number.isFinite(loteId) && loteId > 0
-  const [lote, setLote] = useState<LoteViveroItem | null>(null)
+  const [lote, setLote] = useState<LoteViveroDetalle | null>(null)
   const [loading, setLoading] = useState(isValidId)
   const [error, setError] = useState<string | null>(isValidId ? null : 'Lote inválido')
-  const [fechaEmbolsado, setFechaEmbolsado] = useState<string | null>(null)
 
   useEffect(() => {
     if (!isValidId) return
@@ -54,27 +53,6 @@ function ViveroEventScreen() {
       mounted = false
     }
   }, [loteId, isValidId])
-
-  // La merma requiere fecha >= fecha de embolsado (regla backend). Cargamos solo
-  // cuando el lote tiene embolsado registrado; si falla, el form cae al min
-  // defensivo (lote.fecha_inicio).
-  useEffect(() => {
-    if (!isValidId || !lote || lote.plantas_vivas_iniciales === null) return
-    let mounted = true
-    LotesViveroService.getEmbolsado(loteId)
-      .then((resp) => {
-        if (!mounted) return
-        if (resp.data.registrado) {
-          setFechaEmbolsado(resp.data.evento.fecha_evento)
-        }
-      })
-      .catch(() => {
-        // Silencio: el form fallback ya cubre el caso.
-      })
-    return () => {
-      mounted = false
-    }
-  }, [isValidId, loteId, lote])
 
   const tabs: StageTab[] = useMemo(() => {
     if (!lote) return []
@@ -186,6 +164,10 @@ function ViveroEventScreen() {
   const codigo = lote.codigo_trazabilidad || `VIV-${lote.id}`
   const viveroNombre = lote.vivero?.nombre || `Vivero #${lote.vivero_id}`
   const subetapaLabel = lote.subetapa_actual ? SUBETAPA_LABEL[lote.subetapa_actual] : null
+  // Piso de fecha para MERMA y ADAPTABILIDAD (regla backend RN-VIV-10:
+  // fecha_evento >= fecha_embolsado). Null si todavía no se embolsó —
+  // en ese caso los tabs respectivos no quedan disponibles.
+  const fechaEmbolsado = lote.ultimo_evento_por_tipo.EMBOLSADO?.fecha_evento ?? null
 
   return (
     <div className="relative min-h-screen bg-[#eef2ed] text-brand-700">
@@ -225,7 +207,11 @@ function ViveroEventScreen() {
           <EmbolsadoForm lote={lote} onCompleted={handleCompleted} />
         )}
         {currentKey === 'adaptabilidad' && (
-          <AdaptabilidadForm lote={lote} onCompleted={handleCompleted} />
+          <AdaptabilidadForm
+            lote={lote}
+            fechaEmbolsado={fechaEmbolsado}
+            onCompleted={handleCompleted}
+          />
         )}
         {currentKey === 'merma' && (
           <MermaForm

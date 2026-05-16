@@ -12,6 +12,15 @@ import ObservacionesCard from '../ObservacionesCard'
 
 type Props = {
   lote: LoteViveroItem
+  /**
+   * Fecha del último EMBOLSADO del lote (de
+   * `lote.ultimo_evento_por_tipo.EMBOLSADO?.fecha_evento` en el detalle).
+   * Backend rechaza adaptabilidad con fecha_evento < fecha_embolsado
+   * (RN-VIV-10), así que la usamos como piso del rango. Null si todavía no se
+   * embolsó — en ese caso el tab no debería estar disponible; caemos a
+   * `lote.fecha_inicio` como red de seguridad.
+   */
+  fechaEmbolsado: string | null
   onCompleted: () => void
 }
 
@@ -23,12 +32,12 @@ const SUBETAPAS: { key: SubetapaAdaptabilidad; label: string; hint: string }[] =
   { key: 'SOL_DIRECTO', label: 'Sol directo', hint: 'Exposición plena' },
 ]
 
-function AdaptabilidadForm({ lote, onCompleted }: Props) {
+function AdaptabilidadForm({ lote, fechaEmbolsado, onCompleted }: Props) {
   const { user } = useAuth()
   const authId = user?.auth_id?.trim() || ''
 
   const today = todayLocalISO()
-  const fechaMin = lote.fecha_inicio
+  const fechaMin = fechaEmbolsado ?? lote.fecha_inicio
   const fechaMax = today
 
   const [subetapa, setSubetapa] = useState<SubetapaAdaptabilidad | ''>('')

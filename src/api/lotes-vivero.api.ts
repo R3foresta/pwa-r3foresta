@@ -91,6 +91,16 @@ export async function listLotesViveroApi(filters?: ListLotesViveroQuery): Promis
   })
 }
 
+// Endpoint dedicado de detalle: trae el lote + `ultimo_evento_por_tipo`.
+// Backend no exige auth todavía en GETs del módulo, pero enviamos los headers
+// para no romper cuando lo cierren detrás de x-auth-id.
+export async function getLoteViveroDetalleApi(loteId: number): Promise<Response> {
+  return fetch(`${API_BASE_URL}/lotes-vivero/${loteId}`, {
+    method: 'GET',
+    headers: getAuthHeaders({ includeContentType: false }),
+  })
+}
+
 export async function uploadEvidenciasPendientesViveroApi(
   input: UploadEvidenciasPendientesInput,
   authId?: string,
@@ -206,8 +216,4 @@ export async function registrarDespachoApi(
 // Anomalía pendiente: NO existe POST /lotes-vivero/:id/despacho/evidencias-pendientes
 // en el contrato actual del backend, pero RF-VIV-05 exige evidencia obligatoria.
 // Confirmar con backend si es olvido o decisión.
-//
-// Ineficiencia: NO existe GET /lotes-vivero/:id (detalle por id). Hoy se simula
-// con `?lote_vivero_id=X&limit=1` en LotesViveroService.getById. Cuando exista,
-// agregar getLoteByIdApi y simplificar el service.
 // ──────────────────────────────────────────────────────────────────────────────
