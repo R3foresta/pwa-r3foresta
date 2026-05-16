@@ -112,18 +112,25 @@ function validateEvidencePhotos(fotos: File[], contextLabel = 'evento') {
 // campo libre.
 
 export class LotesViveroService {
+  // Contrato backend (NestJS estándar): el body de error es siempre uno de
+  //   { statusCode, message: string,   error: 'Bad Request' | ... }   ← RPC RAISE (texto en español)
+  //   { statusCode, message: string[], error: 'Bad Request' }         ← ValidationPipe (DTO)
+  // Usamos '\n' como separador para que cada mensaje del array quede en su
+  // propia línea (los <p> que renderizan `submitError` aplican `whitespace-pre-line`).
   private static normalizeErrorMessage(payload: unknown, fallback: string): string {
     if (!payload || typeof payload !== 'object') return fallback
     const source = payload as ApiEnvelope<unknown>
     if (Array.isArray(source.message)) {
-      return source.message.join(' · ') || fallback
+      const lines = source.message
+        .filter((m): m is string => typeof m === 'string' && m.trim() !== '')
+        .map((m) => m.trim())
+      return lines.length > 0 ? lines.join('\n') : fallback
     }
     if (typeof source.message === 'string' && source.message.trim()) {
-      return source.message
+      return source.message.trim()
     }
-    if (typeof source.error === 'string' && source.error.trim()) {
-      return source.error
-    }
+    // `error` queda como último recurso: en NestJS es texto genérico
+    // ("Bad Request"), peor que el fallback específico del endpoint.
     return fallback
   }
 

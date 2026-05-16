@@ -41,7 +41,10 @@ function AdaptabilidadForm({ lote, fechaEmbolsado, onCompleted }: Props) {
   const fechaMax = today
 
   const [subetapa, setSubetapa] = useState<SubetapaAdaptabilidad | ''>('')
-  const [fecha, setFecha] = useState(fechaMin > today ? today : today)
+  // Default a today; backend valida `fecha_evento <= today` siempre, y
+  // `fecha_evento >= fechaMin` (fecha del embolsado). En escenarios normales
+  // `fechaMin <= today`, así que today queda dentro del rango.
+  const [fecha, setFecha] = useState(today)
   const [photos, setPhotos] = useState<Photo[]>([])
   const [observaciones, setObservaciones] = useState('')
   const [showErrors, setShowErrors] = useState(false)
@@ -80,6 +83,11 @@ function AdaptabilidadForm({ lote, fechaEmbolsado, onCompleted }: Props) {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    // Doble guarda contra doble submit: el botón ya está disabled cuando
+    // submitting, pero un Enter dentro del form podría disparar submit antes
+    // de que React re-renderee. POST /adaptabilidad NO tiene Idempotency-Key —
+    // un retry crearía un segundo evento ADAPTABILIDAD duplicado.
+    if (submitting) return
     if (!canSubmit) {
       setShowErrors(true)
       return
@@ -107,6 +115,8 @@ function AdaptabilidadForm({ lote, fechaEmbolsado, onCompleted }: Props) {
             )
           : null
 
+      // Sin fotos, `evidencia_ids` va como `undefined` y JSON.stringify lo omite
+      // del body (NO se manda como `null`, que el ValidationPipe rechaza con 400).
       await LotesViveroService.registrarAdaptabilidad(
         lote.id,
         {
@@ -228,7 +238,7 @@ function AdaptabilidadForm({ lote, fechaEmbolsado, onCompleted }: Props) {
         </section>
 
         {submitError && (
-          <p className="rounded-2xl bg-red-50 px-3 py-2 text-center text-xs font-semibold text-red-600 ring-1 ring-red-200">
+          <p className="whitespace-pre-line rounded-2xl bg-red-50 px-3 py-2 text-center text-xs font-semibold text-red-600 ring-1 ring-red-200">
             {submitError}
           </p>
         )}

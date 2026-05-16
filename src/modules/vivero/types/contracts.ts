@@ -87,6 +87,10 @@ export interface LoteViveroItem {
   unidad_medida_inicial: UnidadMedidaVivero
   plantas_vivas_iniciales: number | null
   saldo_vivo_actual: number | null
+  /**
+   * @deprecated Alias backend de `saldo_vivo_actual`. Backend lo mantiene por
+   * compat con código viejo; cuando todo el front migre, podrá eliminarse.
+   */
   stock_vivo_actual: number | null
   subetapa_actual: SubetapaAdaptabilidad | null
   created_at: string
