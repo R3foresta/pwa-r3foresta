@@ -274,6 +274,12 @@ function MermaForm({ lote, fechaEmbolsado, onCompleted }: Props) {
       if (data.lote_finalizado) {
         setStep('closed')
       } else {
+        // Decisión de producto: para "Registrar otra merma" reutilizamos el
+        // `saldo_vivo_despues` que ya viene en esta respuesta en vez de
+        // refetchear el detalle del lote. Ahorra ~1s de latencia en el flujo
+        // lineal de un solo usuario. Si otro actor mermó/despachó en paralelo
+        // entre medio, el siguiente POST sería rechazado por el backend con
+        // mensaje claro (falla ruidosamente, no silenciosamente).
         setSaldoOverride(data.saldo_vivo_despues)
         setStep('success')
       }
@@ -491,7 +497,7 @@ function MermaForm({ lote, fechaEmbolsado, onCompleted }: Props) {
         </section>
 
         {submitError && (
-          <p className="rounded-2xl bg-red-50 px-3 py-2 text-center text-xs font-semibold text-red-600 ring-1 ring-red-200">
+          <p className="whitespace-pre-line rounded-2xl bg-red-50 px-3 py-2 text-center text-xs font-semibold text-red-600 ring-1 ring-red-200">
             {submitError}
           </p>
         )}

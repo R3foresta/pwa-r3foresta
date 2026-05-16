@@ -69,13 +69,10 @@ function buildTimeline(detail: ViveroLotDetailView): StageTimelineItem[] {
       active: !hasEmbolsado && !hasFinalizado,
       date: null,
     },
-    {
-      key: 'MERMA',
-      label: 'Merma',
-      done: false,
-      active: false,
-      date: null,
-    },
+    // MERMA queda fuera del StageTimeline porque no es una etapa secuencial:
+    // puede ocurrir N veces durante EMBOLSADO o ADAPTABILIDAD, y marcarla
+    // como "done" sería engañoso. El recuento y detalle de cada merma vive
+    // en la sección "Historial de mermas" (ver TODO(sprint-historial) abajo).
     {
       key: 'ADAPTABILIDAD',
       label: 'Adaptabilidad',
