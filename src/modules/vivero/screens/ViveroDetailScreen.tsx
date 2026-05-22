@@ -5,10 +5,14 @@ import type { IconName } from '../../../components/Icon'
 import { LotesViveroService } from '../../../services/lotes-vivero.service'
 import { formatUnidadCanonicaDisplay } from '../../../utils/recoleccionUnidad'
 import CollapsibleSection from '../components/CollapsibleSection';
-import StageTimeline from '../components/StageTimeline'
 import type { StageTimelineItem } from '../components/StageTimeline'
-import SurvivalBar from '../components/SurvivalBar'
-import type { ViveroLotDetailView } from '../types/view-models'
+import SaludCard from '../components/SaludCard'
+import QuickActions from '../components/QuickActions'
+import SubetapasBar from '../components/SubetapasBar'
+import Timeline from '../components/TimeLine'
+import EvidenciaTab from '../components/EvidenciaTab'
+import GalleryModal from '../components/GalleryModal'
+import type { ViveroLotDetailView, ViveroLotEventView } from '../types/view-models'
 
 function formatDate(value?: string | null) {
   if (!value) return 'Sin fecha'
@@ -139,6 +143,9 @@ function ViveroDetailScreen() {
   const [detail, setDetail] = useState<ViveroLotDetailView | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<'resumen' | 'historial' | 'evidencia'>('resumen')
+  const [events, setEvents] = useState<ViveroLotEventView[]>([])
+  const [selectedPhoto, setSelectedPhoto] = useState<{ url: string; titulo: string; fecha: string; autor: string } | null>(null)
 
   useEffect(() => {
     if (!id) {
@@ -158,8 +165,16 @@ function ViveroDetailScreen() {
       try {
         setLoading(true)
         setError(null)
-        const data = await LotesViveroService.getDetail(lotId)
-        if (isMounted) setDetail(data)
+
+        const [dataDetail, dataEvents] = await Promise.all([
+          LotesViveroService.getDetail(lotId),
+          LotesViveroService.getEvents(lotId)
+        ])
+
+        if (isMounted) {
+          setDetail(dataDetail)
+          setEvents(dataEvents)
+        }
       } catch (err) {
         if (isMounted) setError(err instanceof Error ? err.message : 'Error al cargar el lote.')
       } finally {
@@ -173,7 +188,6 @@ function ViveroDetailScreen() {
   }, [id])
 
   const timeline = useMemo(() => (detail ? buildTimeline(detail) : []), [detail])
-  const nextActionInfo = useMemo(() => (detail ? getNextActionInfo(detail) : null), [detail])
   const canRegisterMerma = useMemo(
     () => detail?.estadoLote === 'ACTIVO' && detail?.plantasVivasIniciales !== null,
     [detail],
@@ -181,11 +195,6 @@ function ViveroDetailScreen() {
 
   const plantasIniciales = detail?.plantasVivasIniciales ?? null
   const saldoVivo = detail?.saldoVivoActual ?? plantasIniciales
-  const hasEmbolsado = plantasIniciales !== null
-  const muertas =
-    hasEmbolsado && saldoVivo !== null
-      ? Math.max(0, plantasIniciales - saldoVivo)
-      : null
   const unidadOrigenLabel = formatUnidadCanonicaDisplay(
     detail?.unidadMedidaInicial,
     detail?.cantidadInicialEnProceso,
@@ -214,7 +223,8 @@ function ViveroDetailScreen() {
   return (
     <div className="relative min-h-screen bg-[#eef2ed] text-brand-700">
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-28">
-        {/* Header */}
+        
+        {/* Encabezado fijo común para todas las pestañas */}
         <header className="flex items-start gap-3 px-5 pt-10">
           <button
             type="button"
@@ -237,245 +247,110 @@ function ViveroDetailScreen() {
           </div>
         </header>
 
+        {/* CONTENEDOR PRINCIPAL CON SELECTOR DE PESTAÑAS Y VISTAS CONDICIONALES */}
         <div className="mt-5 space-y-4 px-5">
-          {nextActionInfo ? (
-            <button
-              type="button"
-              onClick={() => navigate(nextActionInfo.path)}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-700 py-4 text-base font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.98]"
-            >
-              <Icon name={nextActionInfo.iconName} className="h-5 w-5" />
-              <span>{nextActionInfo.label}</span>
-            </button>
-          ) : (
-            <div className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-100 py-4 text-base font-extrabold text-emerald-700 ring-1 ring-emerald-200">
-              <Icon name="check" className="h-5 w-5" />
-              <span>Proceso completado</span>
+          
+          {/* Selector Navegación de Pestañas */}
+          <div className="sticky top-0 z-20 -mx-5 px-5 pt-3 pb-2 bg-[#eef2ed]/95 backdrop-blur-sm">
+            <div className="flex rounded-full bg-white p-1 shadow-soft ring-1 ring-black/5">
+              {(['resumen', 'historial', 'evidencia'] as const).map((tab) => {
+                const isSelected = activeTab === tab;
+                return (
+                  <button
+                    key={tab}
+                    type="button"
+                    onClick={() => setActiveTab(tab)}
+                    className={`flex-1 rounded-full px-3 py-2 text-xs font-extrabold tracking-wide capitalize transition-all ${
+                      isSelected
+                        ? 'bg-brand-700 text-white shadow-soft'
+                        : 'text-brand-700 hover:bg-brand-50'
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* ─── PESTAÑA: RESUMEN ─────────────────────────────────── */}
+          {activeTab === 'resumen' && (
+            <>
+              <SaludCard detail={detail} />
+              <QuickActions detail={detail} />
+              <SubetapasBar detail={detail} />
+
+              {/* SECCIÓN DE AUDITORÍA CENTRALIZADA */}
+              <div className="pt-4 border-t border-slate-200/60 mt-6">
+                <p className="text-[10.5px] font-black uppercase tracking-[0.18em] text-slate-400 mb-3 px-1">
+                  Detalle Técnico y Auditoría
+                </p>
+                
+                <CollapsibleSection title="Datos de origen" defaultOpen={false}>
+                  <div className="divide-y divide-brand-50">
+                    <InfoRow
+                      label="Recolección"
+                      value={
+                        detail.recoleccionFecha
+                          ? `${detail.recoleccionCodigo} · ${formatDate(detail.recoleccionFecha)}`
+                          : detail.recoleccionCodigo
+                      }
+                    />
+                    <InfoRow label="Tipo material" value={detail.recoleccionTipoMaterial} />
+                    <InfoRow label="Comunidad origen" value={detail.nombreComunidadOrigen ?? 'Sin registrar'} />
+                    <InfoRow label="Vivero" value={`${detail.viveroNombre} (${detail.viveroCodigo})`} />
+                    <InfoRow
+                      label="Responsable"
+                      value={
+                        detail.responsableUsername
+                          ? `${detail.responsableNombre} (@${detail.responsableUsername})`
+                          : detail.responsableNombre
+                      }
+                    />
+                    <InfoRow label="Fecha inicio" value={formatDate(detail.fechaInicio)} />
+                    <InfoRow label="Actualizado" value={formatDateTime(detail.updatedAt)} />
+                  </div>
+                </CollapsibleSection>
+
+                <div className="mt-2">
+                  <CollapsibleSection title="Datos de planta" defaultOpen={false}>
+                    {detail.plantaImagenUrl && (
+                      <div className="mb-3 overflow-hidden rounded-2xl">
+                        <img src={detail.plantaImagenUrl} alt={detail.especie} className="h-36 w-full object-cover" />
+                      </div>
+                    )}
+                    <div className="divide-y divide-brand-50">
+                      <InfoRow label="Especie" value={detail.especie} />
+                      <InfoRow label="Nombre científico" value={detail.nombreCientifico} />
+                      <InfoRow label="Nombre comercial" value={detail.nombreComercial} />
+                      <InfoRow label="Variedad" value={detail.variedad ?? 'N/D'} />
+                    </div>
+                  </CollapsibleSection>
+                </div>
+                
+                <p className="text-center text-[10px] font-bold text-slate-400 mt-4 tracking-wide">
+                  Registros inmutables con soporte criptográfico · R3foresta
+                </p>
+              </div>
+            </>
+          )}
+
+          {/* ─── PESTAÑA: HISTORIAL (Línea de tiempo operativa) ─── */}
+          {activeTab === 'historial' && (
+            <div className="space-y-4">
+              <Timeline events={events} />
             </div>
           )}
 
-          {/* CTA secundario destructivo: visible solo cuando el lote tiene
-              saldo vivo. Color rojo para comunicar al usuario de campo que
-              es una acción que reduce inventario. */}
-          {canRegisterMerma && saldoVivo !== null && saldoVivo > 0 && (
-            <button
-              type="button"
-              onClick={() => navigate(`/app/vivero/${detail.id}/event/merma`)}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-red-300 bg-red-50 py-3 text-sm font-extrabold text-red-700 transition hover:bg-red-100 active:scale-[0.98]"
-            >
-              <Icon name="info" className="h-4 w-4" />
-              <span>Registrar Merma</span>
-            </button>
+          {/* ─── PESTAÑA: EVIDENCIA (Galería fotográfica dinámica) ─── */}
+          {activeTab === 'evidencia' && (
+            <EvidenciaTab events={events} onSelectPhoto={setSelectedPhoto} />
           )}
 
-          {/* Supervivencia / estado del lote */}
-          <div className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
-            {hasEmbolsado ? (
-              <>
-                <div className="mb-3 flex items-center justify-between">
-                  <p className="text-sm font-extrabold text-brand-700">Supervivencia</p>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-brand-400">
-                    {detail.diasDesdeInicio} días
-                  </span>
-                </div>
-
-                {/* Hero: plantas vivas */}
-                <div className="mb-4 flex items-center justify-between rounded-2xl bg-emerald-50 px-4 py-3 ring-1 ring-emerald-200">
-                  <div>
-                    <p className="text-xs font-semibold text-emerald-700">Plantas vivas</p>
-                    <p className="mt-0.5 text-3xl font-extrabold leading-none text-emerald-700">
-                      {saldoVivo ?? 0}
-                      <span className="ml-1 text-base font-bold text-emerald-600">plantas</span>
-                    </p>
-                  </div>
-                  <Icon name="leaf" className="h-10 w-10 text-emerald-300" />
-                </div>
-
-                {/* Métricas: consumido | iniciales | muertas */}
-                <div className="mb-4 grid grid-cols-3 divide-x divide-brand-100">
-                  <div className="pr-2">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-brand-500">
-                      De recolección
-                    </p>
-                    <p className="mt-1 text-base font-extrabold leading-tight text-brand-700">
-                      {detail.cantidadInicialEnProceso}
-                      <span className="ml-1 text-xs font-bold text-brand-500">
-                        {unidadOrigenLabel}
-                      </span>
-                    </p>
-                  </div>
-                  <div className="px-2">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-brand-500">
-                      Embolsadas
-                    </p>
-                    <p className="mt-1 text-base font-extrabold leading-tight text-brand-700">
-                      {plantasIniciales ?? '—'}
-                      <span className="ml-1 text-xs font-bold text-brand-500">plantas</span>
-                    </p>
-                  </div>
-                  <div className="pl-2">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-brand-500">
-                      Muertas
-                    </p>
-                    <p className="mt-1 text-base font-extrabold leading-tight text-red-600">
-                      {muertas ?? 0}
-                      <span className="ml-1 text-xs font-bold text-red-400">plantas</span>
-                    </p>
-                  </div>
-                </div>
-
-                <SurvivalBar alive={saldoVivo} initial={plantasIniciales} showLabel />
-              </>
-            ) : (
-              <>
-                <div className="mb-3 flex items-center justify-between">
-                  <p className="text-sm font-extrabold text-brand-700">Material en proceso</p>
-                  <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700 ring-1 ring-amber-200">
-                    Pendiente embolsado
-                  </span>
-                </div>
-
-                <div className="mb-4 flex items-center justify-between rounded-2xl bg-brand-50 px-4 py-3 ring-1 ring-brand-100">
-                  <div>
-                    <p className="text-xs font-semibold text-brand-500">De la recolección</p>
-                    <p className="mt-0.5 text-3xl font-extrabold leading-none text-brand-700">
-                      {detail.cantidadInicialEnProceso}
-                      <span className="ml-1 text-base font-bold text-brand-500">
-                        {unidadOrigenLabel}
-                      </span>
-                    </p>
-                  </div>
-                  <Icon name="package" className="h-10 w-10 text-brand-300" />
-                </div>
-
-                <p className="rounded-2xl bg-brand-50/60 px-3 py-2.5 text-xs font-semibold text-brand-600">
-                  El conteo oficial de plantas vivas se inaugura cuando se registre el embolsado.
-                </p>
-              </>
-            )}
-          </div>
-
-          {/* Timeline de etapas */}
-          <div className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
-            <p className="mb-4 text-sm font-semibold text-brand-700">Etapas</p>
-            <StageTimeline
-              stages={timeline}
-              imagenUrl={detail.plantaImagenUrl}
-              mermaAction={null}
-            />
-          </div>
-
-          {/* TODO(sprint-historial): seccion "Historial de mermas" que consume
-              GET /api/lotes-vivero/:id/merma (existe en backend, falta consumer
-              en frontend — ver lotes-vivero.api.ts). Idealmente migrar al
-              endpoint unificado GET /:id/timeline cuando se implemente. */}
-
-          {/* Cantidades detalle */}
-          <CollapsibleSection title="Cantidades" defaultOpen>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="rounded-2xl bg-brand-50 px-3 py-2">
-                <p className="text-[11px] uppercase tracking-wide text-brand-500">
-                  Material consumido
-                </p>
-                <p className="mt-0.5 font-extrabold text-brand-700">
-                  {detail.cantidadInicialEnProceso} {detail.unidadMedidaInicial}
-                </p>
-              </div>
-              <div className="rounded-2xl bg-brand-50 px-3 py-2">
-                <p className="text-[11px] uppercase tracking-wide text-brand-500">
-                  Plantas embolsadas
-                </p>
-                <p className="mt-0.5 font-extrabold text-brand-700">
-                  {detail.plantasVivasIniciales !== null
-                    ? `${detail.plantasVivasIniciales} plantas`
-                    : 'Pendiente'}
-                </p>
-              </div>
-              <div className="rounded-2xl bg-brand-50 px-3 py-2">
-                <p className="text-[11px] uppercase tracking-wide text-brand-500">
-                  Saldo vivo actual
-                </p>
-                <p className="mt-0.5 font-extrabold text-brand-700">
-                  {detail.saldoVivoActual !== null
-                    ? `${detail.saldoVivoActual} plantas`
-                    : 'Pendiente'}
-                </p>
-              </div>
-              <div className="rounded-2xl bg-brand-50 px-3 py-2">
-                <p className="text-[11px] uppercase tracking-wide text-brand-500">
-                  Stock vivo actual
-                </p>
-                <p className="mt-0.5 font-extrabold text-brand-700">
-                  {detail.stockVivoActual !== null
-                    ? `${detail.stockVivoActual} plantas`
-                    : 'Pendiente'}
-                </p>
-              </div>
-            </div>
-            {detail.estadoLote === 'ACTIVO' && detail.plantasVivasIniciales === null && (
-              <p className="mt-2 text-xs font-semibold text-brand-400">
-                El conteo en plantas se inaugura en el embolsado.
-              </p>
-            )}
-          </CollapsibleSection>
-
-          {/* Datos de origen */}
-          {/* TODO(estructural — fuera de P1): esta sección mezcla origen
-              (recolección, comunidad, tipo material) con metadatos del lote
-              (vivero, responsable, fechas). Cuando se rediseñe, partir en 2. */}
-          <CollapsibleSection title="Datos de origen">
-            <div className="divide-y divide-brand-50">
-              <InfoRow
-                label="Recolección"
-                value={
-                  detail.recoleccionFecha
-                    ? `${detail.recoleccionCodigo} · ${formatDate(detail.recoleccionFecha)}`
-                    : detail.recoleccionCodigo
-                }
-              />
-              <InfoRow label="Tipo material" value={detail.recoleccionTipoMaterial} />
-              <InfoRow
-                label="Comunidad origen"
-                value={detail.nombreComunidadOrigen ?? 'Sin registrar'}
-              />
-              <InfoRow label="Vivero" value={`${detail.viveroNombre} (${detail.viveroCodigo})`} />
-              <InfoRow
-                label="Responsable"
-                value={
-                  detail.responsableUsername
-                    ? `${detail.responsableNombre} (@${detail.responsableUsername})`
-                    : detail.responsableNombre
-                }
-              />
-              <InfoRow label="Fecha inicio" value={formatDate(detail.fechaInicio)} />
-              <InfoRow label="Actualizado" value={formatDateTime(detail.updatedAt)} />
-            </div>
-          </CollapsibleSection>
-
-          {/* Datos de planta */}
-          {/* TODO(p1.5 — banner de cierre): cuando el flujo de cierre del backend
-              esté completamente implementado, agregar arriba del scroll un banner
-              prominente con el motivoCierre cuando estadoLote === 'FINALIZADO'.
-              Color por tipo: emerald=DESPACHO_TOTAL · red=PERDIDA_TOTAL · amber=MIXTO. */}
-          <CollapsibleSection title="Datos de planta">
-            {detail.plantaImagenUrl && (
-              <div className="mb-3 overflow-hidden rounded-2xl">
-                <img
-                  src={detail.plantaImagenUrl}
-                  alt={detail.especie}
-                  className="h-36 w-full object-cover"
-                />
-              </div>
-            )}
-            <div className="divide-y divide-brand-50">
-              <InfoRow label="Especie" value={detail.especie} />
-              <InfoRow label="Nombre científico" value={detail.nombreCientifico} />
-              <InfoRow label="Nombre comercial" value={detail.nombreComercial} />
-              <InfoRow label="Variedad" value={detail.variedad ?? 'N/D'} />
-            </div>
-          </CollapsibleSection>
         </div>
       </div>
+      {/* Visor Flotante de Evidencias */}
+      <GalleryModal photo={selectedPhoto} onClose={() => setSelectedPhoto(null)} />
     </div>
   )
 }

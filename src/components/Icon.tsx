@@ -25,6 +25,8 @@ export type IconName =
   | 'x'
   | 'planting'
   | 'map'
+  | 'sunny'
+  | 'truck'
 
 type Props = {
   name: IconName

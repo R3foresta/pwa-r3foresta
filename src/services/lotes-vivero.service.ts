@@ -2,6 +2,7 @@ import {
   createLoteViveroApi,
   getEmbolsadoApi,
   getEmbolsadoContextApi,
+  getAuthHeaders,
   listLotesViveroApi,
   registrarAdaptabilidadApi,
   registrarDespachoApi,
@@ -9,7 +10,9 @@ import {
   registrarMermaApi,
   uploadEvidenciasEventoViveroApi,
   uploadEvidenciasPendientesViveroApi,
+  getTimelineApi, // ✅ Ahora se importa correctamente desde el archivo api
 } from '../api/lotes-vivero.api'
+
 import { mapLoteToCardData, mapLoteToDetailView } from '../modules/vivero/mappers/lote.mapper'
 import type {
   ApiPagination,
@@ -34,7 +37,7 @@ import type {
   UploadEvidenciasEventoInput,
   UploadEvidenciasEventoResponse,
 } from '../modules/vivero/types/contracts'
-import type { ViveroLotCardData, ViveroLotDetailView } from '../modules/vivero/types/view-models'
+import type { ViveroLotCardData, ViveroLotDetailView, ViveroLotEventView } from '../modules/vivero/types/view-models'
 import {
   buildBackendQueryForStageFilter,
   matchesStageFilter,
@@ -55,13 +58,6 @@ const ALLOWED_EVENT_EVIDENCE_MIME = new Set(['image/jpeg', 'image/png'])
 
 export type ListViveroLotsForUiInput = {
   stageFilter: StageFilter
-  /**
-   * Texto de búsqueda libre. Se delega 100% al backend mediante el parámetro
-   * `q` y este decide los matches (snapshots, código de trazabilidad, etc.).
-   * El front NO hace filtrado de texto en cliente; solo aplica el filtrado
-   * fino de sub-etapa (matchesStageFilter) sobre los resultados ya filtrados
-   * por backend.
-   */
   searchQuery?: string
   page?: number
   limit?: number
@@ -97,16 +93,6 @@ function validateEvidencePhotos(fotos: File[], contextLabel = 'evento') {
     throw new Error('Cada foto no puede superar 5 MB.')
   }
 }
-
-// La búsqueda libre por texto se delega completamente al backend (`q`), que
-// cubre `codigo_trazabilidad` + snapshots de texto. NO refiltramos en cliente
-// para evitar descartar hits válidos del backend cuando coinciden por un
-// snapshot que el view-model no expone (ej. nombre científico).
-//
-// TODO(futuro — filtros discretos): si en algún momento queremos filtrar por
-// `vivero.nombre` o `subetapaActual` (campos que el `q` del backend NO cubre),
-// exponerlos como filtros propios (dropdown / chips), no metiéndolos en el
-// campo libre.
 
 export class LotesViveroService {
   private static normalizeErrorMessage(payload: unknown, fallback: string): string {
@@ -160,9 +146,6 @@ export class LotesViveroService {
     const items = Array.isArray(envelope.data) ? envelope.data : []
     const fallback = defaultPagination(items.length)
 
-    // Backend siempre responde success: true en este endpoint (contrato fijo).
-    // Si alguna vez devuelve false en un 2xx, parseJsonResponse no lo detecta
-    // hoy; ese caso quedaría como deuda separada de validación de envelope.
     return {
       success: true,
       data: items,
@@ -177,7 +160,6 @@ export class LotesViveroService {
     }
   }
 
-  // Contrato técnico (backend).
   static async list(filters?: ListLotesViveroQuery): Promise<ListLotesViveroResponse> {
     const response = await listLotesViveroApi(filters)
     const payload = await this.parseJsonResponse<unknown>(
@@ -187,7 +169,6 @@ export class LotesViveroService {
     return this.normalizeListResponse(payload)
   }
 
-  // Caso de uso UI (backend filter + reglas de etapa + view model).
   static async listForUi(input: ListViveroLotsForUiInput): Promise<ListViveroLotsForUiResult> {
     const backendFilters: ListLotesViveroQuery = {
       page: input.page,
@@ -206,16 +187,6 @@ export class LotesViveroService {
     }
   }
 
-  // TODO(backend-pendiente): el backend NO expone GET /lotes-vivero/:id dedicado.
-  // Hoy simulamos con un GET /lotes-vivero?lote_vivero_id=X&limit=1, lo que
-  // trae envelope completo de paginación que descartamos. Cuando el backend
-  // exponga el endpoint dedicado, reemplazar por una llamada directa a
-  // getLoteByIdApi (ver TODO en lotes-vivero.api.ts).
-  //
-  // TODO(p3-consistencia): este método devuelve `LoteViveroItem` (raw) mientras
-  // que listForUi devuelve view-models ya mapeados. Inconsistente. Considerar
-  // que getById ya devuelva ViveroLotDetailView aplicando mapLoteToDetailView,
-  // o renombrarlo para que quede claro que es raw.
   static async getById(loteId: number): Promise<LoteViveroItem> {
     if (!Number.isFinite(loteId) || loteId <= 0) {
       throw new Error('ID de lote de vivero inválido.')
@@ -234,6 +205,44 @@ export class LotesViveroService {
     return mapLoteToDetailView(lot)
   }
 
+  static async getEvents(lotId: number): Promise<ViveroLotEventView[]> {
+    try {
+      const response = await getTimelineApi(lotId);
+      
+      if (!response.ok) {
+        throw new Error(`Error del servidor: ${response.status} al recuperar el historial`);
+      }
+
+      const json = await response.json();
+      
+      // De acuerdo a tu vivero-timeline.service.ts, el array real vive en: json.data.eventos
+      const rawEvents = json.data?.eventos || json.eventos || [];
+
+      // Mapeo DTO preciso alineado con las columnas reales de Supabase
+      return rawEvents.map((e: any) => ({
+        id: e.id,
+        kind: e.tipo_evento || 'INICIO', // Lee 'tipo_evento' del backend
+        label: e.label || `${e.tipo_evento} registrado`, // Fallback si no viene label explícito
+        fecha: e.fecha_evento ? new Date(e.fecha_evento).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Sin fecha',
+        observacion: e.observaciones || null, // Sincronizado con 'observaciones' de tu backend
+        cantidad: e.payload?.cantidad_afectada || e.payload?.plantas_vivas_iniciales || null,
+        saldoDespues: e.payload?.saldo_view_despues || e.payload?.saldo_vivo_despues || null,
+        responsableNombre: e.responsable_nombre || 'Operador de campo', // Sincronizado con 'responsable_nombre'
+        
+        // Sincronizado con el array 'evidencias' que genera cargarEvidenciasBatch
+        fotos: (e.evidencias || []).map((f: any) => ({
+          id: f.id,
+          url: f.public_url || '', // Extrae la url pública real del bucket de Supabase
+          titulo: f.titulo || 'Evidencia técnica',
+          fecha: f.tomado_en ? new Date(f.tomado_en).toLocaleDateString('es-ES') : (e.fecha_evento || 'Sin fecha')
+        }))
+      }));
+    } catch (error) {
+      console.error('❌ Error crítico en el mapeo de producción getEvents:', error);
+      throw new Error(error instanceof Error ? error.message : 'Error al acoplar la trazabilidad de Supabase.');
+    }
+  }
+
   static async uploadEvidenciasPendientes(
     input: UploadEvidenciasPendientesInput,
     authId?: string,
@@ -246,7 +255,6 @@ export class LotesViveroService {
       'Error al subir evidencias pendientes.',
     )
 
-    // Backend siempre responde success: true en este endpoint (contrato fijo).
     return {
       success: true,
       data: Array.isArray(payload.data) ? payload.data : [],
@@ -345,11 +353,6 @@ export class LotesViveroService {
     )
   }
 
-  // TODO(despacho-bloqueado): este método queda inalcanzable desde la UI hasta
-  // que se levante el flag DESPACHO_EVIDENCE_ENDPOINT_READY en DespachoForm.tsx
-  // (depende del endpoint de evidencias backend + Módulo 3 Plantación). Cuando
-  // se reactive, además reemplazar `unknown` por RegistrarDespachoResponse —
-  // hoy ese tipo tampoco existe en contracts.ts.
   static async registrarDespacho(
     loteId: number,
     input: RegistrarDespachoRequest,

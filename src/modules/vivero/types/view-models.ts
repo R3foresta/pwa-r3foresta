@@ -50,3 +50,22 @@ export interface ViveroLotDetailView {
   createdAt: string
   updatedAt: string
 }
+
+export interface ViveroLotEventView {
+  id: number
+  kind: 'INICIO' | 'EMBOLSADO' | 'MERMA' | 'ADAPTABILIDAD' | 'DESPACHO' | 'CIERRE_AUTOMATICO'
+  label: string
+  fecha: string         // Fecha del evento operativo (YYYY-MM-DD)
+  hora?: string | null  // Hora opcional
+  responsableNombre: string
+  cantidad?: number | null
+  saldoAntes?: number | null
+  saldoDespues?: number | null
+  observacion?: string | null
+  fotos?: Array<{
+    id: number
+    url: string
+    titulo: string
+    fecha: string
+  }> | null
+}
