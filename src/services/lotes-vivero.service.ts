@@ -2,7 +2,6 @@ import {
   createLoteViveroApi,
   getEmbolsadoApi,
   getEmbolsadoContextApi,
-  getAuthHeaders,
   listLotesViveroApi,
   registrarAdaptabilidadApi,
   registrarDespachoApi,
@@ -10,7 +9,7 @@ import {
   registrarMermaApi,
   uploadEvidenciasEventoViveroApi,
   uploadEvidenciasPendientesViveroApi,
-  getTimelineApi, // ✅ Ahora se importa correctamente desde el archivo api
+  getTimelineApi, 
 } from '../api/lotes-vivero.api'
 
 import { mapLoteToCardData, mapLoteToDetailView } from '../modules/vivero/mappers/lote.mapper'
@@ -207,39 +206,37 @@ export class LotesViveroService {
 
   static async getEvents(lotId: number): Promise<ViveroLotEventView[]> {
     try {
-      const response = await getTimelineApi(lotId);
+      const response = await getTimelineApi(lotId)
       
       if (!response.ok) {
-        throw new Error(`Error del servidor: ${response.status} al recuperar el historial`);
+        throw new Error(`Error del servidor: ${response.status} al recuperar el historial`)
       }
 
-      const json = await response.json();
+      const json = await response.json()
       
-      // De acuerdo a tu vivero-timeline.service.ts, el array real vive en: json.data.eventos
-      const rawEvents = json.data?.eventos || json.eventos || [];
+      /* eslint-disable @typescript-eslint/no-explicit-any */
+      const rawEvents = (json.data?.eventos || json.eventos || []) as any[];
 
-      // Mapeo DTO preciso alineado con las columnas reales de Supabase
       return rawEvents.map((e: any) => ({
         id: e.id,
-        kind: e.tipo_evento || 'INICIO', // Lee 'tipo_evento' del backend
-        label: e.label || `${e.tipo_evento} registrado`, // Fallback si no viene label explícito
+        kind: e.tipo_evento || 'INICIO',
+        label: e.label || `${e.tipo_evento} registrado`,
         fecha: e.fecha_evento ? new Date(e.fecha_evento).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Sin fecha',
-        observacion: e.observaciones || null, // Sincronizado con 'observaciones' de tu backend
+        observacion: e.observaciones || null,
         cantidad: e.payload?.cantidad_afectada || e.payload?.plantas_vivas_iniciales || null,
         saldoDespues: e.payload?.saldo_view_despues || e.payload?.saldo_vivo_despues || null,
-        responsableNombre: e.responsable_nombre || 'Operador de campo', // Sincronizado con 'responsable_nombre'
-        
-        // Sincronizado con el array 'evidencias' que genera cargarEvidenciasBatch
+        responsableNombre: e.responsable_nombre || 'Operador de campo',
         fotos: (e.evidencias || []).map((f: any) => ({
           id: f.id,
-          url: f.public_url || '', // Extrae la url pública real del bucket de Supabase
+          url: f.public_url || '',
           titulo: f.titulo || 'Evidencia técnica',
           fecha: f.tomado_en ? new Date(f.tomado_en).toLocaleDateString('es-ES') : (e.fecha_evento || 'Sin fecha')
         }))
-      }));
+      }))
+      /* eslint-enable @typescript-eslint/no-explicit-any */
     } catch (error) {
-      console.error('❌ Error crítico en el mapeo de producción getEvents:', error);
-      throw new Error(error instanceof Error ? error.message : 'Error al acoplar la trazabilidad de Supabase.');
+      console.error('❌ Error crítico en el mapeo de producción getEvents:', error)
+      throw new Error(error instanceof Error ? error.message : 'Error al acoplar la trazabilidad de Supabase.')
     }
   }
 

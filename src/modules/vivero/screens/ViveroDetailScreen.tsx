@@ -1,16 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import Icon from '../../../components/Icon'
-import type { IconName } from '../../../components/Icon'
 import { LotesViveroService } from '../../../services/lotes-vivero.service'
-import { formatUnidadCanonicaDisplay } from '../../../utils/recoleccionUnidad'
-import CollapsibleSection from '../components/CollapsibleSection';
-import type { StageTimelineItem } from '../components/StageTimeline'
+import CollapsibleSection from '../components/CollapsibleSection'
 import SaludCard from '../components/SaludCard'
 import QuickActions from '../components/QuickActions'
 import SubetapasBar from '../components/SubetapasBar'
 import Timeline from '../components/TimeLine'
-import EvidenciaTab from '../components/EvidenciaTab'
 import GalleryModal from '../components/GalleryModal'
 import type { ViveroLotDetailView, ViveroLotEventView } from '../types/view-models'
 
@@ -34,100 +30,6 @@ function formatDateTime(value?: string | null) {
   })
 }
 
-function buildTimeline(detail: ViveroLotDetailView): StageTimelineItem[] {
-  const hasEmbolsado = detail.plantasVivasIniciales !== null
-  const hasAdaptabilidad = detail.subetapaActual !== null
-  const hasFinalizado = detail.estadoLote === 'FINALIZADO'
-  const hasDespacho =
-    hasFinalizado &&
-    (detail.motivoCierre === 'DESPACHO_TOTAL' || detail.motivoCierre === 'MIXTO')
-
-  const adaptSubStates = hasEmbolsado
-    ? [
-        { key: 'SOMBRA', label: 'Sombra', active: detail.subetapaActual === 'SOMBRA' },
-        {
-          key: 'MEDIA_SOMBRA',
-          label: 'Media sombra',
-          active: detail.subetapaActual === 'MEDIA_SOMBRA',
-        },
-        {
-          key: 'SOL_DIRECTO',
-          label: 'Sol directo',
-          active: detail.subetapaActual === 'SOL_DIRECTO',
-        },
-      ]
-    : undefined
-
-  return [
-    {
-      key: 'INICIO',
-      label: 'Inicio',
-      done: true,
-      active: false,
-      date: detail.fechaInicio,
-    },
-    {
-      key: 'EMBOLSADO',
-      label: 'Embolsado',
-      done: hasEmbolsado,
-      active: !hasEmbolsado && !hasFinalizado,
-      date: null,
-    },
-    {
-      key: 'MERMA',
-      label: 'Merma',
-      done: false,
-      active: false,
-      date: null,
-    },
-    {
-      key: 'ADAPTABILIDAD',
-      label: 'Adaptabilidad',
-      done: hasAdaptabilidad && hasFinalizado,
-      active: hasAdaptabilidad && !hasFinalizado,
-      date: null,
-      subStates: hasEmbolsado ? adaptSubStates : undefined,
-    },
-    {
-      key: 'DESPACHO',
-      label: 'Despacho',
-      done: hasDespacho,
-      active: false,
-      date: null,
-    },
-    {
-      key: 'CIERRE',
-      label: 'Cierre',
-      done: hasFinalizado,
-      active: false,
-      date: hasFinalizado ? detail.updatedAt : null,
-    },
-  ]
-}
-
-function getNextActionInfo(
-  detail: ViveroLotDetailView,
-): { label: string; iconName: IconName; path: string } | null {
-  if (detail.estadoLote === 'FINALIZADO') return null
-  if (detail.plantasVivasIniciales === null)
-    return {
-      label: 'Registrar Embolsado',
-      iconName: 'package',
-      path: `/app/vivero/${detail.id}/event/embolsado`,
-    }
-  if (detail.subetapaActual === null)
-    return {
-      label: 'Registrar Adaptabilidad',
-      iconName: 'leaf',
-      path: `/app/vivero/${detail.id}/event/adaptabilidad`,
-    }
-  return {
-    label: 'Registrar Despacho',
-    iconName: 'planting',
-    path: `/app/vivero/${detail.id}/event/despacho`,
-  }
-}
-
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-start justify-between gap-3 py-1.5">
@@ -135,6 +37,59 @@ function InfoRow({ label, value }: { label: string; value: string }) {
       <span className="text-right text-xs font-bold text-brand-700">{value}</span>
     </div>
   )
+}
+
+function EvidenciaTab({
+    events,
+    onSelectPhoto
+  }: {
+    events: ViveroLotEventView[]
+    onSelectPhoto: (photo: { url: string; titulo: string; fecha: string; autor: string } | null) => void
+  }) {
+    const photos = useMemo(() => {
+      return events.reduce<{ url: string; titulo: string; fecha: string; autor: string }[]>((acc, event) => {
+        // Usamos la interfaz directamente. Si viene en 'evidencias' (backend real) o 'fotos' (fallback), lo manejamos aquí:
+        const listaEvidencias = event.evidencias || event.fotos || [];
+
+        listaEvidencias.forEach((item) => {
+          acc.push({
+            url: 'public_url' in item ? (item as any).public_url : item.url, // Si es el modelo de evidencias, usamos public_url
+            titulo: item.titulo,
+            fecha: 'tomado_en' in item ? (item as any).tomado_en : item.fecha,
+            autor: event.responsableNombre
+          });
+        });
+        return acc;
+      }, []);
+    }, [events]);
+
+    if (photos.length === 0) {
+      return (
+        <div className="rounded-3xl bg-white p-4 text-sm font-semibold text-brand-500 shadow-soft ring-1 ring-black/5">
+          No hay evidencias fotográficas disponibles.
+        </div>
+      )
+    }
+
+    return (
+      <div className="grid grid-cols-2 gap-3">
+        {photos.map((photo, index) => (
+          <button
+            key={`${photo.url}-${index}`}
+            type="button"
+            onClick={() => onSelectPhoto(photo)}
+            className="overflow-hidden rounded-2xl bg-white text-left shadow-soft ring-1 ring-black/5 transition hover:-translate-y-0.5 hover:shadow-md"
+          >
+            <img src={photo.url} alt={photo.titulo} className="h-28 w-full object-cover" />
+            <div className="space-y-1 p-3">
+              <p className="line-clamp-1 text-xs font-bold text-brand-700">{photo.titulo}</p>
+              <p className="text-[10px] font-semibold text-brand-500">{photo.autor}</p>
+              <p className="text-[10px] font-semibold text-brand-400">{photo.fecha || 'Sin fecha'}</p>
+            </div>
+          </button>
+        ))}
+      </div>
+    )
 }
 
 function ViveroDetailScreen() {
@@ -186,19 +141,6 @@ function ViveroDetailScreen() {
       isMounted = false
     }
   }, [id])
-
-  const timeline = useMemo(() => (detail ? buildTimeline(detail) : []), [detail])
-  const canRegisterMerma = useMemo(
-    () => detail?.estadoLote === 'ACTIVO' && detail?.plantasVivasIniciales !== null,
-    [detail],
-  )
-
-  const plantasIniciales = detail?.plantasVivasIniciales ?? null
-  const saldoVivo = detail?.saldoVivoActual ?? plantasIniciales
-  const unidadOrigenLabel = formatUnidadCanonicaDisplay(
-    detail?.unidadMedidaInicial,
-    detail?.cantidadInicialEnProceso,
-  )
 
   if (loading) {
     return (
@@ -335,7 +277,7 @@ function ViveroDetailScreen() {
             </>
           )}
 
-          {/* ─── PESTAÑA: HISTORIAL (Línea de tiempo operativa) ─── */}
+          {/* ─── PESTAÑA: HISTORIAL ───────────────────────────────── */}
           {activeTab === 'historial' && (
             <div className="space-y-4">
               <Timeline events={events} />
@@ -346,11 +288,12 @@ function ViveroDetailScreen() {
           {activeTab === 'evidencia' && (
             <EvidenciaTab events={events} onSelectPhoto={setSelectedPhoto} />
           )}
-
         </div>
       </div>
       {/* Visor Flotante de Evidencias */}
-      <GalleryModal photo={selectedPhoto} onClose={() => setSelectedPhoto(null)} />
+      {selectedPhoto && (
+        <GalleryModal photo={selectedPhoto} onClose={() => setSelectedPhoto(null)} />
+      )}
     </div>
   )
 }

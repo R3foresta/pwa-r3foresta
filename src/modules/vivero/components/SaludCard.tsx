@@ -1,4 +1,3 @@
-import Icon from '../../../components/Icon'
 import SurvivalBar from './SurvivalBar'
 import type { ViveroLotDetailView } from '../types/view-models'
 
