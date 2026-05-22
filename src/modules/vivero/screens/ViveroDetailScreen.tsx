@@ -6,7 +6,7 @@ import CollapsibleSection from '../components/CollapsibleSection'
 import SaludCard from '../components/SaludCard'
 import QuickActions from '../components/QuickActions'
 import SubetapasBar from '../components/SubetapasBar'
-import Timeline from '../components/TimeLine'
+import Timeline from '../components/Timeline'
 import GalleryModal from '../components/GalleryModal'
 import type { ViveroLotDetailView, ViveroLotEventView } from '../types/view-models'
 
