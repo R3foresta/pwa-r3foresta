@@ -9,29 +9,61 @@ interface Props {
 export default function HeroHeader({ detail }: Props) {
   const navigate = useNavigate();
   const disponibles = detail.saldoVivoActual ?? detail.plantasVivasIniciales ?? 0;
+  const estado = (detail as ViveroLotDetailView & { estado?: string }).estado || (disponibles === 0 ? 'FINALIZADO' : 'ACTIVO');
+  const isFinalizado = estado === 'FINALIZADO';
 
   return (
-    <header className="relative h-64 w-full overflow-hidden bg-slate-900">
+    <header className="relative h-[300px] w-full overflow-hidden bg-[#002b15]">
       {detail.plantaImagenUrl ? (
-        <img src={detail.plantaImagenUrl} alt={detail.especie} className="h-full w-full object-cover opacity-60" />
+        <img src={detail.plantaImagenUrl} alt={detail.especie} className="h-full w-full object-cover opacity-50" />
       ) : (
-        <div className="flex h-full w-full items-center justify-center bg-brand-900" />
+        <div className="flex h-full w-full items-center justify-center bg-[#002b15]" />
       )}
-      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#002b15] via-[#002b15]/60 to-transparent" />
       
-      <button onClick={() => navigate(-1)} className="absolute left-4 top-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 backdrop-blur-md text-white">
+      {/* Botón Volver */}
+      <button onClick={() => navigate(-1)} className="absolute left-4 top-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 backdrop-blur-md text-white hover:bg-white/20 transition">
         <Icon name="arrow-left" className="h-5 w-5" />
       </button>
 
-      <div className="absolute bottom-4 left-5 right-5 flex items-end justify-between text-white">
-        <div>
-          <span className="text-[10px] font-black uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded-md">{detail.codigo}</span>
-          <h1 className="text-2xl font-black mt-1">{detail.especie}</h1>
-          <p className="text-xs italic text-slate-300">{detail.nombreCientifico}</p>
+      {/* Píldora Superior Derecha (ESTADO) */}
+      <div className={`absolute right-4 top-10 rounded-full px-3 py-1.5 text-[9px] font-black uppercase tracking-widest shadow-sm backdrop-blur-md ${isFinalizado ? 'bg-white text-[#002b15]' : 'bg-emerald-400/20 text-emerald-50 ring-1 ring-emerald-200/50'}`}>
+        VIVERO · {estado}
+      </div>
+
+      <div className="absolute bottom-6 left-5 right-5 flex items-end justify-between text-white">
+        <div className="flex-1 min-w-0 pr-4">
+          <span className="text-[10px] font-black uppercase tracking-widest text-white/80">
+            LOTE {detail.codigo}
+          </span>
+          <h1 className="text-[32px] font-black mt-0.5 leading-none tracking-tight truncate">
+            {detail.especie}
+          </h1>
+          <p className="text-sm italic text-white/80 mt-1 truncate">
+            {detail.nombreCientifico}
+          </p>
+
+          {/* Píldoras de Vivero y Subetapa */}
+          <div className="mt-3 flex flex-wrap gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[9px] font-black tracking-widest backdrop-blur-md ring-1 ring-white/20">
+              <Icon name="user" className="h-3 w-3 text-white/80" /> {detail.viveroNombre || 'Vivero Central'}
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/20 px-2.5 py-1 text-[9px] font-black tracking-widest text-amber-50 backdrop-blur-md ring-1 ring-amber-300/30">
+              <Icon name="sun" className="h-3 w-3 text-amber-300" /> {detail.subetapaActual || 'SOMBRA'}
+            </span>
+            {isFinalizado && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-[9px] font-black tracking-widest text-[#002b15] shadow-sm">
+                <Icon name="truck" className="h-3 w-3" /> DESPACHO_TOTAL
+              </span>
+            )}
+          </div>
         </div>
-        <div className="bg-brand-600 px-4 py-2 rounded-2xl text-center">
-          <p className="text-[9px] uppercase font-bold text-brand-200">Individuos</p>
-          <p className="text-xl font-black">{disponibles}</p>
+
+        {/* Cifra de Saldo */}
+        <div className="text-right flex-shrink-0">
+          <p className="text-[9px] uppercase font-black tracking-widest text-white/70">Saldo Vivo</p>
+          <p className="text-[44px] font-black leading-none tracking-tighter mt-0.5">{disponibles}</p>
+          <p className="text-[8px] font-bold uppercase tracking-widest text-white/60 mt-1">Plantas · Unidad</p>
         </div>
       </div>
     </header>

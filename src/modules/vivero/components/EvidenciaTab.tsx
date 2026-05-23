@@ -1,8 +1,17 @@
 import type { ViveroLotEventView } from '../types/view-models'
 
+// Actualizamos la interfaz para que acepte la 'etapa'
+export interface PhotoItem {
+  url: string;
+  titulo: string;
+  fecha: string;
+  autor: string;
+  etapa: string;
+}
+
 interface EvidenciaTabProps {
   events: ViveroLotEventView[]
-  onSelectPhoto: (photo: { url: string; titulo: string; fecha: string; autor: string } | null) => void
+  onSelectPhoto: (photo: PhotoItem | null) => void
 }
 
 export default function EvidenciaTab({ events, onSelectPhoto }: EvidenciaTabProps) {
@@ -13,12 +22,24 @@ export default function EvidenciaTab({ events, onSelectPhoto }: EvidenciaTabProp
           url: f.url,
           titulo: f.titulo,
           fecha: f.fecha, 
-          autor: event.responsableNombre
+          autor: event.responsableNombre,
+          etapa: event.kind 
+        })
+      })
+    }
+    if (event.evidencias && event.evidencias.length > 0) {
+      event.evidencias.forEach((e) => {
+        acc.push({
+          url: e.public_url,
+          titulo: e.titulo,
+          fecha: e.tomado_en ? new Date(e.tomado_en).toLocaleDateString() : event.fecha, 
+          autor: event.responsableNombre,
+          etapa: event.kind
         })
       })
     }
     return acc
-  }, [] as Array<{ url: string; titulo: string; fecha: string; autor: string }>)
+  }, [] as PhotoItem[])
 
   if (allPhotos.length === 0) {
     return (
@@ -29,19 +50,33 @@ export default function EvidenciaTab({ events, onSelectPhoto }: EvidenciaTabProp
   }
 
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-2 gap-3 pb-8">
       {allPhotos.map((photo, index) => (
         <button
           key={`${photo.url}-${index}`}
           type="button"
           onClick={() => onSelectPhoto(photo)}
-          className="overflow-hidden rounded-2xl bg-white text-left shadow-soft ring-1 ring-black/5 transition hover:-translate-y-0.5 hover:shadow-md"
+          className="group overflow-hidden rounded-2xl bg-white text-left shadow-sm ring-1 ring-slate-100 transition hover:-translate-y-0.5 hover:shadow-md relative"
         >
-          <img src={photo.url} alt={photo.titulo} className="h-28 w-full object-cover" />
+          {/* Badge de la Etapa sobre la imagen */}
+          <div className="absolute left-2 top-2 z-10 rounded-md bg-black/60 px-1.5 py-0.5 backdrop-blur-sm">
+            <p className="text-[8px] font-black uppercase tracking-widest text-white">
+              {photo.etapa.replace('_', ' ')}
+            </p>
+          </div>
+
+          <div className="aspect-[4/3] w-full overflow-hidden bg-slate-50">
+            <img 
+              src={photo.url} 
+              alt={photo.titulo} 
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" 
+            />
+          </div>
+          
           <div className="space-y-1 p-3">
-            <p className="line-clamp-1 text-xs font-bold text-brand-700">{photo.titulo}</p>
-            <p className="text-[10px] font-semibold text-brand-500">{photo.autor}</p>
-            <p className="text-[10px] font-semibold text-brand-400">{photo.fecha}</p>
+            <p className="line-clamp-1 text-xs font-bold text-[#002b15]">{photo.titulo || 'Evidencia técnica'}</p>
+            <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">{photo.autor}</p>
+            <p className="text-[10px] font-semibold text-slate-400">{photo.fecha}</p>
           </div>
         </button>
       ))}

@@ -5,39 +5,41 @@ import type { ViveroLotDetailView } from '../types/view-models'
 
 interface QuickActionsProps {
   detail: ViveroLotDetailView
+  onJumpEvidencia: () => void // <-- Añadimos esta nueva propiedad
 }
 
-export default function QuickActions({ detail }: QuickActionsProps) {
+export default function QuickActions({ detail, onJumpEvidencia }: QuickActionsProps) {
   const navigate = useNavigate()
   const closed = detail.estadoLote === 'FINALIZADO'
 
-  const actions: { key: string; label: string; icon: IconName; path: string; disabled: boolean }[] = [
+  // Cambiamos 'path' por 'onClick' para darle flexibilidad a cada botón
+  const actions: { key: string; label: string; icon: IconName; onClick: () => void; disabled: boolean }[] = [
     { 
       key: 'merma', 
       label: 'Merma', 
       icon: 'loss' as IconName, 
-      path: `/app/vivero/${detail.id}/event/merma`,
+      onClick: () => navigate(`/app/vivero/${detail.id}/event/merma`),
       disabled: detail.plantasVivasIniciales === null 
     },
     { 
       key: 'adapt', 
       label: 'Subetapa', 
-      icon: 'sun'as IconName, 
-      path: `/app/vivero/${detail.id}/event/adaptabilidad`,
+      icon: 'sun' as IconName, 
+      onClick: () => navigate(`/app/vivero/${detail.id}/event/adaptabilidad`),
       disabled: detail.plantasVivasIniciales === null 
     },
     { 
       key: 'despacho', 
       label: 'Despacho', 
-      icon: 'truck'as IconName, 
-      path: `/app/vivero/${detail.id}/event/despacho`,
+      icon: 'truck' as IconName, 
+      onClick: () => navigate(`/app/vivero/${detail.id}/event/despacho`),
       disabled: detail.subetapaActual === null 
     },
     { 
       key: 'foto', 
       label: 'Evidencia', 
       icon: 'photo', 
-      path: `/app/vivero/${detail.id}/event/evidencia`,
+      onClick: onJumpEvidencia, 
       disabled: false 
     },
   ]
@@ -63,7 +65,7 @@ export default function QuickActions({ detail }: QuickActionsProps) {
             key={a.key}
             type="button"
             disabled={a.disabled}
-            onClick={() => navigate(a.path)}
+            onClick={a.onClick} // <-- Ejecuta la acción asignada arriba
             className={`flex flex-col items-center justify-center gap-1.5 rounded-2xl bg-white px-2 py-3 shadow-soft ring-1 ring-black/5 transition-all active:scale-[0.97] ${
               a.disabled 
                 ? 'opacity-40 cursor-not-allowed bg-slate-50 ring-transparent' 

@@ -1,4 +1,4 @@
-import SurvivalBar from './SurvivalBar'
+import Icon from '../../../components/Icon'
 import type { ViveroLotDetailView } from '../types/view-models'
 
 interface SaludCardProps {
@@ -7,24 +7,32 @@ interface SaludCardProps {
 
 export default function SaludCard({ detail }: SaludCardProps) {
   const plantasIniciales = detail.plantasVivasIniciales ?? 0
-  const saldoVivo = detail.saldoVivoActual ?? plantasIniciales
   const hasEmbolsado = detail.plantasVivasIniciales !== null
   
-  const muertas = hasEmbolsado ? Math.max(0, plantasIniciales - saldoVivo) : 0
+  const despachadas = (detail as ViveroLotDetailView & { despachadas?: number }).despachadas ?? 0
+  const disponibles = detail.saldoVivoActual ?? plantasIniciales
+  
+  const vivasHoy = disponibles + despachadas
+  const mermas = hasEmbolsado ? Math.max(0, plantasIniciales - vivasHoy) : 0
+  
   const supervivencia = plantasIniciales > 0 
-    ? Math.round((saldoVivo / plantasIniciales) * 100) 
+    ? Math.round((vivasHoy / plantasIniciales) * 100) 
     : 0
+
+  const pctDisponibles = plantasIniciales > 0 ? (disponibles / plantasIniciales) * 100 : 0
+  const pctDespachadas = plantasIniciales > 0 ? (despachadas / plantasIniciales) * 100 : 0
+  const pctMermas = plantasIniciales > 0 ? (mermas / plantasIniciales) * 100 : 0
 
   if (!hasEmbolsado) {
     return (
       <div className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
         <div className="mb-3 flex items-center justify-between">
-          <p className="text-sm font-extrabold text-brand-700">Material en proceso</p>
-          <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700 ring-1 ring-amber-200">
+          <p className="text-sm font-extrabold text-[#002b15]">Material en proceso</p>
+          <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-amber-700 ring-1 ring-amber-200">
             Pendiente embolsado
           </span>
         </div>
-        <p className="text-xs font-semibold text-brand-600 bg-brand-50/60 px-3 py-2.5 rounded-2xl">
+        <p className="text-xs font-semibold text-brand-600 bg-[#f4f7f2] px-3 py-2.5 rounded-2xl ring-1 ring-brand-100">
           El conteo oficial de plantas vivas se inaugura cuando se registre el embolsado.
         </p>
       </div>
@@ -32,41 +40,59 @@ export default function SaludCard({ detail }: SaludCardProps) {
   }
 
   return (
-    <section className="rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
+    <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
       <header className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-brand-500">Salud del lote</p>
-          <h3 className="mt-0.5 text-sm font-bold text-brand-800">Supervivencia y composición actual</h3>
+          <p className="text-[9px] font-black uppercase tracking-widest text-brand-700">Salud del lote</p>
+          <h3 className="mt-0.5 text-base font-extrabold text-[#002b15] leading-tight">Supervivencia y<br/>composición actual</h3>
         </div>
         <div className="text-right shrink-0">
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Edad</p>
-          <p className="text-sm font-extrabold text-brand-800 leading-none mt-0.5">
-            {detail.diasDesdeInicio}<span className="text-xs font-bold text-slate-500 ml-0.5">días</span>
+          <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">En vivero</p>
+          <p className="text-sm font-black text-[#002b15] leading-none mt-0.5">
+            {detail.diasDesdeInicio ?? 0} <span className="font-bold text-slate-500">días</span>
           </p>
         </div>
       </header>
 
-      <div className="mt-3 flex items-end justify-between gap-2">
+      <div className="mt-5 flex items-end justify-between gap-2">
         <div>
-          <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-brand-500">Supervivencia</p>
-          <p className="text-4xl font-extrabold text-brand-700 leading-none tracking-tight">{supervivencia}%</p>
+          <p className="text-[9px] font-black uppercase tracking-widest text-[#002b15]">Supervivencia</p>
+          <p className="text-5xl font-black text-[#002b15] leading-none tracking-tighter mt-1">{supervivencia}%</p>
         </div>
-        <div className="text-right">
-          <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-slate-500">Vivas hoy</p>
-          <p className="text-xl font-extrabold text-brand-800 leading-none">
-            {saldoVivo.toLocaleString('es-BO')}
-            <span className="text-xs font-bold text-slate-400"> / {plantasIniciales.toLocaleString('es-BO')}</span>
+        <div className="text-right pb-1">
+          <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">Vivas hoy</p>
+          <p className="text-2xl font-black text-[#002b15] leading-none mt-1">
+            {vivasHoy.toLocaleString('es-BO')} <span className="text-sm font-bold text-slate-400">/ {plantasIniciales.toLocaleString('es-BO')}</span>
           </p>
         </div>
       </div>
 
-      <div className="mt-4">
-        <SurvivalBar alive={saldoVivo} initial={plantasIniciales} showLabel={false} />
+      {/* Barra de composición dinámica */}
+      <div className="mt-4 flex h-3 w-full overflow-hidden rounded-full bg-slate-100">
+        <div style={{ width: `${pctDisponibles}%` }} className="bg-brand-700 transition-all duration-500" />
+        <div style={{ width: `${pctDespachadas}%` }} className="bg-blue-500 transition-all duration-500" />
+        <div style={{ width: `${pctMermas}%` }} className="bg-red-500 transition-all duration-500" />
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-bold">
-        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-emerald-500" /><span className="text-brand-700">Disponibles · {detail.stockVivoActual ?? saldoVivo}</span></span>
-        <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-red-500" /><span className="text-red-700">Mermas · {muertas}</span></span>
+      {/* Leyenda */}
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] font-black tracking-wide">
+        <span className="flex items-center gap-1.5 text-[#002b15]">
+          <span className="h-2 w-2 rounded-full bg-brand-700" /> Disponibles · {disponibles}
+        </span>
+        <span className="flex items-center gap-1.5 text-blue-700">
+          <span className="h-2 w-2 rounded-full bg-blue-500" /> Despachadas · {despachadas}
+        </span>
+        <span className="flex items-center gap-1.5 text-red-600">
+          <span className="h-2 w-2 rounded-full bg-red-500" /> Mermas · {mermas}
+        </span>
+      </div>
+
+      {/* Observación inferior (Opcional, si tienes el dato) */}
+      <div className="mt-4 flex items-center gap-2 rounded-xl bg-[#f4f7f2] px-3 py-2.5 ring-1 ring-brand-100/50">
+        <Icon name="info" className="h-4 w-4 shrink-0 text-brand-600" />
+        <p className="text-[10.5px] font-bold text-[#002b15] leading-snug">
+          Última merma hace 48 días. Subetapa actual: <span className="font-black">{detail.subetapaActual?.replace('_', ' ') || 'SOMBRA'}</span>.
+        </p>
       </div>
     </section>
   )

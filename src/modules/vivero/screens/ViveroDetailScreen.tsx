@@ -1,27 +1,30 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { LotesViveroService } from '../../../services/lotes-vivero.service'
-import HeroHeader from '../components/HeroHeader' // Ahora importará bien
+import HeroHeader from '../components/HeroHeader'
 import SaludCard from '../components/SaludCard'
 import QuickActions from '../components/QuickActions'
 import SubetapasBar from '../components/SubetapasBar'
-import IndicadoresRapidos from '../components/IndicadoresRapidos' // Asegúrate de tener este
-import UltimosEventos from '../components/UltimosEventos'     // Asegúrate de tener este
+import IndicadoresRapidos from '../components/IndicadoresRapidos'
+import UltimosEventos from '../components/UltimosEventos'
 import Timeline from '../components/Timeline'
 import EvidenciaTab from '../components/EvidenciaTab'
-import type { ViveroLotDetailView, ViveroLotEventView } from '../types/view-models'
 import OrigenCard from '../components/OrigenCard'
 import FiltersRow from '../components/FiltersRow'
 import AuditoriaSection from '../components/AuditoriaSection'
+import GalleryModal from '../components/GalleryModal' 
+import type { PhotoItem } from '../components/GalleryModal'
+import CierreLoteCard from '../components/CierreLoteCard'
+import type { ViveroLotDetailView, ViveroLotEventView } from '../types/view-models'
 
 export default function ViveroDetailScreen() {
   const { id } = useParams()
   const [detail, setDetail] = useState<ViveroLotDetailView | null>(null)
   const [events, setEvents] = useState<ViveroLotEventView[]>([])
   const [activeTab, setActiveTab] = useState<'resumen' | 'historial' | 'evidencia'>('resumen')
-  const [filter, setFilter] = useState('todos')
-  const counts: Record<string, number> = { todos: events.length }
-  const filteredEvents = events
+  
+  const [filter, setFilter] = useState('TODOS')
+  const [selectedPhoto, setSelectedPhoto] = useState<PhotoItem | null>(null)
 
   useEffect(() => {
     if (!id) return
@@ -29,15 +32,58 @@ export default function ViveroDetailScreen() {
     LotesViveroService.getEvents(Number(id)).then(setEvents)
   }, [id])
 
-  if (!detail) return <div>Cargando...</div>
+  const counts = useMemo(() => {
+    return events.reduce((acc, event) => {
+      const kind = event.kind.toUpperCase()
+      acc[kind] = (acc[kind] || 0) + 1
+      return acc
+    }, { TODOS: events.length } as Record<string, number>)
+  }, [events])
+
+  const filteredEvents = useMemo(() => {
+    const filterUpper = filter.toUpperCase()
+    if (filterUpper === 'TODOS') return events
+    return events.filter(e => e.kind.toUpperCase() === filterUpper)
+  }, [events, filter])
+
+  const handleOpenGalleryFromEvent = (event: ViveroLotEventView) => {
+    const imagenes = event.fotos && event.fotos.length > 0
+      ? event.fotos
+      : event.evidencias && event.evidencias.length > 0
+        ? event.evidencias.map(e => ({ url: e.public_url, titulo: e.titulo }))
+        : []
+
+    if (imagenes.length > 0) {
+      setSelectedPhoto({
+        url: imagenes[0].url,
+        titulo: imagenes[0].titulo,
+        fecha: event.fecha,
+        autor: event.responsableNombre,
+        etapa: event.kind
+      })
+    }
+  }
+
+  if (!detail) {
+    return (
+      <div className="flex justify-center min-h-screen bg-[#d8e0d3]">
+        <div className="w-full max-w-md bg-[#eef2ed] min-h-screen flex flex-col items-center justify-center shadow-2xl relative">
+          <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-white shadow-soft ring-1 ring-black/5 mb-4 animate-pulse">
+            <span className="text-3xl text-brand-600">🌿</span>
+          </div>
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-600 animate-pulse">
+            Cargando lote...
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex justify-center min-h-screen bg-[#d8e0d3]">
-      {/* 'max-w-md w-full bg-[#eef2ed]' es el contenedor real del celular */}
       <div className="w-full max-w-md bg-[#eef2ed] min-h-screen shadow-2xl relative overflow-y-auto">
         <HeroHeader detail={detail} />
       
-        {/* Pestañas */}
         <div className="sticky top-0 z-20 px-5 pt-4 pb-2 bg-[#eef2ed]/95 backdrop-blur-sm">
           <div className="flex rounded-full bg-white p-1 ring-1 ring-slate-200">
             {(['resumen', 'historial', 'evidencia'] as const).map(tab => (
@@ -48,14 +94,20 @@ export default function ViveroDetailScreen() {
           </div>
         </div>
 
-        {/* CONTENIDO: Se añadió pb-28 para evitar que la barra inferior tape el scroll */}
         <div className="px-5 pb-28 space-y-6">
           {activeTab === 'resumen' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <SaludCard detail={detail} />
+              {/* CONDICIONAL: Si saldo es 0 (o tienes detail.estado === 'FINALIZADO'), muestra Cierre, si no, Salud */}
+              {(detail.saldoVivoActual ?? detail.plantasVivasIniciales ?? 0) === 0 
+                ? <CierreLoteCard /> 
+                : <SaludCard detail={detail} />
+              }
               <IndicadoresRapidos detail={detail} events={events} />
               <SubetapasBar detail={detail} />
-              <QuickActions detail={detail} />
+              <QuickActions 
+                detail={detail} 
+                onJumpEvidencia={() => setActiveTab('evidencia')} 
+              />
               <UltimosEventos events={events} onJumpHistorial={() => setActiveTab('historial')} />
             </div>
           )}
@@ -64,13 +116,21 @@ export default function ViveroDetailScreen() {
             <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <OrigenCard detail={detail} />
               <FiltersRow active={filter} onChange={setFilter} counts={counts} />
-              <Timeline events={filteredEvents} />
+              {/* Le pasamos la lista filtrada y la función para abrir la galería */}
+              <Timeline events={filteredEvents} onOpenGallery={handleOpenGalleryFromEvent} />
               <AuditoriaSection detail={detail} />
             </div>
           )}
-          {activeTab === 'evidencia' && <EvidenciaTab events={events} onSelectPhoto={() => {}} />}
+          
+          {/* Le pasamos setSelectedPhoto para que la pestaña también pueda abrir el modal */}
+          {activeTab === 'evidencia' && (
+            <EvidenciaTab events={events} onSelectPhoto={setSelectedPhoto} />
+          )}
         </div>
       </div>
+
+      {/* Renderizado condicional del Modal de Galería al más alto nivel */}
+      <GalleryModal photo={selectedPhoto} onClose={() => setSelectedPhoto(null)} />
     </div>
   )
 }
