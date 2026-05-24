@@ -1,23 +1,49 @@
 import Icon from '../../../components/Icon'
 import type { IconName } from '../../../components/Icon'
-import type { ViveroLotDetailView } from '../types/view-models'
+import type { ViveroLotDetailView, ViveroLotEventView } from '../types/view-models'
 
 interface SubetapasBarProps {
   detail: ViveroLotDetailView
+  events: ViveroLotEventView[] 
 }
 
-export default function SubetapasBar({ detail }: SubetapasBarProps) {
+export default function SubetapasBar({ detail, events }: SubetapasBarProps) {
   const currentSub = detail.subetapaActual
   if (!currentSub) return null
 
-  const detailExtended = detail as ViveroLotDetailView & { 
-    diasSombra?: number; 
-    diasMediaSombra?: number; 
-    diasSolDirecto?: number; 
+  // SOLUCIÓN OBS #9 DE PABLO: Cálculo dinámico de días leyendo el historial
+  const calcularDias = () => {
+    // 1. Buscamos las fechas en las que el lote cambió de etapa
+    const tEmbolsado = events.find(e => e.kind === 'EMBOLSADO')?.fecha || detail.fechaInicio;
+    const tMediaSombra = events.find(e => e.kind === 'ADAPTABILIDAD' && e.subetapa === 'MEDIA_SOMBRA')?.fecha;
+    const tSolDirecto = events.find(e => e.kind === 'ADAPTABILIDAD' && e.subetapa === 'SOL_DIRECTO')?.fecha;
+    
+    // 2. Buscamos la fecha de fin (cierre o el día de hoy)
+    const cierre = events.find(e => e.kind === 'CIERRE_AUTOMATICO' || e.kind === 'DESPACHO');
+    const today = new Date().toISOString().split('T')[0];
+    const endRef = cierre ? cierre.fecha : (detail.estadoLote === 'FINALIZADO' ? detail.updatedAt : today);
+
+    // Helper matemático para calcular la diferencia en días
+    const diffDays = (start?: string, end?: string) => {
+      if (!start || !end) return 0;
+      const d1 = new Date(start).getTime();
+      const d2 = new Date(end).getTime();
+      return Math.max(0, Math.floor((d2 - d1) / 86400000));
+    };
+
+    // 3. Calculamos el tiempo gastado en cada bloque
+    const diasSombra = diffDays(tEmbolsado, tMediaSombra || tSolDirecto || endRef);
+    const diasMediaSombra = tMediaSombra ? diffDays(tMediaSombra, tSolDirecto || endRef) : 0;
+    const diasSolDirecto = tSolDirecto ? diffDays(tSolDirecto, endRef) : 0;
+
+    return {
+      diasSombra: diasSombra > 0 ? diasSombra : (currentSub === 'SOMBRA' ? 1 : 0),
+      diasMediaSombra: diasMediaSombra > 0 ? diasMediaSombra : (currentSub === 'MEDIA_SOMBRA' ? 1 : 0),
+      diasSolDirecto: diasSolDirecto > 0 ? diasSolDirecto : (currentSub === 'SOL_DIRECTO' ? 1 : 0),
+    };
   };
-  const diasSombra = detailExtended.diasSombra ?? 21;
-  const diasMediaSombra = detailExtended.diasMediaSombra ?? 24;
-  const diasSolDirecto = detailExtended.diasSolDirecto ?? 35;
+
+  const { diasSombra, diasMediaSombra, diasSolDirecto } = calcularDias();
   const totalDias = diasSombra + diasMediaSombra + diasSolDirecto;
 
   const subetapasData = [
@@ -25,6 +51,9 @@ export default function SubetapasBar({ detail }: SubetapasBarProps) {
     { key: 'MEDIA_SOMBRA', label: 'Media sombra', icon: 'sun', dias: diasMediaSombra, color: 'bg-amber-400' },
     { key: 'SOL_DIRECTO', label: 'Sol directo', icon: 'sunny', dias: diasSolDirecto, color: 'bg-amber-500' },
   ]
+
+  // Si totalDias es 0 (error de fechas en BD), evitamos dividir por cero
+  const safeTotal = totalDias > 0 ? totalDias : 1;
 
   return (
     <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
@@ -38,12 +67,11 @@ export default function SubetapasBar({ detail }: SubetapasBarProps) {
         </p>
       </header>
 
-      {/* Barra superior segmentada */}
       <div className="flex h-2.5 w-full overflow-hidden rounded-full mb-4">
         {subetapasData.map((s) => (
           <div 
             key={`bar-${s.key}`} 
-            style={{ width: `${(s.dias / totalDias) * 100}%` }} 
+            style={{ width: `${(s.dias / safeTotal) * 100}%` }} 
             className={`${s.color} transition-all duration-500`} 
           />
         ))}

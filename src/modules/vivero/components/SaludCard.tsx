@@ -1,19 +1,21 @@
 import Icon from '../../../components/Icon'
-import type { ViveroLotDetailView } from '../types/view-models'
+import type { ViveroLotDetailView, ViveroLotEventView } from '../types/view-models'
 
 interface SaludCardProps {
   detail: ViveroLotDetailView
+  events: ViveroLotEventView[] // <-- Agregamos events aquí
 }
 
-export default function SaludCard({ detail }: SaludCardProps) {
+export default function SaludCard({ detail, events }: SaludCardProps) {
   const plantasIniciales = detail.plantasVivasIniciales ?? 0
   const hasEmbolsado = detail.plantasVivasIniciales !== null
   
-  const despachadas = (detail as ViveroLotDetailView & { despachadas?: number }).despachadas ?? 0
+  // Lógica matemática REAL (Resuelve Obs 10 de Pablo)
+  const despachadas = events.filter(e => e.kind === 'DESPACHO').reduce((acc, curr) => acc + (curr.cantidad || 0), 0)
+  const mermas = events.filter(e => e.kind === 'MERMA').reduce((acc, curr) => acc + (curr.cantidad || 0), 0)
   const disponibles = detail.saldoVivoActual ?? plantasIniciales
   
   const vivasHoy = disponibles + despachadas
-  const mermas = hasEmbolsado ? Math.max(0, plantasIniciales - vivasHoy) : 0
   
   const supervivencia = plantasIniciales > 0 
     ? Math.round((vivasHoy / plantasIniciales) * 100) 
@@ -22,6 +24,12 @@ export default function SaludCard({ detail }: SaludCardProps) {
   const pctDisponibles = plantasIniciales > 0 ? (disponibles / plantasIniciales) * 100 : 0
   const pctDespachadas = plantasIniciales > 0 ? (despachadas / plantasIniciales) * 100 : 0
   const pctMermas = plantasIniciales > 0 ? (mermas / plantasIniciales) * 100 : 0
+
+  // Encontrar la última merma para el mensaje dinámico
+  const mermasEventos = events.filter(e => e.kind === 'MERMA');
+  const ultimaMerma = mermasEventos.length > 0 ? mermasEventos[mermasEventos.length - 1] : null;
+  
+  const diasDesdeUltimaMerma = ultimaMerma ? Math.floor((new Date().getTime() - new Date(ultimaMerma.fecha).getTime()) / (1000 * 60 * 60 * 24)) : null;
 
   if (!hasEmbolsado) {
     return (
@@ -74,7 +82,6 @@ export default function SaludCard({ detail }: SaludCardProps) {
         <div style={{ width: `${pctMermas}%` }} className="bg-red-500 transition-all duration-500" />
       </div>
 
-      {/* Leyenda */}
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] font-black tracking-wide">
         <span className="flex items-center gap-1.5 text-[#002b15]">
           <span className="h-2 w-2 rounded-full bg-brand-700" /> Disponibles · {disponibles}
@@ -87,11 +94,10 @@ export default function SaludCard({ detail }: SaludCardProps) {
         </span>
       </div>
 
-      {/* Observación inferior (Opcional, si tienes el dato) */}
       <div className="mt-4 flex items-center gap-2 rounded-xl bg-[#f4f7f2] px-3 py-2.5 ring-1 ring-brand-100/50">
         <Icon name="info" className="h-4 w-4 shrink-0 text-brand-600" />
         <p className="text-[10.5px] font-bold text-[#002b15] leading-snug">
-          Última merma hace 48 días. Subetapa actual: <span className="font-black">{detail.subetapaActual?.replace('_', ' ') || 'SOMBRA'}</span>.
+          {diasDesdeUltimaMerma !== null ? `Última merma hace ${diasDesdeUltimaMerma} días.` : 'Sin mermas registradas.'} Subetapa actual: <span className="font-black">{detail.subetapaActual?.replace('_', ' ') || 'SOMBRA'}</span>.
         </p>
       </div>
     </section>

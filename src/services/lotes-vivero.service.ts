@@ -217,15 +217,32 @@ export class LotesViveroService {
       /* eslint-disable @typescript-eslint/no-explicit-any */
       const rawEvents = (json.data?.eventos || json.eventos || []) as any[];
 
-      return rawEvents.map((e: any) => ({
+      // SOLUCIÓN OBS #4 (Pablo): Filtramos eventos corruptos que no tengan tipo_evento
+      const validEvents = rawEvents.filter(e => e.tipo_evento);
+
+      return validEvents.map((e: any) => ({
         id: e.id,
-        kind: e.tipo_evento || 'INICIO',
-        label: e.label || `${e.tipo_evento} registrado`,
+        kind: e.tipo_evento, 
+        label: e.label || `${e.tipo_evento.replace(/_/g, ' ')} registrado`,
         fecha: e.fecha_evento ? new Date(e.fecha_evento).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Sin fecha',
-        observacion: e.observaciones || null,
-        cantidad: e.payload?.cantidad_afectada || e.payload?.plantas_vivas_iniciales || null,
-        saldoDespues: e.payload?.saldo_view_despues || e.payload?.saldo_vivo_despues || null,
+        // Intentamos extraer la hora de la fecha o del payload
+        hora: e.fecha_evento ? new Date(e.fecha_evento).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : null,
         responsableNombre: e.responsable_nombre || 'Operador de campo',
+        cantidad: e.payload?.cantidad_afectada ?? e.payload?.plantas_vivas_iniciales ?? null,
+        
+        // Mapeo exhaustivo para las tarjetas premium (Solución Obs #4)
+        saldoAntes: e.payload?.saldo_vivo_antes ?? null,
+        saldoDespues: e.payload?.saldo_vivo_despues ?? null,
+        observacion: e.observaciones || null,
+        
+        causa: e.payload?.causa_merma || null,
+        subetapa: e.payload?.subetapa_destino || null,
+        destino: e.payload?.destino_tipo || null,
+        referencia: e.payload?.destino_referencia || null,
+        comunidad: e.payload?.comunidad_destino || null,
+        materialIngresado: e.payload?.material_ingresado || null,
+        sustrato: e.payload?.sustrato || null,
+
         fotos: (e.evidencias || []).map((f: any) => ({
           id: f.id,
           url: f.public_url || '',

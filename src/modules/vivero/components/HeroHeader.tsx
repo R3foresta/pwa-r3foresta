@@ -6,11 +6,13 @@ interface Props {
   detail: ViveroLotDetailView;
 }
 
+// Reemplaza la declaración de estado y el render de las píldoras:
 export default function HeroHeader({ detail }: Props) {
   const navigate = useNavigate();
   const disponibles = detail.saldoVivoActual ?? detail.plantasVivasIniciales ?? 0;
-  const estado = (detail as ViveroLotDetailView & { estado?: string }).estado || (disponibles === 0 ? 'FINALIZADO' : 'ACTIVO');
-  const isFinalizado = estado === 'FINALIZADO';
+  
+  // FIX: Usar el estado real
+  const isFinalizado = detail.estadoLote === 'FINALIZADO';
 
   return (
     <header className="relative h-[300px] w-full overflow-hidden bg-[#002b15]">
@@ -28,7 +30,7 @@ export default function HeroHeader({ detail }: Props) {
 
       {/* Píldora Superior Derecha (ESTADO) */}
       <div className={`absolute right-4 top-10 rounded-full px-3 py-1.5 text-[9px] font-black uppercase tracking-widest shadow-sm backdrop-blur-md ${isFinalizado ? 'bg-white text-[#002b15]' : 'bg-emerald-400/20 text-emerald-50 ring-1 ring-emerald-200/50'}`}>
-        VIVERO · {estado}
+        VIVERO · {detail.estadoLote || 'ACTIVO'}
       </div>
 
       <div className="absolute bottom-6 left-5 right-5 flex items-end justify-between text-white">
@@ -43,17 +45,24 @@ export default function HeroHeader({ detail }: Props) {
             {detail.nombreCientifico}
           </p>
 
-          {/* Píldoras de Vivero y Subetapa */}
           <div className="mt-3 flex flex-wrap gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[9px] font-black tracking-widest backdrop-blur-md ring-1 ring-white/20">
-              <Icon name="user" className="h-3 w-3 text-white/80" /> {detail.viveroNombre || 'Vivero Central'}
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/20 px-2.5 py-1 text-[9px] font-black tracking-widest text-amber-50 backdrop-blur-md ring-1 ring-amber-300/30">
-              <Icon name="sun" className="h-3 w-3 text-amber-300" /> {detail.subetapaActual || 'SOMBRA'}
-            </span>
-            {isFinalizado && (
+            {/* FIX: Quitar fallback engañoso. Solo mostrar si existe. */}
+            {detail.viveroNombre && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[9px] font-black tracking-widest backdrop-blur-md ring-1 ring-white/20">
+                <Icon name="user" className="h-3 w-3 text-white/80" /> {detail.viveroNombre}
+              </span>
+            )}
+            
+            {detail.subetapaActual && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/20 px-2.5 py-1 text-[9px] font-black tracking-widest text-amber-50 backdrop-blur-md ring-1 ring-amber-300/30">
+                <Icon name="sun" className="h-3 w-3 text-amber-300" /> {detail.subetapaActual.replace('_', ' ')}
+              </span>
+            )}
+
+            {/* FIX: Renderizar el motivo de cierre real si existe */}
+            {isFinalizado && detail.motivoCierre && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-[9px] font-black tracking-widest text-[#002b15] shadow-sm">
-                <Icon name="truck" className="h-3 w-3" /> DESPACHO_TOTAL
+                <Icon name="truck" className="h-3 w-3" /> {detail.motivoCierre}
               </span>
             )}
           </div>

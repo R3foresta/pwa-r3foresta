@@ -46,12 +46,10 @@ export default function ViveroDetailScreen() {
     return events.filter(e => e.kind.toUpperCase() === filterUpper)
   }, [events, filter])
 
+  // Función para adaptar la foto del Timeline al formato que espera el Modal
   const handleOpenGalleryFromEvent = (event: ViveroLotEventView) => {
-    const imagenes = event.fotos && event.fotos.length > 0
-      ? event.fotos
-      : event.evidencias && event.evidencias.length > 0
-        ? event.evidencias.map(e => ({ url: e.public_url, titulo: e.titulo }))
-        : []
+    // SOLUCIÓN OBS 19 PABLO: Limpiamos la lógica paralela
+    const imagenes = event.fotos && event.fotos.length > 0 ? event.fotos : []
 
     if (imagenes.length > 0) {
       setSelectedPhoto({
@@ -63,7 +61,7 @@ export default function ViveroDetailScreen() {
       })
     }
   }
-
+  
   if (!detail) {
     return (
       <div className="flex justify-center min-h-screen bg-[#d8e0d3]">
@@ -97,17 +95,17 @@ export default function ViveroDetailScreen() {
         <div className="px-5 pb-28 space-y-6">
           {activeTab === 'resumen' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              {/* CONDICIONAL: Si saldo es 0 (o tienes detail.estado === 'FINALIZADO'), muestra Cierre, si no, Salud */}
-              {(detail.saldoVivoActual ?? detail.plantasVivasIniciales ?? 0) === 0 
-                ? <CierreLoteCard /> 
-                : <SaludCard detail={detail} />
+              {/* FIX: Usamos estadoLote oficial del view-model */}
+              {detail.estadoLote === 'FINALIZADO' 
+                ? <CierreLoteCard detail={detail} events={events} /> 
+                : <SaludCard detail={detail} events={events} />
               }
+              
+              {/* FIX (Obs 16): QuickActions sube al 2do lugar */}
+              <QuickActions detail={detail} onJumpEvidencia={() => setActiveTab('evidencia')} />
+              
               <IndicadoresRapidos detail={detail} events={events} />
-              <SubetapasBar detail={detail} />
-              <QuickActions 
-                detail={detail} 
-                onJumpEvidencia={() => setActiveTab('evidencia')} 
-              />
+              <SubetapasBar detail={detail} events={events} />
               <UltimosEventos events={events} onJumpHistorial={() => setActiveTab('historial')} />
             </div>
           )}

@@ -51,17 +51,33 @@ export interface ViveroLotDetailView {
   updatedAt: string
 }
 
+export interface ViveroEventPhoto {
+  id: number
+  url: string
+  titulo: string
+  fecha: string
+}
+
 export interface ViveroLotEventView {
   id: number
-  kind: 'INICIO' | 'EMBOLSADO' | 'MERMA' | 'ADAPTABILIDAD' | 'DESPACHO' | 'CIERRE_AUTOMATICO'
+  kind: string // O tu unión de tipos 'INICIO' | 'MERMA' etc.
   label: string
-  fecha: string         // Fecha del evento operativo (YYYY-MM-DD)
-  hora?: string | null  // Hora opcional
+  fecha: string
+  hora?: string | null
   responsableNombre: string
   cantidad?: number | null
   saldoAntes?: number | null
   saldoDespues?: number | null
   observacion?: string | null
-  fotos?: Array<{ id: number; url: string; titulo: string; fecha: string }> | null
+  fotos?: Array<ViveroEventPhoto> | null
   evidencias?: Array<{ id: number; public_url: string; titulo: string; tomado_en: string }> | null
+  
+  // FIX: Agregar campos extra aquí oficialmente
+  causa?: string | null
+  subetapa?: string | null
+  destino?: string | null
+  referencia?: string | null
+  comunidad?: string | null
+  materialIngresado?: string | null
+  sustrato?: string | null
 }

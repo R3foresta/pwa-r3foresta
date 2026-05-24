@@ -1,27 +1,14 @@
 import Icon from '../../../components/Icon'
 import type { IconName } from '../../../components/Icon'
-import type { ViveroLotEventView } from '../types/view-models'
-
-// 1. Extendemos tu interface localmente para aceptar los datos específicos de cada etapa
-// sin romper tu view-models original. (Idealmente, luego agregas estos a tu interface oficial).
-type ExtendedEventView = ViveroLotEventView & {
-  causa?: string
-  subetapa?: string
-  materialIngresado?: string
-  sustrato?: string
-  destino?: string
-  referencia?: string
-  comunidad?: string
-}
+import type { ViveroLotEventView, ViveroEventPhoto } from '../types/view-models'
 
 interface EventCardProps {
-  event: ExtendedEventView
+  event: ViveroLotEventView
   isLast: boolean
   onOpenGallery?: (event: ViveroLotEventView) => void
 }
 
 export default function EventCard({ event, isLast, onOpenGallery }: EventCardProps) {
-  // Configuración de colores por etapa
   const configMap: Record<string, { icon: IconName; bg: string; text: string; ring: string }> = {
     INICIO: { icon: 'leaf', bg: 'bg-emerald-50', text: 'text-emerald-700', ring: 'ring-emerald-200' },
     EMBOLSADO: { icon: 'box', bg: 'bg-[#f4f7f2]', text: 'text-[#002b15]', ring: 'ring-[#002b15]/10' },
@@ -33,12 +20,14 @@ export default function EventCard({ event, isLast, onOpenGallery }: EventCardPro
 
   const theme = configMap[event.kind] || configMap.INICIO
 
-  // Determinamos qué array de imágenes usar
+  // SOLUCIÓN OBS 19 PABLO: Solo usamos "fotos", ignoramos "evidencias"
   const imagenes = event.fotos && event.fotos.length > 0 
-    ? event.fotos.map(f => ({ id: f.id, url: f.url, titulo: f.titulo }))
-    : event.evidencias && event.evidencias.length > 0
-      ? event.evidencias.map(e => ({ id: e.id, url: e.public_url, titulo: e.titulo }))
-      : []
+  ? event.fotos.map((f: ViveroEventPhoto) => ({ 
+      id: f.id, 
+      url: f.url, 
+      titulo: f.titulo 
+    }))
+  : []
 
   return (
     <div className="flex gap-x-3">
@@ -57,7 +46,7 @@ export default function EventCard({ event, isLast, onOpenGallery }: EventCardPro
           {/* Header Común */}
           <div className="flex items-center gap-2 mb-2">
             <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[9px] font-black tracking-widest uppercase ring-1 ring-inset ${theme.text} ${theme.ring} bg-white`}>
-              {event.kind.replace('_', ' ')}
+              {event.kind?.replaceAll('_', ' ')}
             </span>
             <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">
               {event.fecha} {event.hora ? `· ${event.hora}` : ''}

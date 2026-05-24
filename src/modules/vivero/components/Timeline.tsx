@@ -1,16 +1,6 @@
 import EventCard from './EventCard';
 import type { ViveroLotEventView } from '../types/view-models';
 
-type ExtendedEventView = ViveroLotEventView & {
-  causa?: string;
-  subetapa?: string;
-  materialIngresado?: string;
-  sustrato?: string;
-  destino?: string;
-  referencia?: string;
-  comunidad?: string;
-};
-
 interface TimelineProps {
   events: ViveroLotEventView[];
   onOpenGallery?: (event: ViveroLotEventView) => void;
@@ -24,11 +14,12 @@ export default function Timeline({ events, onOpenGallery }: TimelineProps) {
           Cronología del lote
         </p>
       </div>
-      <ol className="relative ml-3 border-l-2 border-slate-200 space-y-6">
+      {/* FIX: Se eliminó border-l-2 border-slate-200 */}
+      <ol className="relative ml-3 space-y-6">
         {events.map((event, index) => (
           <EventCard 
             key={event.id ?? index} 
-            event={event as ExtendedEventView}
+            event={event} 
             isLast={index === events.length - 1} 
             onOpenGallery={onOpenGallery} 
           />

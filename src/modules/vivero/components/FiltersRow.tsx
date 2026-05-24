@@ -1,4 +1,3 @@
-
 interface FiltersRowProps {
   active: string;
   onChange: (filter: string) => void;
@@ -6,7 +5,7 @@ interface FiltersRowProps {
 }
 
 export default function FiltersRow({ active, onChange, counts }: FiltersRowProps) {
-  const filters = ['TODOS', 'MERMA', 'DESPACHO', 'ADAPTABILIDAD'];
+  const filters = ['TODOS', 'INICIO', 'EMBOLSADO', 'MERMA', 'ADAPTABILIDAD', 'DESPACHO', 'CIERRE_AUTOMATICO'];
 
   return (
     <section>
@@ -19,7 +18,7 @@ export default function FiltersRow({ active, onChange, counts }: FiltersRowProps
               active === f ? 'bg-brand-600 text-white ring-brand-700' : 'bg-white text-brand-700 ring-brand-100'
             }`}
           >
-            {f} {counts[f] ? `(${counts[f]})` : ''}
+            {f.replaceAll('_', ' ')} {counts[f] ? `(${counts[f]})` : ''}
           </button>
         ))}
       </div>
