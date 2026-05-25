@@ -30,7 +30,6 @@ export default function ViveroDetailScreen() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // 👇 CORREGIDO: ahora es una variable de estado, no una función
   const [now, setNow] = useState<number | null>(null)
 
   useEffect(() => {
