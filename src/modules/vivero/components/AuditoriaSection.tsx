@@ -17,7 +17,7 @@ export default function AuditoriaSection({ detail }: AuditoriaSectionProps) {
     ['VIVERO_ID', detail.viveroNombre],
     ['CREATED_AT', detail.createdAt ? new Date(detail.createdAt).toISOString() : fallbackDate],
     ['RESPONSABLE_ID', detail.responsableUsername || 'Sistema'],
-  ].filter(([v]) => Boolean(v));
+  ].filter(([, v]) => Boolean(v));
 
   const handleExportJson = () => {
     const dataToExport = {

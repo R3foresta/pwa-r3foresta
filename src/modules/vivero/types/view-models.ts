@@ -4,6 +4,7 @@ import type {
   SubetapaAdaptabilidad,
   TipoMaterialVivero,
   UnidadMedidaVivero,
+  TipoEventoVivero,
 } from './contracts'
 
 export interface ViveroLotCardData {
@@ -60,9 +61,10 @@ export interface ViveroEventPhoto {
 
 export interface ViveroLotEventView {
   id: number
-  kind: string // O tu unión de tipos 'INICIO' | 'MERMA' etc.
+  kind: TipoEventoVivero
   label: string
   fecha: string
+  fechaIso: string
   hora?: string | null
   responsableNombre: string
   cantidad?: number | null

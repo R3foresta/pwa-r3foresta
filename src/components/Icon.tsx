@@ -27,7 +27,7 @@ export type IconName =
   | 'map'
   | 'sunny'
   | 'truck'
-  | 'trending_up'
+  | 'trending-up'
   | 'chevron-right'
   | 'loss'
   | 'shield'
@@ -256,10 +256,10 @@ function Icon({ name, className }: Props) {
       )
     case 'planting':
       return (
-        <svg className={`${common} ${className ?? ''}`} viewBox="0 0 24 24" fill="none" strokeWidth="1.8">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 20v-8" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 12c0-3 2-5 4.5-5.5.5-.1.5-.8 0-.9-3-.7-4.5-2.6-4.5-5.6" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M7 20h10" />
+        <svg className={`${common} ${className ?? ''}`} viewBox="0 0 24 24" fill="none" strokeWidth="2">
+          <path d="M7 20h10" />
+          <path d="M10 20c5.5-2.5.5-10 1.5-14.5 0 0 1.5 1.5 1.5 5 0 0 4-1.5 4-5.5" />
+          <path d="M10 13c-2.5-2.5-5-2-5-2s1.5 3 3 4" />
         </svg>
       )
     case 'map':
@@ -287,7 +287,7 @@ function Icon({ name, className }: Props) {
           <circle cx="17.5" cy="17.5" r="2.5" />
         </svg>
       )
-    case 'trending_up':
+    case 'trending-up':
       return (
         <svg className={`${common} ${className ?? ''}`} viewBox="0 0 24 24" fill="none" strokeWidth="1.8">
           <path strokeLinecap="round" strokeLinejoin="round" d="M23 6l-9.5 9.5-5-5L1 18" />

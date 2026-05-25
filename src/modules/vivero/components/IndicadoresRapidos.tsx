@@ -31,7 +31,7 @@ export default function IndicadoresRapidos({ detail, events }: Props) {
             <p className="mt-1 text-[11px] font-bold text-white/80">UNIDAD · saldo vivo actual</p>
           </div>
           <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/25">
-            <Icon name="trending_up" className="h-6 w-6" />
+            <Icon name="trending-up" className="h-6 w-6" />
           </div>
         </div>
       </div>

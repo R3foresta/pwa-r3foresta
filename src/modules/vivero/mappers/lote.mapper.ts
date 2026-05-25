@@ -1,5 +1,7 @@
-import type { LoteViveroItem } from '../types/contracts'
+import type { EvidenciaDto, LoteViveroItem } from '../types/contracts'
 import type { ViveroLotCardData, ViveroLotDetailView } from '../types/view-models'
+import type { TimelineEventDto, TipoEventoVivero } from '../types/contracts'
+import type { ViveroLotEventView } from '../types/view-models'
 
 // TODO(p1 — datos no expuestos restantes):
 //   • recoleccion.saldo_actual     → si la recolección origen sigue con saldo.
@@ -100,4 +102,37 @@ export function mapLoteToDetailView(lot: LoteViveroItem): ViveroLotDetailView {
     createdAt: lot.created_at,
     updatedAt: lot.updated_at,
   }
+}
+
+export function mapTimelineEventToView(e: TimelineEventDto): ViveroLotEventView {
+  const p = e.payload as Record<string, unknown> | undefined;
+
+  return {
+    id: e.id,
+    kind: (e.tipo_evento as TipoEventoVivero) || 'INICIO',
+    label: e.label || `${e.tipo_evento?.replace(/_/g, ' ') || 'Evento'} registrado`,
+    fecha: e.fecha_evento ? new Date(e.fecha_evento).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Sin fecha',
+    fechaIso: e.fecha_evento || new Date().toISOString(),
+    hora: e.fecha_evento ? new Date(e.fecha_evento).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : null,
+    responsableNombre: e.responsable_nombre || 'Operador de campo',
+    cantidad: (p?.cantidad_afectada as number | undefined) ?? (p?.plantas_vivas_iniciales as number | undefined) ?? null,
+    saldoAntes: (p?.saldo_vivo_antes as number | undefined) ?? null,
+    saldoDespues: (p?.saldo_vivo_despues as number | undefined) ?? null,
+    
+    observacion: e.observaciones || null,
+    causa: (p?.causa_merma as string | undefined) || null,
+    subetapa: (p?.subetapa_destino as string | undefined) || null,
+    destino: (p?.destino_tipo as string | undefined) || null,
+    referencia: (p?.destino_referencia as string | undefined) || null,
+    comunidad: (p?.comunidad_destino as string | undefined) || null,
+    materialIngresado: (p?.material_ingresado as string | undefined) || null,
+    sustrato: (p?.sustrato as string | undefined) || null,
+    
+    fotos: (e.evidencias || []).map((f: EvidenciaDto) => ({
+      id: f.id,
+      url: f.public_url || '',
+      titulo: f.titulo || 'Evidencia técnica',
+      fecha: f.tomado_en ? new Date(f.tomado_en).toLocaleDateString('es-ES') : (e.fecha_evento || 'Sin fecha')
+    }))
+  };
 }

@@ -3,7 +3,7 @@ import type { ViveroLotDetailView, ViveroLotEventView } from '../types/view-mode
 import { useNow } from './nowContext'; 
 
 export function useViveroStats(detail: ViveroLotDetailView, events: ViveroLotEventView[]) {
-  const now = useNow(); // timestamp actual (null al inicio)
+  const now = useNow(); 
 
   return useMemo(() => {
     const plantasIniciales = detail.plantasVivasIniciales ?? 0;
@@ -27,10 +27,9 @@ export function useViveroStats(detail: ViveroLotDetailView, events: ViveroLotEve
     const mermasEventos = events.filter(e => e.kind === 'MERMA');
     const ultimaMerma = mermasEventos.length > 0 ? mermasEventos[mermasEventos.length - 1] : null;
 
-    // now puede ser null en el primer render, luego se actualiza
     const diasDesdeUltimaMerma = (now != null && ultimaMerma)
-      ? Math.floor((now - new Date(ultimaMerma.fecha).getTime()) / 86_400_000)
-      : null;
+    ? Math.floor((now - new Date(ultimaMerma.fechaIso).getTime()) / 86_400_000)
+    : null;
 
     return {
       plantasIniciales,

@@ -14,7 +14,6 @@ export default function Timeline({ events, onOpenGallery }: TimelineProps) {
           Cronología del lote
         </p>
       </div>
-      {/* FIX: Se eliminó border-l-2 border-slate-200 */}
       <ol className="relative ml-3 space-y-6">
         {events.map((event, index) => (
           <EventCard 

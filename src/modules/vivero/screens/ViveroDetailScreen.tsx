@@ -25,7 +25,7 @@ export default function ViveroDetailScreen() {
   const [activeTab, setActiveTab] = useState<'resumen' | 'historial' | 'evidencia'>('resumen')
 
   const [filter, setFilter] = useState('TODOS')
-  const [selectedPhoto, setSelectedPhoto] = useState<PhotoItem | null>(null)
+  const [selectedPhotos, setSelectedPhotos] = useState<PhotoItem[] | null>(null)
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -68,7 +68,6 @@ export default function ViveroDetailScreen() {
     return () => { isMounted = false }
   }, [id])
 
-  // Actualiza el timestamp actual sin llamada síncrona a setState
   useEffect(() => {
     const timer = setTimeout(() => setNow(Date.now()), 0)
     return () => clearTimeout(timer)
@@ -89,16 +88,14 @@ export default function ViveroDetailScreen() {
   }, [events])
 
   const handleOpenGalleryFromEvent = (event: ViveroLotEventView) => {
-    const imagenes = event.fotos && event.fotos.length > 0 ? event.fotos : []
-    if (imagenes.length > 0) {
-      setSelectedPhoto({
-        url: imagenes[0].url,
-        titulo: imagenes[0].titulo,
-        fecha: event.fecha,
-        autor: event.responsableNombre,
-        etapa: event.kind,
-      })
-    }
+    const photoItem: PhotoItem = {
+      url: event.fotos?.[0]?.url || '',
+      titulo: event.fotos?.[0]?.titulo || 'Evidencia',
+      fecha: event.fecha,
+      autor: event.responsableNombre,
+      etapa: event.kind
+    };
+    setSelectedPhotos([photoItem]); 
   }
 
   if (error) {
@@ -127,7 +124,6 @@ export default function ViveroDetailScreen() {
     )
   }
 
-  // 👇 El provider envuelve todo el contenido real
   return (
     <NowContext.Provider value={now}>
       <div className="flex justify-center min-h-screen bg-[#d8e0d3]">
@@ -175,12 +171,15 @@ export default function ViveroDetailScreen() {
             )}
 
             {activeTab === 'evidencia' && (
-              <EvidenciaTab events={events} onSelectPhoto={setSelectedPhoto} />
+              <EvidenciaTab 
+                events={events} 
+                onSelectPhoto={(photo) => setSelectedPhotos(photo ? [photo] : null)} 
+              />
             )}
           </div>
         </div>
 
-        <GalleryModal photo={selectedPhoto} onClose={() => setSelectedPhoto(null)} />
+        <GalleryModal photos={selectedPhotos} onClose={() => setSelectedPhotos(null)} />
       </div>
     </NowContext.Provider>
   )

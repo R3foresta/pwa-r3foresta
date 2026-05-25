@@ -49,7 +49,6 @@ export default function EvidenciaTab({ events, onSelectPhoto }: EvidenciaTabProp
           onClick={() => onSelectPhoto(photo)}
           className="group overflow-hidden rounded-2xl bg-white text-left shadow-sm ring-1 ring-slate-100 transition hover:-translate-y-0.5 hover:shadow-md relative"
         >
-          {/* Badge de la Etapa sobre la imagen */}
           <div className="absolute left-2 top-2 z-10 rounded-md bg-black/60 px-1.5 py-0.5 backdrop-blur-sm">
             <p className="text-[8px] font-black uppercase tracking-widest text-white">
               {photo.etapa ? photo.etapa.replace('_', ' ') : 'Sin etapa'}

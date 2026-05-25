@@ -6,7 +6,6 @@ interface Props {
   detail: ViveroLotDetailView;
 }
 
-// Reemplaza la declaración de estado y el render de las píldoras:
 export default function HeroHeader({ detail }: Props) {
   const navigate = useNavigate();
   const disponibles = detail.saldoVivoActual ?? detail.plantasVivasIniciales ?? 0;
@@ -45,7 +44,6 @@ export default function HeroHeader({ detail }: Props) {
           </p>
 
           <div className="mt-3 flex flex-wrap gap-2">
-            {/* FIX: Quitar fallback engañoso. Solo mostrar si existe. */}
             {detail.viveroNombre && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[9px] font-black tracking-widest backdrop-blur-md ring-1 ring-white/20">
                 <Icon name="user" className="h-3 w-3 text-white/80" /> {detail.viveroNombre}
@@ -58,7 +56,6 @@ export default function HeroHeader({ detail }: Props) {
               </span>
             )}
 
-            {/* FIX: Renderizar el motivo de cierre real si existe */}
             {isFinalizado && detail.motivoCierre && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-[9px] font-black tracking-widest text-[#002b15] shadow-sm">
                 <Icon name="truck" className="h-3 w-3" /> {detail.motivoCierre}

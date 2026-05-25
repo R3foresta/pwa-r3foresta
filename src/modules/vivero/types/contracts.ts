@@ -391,6 +391,24 @@ export interface RegistrarMermaResponse {
   }
 }
 
+export interface TimelineEventDto {
+  id: number;
+  tipo_evento: string;
+  label?: string;
+  fecha_evento?: string;
+  observaciones?: string;
+  responsable_nombre?: string;
+  payload?: Record<string, unknown>; 
+  evidencias?: EvidenciaDto[];   
+}
+
+export interface EvidenciaDto {
+  id: number;
+  public_url: string;
+  titulo: string;
+  tomado_en?: string;
+}
+
 // TODO(backend-pendiente): falta definir RegistrarDespachoResponse en el
 // contrato (existen RegistrarMermaResponse y RegistrarAdaptabilidadResponse).
 // Mientras tanto, LotesViveroService.registrarDespacho retorna `unknown`.
@@ -418,3 +436,4 @@ export interface RegistrarMermaResponse {
 // Hoy el `ViveroDetailScreen` arma la timeline desde el detalle del lote, así
 // que esto no bloquea ninguna pantalla actual. Migrar cuando el front necesite
 // historial granular o paginado de eventos.
+

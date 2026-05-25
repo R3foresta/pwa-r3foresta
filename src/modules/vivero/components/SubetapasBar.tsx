@@ -12,9 +12,9 @@ export default function SubetapasBar({ detail, events }: SubetapasBarProps) {
   if (!currentSub) return null
 
   const calcularDias = () => {
-    const tEmbolsado = events.find(e => e.kind === 'EMBOLSADO')?.fecha || detail.fechaInicio;
-    const tMediaSombra = events.find(e => e.kind === 'ADAPTABILIDAD' && e.subetapa === 'MEDIA_SOMBRA')?.fecha;
-    const tSolDirecto = events.find(e => e.kind === 'ADAPTABILIDAD' && e.subetapa === 'SOL_DIRECTO')?.fecha;
+    const tEmbolsado = events.find(e => e.kind === 'EMBOLSADO')?.fechaIso || detail.fechaInicio;
+    const tMediaSombra = events.find(e => e.kind === 'ADAPTABILIDAD' && e.subetapa === 'MEDIA_SOMBRA')?.fechaIso;
+    const tSolDirecto = events.find(e => e.kind === 'ADAPTABILIDAD' && e.subetapa === 'SOL_DIRECTO')?.fechaIso;
     
     const cierre = events.find(e => e.kind === 'CIERRE_AUTOMATICO' || e.kind === 'DESPACHO');
     const today = new Date().toISOString().split('T')[0];

@@ -4,7 +4,6 @@ import type { ViveroLotDetailView } from '../types/view-models';
 export default function OrigenCard({ detail }: { detail: ViveroLotDetailView }) {
   return (
     <section className="relative overflow-hidden rounded-3xl bg-white p-5 shadow-sm ring-1 ring-black/5">
-      {/* Detalle visual de fondo (Opcional, le da el toque de la app) */}
       <div className="absolute -right-4 -top-4 opacity-5 pointer-events-none">
         <Icon name="leaf" className="h-32 w-32 text-brand-500" />
       </div>

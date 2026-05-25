@@ -43,6 +43,9 @@ import {
   type StageFilter,
 } from '../modules/vivero/utils/stageFilters'
 
+import { mapTimelineEventToView } from '../modules/vivero/mappers/lote.mapper'
+import type { TimelineEventDto } from '../modules/vivero/types/contracts'
+
 type ApiEnvelope<T> = {
   success?: boolean
   data?: T
@@ -211,45 +214,10 @@ export class LotesViveroService {
       if (!response.ok) {
         throw new Error(`Error del servidor: ${response.status} al recuperar el historial`)
       }
-
       const json = await response.json()
-      
-      /* eslint-disable @typescript-eslint/no-explicit-any */
-      const rawEvents = (json.data?.eventos || json.eventos || []) as any[];
-
+      const rawEvents = (json.data?.eventos || json.eventos || []) as TimelineEventDto[];
       const validEvents = rawEvents.filter(e => e.tipo_evento);
-
-      return validEvents.map((e: any) => ({
-        id: e.id,
-        kind: e.tipo_evento, 
-        label: e.label || `${e.tipo_evento.replace(/_/g, ' ')} registrado`,
-        fecha: e.fecha_evento ? new Date(e.fecha_evento).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Sin fecha',
-        // Intentamos extraer la hora de la fecha o del payload
-        hora: e.fecha_evento ? new Date(e.fecha_evento).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : null,
-        responsableNombre: e.responsable_nombre || 'Operador de campo',
-        cantidad: e.payload?.cantidad_afectada ?? e.payload?.plantas_vivas_iniciales ?? null,
-        
-        // Mapeo exhaustivo para las tarjetas premium (Solución Obs #4)
-        saldoAntes: e.payload?.saldo_vivo_antes ?? null,
-        saldoDespues: e.payload?.saldo_vivo_despues ?? null,
-        observacion: e.observaciones || null,
-        
-        causa: e.payload?.causa_merma || null,
-        subetapa: e.payload?.subetapa_destino || null,
-        destino: e.payload?.destino_tipo || null,
-        referencia: e.payload?.destino_referencia || null,
-        comunidad: e.payload?.comunidad_destino || null,
-        materialIngresado: e.payload?.material_ingresado || null,
-        sustrato: e.payload?.sustrato || null,
-
-        fotos: (e.evidencias || []).map((f: any) => ({
-          id: f.id,
-          url: f.public_url || '',
-          titulo: f.titulo || 'Evidencia técnica',
-          fecha: f.tomado_en ? new Date(f.tomado_en).toLocaleDateString('es-ES') : (e.fecha_evento || 'Sin fecha')
-        }))
-      }))
-      /* eslint-enable @typescript-eslint/no-explicit-any */
+      return validEvents.map(mapTimelineEventToView);
     } catch (error) {
       console.error('❌ Error crítico en el mapeo de producción getEvents:', error)
       throw new Error(error instanceof Error ? error.message : 'Error al acoplar la trazabilidad de Supabase.')
@@ -378,3 +346,9 @@ export class LotesViveroService {
     )
   }
 }
+
+// TODO(backend-pendiente): funciones cliente faltantes — el backend ya las expone
+// pero todavía no las consumimos desde el frontend. Agregar cuando se conecte:
+//   • GET  /lotes-vivero/:id/adaptabilidad
+//   • GET  /lotes-vivero/:id/merma
+// Ineficiencia: NO existe GET /lotes-vivero/:id (detalle por id). Se simula listando.

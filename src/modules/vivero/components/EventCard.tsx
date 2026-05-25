@@ -60,10 +60,6 @@ export default function EventCard({ event, isLast, onOpenGallery }: EventCardPro
             {event.responsableNombre}
           </p>
 
-          {/* ───────────────────────────────────────────────────────── */}
-          {/* BLOQUES DINÁMICOS SEGÚN EL TIPO DE EVENTO (Igual al Mockup) */}
-          {/* ───────────────────────────────────────────────────────── */}
-
           {/* 1. Diseño Específico para INICIO */}
           {event.kind === 'INICIO' && (
             <div className="mt-4 space-y-3">
@@ -155,10 +151,6 @@ export default function EventCard({ event, isLast, onOpenGallery }: EventCardPro
               </div>
             </div>
           )}
-
-          {/* ───────────────────────────────────────────────────────── */}
-          {/* BLOQUES COMPARTIDOS (Saldos, Evidencias y Observaciones) */}
-          {/* ───────────────────────────────────────────────────────── */}
 
           {/* Componente "Saldo Antes -> Saldo Después" (Reutilizable para Merma y Despacho) */}
           {event.saldoAntes != null && event.saldoDespues != null && (
