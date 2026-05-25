@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import Icon from '../../../components/Icon';
 import type { ViveroLotDetailView } from '../types/view-models';
 
@@ -9,21 +9,15 @@ interface AuditoriaSectionProps {
 export default function AuditoriaSection({ detail }: AuditoriaSectionProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const fallbackDate = useMemo(() => new Date().toISOString(), []);
+  const fallbackDate = new Date().toISOString();
 
   const rows = [
-    ['LOTE_VIVERO_ID', detail.codigo || 'lv_01HZX...'],
-    ['RECOLECCION_ID', detail.recoleccionCodigo || 'rec_01HZX...'],
-    ['VIVERO_ID', detail.viveroNombre || 'viv_01HZW...'],
+    ['LOTE_VIVERO_ID', detail.codigo],
+    ['RECOLECCION_ID', detail.recoleccionCodigo],
+    ['VIVERO_ID', detail.viveroNombre],
     ['CREATED_AT', detail.createdAt ? new Date(detail.createdAt).toISOString() : fallbackDate],
-    ['UPDATED_AT', fallbackDate],
-    ['RESPONSABLE_ID', detail.responsableUsername || 'usr_01HZX...'],
-    ['INGEST_TRANSACTION', 'tx_v1:09f8c3a4b...'],
-    ['EVIDENCIA_HASH_ROOT', 'sha256:8e2af0...'],
-    ['BLOCKCHAIN_RED', 'Polygon'],
-    ['BLOCKCHAIN_TX', '0x9c4f1d3a4b5...'],
-    ['METADATA_VERSION', 'v2026.10'],
-  ];
+    ['RESPONSABLE_ID', detail.responsableUsername || 'Sistema'],
+  ].filter(([v]) => Boolean(v));
 
   const handleExportJson = () => {
     const dataToExport = {

@@ -1,13 +1,4 @@
-import type { ViveroLotEventView } from '../types/view-models'
-
-// Actualizamos la interfaz para que acepte la 'etapa'
-export interface PhotoItem {
-  url: string;
-  titulo: string;
-  fecha: string;
-  autor: string;
-  etapa: string;
-}
+import type { ViveroLotEventView, PhotoItem } from '../types/view-models'
 
 interface EvidenciaTabProps {
   events: ViveroLotEventView[]
@@ -61,7 +52,7 @@ export default function EvidenciaTab({ events, onSelectPhoto }: EvidenciaTabProp
           {/* Badge de la Etapa sobre la imagen */}
           <div className="absolute left-2 top-2 z-10 rounded-md bg-black/60 px-1.5 py-0.5 backdrop-blur-sm">
             <p className="text-[8px] font-black uppercase tracking-widest text-white">
-              {photo.etapa.replace('_', ' ')}
+              {photo.etapa ? photo.etapa.replace('_', ' ') : 'Sin etapa'}
             </p>
           </div>
 

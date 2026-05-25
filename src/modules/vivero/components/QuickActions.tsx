@@ -73,7 +73,7 @@ export default function QuickActions({ detail, onJumpEvidencia }: QuickActionsPr
             }`}
           >
             <div className={`flex h-9 w-9 items-center justify-center rounded-2xl ${a.disabled ? 'bg-slate-200 text-slate-400' : 'bg-brand-50 text-brand-600'}`}>
-              <Icon name={a.icon} className="h-4.5 w-4.5" />
+              <Icon name={a.icon} className="h-5 w-5" />
             </div>
             <span className="text-[11px] font-extrabold text-brand-700 tracking-tight">{a.label}</span>
           </button>

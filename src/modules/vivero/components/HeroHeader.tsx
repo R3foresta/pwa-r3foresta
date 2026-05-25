@@ -11,7 +11,6 @@ export default function HeroHeader({ detail }: Props) {
   const navigate = useNavigate();
   const disponibles = detail.saldoVivoActual ?? detail.plantasVivasIniciales ?? 0;
   
-  // FIX: Usar el estado real
   const isFinalizado = detail.estadoLote === 'FINALIZADO';
 
   return (

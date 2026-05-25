@@ -1,6 +1,6 @@
-import { useMemo } from 'react'
 import Icon from '../../../components/Icon'
 import type { ViveroLotDetailView, ViveroLotEventView } from '../types/view-models'
+import { useViveroStats } from '../hooks/useViveroStats' 
 
 interface Props {
   detail: ViveroLotDetailView
@@ -8,16 +8,7 @@ interface Props {
 }
 
 export default function IndicadoresRapidos({ detail, events }: Props) {
-  const disponibles = detail.saldoVivoActual ?? detail.plantasVivasIniciales ?? 0
-
-  // Cálculo dinámico iterando sobre los eventos reales del backend
-  const { mermas, despachadas } = useMemo(() => {
-    return events.reduce((acc, e) => {
-      if (e.kind === 'MERMA') acc.mermas += (e.cantidad || 0)
-      if (e.kind === 'DESPACHO') acc.despachadas += (e.cantidad || 0)
-      return acc
-    }, { mermas: 0, despachadas: 0 })
-  }, [events])
+  const { disponibles, mermas, despachadas } = useViveroStats(detail, events);
 
   const smallCards = [
     { label: 'Material inicial', value: detail.cantidadInicialEnProceso, unit: detail.unidadMedidaInicial, hint: 'En INICIO' },

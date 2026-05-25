@@ -20,7 +20,6 @@ export default function EventCard({ event, isLast, onOpenGallery }: EventCardPro
 
   const theme = configMap[event.kind] || configMap.INICIO
 
-  // SOLUCIÓN OBS 19 PABLO: Solo usamos "fotos", ignoramos "evidencias"
   const imagenes = event.fotos && event.fotos.length > 0 
   ? event.fotos.map((f: ViveroEventPhoto) => ({ 
       id: f.id, 
@@ -34,7 +33,7 @@ export default function EventCard({ event, isLast, onOpenGallery }: EventCardPro
       {/* Columna Izquierda: Línea y Burbuja */}
       <div className="relative flex flex-col items-center shrink-0">
         <div className={`flex h-9 w-9 items-center justify-center rounded-full bg-white ring-1 ring-inset ${theme.ring} ${theme.text} shadow-sm z-10`}>
-          <Icon name={theme.icon} className="h-4.5 w-4.5" />
+          <Icon name={theme.icon} className="h-5 w-5" />
         </div>
         {!isLast && <div className="w-[2px] bg-emerald-900/5 grow my-1" />}
       </div>
@@ -45,7 +44,7 @@ export default function EventCard({ event, isLast, onOpenGallery }: EventCardPro
           
           {/* Header Común */}
           <div className="flex items-center gap-2 mb-2">
-            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[9px] font-black tracking-widest uppercase ring-1 ring-inset ${theme.text} ${theme.ring} bg-white`}>
+            <span className={`inline-flex items-center rounded-full px-3 py-1 text-[9px] font-black tracking-widest uppercase ring-1 ring-inset ${theme.text} ${theme.ring} bg-white`}>
               {event.kind?.replaceAll('_', ' ')}
             </span>
             <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">
@@ -56,8 +55,8 @@ export default function EventCard({ event, isLast, onOpenGallery }: EventCardPro
           <h3 className="text-xl font-extrabold text-[#002b15] leading-tight">
             {event.label}
           </h3>
-          <p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-slate-500">
-            <Icon name="user" className="h-3.5 w-3.5 text-slate-400" />
+          <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-slate-500">
+            <Icon name="user" className="h-5 w-5 text-slate-400" />
             {event.responsableNombre}
           </p>
 
@@ -70,11 +69,11 @@ export default function EventCard({ event, isLast, onOpenGallery }: EventCardPro
             <div className="mt-4 space-y-3">
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <p className="text-[9px] font-black uppercase tracking-widest text-[#002b15] mb-0.5">Material Ingresado</p>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-[#002b15] mb-1">Material Ingresado</p>
                   <p className="text-base font-black text-[#002b15]">{event.materialIngresado || `${event.cantidad || 0} G`}</p>
                 </div>
                 <div>
-                  <p className="text-[9px] font-black uppercase tracking-widest text-[#002b15] mb-0.5">Sustrato</p>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-[#002b15] mb-1">Sustrato</p>
                   <p className="text-sm font-bold text-[#002b15] leading-tight">{event.sustrato || 'Sustrato A · turba + perlita'}</p>
                 </div>
               </div>
@@ -89,8 +88,8 @@ export default function EventCard({ event, isLast, onOpenGallery }: EventCardPro
           {event.kind === 'EMBOLSADO' && (
             <div className="mt-4 rounded-2xl bg-brand-50 p-3 ring-1 ring-inset ring-brand-100">
               <p className="text-[9px] font-black uppercase tracking-widest text-brand-700">Nacen las plantas vivas</p>
-              <p className="mt-0.5 text-3xl font-black tracking-tight text-[#002b15]">{event.cantidad || 0}</p>
-              <p className="mt-0.5 text-[9px] font-bold uppercase tracking-widest text-[#002b15]/70">Unidad · saldo inicial del lote</p>
+              <p className="mt-1 text-3xl font-black tracking-tight text-[#002b15]">{event.cantidad || 0}</p>
+              <p className="mt-1 text-[9px] font-bold uppercase tracking-widest text-[#002b15]/70">Unidad · saldo inicial del lote</p>
             </div>
           )}
 

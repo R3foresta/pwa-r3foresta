@@ -72,7 +72,6 @@ export interface ViveroLotEventView {
   fotos?: Array<ViveroEventPhoto> | null
   evidencias?: Array<{ id: number; public_url: string; titulo: string; tomado_en: string }> | null
   
-  // FIX: Agregar campos extra aquí oficialmente
   causa?: string | null
   subetapa?: string | null
   destino?: string | null
@@ -80,4 +79,12 @@ export interface ViveroLotEventView {
   comunidad?: string | null
   materialIngresado?: string | null
   sustrato?: string | null
+}
+
+export interface PhotoItem {
+  url: string;
+  titulo: string;
+  fecha: string;
+  autor: string;
+  etapa?: string;
 }

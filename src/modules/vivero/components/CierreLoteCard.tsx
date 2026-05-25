@@ -1,12 +1,11 @@
 import Icon from '../../../components/Icon';
 import type { ViveroLotDetailView, ViveroLotEventView } from '../types/view-models';
+import { useViveroStats } from '../hooks/useViveroStats'; 
 
 export default function CierreLoteCard({ detail, events }: { detail: ViveroLotDetailView, events: ViveroLotEventView[] }) {
-  // Cálculos reales a partir de los eventos
-  const despachadas = events.filter(e => e.kind === 'DESPACHO').reduce((acc, curr) => acc + (curr.cantidad || 0), 0);
-  const perdidas = events.filter(e => e.kind === 'MERMA').reduce((acc, curr) => acc + (curr.cantidad || 0), 0);
+
+  const { despachadas, mermas } = useViveroStats(detail, events);
   
-  // Buscar evento de cierre o último evento
   const ultimoEvento = events[events.length - 1];
   const fechaCierre = ultimoEvento ? ultimoEvento.fecha : detail.updatedAt;
 
@@ -28,7 +27,7 @@ export default function CierreLoteCard({ detail, events }: { detail: ViveroLotDe
             <div>
               <p className="text-[9px] font-black uppercase tracking-widest text-blue-600/70 mb-0.5">Motivo</p>
               <p className="text-[13px] font-black text-blue-800 leading-tight">
-                {detail.motivoCierre?.replace('_', ' ') || 'No especificado'}
+                {detail.motivoCierre?.replace(/_/g, ' ') || 'No especificado'}
               </p>
             </div>
             <div className="text-right flex-shrink-0">
@@ -50,7 +49,7 @@ export default function CierreLoteCard({ detail, events }: { detail: ViveroLotDe
          </div>
          <div className="rounded-2xl bg-red-50/60 p-3 ring-1 ring-red-100 flex flex-col justify-center items-center">
             <p className="text-[9px] font-black uppercase tracking-widest text-red-600 mb-1 text-center leading-tight"><br/>Pérdidas</p>
-            <p className="text-[22px] font-black text-red-700 leading-none mt-1">{perdidas}</p>
+            <p className="text-[22px] font-black text-red-700 leading-none mt-1">{mermas}</p>
          </div>
       </div>
     </section>

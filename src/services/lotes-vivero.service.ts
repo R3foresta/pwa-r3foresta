@@ -217,7 +217,6 @@ export class LotesViveroService {
       /* eslint-disable @typescript-eslint/no-explicit-any */
       const rawEvents = (json.data?.eventos || json.eventos || []) as any[];
 
-      // SOLUCIÓN OBS #4 (Pablo): Filtramos eventos corruptos que no tengan tipo_evento
       const validEvents = rawEvents.filter(e => e.tipo_evento);
 
       return validEvents.map((e: any) => ({

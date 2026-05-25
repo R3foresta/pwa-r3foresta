@@ -1,12 +1,5 @@
 import Icon from '../../../components/Icon'
-
-export interface PhotoItem {
-  url: string;
-  titulo: string;
-  fecha: string;
-  autor: string;
-  etapa?: string;
-}
+import type { PhotoItem } from '../types/view-models'
 
 interface GalleryModalProps {
   photo: PhotoItem | null

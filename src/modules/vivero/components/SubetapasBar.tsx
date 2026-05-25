@@ -11,19 +11,14 @@ export default function SubetapasBar({ detail, events }: SubetapasBarProps) {
   const currentSub = detail.subetapaActual
   if (!currentSub) return null
 
-  // SOLUCIÓN OBS #9 DE PABLO: Cálculo dinámico de días leyendo el historial
   const calcularDias = () => {
-    // 1. Buscamos las fechas en las que el lote cambió de etapa
     const tEmbolsado = events.find(e => e.kind === 'EMBOLSADO')?.fecha || detail.fechaInicio;
     const tMediaSombra = events.find(e => e.kind === 'ADAPTABILIDAD' && e.subetapa === 'MEDIA_SOMBRA')?.fecha;
     const tSolDirecto = events.find(e => e.kind === 'ADAPTABILIDAD' && e.subetapa === 'SOL_DIRECTO')?.fecha;
     
-    // 2. Buscamos la fecha de fin (cierre o el día de hoy)
     const cierre = events.find(e => e.kind === 'CIERRE_AUTOMATICO' || e.kind === 'DESPACHO');
     const today = new Date().toISOString().split('T')[0];
     const endRef = cierre ? cierre.fecha : (detail.estadoLote === 'FINALIZADO' ? detail.updatedAt : today);
-
-    // Helper matemático para calcular la diferencia en días
     const diffDays = (start?: string, end?: string) => {
       if (!start || !end) return 0;
       const d1 = new Date(start).getTime();
@@ -31,7 +26,6 @@ export default function SubetapasBar({ detail, events }: SubetapasBarProps) {
       return Math.max(0, Math.floor((d2 - d1) / 86400000));
     };
 
-    // 3. Calculamos el tiempo gastado en cada bloque
     const diasSombra = diffDays(tEmbolsado, tMediaSombra || tSolDirecto || endRef);
     const diasMediaSombra = tMediaSombra ? diffDays(tMediaSombra, tSolDirecto || endRef) : 0;
     const diasSolDirecto = tSolDirecto ? diffDays(tSolDirecto, endRef) : 0;
@@ -52,7 +46,6 @@ export default function SubetapasBar({ detail, events }: SubetapasBarProps) {
     { key: 'SOL_DIRECTO', label: 'Sol directo', icon: 'sunny', dias: diasSolDirecto, color: 'bg-amber-500' },
   ]
 
-  // Si totalDias es 0 (error de fechas en BD), evitamos dividir por cero
   const safeTotal = totalDias > 0 ? totalDias : 1;
 
   return (

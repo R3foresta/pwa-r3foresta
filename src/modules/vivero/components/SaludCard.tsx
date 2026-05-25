@@ -1,35 +1,18 @@
 import Icon from '../../../components/Icon'
 import type { ViveroLotDetailView, ViveroLotEventView } from '../types/view-models'
+import { useViveroStats } from '../hooks/useViveroStats' 
 
 interface SaludCardProps {
   detail: ViveroLotDetailView
-  events: ViveroLotEventView[] // <-- Agregamos events aquí
+  events: ViveroLotEventView[] 
 }
 
 export default function SaludCard({ detail, events }: SaludCardProps) {
-  const plantasIniciales = detail.plantasVivasIniciales ?? 0
-  const hasEmbolsado = detail.plantasVivasIniciales !== null
-  
-  // Lógica matemática REAL (Resuelve Obs 10 de Pablo)
-  const despachadas = events.filter(e => e.kind === 'DESPACHO').reduce((acc, curr) => acc + (curr.cantidad || 0), 0)
-  const mermas = events.filter(e => e.kind === 'MERMA').reduce((acc, curr) => acc + (curr.cantidad || 0), 0)
-  const disponibles = detail.saldoVivoActual ?? plantasIniciales
-  
-  const vivasHoy = disponibles + despachadas
-  
-  const supervivencia = plantasIniciales > 0 
-    ? Math.round((vivasHoy / plantasIniciales) * 100) 
-    : 0
-
-  const pctDisponibles = plantasIniciales > 0 ? (disponibles / plantasIniciales) * 100 : 0
-  const pctDespachadas = plantasIniciales > 0 ? (despachadas / plantasIniciales) * 100 : 0
-  const pctMermas = plantasIniciales > 0 ? (mermas / plantasIniciales) * 100 : 0
-
-  // Encontrar la última merma para el mensaje dinámico
-  const mermasEventos = events.filter(e => e.kind === 'MERMA');
-  const ultimaMerma = mermasEventos.length > 0 ? mermasEventos[mermasEventos.length - 1] : null;
-  
-  const diasDesdeUltimaMerma = ultimaMerma ? Math.floor((new Date().getTime() - new Date(ultimaMerma.fecha).getTime()) / (1000 * 60 * 60 * 24)) : null;
+  // EXTRAE TODO DEL HOOK
+  const { 
+    plantasIniciales, hasEmbolsado, despachadas, mermas, disponibles, 
+    vivasHoy, supervivencia, pctDisponibles, pctDespachadas, pctMermas, diasDesdeUltimaMerma 
+  } = useViveroStats(detail, events);
 
   if (!hasEmbolsado) {
     return (
@@ -75,7 +58,6 @@ export default function SaludCard({ detail, events }: SaludCardProps) {
         </div>
       </div>
 
-      {/* Barra de composición dinámica */}
       <div className="mt-4 flex h-3 w-full overflow-hidden rounded-full bg-slate-100">
         <div style={{ width: `${pctDisponibles}%` }} className="bg-brand-700 transition-all duration-500" />
         <div style={{ width: `${pctDespachadas}%` }} className="bg-blue-500 transition-all duration-500" />

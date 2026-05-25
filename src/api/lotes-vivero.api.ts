@@ -34,7 +34,7 @@ function getRequiredAuthId(authId?: string): string {
   return resolved
 }
 
-export function getAuthHeaders(options?: {
+function getAuthHeaders(options?: {
   authId?: string
   includeContentType?: boolean
 }): HeadersInit {
@@ -189,7 +189,6 @@ export async function registrarDespachoApi(
   })
 }
 
-// 2. AGREGA ESTA FUNCIÓN AL FINAL DEL ARCHIVO ANTES DEL BLOQUE TODO:
 export async function getTimelineApi(loteId: number): Promise<Response> {
   return fetch(`${API_BASE_URL}/lotes-vivero/${loteId}/timeline`, {
     method: 'GET',
