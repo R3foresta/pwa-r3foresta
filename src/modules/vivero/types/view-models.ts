@@ -66,6 +66,7 @@ export interface ViveroLotEventView {
   label: string
   fecha: string
   fechaIso: string
+  hora: string | null
   responsableNombre: string
   cantidad?: number | null
   saldoAntes?: number | null

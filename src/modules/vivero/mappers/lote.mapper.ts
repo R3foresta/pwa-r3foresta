@@ -3,6 +3,15 @@ import type { ViveroLotCardData, ViveroLotDetailView } from '../types/view-model
 import type { TimelineEventDto, TipoEventoVivero } from '../types/contracts'
 import type { ViveroLotEventView } from '../types/view-models'
 
+const VALID_KINDS = new Set<TipoEventoVivero>([
+  'INICIO',
+  'EMBOLSADO',
+  'ADAPTABILIDAD',
+  'MERMA',
+  'DESPACHO',
+  'CIERRE_AUTOMATICO',
+]);
+
 // TODO(p1 — datos no expuestos restantes):
 //   • recoleccion.saldo_actual     → si la recolección origen sigue con saldo.
 //   • recoleccion.estado_operativo → ABIERTO/CERRADO.
@@ -105,8 +114,13 @@ export function mapLoteToDetailView(lot: LoteViveroItem): ViveroLotDetailView {
   }
 }
 
-export function mapTimelineEventToView(e: TimelineEventDto): ViveroLotEventView {
+export function mapTimelineEventToView(e: TimelineEventDto): ViveroLotEventView | null {
+  if (!VALID_KINDS.has(e.tipo_evento as TipoEventoVivero)) return null;
+
   const p = e.payload as Record<string, unknown> | undefined;
+  const cantidadRaw = typeof p?.cantidad_afectada === 'number'
+    ? p.cantidad_afectada
+    : (typeof p?.plantas_vivas_iniciales === 'number' ? p.plantas_vivas_iniciales : null);
 
   return {
     id: e.id,
@@ -114,8 +128,9 @@ export function mapTimelineEventToView(e: TimelineEventDto): ViveroLotEventView 
     label: e.label || `${e.tipo_evento?.replace(/_/g, ' ') || 'Evento'} registrado`,
     fecha: e.fecha_evento ? new Date(e.fecha_evento).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Sin fecha',
     fechaIso: e.fecha_evento || new Date().toISOString(),
+    hora: e.fecha_evento ? new Date(e.fecha_evento).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : null,
     responsableNombre: e.responsable_nombre || 'Operador de campo',
-    cantidad: typeof p?.cantidad_afectada === 'number' ? p.cantidad_afectada : (typeof p?.plantas_vivas_iniciales === 'number' ? p.plantas_vivas_iniciales : null),
+    cantidad: cantidadRaw,
     saldoAntes: typeof p?.saldo_vivo_antes === 'number' ? p.saldo_vivo_antes : null,
     saldoDespues: typeof p?.saldo_vivo_despues === 'number' ? p.saldo_vivo_despues : null,
     observacion: e.observaciones || null,

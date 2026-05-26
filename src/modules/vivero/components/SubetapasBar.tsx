@@ -31,9 +31,9 @@ export default function SubetapasBar({ detail, events }: SubetapasBarProps) {
     const diasSolDirecto = tSolDirecto ? diffDays(tSolDirecto, endRef) : 0;
 
     return {
-      diasSombra: diasSombra > 0 ? diasSombra : (currentSub === 'SOMBRA' ? 1 : 0),
-      diasMediaSombra: diasMediaSombra > 0 ? diasMediaSombra : (currentSub === 'MEDIA_SOMBRA' ? 1 : 0),
-      diasSolDirecto: diasSolDirecto > 0 ? diasSolDirecto : (currentSub === 'SOL_DIRECTO' ? 1 : 0),
+      diasSombra: Math.max(0, diasSombra),
+      diasMediaSombra: Math.max(0, diasMediaSombra),
+      diasSolDirecto: Math.max(0, diasSolDirecto),
     };
   };
 

@@ -30,11 +30,9 @@ export default function ViveroDetailScreen() {
   const [filter, setFilter] = useState('TODOS')
   const [selectedPhotos, setSelectedPhotos] = useState<PhotoItem[] | null>(null)
 
-  // 2. Inicializamos error y loading basados en la validación previa
   const [loading, setLoading] = useState(!isInvalidId)
   const [error, setError] = useState<string | null>(isInvalidId ? 'ID de lote inválido.' : null)
 
-  // 3. Inicializamos 'now' directamente con el tiempo actual para evitar el setNow síncrono
   const [now, setNow] = useState<number>(() => Date.now())
 
   useEffect(() => {
@@ -74,11 +72,27 @@ export default function ViveroDetailScreen() {
     return () => clearInterval(interval)
   }, [])
 
-  const filteredEvents = useMemo(() => {
+  const baseFilteredEvents = useMemo(() => {
     const filterUpper = filter.toUpperCase()
     if (filterUpper === 'TODOS') return events
     return events.filter(e => e.kind.toUpperCase() === filterUpper)
   }, [events, filter])
+
+  const filteredEvents = useMemo(() => {
+    if (!detail) return baseFilteredEvents;
+
+    return baseFilteredEvents.map(event => {
+      if (event.kind === 'INICIO') {
+        const unidadFormat = detail.unidadMedidaInicial === 'G' ? 'gr' : detail.unidadMedidaInicial.toLowerCase();
+        
+        return {
+          ...event,
+          materialIngresado: `${detail.cantidadInicialEnProceso} ${unidadFormat}`
+        };
+      }
+      return event;
+    });
+  }, [baseFilteredEvents, detail]);
 
   const counts = useMemo(() => {
     return events.reduce((acc, event) => {

@@ -49,6 +49,12 @@ export default function EventCard({ event, isLast, onOpenGallery }: EventCardPro
             </span>
             <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">
               {event.fecha} 
+              {event.hora && (
+                <>
+                  <span className="h-1 w-1 rounded-full bg-slate-300 inline-block" />
+                  <span>{event.hora}</span>
+                </>
+              )}
             </p>
           </div>
           
@@ -67,14 +73,13 @@ export default function EventCard({ event, isLast, onOpenGallery }: EventCardPro
                 <div>
                   <p className="text-[9px] font-black uppercase tracking-widest text-[#002b15] mb-1">Material Ingresado</p>
                   <p className="text-base font-black text-[#002b15]">
-                    {/* Eliminamos la dependencia de 'detail' usando fallbacks o asumiendo el formato estándar */}
-                    {event.materialIngresado || (event.cantidad ? `${event.cantidad} gr` : 'Sin datos')}
+                    {event.materialIngresado || 'Sin datos'}
                   </p>
                 </div>
                 <div>
                   <p className="text-[9px] font-black uppercase tracking-widest text-[#002b15] mb-1">Sustrato</p>
                   <p className="text-sm font-bold text-[#002b15] leading-tight">
-                    {event.sustrato || 'No especificado'}
+                    {event.sustrato || 'Sustrato A · estándar'}
                   </p>
                 </div>
               </div>

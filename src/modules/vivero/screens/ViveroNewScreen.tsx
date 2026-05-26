@@ -373,7 +373,7 @@ function ViveroNewScreen() {
         authId,
       )
 
-      navigate(`/app/vivero/${createResponse.data.lote_vivero_id}`)
+      navigate(`/app/vivero/${createResponse.data.lote_vivero_id}`, { replace: true });
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'Error al registrar el lote.')
     } finally {

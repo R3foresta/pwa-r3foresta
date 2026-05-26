@@ -217,7 +217,7 @@ export class LotesViveroService {
       const json = await response.json()
       const rawEvents = (json.data?.eventos || json.eventos || []) as TimelineEventDto[];
       const validEvents = rawEvents.filter(e => e.tipo_evento);
-      return validEvents.map(mapTimelineEventToView);
+      return validEvents.map(mapTimelineEventToView).filter(Boolean) as ViveroLotEventView[];
     } catch (error) {
       console.error('[LotesViveroService.getEvents] Failed to load timeline:', error)
       throw new Error(error instanceof Error ? error.message : 'Error al cargar el historial del lote.')

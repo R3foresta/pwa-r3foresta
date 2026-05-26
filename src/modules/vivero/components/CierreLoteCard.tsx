@@ -5,9 +5,18 @@ import { useViveroStats } from '../hooks/useViveroStats';
 export default function CierreLoteCard({ detail, events }: { detail: ViveroLotDetailView, events: ViveroLotEventView[] }) {
 
   const { despachadas, mermas } = useViveroStats(detail, events);
-  
   const ultimoEvento = events[events.length - 1];
   const fechaCierre = ultimoEvento ? ultimoEvento.fecha : detail.updatedAt;
+
+  const formatMotivoCierre = (motivo: string | null | undefined) => {
+    if (!motivo) return 'No especificado';
+    const dic: Record<string, string> = {
+      'DESPACHO_TOTAL': 'Despacho total',
+      'PERDIDA_TOTAL': 'Pérdida total',
+      'MIXTO': 'Cierre mixto'
+    };
+    return dic[motivo] || motivo.replaceAll('_', ' ');
+  };
 
   return (
     <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-black/5">
@@ -51,6 +60,12 @@ export default function CierreLoteCard({ detail, events }: { detail: ViveroLotDe
             <p className="text-[9px] font-black uppercase tracking-widest text-red-600 mb-1 text-center leading-tight"><br/>Pérdidas</p>
             <p className="text-[22px] font-black text-red-700 leading-none mt-1">{mermas}</p>
          </div>
+         <div>
+            <p className="text-[9px] font-black uppercase tracking-widest text-blue-600/70 mb-0.5">Motivo</p>
+            <p className="text-[13px] font-black text-blue-800 leading-tight">
+              {formatMotivoCierre(detail.motivoCierre)}
+            </p>
+          </div>
       </div>
     </section>
   );

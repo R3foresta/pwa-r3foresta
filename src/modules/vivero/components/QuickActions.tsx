@@ -13,14 +13,14 @@ export default function QuickActions({ detail, onJumpEvidencia }: QuickActionsPr
   const closed = detail.estadoLote === 'FINALIZADO'
   const yaEmbolsado = detail.plantasVivasIniciales !== null;
 
-  const actions: { key: string; label: string; icon: IconName; onClick: () => void; disabled: boolean }[] = [
-    { 
+  const actions = [
+    ...(!yaEmbolsado ? [{ 
       key: 'embolsado', 
       label: 'Embolsado', 
       icon: 'box' as IconName, 
-      onClick: () => navigate(`/app/vivero/${detail.id}/event/embolsado`),
-      disabled: yaEmbolsado 
-    },
+      onClick: () => navigate(`/app/vivero/${detail.id}/event/new`), 
+      disabled: false 
+    }] : []),
     { 
       key: 'merma', 
       label: 'Merma', 
@@ -80,7 +80,7 @@ export default function QuickActions({ detail, onJumpEvidencia }: QuickActionsPr
             }`}
           >
             <div className={`flex h-9 w-9 items-center justify-center rounded-2xl ${a.disabled ? 'bg-slate-200 text-slate-400' : 'bg-brand-50 text-brand-600'}`}>
-              <Icon name={a.icon} className="h-5 w-5" />
+              <Icon name={a.icon as IconName} className="h-5 w-5" />
             </div>
             <span className="text-[11px] font-extrabold text-brand-700 tracking-tight">{a.label}</span>
           </button>

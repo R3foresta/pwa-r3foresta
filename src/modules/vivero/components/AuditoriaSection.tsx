@@ -9,13 +9,11 @@ interface AuditoriaSectionProps {
 export default function AuditoriaSection({ detail }: AuditoriaSectionProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const fallbackDate = new Date().toISOString();
-
   const rows = [
     ['LOTE_VIVERO_ID', detail.codigo],
     ['RECOLECCION_ID', detail.recoleccionCodigo],
-    ['VIVERO_ID', detail.viveroNombre],
-    ['CREATED_AT', detail.createdAt ? new Date(detail.createdAt).toISOString() : fallbackDate],
+    ['VIVERO_ID', detail.viveroCodigo || 'No disponible'], 
+    ['CREATED_AT', detail.createdAt ? new Date(detail.createdAt).toISOString() : 'No disponible'],
     ['RESPONSABLE_ID', detail.responsableUsername || 'Sistema'],
   ].filter(([, v]) => Boolean(v));
 
