@@ -44,6 +44,7 @@ export interface ViveroLotDetailView {
   viveroCodigo: string
   responsableNombre: string
   responsableUsername: string | null
+  recoleccionId: number
   recoleccionCodigo: string
   recoleccionFecha: string | null
   recoleccionTipoMaterial: TipoMaterialVivero
@@ -65,7 +66,6 @@ export interface ViveroLotEventView {
   label: string
   fecha: string
   fechaIso: string
-  hora?: string | null
   responsableNombre: string
   cantidad?: number | null
   saldoAntes?: number | null

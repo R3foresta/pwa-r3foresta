@@ -2,20 +2,21 @@ import { useNavigate } from 'react-router-dom';
 import Icon from '../../../components/Icon';
 import type { ViveroLotDetailView } from '../types/view-models';
 
-interface Props {
+interface HeroHeaderProps {
   detail: ViveroLotDetailView;
+  customImage?: string | null;
 }
 
-export default function HeroHeader({ detail }: Props) {
+export default function HeroHeader({ detail, customImage }: HeroHeaderProps) {
   const navigate = useNavigate();
   const disponibles = detail.saldoVivoActual ?? detail.plantasVivasIniciales ?? 0;
   
   const isFinalizado = detail.estadoLote === 'FINALIZADO';
 
   return (
-    <header className="relative h-[300px] w-full overflow-hidden bg-[#002b15]">
+    <header className="relative h-[300px] w-full overflow-hidden rounded-b-3xl bg-[#002b15] shadow-md">
       {detail.plantaImagenUrl ? (
-        <img src={detail.plantaImagenUrl} alt={detail.especie} className="h-full w-full object-cover opacity-50" />
+        <img src={customImage || detail.plantaImagenUrl} alt={detail.especie} className="h-full w-full object-cover opacity-50" />
       ) : (
         <div className="flex h-full w-full items-center justify-center bg-[#002b15]" />
       )}

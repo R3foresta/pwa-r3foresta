@@ -99,6 +99,11 @@ export default function ViveroDetailScreen() {
     setSelectedPhotos([photoItem]); 
   }
 
+  const ultimaFotoLote = useMemo(() => {
+    const eventoConFoto = [...events].reverse().find(e => e.fotos && e.fotos.length > 0);
+    return eventoConFoto?.fotos?.[0]?.url || detail?.plantaImagenUrl;
+  }, [events, detail?.plantaImagenUrl]);
+
   if (error) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#d8e0d3]">
@@ -129,7 +134,7 @@ export default function ViveroDetailScreen() {
     <NowContext.Provider value={now}>
       <div className="flex justify-center min-h-screen bg-[#d8e0d3]">
         <div className="w-full max-w-md bg-[#eef2ed] min-h-screen shadow-2xl relative overflow-y-auto">
-          <HeroHeader detail={detail} />
+          <HeroHeader detail={detail} customImage={ultimaFotoLote} />
 
           <div className="sticky top-0 z-20 px-5 pt-4 pb-2 bg-[#eef2ed]/95 backdrop-blur-sm">
             <div className="flex rounded-full bg-white p-1 ring-1 ring-slate-200">

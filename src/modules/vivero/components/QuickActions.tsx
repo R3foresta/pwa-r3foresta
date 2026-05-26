@@ -5,15 +5,22 @@ import type { ViveroLotDetailView } from '../types/view-models'
 
 interface QuickActionsProps {
   detail: ViveroLotDetailView
-  onJumpEvidencia: () => void // <-- Añadimos esta nueva propiedad
+  onJumpEvidencia: () => void 
 }
 
 export default function QuickActions({ detail, onJumpEvidencia }: QuickActionsProps) {
   const navigate = useNavigate()
   const closed = detail.estadoLote === 'FINALIZADO'
+  const yaEmbolsado = detail.plantasVivasIniciales !== null;
 
-  // Cambiamos 'path' por 'onClick' para darle flexibilidad a cada botón
   const actions: { key: string; label: string; icon: IconName; onClick: () => void; disabled: boolean }[] = [
+    { 
+      key: 'embolsado', 
+      label: 'Embolsado', 
+      icon: 'box' as IconName, 
+      onClick: () => navigate(`/app/vivero/${detail.id}/event/embolsado`),
+      disabled: yaEmbolsado 
+    },
     { 
       key: 'merma', 
       label: 'Merma', 
@@ -33,7 +40,7 @@ export default function QuickActions({ detail, onJumpEvidencia }: QuickActionsPr
       label: 'Despacho', 
       icon: 'truck' as IconName, 
       onClick: () => navigate(`/app/vivero/${detail.id}/event/despacho`),
-      disabled: detail.subetapaActual === null 
+      disabled: (detail.saldoVivoActual ?? detail.plantasVivasIniciales ?? 0) === 0 
     },
     { 
       key: 'foto', 
@@ -65,7 +72,7 @@ export default function QuickActions({ detail, onJumpEvidencia }: QuickActionsPr
             key={a.key}
             type="button"
             disabled={a.disabled}
-            onClick={a.onClick} // <-- Ejecuta la acción asignada arriba
+            onClick={a.onClick} 
             className={`flex flex-col items-center justify-center gap-1.5 rounded-2xl bg-white px-2 py-3 shadow-soft ring-1 ring-black/5 transition-all active:scale-[0.97] ${
               a.disabled 
                 ? 'opacity-40 cursor-not-allowed bg-slate-50 ring-transparent' 

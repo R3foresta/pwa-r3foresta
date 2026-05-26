@@ -20,9 +20,9 @@ export function useViveroStats(detail: ViveroLotDetailView, events: ViveroLotEve
     const vivasHoy = disponibles + despachadas;
     const supervivencia = plantasIniciales > 0 ? Math.round((vivasHoy / plantasIniciales) * 100) : 0;
 
-    const pctDisponibles = plantasIniciales > 0 ? (disponibles / plantasIniciales) * 100 : 0;
-    const pctDespachadas = plantasIniciales > 0 ? (despachadas / plantasIniciales) * 100 : 0;
-    const pctMermas = plantasIniciales > 0 ? (mermas / plantasIniciales) * 100 : 0;
+    const pctDisponibles = plantasIniciales > 0 ? Math.round((disponibles / plantasIniciales) * 100) : 0;
+    const pctDespachadas = plantasIniciales > 0 ? Math.round((despachadas / plantasIniciales) * 100) : 0;
+    const pctMermas = plantasIniciales > 0 ? Math.round((mermas / plantasIniciales) * 100) : 0;
 
     const mermasEventos = events.filter(e => e.kind === 'MERMA');
     const ultimaMerma = mermasEventos.length > 0 ? mermasEventos[mermasEventos.length - 1] : null;
