@@ -115,10 +115,9 @@ export function mapTimelineEventToView(e: TimelineEventDto): ViveroLotEventView 
     fechaIso: e.fecha_evento || new Date().toISOString(),
     hora: e.fecha_evento ? new Date(e.fecha_evento).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : null,
     responsableNombre: e.responsable_nombre || 'Operador de campo',
-    cantidad: (p?.cantidad_afectada as number | undefined) ?? (p?.plantas_vivas_iniciales as number | undefined) ?? null,
-    saldoAntes: (p?.saldo_vivo_antes as number | undefined) ?? null,
-    saldoDespues: (p?.saldo_vivo_despues as number | undefined) ?? null,
-    
+    cantidad: typeof p?.cantidad_afectada === 'number' ? p.cantidad_afectada : (typeof p?.plantas_vivas_iniciales === 'number' ? p.plantas_vivas_iniciales : null),
+    saldoAntes: typeof p?.saldo_vivo_antes === 'number' ? p.saldo_vivo_antes : null,
+    saldoDespues: typeof p?.saldo_vivo_despues === 'number' ? p.saldo_vivo_despues : null,
     observacion: e.observaciones || null,
     causa: (p?.causa_merma as string | undefined) || null,
     subetapa: (p?.subetapa_destino as string | undefined) || null,

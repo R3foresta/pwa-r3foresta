@@ -72,8 +72,6 @@ export interface ViveroLotEventView {
   saldoDespues?: number | null
   observacion?: string | null
   fotos?: Array<ViveroEventPhoto> | null
-  evidencias?: Array<{ id: number; public_url: string; titulo: string; tomado_en: string }> | null
-  
   causa?: string | null
   subetapa?: string | null
   destino?: string | null

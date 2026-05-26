@@ -18,7 +18,7 @@ export default function SubetapasBar({ detail, events }: SubetapasBarProps) {
     
     const cierre = events.find(e => e.kind === 'CIERRE_AUTOMATICO' || e.kind === 'DESPACHO');
     const today = new Date().toISOString().split('T')[0];
-    const endRef = cierre ? cierre.fecha : (detail.estadoLote === 'FINALIZADO' ? detail.updatedAt : today);
+    const endRef = cierre ? cierre.fechaIso : (detail.estadoLote === 'FINALIZADO' ? detail.updatedAt : today);
     const diffDays = (start?: string, end?: string) => {
       if (!start || !end) return 0;
       const d1 = new Date(start).getTime();

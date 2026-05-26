@@ -16,61 +16,62 @@ import GalleryModal from '../components/GalleryModal'
 import type { PhotoItem, ViveroLotDetailView, ViveroLotEventView } from '../types/view-models'
 import CierreLoteCard from '../components/CierreLoteCard'
 import Icon from '../../../components/Icon'
-import { NowContext } from '../hooks/nowContext' // 
+import { NowContext } from '../hooks/nowContext' 
 
 export default function ViveroDetailScreen() {
   const { id } = useParams()
+
+  const lotId = Number(id)
+  const isInvalidId = !Number.isFinite(lotId) || lotId <= 0
+
   const [detail, setDetail] = useState<ViveroLotDetailView | null>(null)
   const [events, setEvents] = useState<ViveroLotEventView[]>([])
   const [activeTab, setActiveTab] = useState<'resumen' | 'historial' | 'evidencia'>('resumen')
-
   const [filter, setFilter] = useState('TODOS')
   const [selectedPhotos, setSelectedPhotos] = useState<PhotoItem[] | null>(null)
 
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  // 2. Inicializamos error y loading basados en la validación previa
+  const [loading, setLoading] = useState(!isInvalidId)
+  const [error, setError] = useState<string | null>(isInvalidId ? 'ID de lote inválido.' : null)
 
-  const [now, setNow] = useState<number | null>(null)
+  // 3. Inicializamos 'now' directamente con el tiempo actual para evitar el setNow síncrono
+  const [now, setNow] = useState<number>(() => Date.now())
 
   useEffect(() => {
-    const lotId = Number(id)
-    if (!Number.isFinite(lotId) || lotId <= 0) {
-      setError('ID de lote inválido.')
-      setLoading(false)
-      return
-    }
+    if (isInvalidId) return
 
     let isMounted = true
 
     const fetchDetailData = async () => {
       setLoading(true)
       setError(null)
-      try {
-        const [detailData, eventsData] = await Promise.all([
-          LotesViveroService.getDetail(lotId),
-          LotesViveroService.getEvents(lotId),
-        ])
-        if (isMounted) {
-          setDetail(detailData)
-          setEvents(eventsData)
-        }
-      } catch {
-        if (isMounted) {
-          setError('No se pudo cargar la información del lote. Verifica tu conexión.')
-        }
-      } finally {
-        if (isMounted) setLoading(false)
+      
+      const [detailResult, eventsResult] = await Promise.allSettled([
+        LotesViveroService.getDetail(lotId),
+        LotesViveroService.getEvents(lotId),
+      ])
+
+      if (!isMounted) return
+
+      if (detailResult.status === 'rejected') {
+        setError('No se pudo cargar la información del lote. Verifica tu conexión.')
+        setLoading(false)
+        return
       }
+
+      setDetail(detailResult.value)
+      setEvents(eventsResult.status === 'fulfilled' ? eventsResult.value : [])
+      setLoading(false)
     }
 
     fetchDetailData()
 
     return () => { isMounted = false }
-  }, [id])
+  }, [lotId, isInvalidId]) 
 
   useEffect(() => {
-    const timer = setTimeout(() => setNow(Date.now()), 0)
-    return () => clearTimeout(timer)
+    const interval = setInterval(() => setNow(Date.now()), 60_000)
+    return () => clearInterval(interval)
   }, [])
 
   const filteredEvents = useMemo(() => {

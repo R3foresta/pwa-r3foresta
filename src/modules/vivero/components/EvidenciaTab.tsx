@@ -18,17 +18,6 @@ export default function EvidenciaTab({ events, onSelectPhoto }: EvidenciaTabProp
         })
       })
     }
-    if (event.evidencias && event.evidencias.length > 0) {
-      event.evidencias.forEach((e) => {
-        acc.push({
-          url: e.public_url,
-          titulo: e.titulo,
-          fecha: e.tomado_en ? new Date(e.tomado_en).toLocaleDateString() : event.fecha, 
-          autor: event.responsableNombre,
-          etapa: event.kind
-        })
-      })
-    }
     return acc
   }, [] as PhotoItem[])
 

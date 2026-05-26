@@ -219,8 +219,8 @@ export class LotesViveroService {
       const validEvents = rawEvents.filter(e => e.tipo_evento);
       return validEvents.map(mapTimelineEventToView);
     } catch (error) {
-      console.error('❌ Error crítico en el mapeo de producción getEvents:', error)
-      throw new Error(error instanceof Error ? error.message : 'Error al acoplar la trazabilidad de Supabase.')
+      console.error('[LotesViveroService.getEvents] Failed to load timeline:', error)
+      throw new Error(error instanceof Error ? error.message : 'Error al cargar el historial del lote.')
     }
   }
 
