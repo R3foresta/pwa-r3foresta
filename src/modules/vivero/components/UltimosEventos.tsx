@@ -3,6 +3,17 @@ import type { ViveroLotEventView } from '../types/view-models'
 
 export default function UltimosEventos({ events, onJumpHistorial }: { events: ViveroLotEventView[], onJumpHistorial: () => void }) {
   const recent = [...events].reverse().slice(0, 3)
+  const getIconForKind = (kind: string) => {
+    const icons = {
+      INICIO: 'leaf',
+      EMBOLSADO: 'box',
+      ADAPTABILIDAD: 'sun',
+      MERMA: 'loss',
+      DESPACHO: 'truck',
+      CIERRE_AUTOMATICO: 'flag',
+    } as const
+    return icons[kind as keyof typeof icons] ?? 'leaf'
+  }
 
   return (
     <section className="rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
@@ -24,7 +35,8 @@ export default function UltimosEventos({ events, onJumpHistorial }: { events: Vi
           {recent.map((e) => (
             <li key={e.id} className="flex items-center gap-2.5">
               <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-500 ring-1 ring-slate-200">
-                <Icon name="activity" className="h-4 w-4" />
+                <Icon name={getIconForKind(e.kind)} className="h-4 w-4" />
+                
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">

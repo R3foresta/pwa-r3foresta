@@ -52,9 +52,17 @@ export default function ViveroDetailScreen() {
       if (!isMounted) return
 
       if (detailResult.status === 'rejected') {
-        setError('No se pudo cargar la información del lote. Verifica tu conexión.')
-        setLoading(false)
-        return
+        const err = detailResult.reason as { response?: { status?: number }; status?: number };
+        const status = err?.response?.status || err?.status;
+        
+        let msg = 'No se pudo cargar la información del lote. Verifica tu conexión.';
+        if (status === 404) msg = 'El lote solicitado no existe.';
+        if (status === 403) msg = 'No tienes permisos para ver este lote.';
+        if (typeof status === 'number' && status >= 500) msg = 'Error interno del servidor.';
+        
+        setError(msg);
+        setLoading(false);
+        return;
       }
 
       setDetail(detailResult.value)

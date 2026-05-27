@@ -118,6 +118,7 @@ export function mapTimelineEventToView(e: TimelineEventDto): ViveroLotEventView 
   if (!VALID_KINDS.has(e.tipo_evento as TipoEventoVivero)) return null;
 
   const p = e.payload as Record<string, unknown> | undefined;
+
   const cantidadRaw = typeof p?.cantidad_afectada === 'number'
     ? p.cantidad_afectada
     : (typeof p?.plantas_vivas_iniciales === 'number' ? p.plantas_vivas_iniciales : null);
@@ -128,7 +129,9 @@ export function mapTimelineEventToView(e: TimelineEventDto): ViveroLotEventView 
     label: e.label || `${e.tipo_evento?.replace(/_/g, ' ') || 'Evento'} registrado`,
     fecha: e.fecha_evento ? new Date(e.fecha_evento).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Sin fecha',
     fechaIso: e.fecha_evento || new Date().toISOString(),
-    hora: e.fecha_evento ? new Date(e.fecha_evento).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : null,
+    // Se oculta temporalmente la hora. El backend está enviando
+    // timestamps sin tiempo real (00:00:00 UTC), lo que en GMT-4 resulta en "20:00" falso.
+    hora: null,
     responsableNombre: e.responsable_nombre || 'Operador de campo',
     cantidad: cantidadRaw,
     saldoAntes: typeof p?.saldo_vivo_antes === 'number' ? p.saldo_vivo_antes : null,
