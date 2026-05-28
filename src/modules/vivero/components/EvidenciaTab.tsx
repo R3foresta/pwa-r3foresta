@@ -41,7 +41,7 @@ export default function EvidenciaTab({ events, onSelectPhoto }: EvidenciaTabProp
           <div className="absolute left-2 top-2 z-10 rounded-md bg-black/60 px-1.5 py-0.5 backdrop-blur-sm">
             <p className="text-[8px] font-black uppercase tracking-widest text-white">
               {photo.etapa && (
-                <span className="absolute top-2 left-2 rounded-md bg-black/60 px-2 py-1 text-[10px] font-bold text-white backdrop-blur-md">
+                <span className="absolute top-2 left-2 z-10 rounded-md bg-black/60 px-2 py-1 text-[10px] font-bold text-white backdrop-blur-md">
                   {photo.etapa.replaceAll('_', ' ')}
                 </span>
               )}

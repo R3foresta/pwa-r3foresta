@@ -1,14 +1,15 @@
 import Icon from '../../../components/Icon'
 import type { ViveroLotDetailView, ViveroLotEventView } from '../types/view-models'
-import { useViveroStats } from '../hooks/useViveroStats' 
 
 interface Props {
-  detail: ViveroLotDetailView
-  events: ViveroLotEventView[]
+  detail: ViveroLotDetailView;
+  events: ViveroLotEventView[];
+  stats: { mermas: number; despachadas: number; disponibles: number };
 }
 
-export default function IndicadoresRapidos({ detail, events }: Props) {
-  const { disponibles, mermas, despachadas } = useViveroStats(detail, events);
+export default function IndicadoresRapidos({ detail, stats }: Props) {
+  
+  const { mermas, despachadas, disponibles } = stats;
 
   const smallCards = [
     { label: 'Material inicial', value: detail.cantidadInicialEnProceso, unit: detail.unidadMedidaInicial, hint: 'En INICIO' },

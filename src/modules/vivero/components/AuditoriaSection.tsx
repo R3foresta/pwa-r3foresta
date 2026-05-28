@@ -23,8 +23,7 @@ export default function AuditoriaSection({ detail }: AuditoriaSectionProps) {
         exportedAt: new Date().toISOString(),
         system: "R3foresta App"
       },
-      auditoriaList: Object.fromEntries(rows),
-      rawDetail: detail
+      auditoriaList: Object.fromEntries(rows)
     };
 
     const jsonString = JSON.stringify(dataToExport, null, 2);

@@ -2,10 +2,25 @@ import { useMemo } from 'react';
 import type { ViveroLotDetailView, ViveroLotEventView } from '../types/view-models';
 import { useNow } from '../contexts/nowContext'; 
 
-export function useViveroStats(detail: ViveroLotDetailView, events: ViveroLotEventView[]) {
+export function useViveroStats(detail: ViveroLotDetailView | null, events: ViveroLotEventView[]) {
   const now = useNow(); 
 
   return useMemo(() => {
+    if (!detail) {
+      return {
+        plantasIniciales: 0,
+        hasEmbolsado: false,
+        despachadas: 0,
+        mermas: 0,
+        disponibles: 0,
+        vivasHoy: 0,
+        supervivencia: 0,
+        pctDisponibles: 0,
+        pctDespachadas: 0,
+        pctMermas: 0,
+        diasDesdeUltimaMerma: null
+      };
+    }
     const plantasIniciales = detail.plantasVivasIniciales ?? 0;
     const hasEmbolsado = detail.plantasVivasIniciales !== null;
 

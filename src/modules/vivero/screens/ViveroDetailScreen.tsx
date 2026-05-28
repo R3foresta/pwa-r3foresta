@@ -17,6 +17,7 @@ import Icon from '../../../components/Icon'
 import { NowContext } from '../contexts/nowContext' 
 import { useViveroDetail } from '../hooks/useViveroDetail'
 import type { PhotoItem, ViveroLotEventView } from '../types/view-models'
+import { useViveroStats } from '../hooks/useViveroStats'
 
 export default function ViveroDetailScreen() {
   const { id } = useParams()
@@ -25,6 +26,9 @@ export default function ViveroDetailScreen() {
 
   // 1. Lógica delegada al Custom Hook (Fix QA4)
   const { detail, events, loading, error } = useViveroDetail(lotId, isInvalidId)
+
+  // ✨ NUEVO: Calculamos las estadísticas UNA SOLA VEZ aquí
+  const stats = useViveroStats(detail, events)
 
   // 2. Estados locales de la vista
   const [activeTab, setActiveTab] = useState<'resumen' | 'historial' | 'evidencia'>('resumen')
@@ -66,14 +70,14 @@ export default function ViveroDetailScreen() {
   }, [events])
 
   const handleOpenGalleryFromEvent = (event: ViveroLotEventView) => {
-    const photoItem: PhotoItem = {
-      url: event.fotos?.[0]?.url || '',
-      titulo: event.fotos?.[0]?.titulo || 'Evidencia',
-      fecha: event.fecha,
+    const photos: PhotoItem[] = (event.fotos ?? []).map(f => ({
+      url: f.url,
+      titulo: f.titulo || 'Evidencia',
+      fecha: f.fecha || event.fecha,
       autor: event.responsableNombre,
       etapa: event.kind
-    };
-    setSelectedPhotos([photoItem]); 
+    }));
+    if (photos.length > 0) setSelectedPhotos(photos);
   }
 
   const ultimaFotoLote = useMemo(() => {
@@ -133,12 +137,12 @@ export default function ViveroDetailScreen() {
             {activeTab === 'resumen' && (
               <div className="space-y-6 transition-opacity duration-300">
                 {detail.estadoLote === 'FINALIZADO' ? (
-                  <CierreLoteCard detail={detail} events={events} />
+                  <CierreLoteCard detail={detail} events={events} stats={stats} />
                 ) : (
-                  <SaludCard detail={detail} events={events} />
+                  <SaludCard detail={detail} events={events} stats={stats} />
                 )}
                 <QuickActions detail={detail} onJumpEvidencia={() => setActiveTab('evidencia')} />
-                <IndicadoresRapidos detail={detail} events={events} />
+                <IndicadoresRapidos detail={detail} events={events} stats={stats} />
                 <SubetapasBar detail={detail} events={events} />
                 <UltimosEventos events={events} onJumpHistorial={() => setActiveTab('historial')} />
               </div>

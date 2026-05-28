@@ -1,18 +1,30 @@
 import Icon from '../../../components/Icon'
 import type { ViveroLotDetailView, ViveroLotEventView } from '../types/view-models'
-import { useViveroStats } from '../hooks/useViveroStats' 
 
 interface SaludCardProps {
-  detail: ViveroLotDetailView
-  events: ViveroLotEventView[] 
+  detail: ViveroLotDetailView;
+  events: ViveroLotEventView[]; 
+  stats: {
+    plantasIniciales: number;
+    hasEmbolsado: boolean;
+    despachadas: number;
+    mermas: number;
+    disponibles: number;
+    vivasHoy: number;
+    supervivencia: number;
+    pctDisponibles: number;
+    pctDespachadas: number;
+    pctMermas: number;
+    diasDesdeUltimaMerma: number | null;
+  };
 }
 
-export default function SaludCard({ detail, events }: SaludCardProps) {
-  // EXTRAE TODO DEL HOOK
+export default function SaludCard({ detail, stats }: SaludCardProps) {
+  
   const { 
     plantasIniciales, hasEmbolsado, despachadas, mermas, disponibles, 
     vivasHoy, supervivencia, pctDisponibles, pctDespachadas, pctMermas, diasDesdeUltimaMerma 
-  } = useViveroStats(detail, events);
+  } = stats;
 
   if (!hasEmbolsado) {
     return (

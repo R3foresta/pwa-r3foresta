@@ -1,10 +1,14 @@
 import Icon from '../../../components/Icon';
 import type { ViveroLotDetailView, ViveroLotEventView } from '../types/view-models';
-import { useViveroStats } from '../hooks/useViveroStats'; 
 
-export default function CierreLoteCard({ detail, events }: { detail: ViveroLotDetailView, events: ViveroLotEventView[] }) {
+interface CierreLoteCardProps {
+  detail: ViveroLotDetailView;
+  events: ViveroLotEventView[];
+  stats: { despachadas: number; mermas: number };
+}
 
-  const { despachadas, mermas } = useViveroStats(detail, events);
+export default function CierreLoteCard({ detail, events, stats }: CierreLoteCardProps) {
+
   const ultimoEvento = events[events.length - 1];
   const fechaCierre = ultimoEvento ? ultimoEvento.fecha : detail.updatedAt;
 
@@ -48,17 +52,17 @@ export default function CierreLoteCard({ detail, events }: { detail: ViveroLotDe
       </div>
 
       <div className="mt-3 grid grid-cols-3 gap-2">
-         <div className="rounded-2xl bg-white p-3 ring-1 ring-slate-200 flex flex-col justify-center items-center">
-            <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1 text-center leading-tight">Días<br/>Activo</p>
+         <div className="rounded-2xl bg-white p-3 ring-1 ring-slate-200 flex flex-col justify-end items-center h-full text-center">
+            <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1 leading-tight">Días<br/>Activo</p>
             <p className="text-[22px] font-black text-[#002b15] leading-none mt-1">{detail.diasDesdeInicio || 0}</p>
          </div>
-         <div className="rounded-2xl bg-blue-50/60 p-3 ring-1 ring-blue-100 flex flex-col justify-center items-center">
-            <p className="text-[9px] font-black uppercase tracking-widest text-blue-600 mb-1 text-center leading-tight"><br/>Despachadas</p>
-            <p className="text-[22px] font-black text-blue-700 leading-none mt-1">{despachadas}</p>
+         <div className="rounded-2xl bg-blue-50/60 p-3 ring-1 ring-blue-100 flex flex-col justify-end items-center h-full text-center">
+            <p className="text-[9px] font-black uppercase tracking-widest text-blue-600 mb-1 leading-tight">Despachadas</p>
+            <p className="text-[22px] font-black text-blue-700 leading-none mt-1">{stats.despachadas}</p>
          </div>
-         <div className="rounded-2xl bg-red-50/60 p-3 ring-1 ring-red-100 flex flex-col justify-center items-center">
-            <p className="text-[9px] font-black uppercase tracking-widest text-red-600 mb-1 text-center leading-tight"><br/>Pérdidas</p>
-            <p className="text-[22px] font-black text-red-700 leading-none mt-1">{mermas}</p>
+         <div className="rounded-2xl bg-red-50/60 p-3 ring-1 ring-red-100 flex flex-col justify-end items-center h-full text-center">
+            <p className="text-[9px] font-black uppercase tracking-widest text-red-600 mb-1 leading-tight">Pérdidas</p>
+            <p className="text-[22px] font-black text-red-700 leading-none mt-1">{stats.mermas}</p>
          </div>
       </div>
     </section>
