@@ -3,7 +3,7 @@ import Icon from '../Icon'
 import { compressImageFile } from '../../utils/imageCompression'
 
 const ACCEPTED_MIME = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp']
-const DEFAULT_MAX_BYTES = 5 * 1024 * 1024 // 5 MB — el compresor reduce la salida a ≤ 1 MB
+const DEFAULT_MAX_BYTES = 5 * 1024 * 1024 // 5 MB final tras comprimir
 
 type Props = {
   /** URL existente de la imagen (modo edición). */
@@ -57,16 +57,14 @@ function ImageUploader({
       return
     }
 
-    if (file.size > maxBytes) {
-      reportError(`La imagen supera ${formatMB(maxBytes)} MB.`)
-      return
-    }
-
-    // Comprimir antes de generar preview y notificar al padre
     setCompressing(true)
     reportError(null)
     try {
       const compressed = await compressImageFile(file)
+      if (compressed.size > maxBytes) {
+        reportError(`La imagen supera ${formatMB(maxBytes)} MB incluso después de comprimir.`)
+        return
+      }
       if (objectUrl) URL.revokeObjectURL(objectUrl)
       const url = URL.createObjectURL(compressed)
       setObjectUrl(url)
@@ -106,7 +104,7 @@ function ImageUploader({
               disabled={disabled || compressing}
               onClick={() => {
                 if (inputRef.current) inputRef.current.value = ''
-                handleFile(null)
+                void handleFile(null)
               }}
               className="rounded-xl bg-white px-3 py-2 text-xs font-bold uppercase tracking-wide text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
@@ -119,8 +117,8 @@ function ImageUploader({
           ref={inputRef}
           type="file"
           accept={ACCEPTED_MIME.join(',')}
-          onChange={(event) => { void handleFile(event.target.files?.[0] ?? null) }}
-          disabled={disabled}
+          onChange={(event) => { void handleFile(event.currentTarget.files?.[0] ?? null) }}
+          disabled={disabled || compressing}
           className="hidden"
         />
       </div>
@@ -129,7 +127,7 @@ function ImageUploader({
         <p className="text-center text-xs font-semibold text-red-600">{localError}</p>
       )}
       <p className="text-center text-[11px] font-medium text-brand-400">
-        PNG, JPG o WEBP
+        PNG, JPG o WEBP · se comprime al subir
       </p>
     </div>
   )

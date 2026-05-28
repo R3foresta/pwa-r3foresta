@@ -6,6 +6,7 @@ import SearchBar from '../../components/crud/SearchBar'
 import Icon from '../../components/Icon'
 import { PlantasService } from '../../services/plantas.service'
 import type { PlantaCatalogo, PlantasPagination } from '../../types/plantas.types'
+import { withImageVersion } from '../../utils/imageUrl'
 
 const PAGE_LIMIT = 20
 
@@ -26,6 +27,7 @@ type PlantaCardProps = {
 function PlantaCard({ planta, onClick }: PlantaCardProps) {
   const titulo = planta.nombre_comun_principal || planta.especie
   const inicial = (titulo || '?').trim().charAt(0).toUpperCase()
+  const imageUrl = withImageVersion(planta.imagen_url, planta.updated_at)
   return (
     <button
       type="button"
@@ -33,9 +35,9 @@ function PlantaCard({ planta, onClick }: PlantaCardProps) {
       className="flex w-full items-center gap-4 rounded-2xl bg-white p-4 text-left shadow-soft ring-1 ring-black/5 transition active:scale-[0.99]"
     >
       <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-brand-50 ring-1 ring-brand-100">
-        {planta.imagen_url ? (
+        {imageUrl ? (
           <img
-            src={planta.imagen_url}
+            src={imageUrl}
             alt={titulo}
             loading="lazy"
             className="h-full w-full object-cover"

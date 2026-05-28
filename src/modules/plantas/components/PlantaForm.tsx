@@ -4,6 +4,7 @@ import { inputClasses, selectWrapperClasses } from '../../../components/crud/for
 import ImageUploader from '../../../components/crud/ImageUploader'
 import Icon from '../../../components/Icon'
 import type { PlantaCatalogo, PlantaFormInput, TipoPlantaCatalogo } from '../../../types/plantas.types'
+import { withImageVersion } from '../../../utils/imageUrl'
 
 type Mode = 'create' | 'edit'
 
@@ -101,7 +102,7 @@ function PlantaForm({ mode, initial, tiposPlantas, submitting, submitError, onSu
 
       <section className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
         <ImageUploader
-          initialUrl={initial?.imagen_url ?? null}
+          initialUrl={withImageVersion(initial?.imagen_url, initial?.updated_at)}
           onChange={setImagen}
           onError={setImagenError}
           disabled={submitting}
