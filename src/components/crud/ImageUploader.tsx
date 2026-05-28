@@ -129,7 +129,7 @@ function ImageUploader({
         <p className="text-center text-xs font-semibold text-red-600">{localError}</p>
       )}
       <p className="text-center text-[11px] font-medium text-brand-400">
-        PNG, JPG o WEBP · se comprime automáticamente al subir
+        PNG, JPG o WEBP
       </p>
     </div>
   )

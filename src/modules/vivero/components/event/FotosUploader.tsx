@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Icon from '../../../../components/Icon'
+import { compressImageFile } from '../../../../utils/imageCompression'
 
 export type Photo = { file: File; previewUrl: string }
 
@@ -31,22 +32,23 @@ function FotosUploader({
   headerless = false,
 }: Props) {
   const [fileError, setFileError] = useState<string | null>(null)
+  const [compressing, setCompressing] = useState(false)
 
-  const handleFiles = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files ?? [])
+  const handleFiles = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const input = event.currentTarget
+    const files = Array.from(input.files ?? [])
     if (files.length === 0) return
 
     const availableSlots = Math.max(0, max - photos.length)
     if (availableSlots === 0) {
       setFileError(`Ya alcanzaste el máximo de ${max} fotos.`)
-      event.target.value = ''
+      input.value = ''
       return
     }
 
-    const invalidType = files.filter((f) => !ALLOWED_MIME_TYPES.has(f.type))
-    const oversized = files.filter((f) => f.size > MAX_FILE_BYTES)
-    const accepted = files
-      .filter((f) => ALLOWED_MIME_TYPES.has(f.type) && f.size <= MAX_FILE_BYTES)
+    const invalidType = files.filter((file) => !ALLOWED_MIME_TYPES.has(file.type))
+    const candidates = files
+      .filter((file) => ALLOWED_MIME_TYPES.has(file.type))
       .slice(0, availableSlots)
 
     const errors: string[] = []
@@ -55,25 +57,36 @@ function FotosUploader({
         `${invalidType.length === 1 ? '1 archivo no es JPG o PNG' : `${invalidType.length} archivos no son JPG o PNG`}.`,
       )
     }
-    if (oversized.length > 0) {
-      errors.push(
-        `${oversized.length === 1 ? '1 archivo supera' : `${oversized.length} archivos superan`} los 5 MB máximos.`,
-      )
-    }
     if (files.length > availableSlots) {
       errors.push(
-        accepted.length > 0
-          ? `Solo se agregaron ${accepted.length} de ${files.length} fotos por el límite de ${max}.`
+        candidates.length > 0
+          ? `Solo se procesaron ${candidates.length} de ${files.length} fotos por el límite de ${max}.`
           : `No se agregaron fotos porque se alcanzó el límite de ${max}.`,
       )
     }
 
-    setFileError(errors.length > 0 ? errors.join(' ') : null)
-    if (accepted.length > 0) onAdd(accepted)
-    event.target.value = ''
+    setCompressing(true)
+    try {
+      const compressed = await Promise.all(candidates.map((file) => compressImageFile(file)))
+      const oversized = compressed.filter((file) => file.size > MAX_FILE_BYTES)
+      const accepted = compressed.filter((file) => file.size <= MAX_FILE_BYTES)
+
+      if (oversized.length > 0) {
+        errors.push(
+          `${oversized.length === 1 ? '1 archivo supera' : `${oversized.length} archivos superan`} los 5 MB máximos incluso después de comprimir.`,
+        )
+      }
+
+      setFileError(errors.length > 0 ? errors.join(' ') : null)
+      if (accepted.length > 0) onAdd(accepted)
+    } finally {
+      setCompressing(false)
+      input.value = ''
+    }
   }
 
   const empty = photos.length === 0
+  const isDisabled = disabled || compressing
 
   return (
     <div className="space-y-2">
@@ -101,19 +114,23 @@ function FotosUploader({
             showError
               ? 'border-red-300 bg-red-50'
               : 'border-brand-200 bg-brand-50/60 hover:border-brand-300 hover:bg-brand-50'
-          } ${disabled ? 'pointer-events-none opacity-50' : ''}`}
+          } ${isDisabled ? 'pointer-events-none opacity-50' : ''}`}
         >
           <Icon name="photo" className="h-7 w-7" />
-          <span className="text-sm font-extrabold">Añadir fotos</span>
+          <span className="text-sm font-extrabold">
+            {compressing ? 'Procesando fotos...' : 'Añadir fotos'}
+          </span>
           <span className="text-[11px] font-semibold text-brand-500">
-            JPG o PNG · hasta {max} archivos · 5 MB c/u
+            JPG o PNG · hasta {max} archivos · se comprimen al subir
           </span>
           <input
             type="file"
             multiple
             accept="image/jpeg,image/jpg,image/png"
-            onChange={handleFiles}
-            disabled={disabled}
+            onChange={(event) => {
+              void handleFiles(event)
+            }}
+            disabled={isDisabled}
             className="hidden"
           />
         </label>
@@ -132,7 +149,7 @@ function FotosUploader({
               <button
                 type="button"
                 onClick={() => onRemove(index)}
-                disabled={disabled}
+                disabled={isDisabled}
                 className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow-md ring-2 ring-white transition hover:bg-red-600 disabled:opacity-50"
                 aria-label="Quitar foto"
               >
@@ -143,19 +160,21 @@ function FotosUploader({
           {photos.length < max && (
             <label
               className={`flex h-24 w-24 shrink-0 cursor-pointer flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-brand-200 bg-brand-50/60 text-brand-600 transition hover:border-brand-300 hover:bg-brand-50 ${
-                disabled ? 'pointer-events-none opacity-50' : ''
+                isDisabled ? 'pointer-events-none opacity-50' : ''
               }`}
             >
               <Icon name="plus" className="h-6 w-6" />
               <span className="text-[10px] font-extrabold uppercase tracking-wider">
-                Añadir
+                {compressing ? '...' : 'Añadir'}
               </span>
               <input
                 type="file"
                 multiple
                 accept="image/jpeg,image/jpg,image/png"
-                onChange={handleFiles}
-                disabled={disabled}
+                onChange={(event) => {
+                  void handleFiles(event)
+                }}
+                disabled={isDisabled}
                 className="hidden"
               />
             </label>
