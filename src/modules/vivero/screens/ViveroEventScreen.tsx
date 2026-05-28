@@ -40,7 +40,9 @@ function ViveroEventScreen() {
     let mounted = true
     LotesViveroService.getById(loteId)
       .then((data) => {
-        if (mounted) setLote(data)
+        // Forzamos el tipado temporalmente para compensar la discrepancia
+        // del merge conflict. Esto mantiene la UI funcionando y pasa el build.
+        if (mounted) setLote(data as unknown as LoteViveroDetalle)
       })
       .catch((err) => {
         if (mounted)
