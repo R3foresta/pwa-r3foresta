@@ -54,7 +54,7 @@ function buildFormData(input: PlantaFormInput): FormData {
   ]
   for (const key of textFields) {
     const value = input[key]
-    if (typeof value === 'string' && value.trim().length > 0) {
+    if (typeof value === 'string') {
       form.append(key, value.trim())
     }
   }
@@ -64,8 +64,8 @@ function buildFormData(input: PlantaFormInput): FormData {
   if (typeof input.activo === 'boolean') {
     form.append('activo', input.activo ? 'true' : 'false')
   }
-  if (input.imagen instanceof File) {
-    form.append('imagen', input.imagen)
+  if (input.imagen) {
+    form.append('imagen', input.imagen, input.imagen.name)
   }
   return form
 }

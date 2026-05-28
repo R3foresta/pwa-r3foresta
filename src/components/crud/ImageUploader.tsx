@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import Icon from '../Icon'
+import { compressImageFile } from '../../utils/imageCompression'
 
 const ACCEPTED_MIME = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp']
-const DEFAULT_MAX_BYTES = 2 * 1024 * 1024
+const DEFAULT_MAX_BYTES = 5 * 1024 * 1024 // 5 MB — el compresor reduce la salida a ≤ 1 MB
 
 type Props = {
   /** URL existente de la imagen (modo edición). */
@@ -27,6 +28,7 @@ function ImageUploader({
   const inputRef = useRef<HTMLInputElement | null>(null)
   const [objectUrl, setObjectUrl] = useState<string | null>(null)
   const [localError, setLocalError] = useState<string | null>(null)
+  const [compressing, setCompressing] = useState(false)
 
   const preview = objectUrl ?? initialUrl ?? null
 
@@ -41,7 +43,7 @@ function ImageUploader({
     onError?.(message)
   }
 
-  const handleFile = (file: File | null) => {
+  const handleFile = async (file: File | null) => {
     if (!file) {
       if (objectUrl) URL.revokeObjectURL(objectUrl)
       setObjectUrl(null)
@@ -60,11 +62,20 @@ function ImageUploader({
       return
     }
 
-    if (objectUrl) URL.revokeObjectURL(objectUrl)
-    const url = URL.createObjectURL(file)
-    setObjectUrl(url)
-    onChange(file)
+    // Comprimir antes de generar preview y notificar al padre
+    setCompressing(true)
     reportError(null)
+    try {
+      const compressed = await compressImageFile(file)
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+      const url = URL.createObjectURL(compressed)
+      setObjectUrl(url)
+      onChange(compressed)
+    } catch {
+      reportError('No se pudo procesar la imagen. Intenta de nuevo.')
+    } finally {
+      setCompressing(false)
+    }
   }
 
   return (
@@ -83,7 +94,7 @@ function ImageUploader({
         <div className="flex items-center gap-2">
           <button
             type="button"
-            disabled={disabled}
+            disabled={disabled || compressing}
             onClick={() => inputRef.current?.click()}
             className="rounded-xl bg-brand-50 px-4 py-2 text-xs font-bold uppercase tracking-wide text-brand-700 ring-1 ring-brand-100 transition hover:bg-brand-100 disabled:cursor-not-allowed disabled:opacity-60"
           >
@@ -92,7 +103,7 @@ function ImageUploader({
           {preview && (
             <button
               type="button"
-              disabled={disabled}
+              disabled={disabled || compressing}
               onClick={() => {
                 if (inputRef.current) inputRef.current.value = ''
                 handleFile(null)
@@ -108,7 +119,7 @@ function ImageUploader({
           ref={inputRef}
           type="file"
           accept={ACCEPTED_MIME.join(',')}
-          onChange={(event) => handleFile(event.target.files?.[0] ?? null)}
+          onChange={(event) => { void handleFile(event.target.files?.[0] ?? null) }}
           disabled={disabled}
           className="hidden"
         />
@@ -118,7 +129,7 @@ function ImageUploader({
         <p className="text-center text-xs font-semibold text-red-600">{localError}</p>
       )}
       <p className="text-center text-[11px] font-medium text-brand-400">
-        PNG, JPG o WEBP · máximo {formatMB(maxBytes)} MB
+        PNG, JPG o WEBP · se comprime automáticamente al subir
       </p>
     </div>
   )
