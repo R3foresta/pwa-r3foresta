@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react'
 import { ProfileService } from '../profile.service'
+import { compressImageFile } from '../../../utils/imageCompression'
 
 interface AvatarUploadProps {
   currentPhotoUrl?: string
@@ -11,17 +12,27 @@ export function AvatarUpload({ currentPhotoUrl, onUploadSuccess }: AvatarUploadP
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+    const input = e.currentTarget
+    const file = input.files?.[0]
     if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      alert('Selecciona una imagen valida.')
+      input.value = ''
+      return
+    }
 
     try {
       setIsUploading(true)
-      const response = await ProfileService.updateProfilePhoto(file)
+      const compressed = await compressImageFile(file)
+      const response = await ProfileService.updateProfilePhoto(compressed)
       onUploadSuccess(response.foto_perfil_url)
-    } catch (error: any) {
-      alert(error.message || 'Error al subir la foto')
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Error al subir la foto'
+      alert(message)
     } finally {
       setIsUploading(false)
+      input.value = ''
     }
   }
 
@@ -50,10 +61,11 @@ export function AvatarUpload({ currentPhotoUrl, onUploadSuccess }: AvatarUploadP
 
       <button
         type="button"
-        onClick={() => fileInputRef.current?.click()}
+        onClick={() => !isUploading && fileInputRef.current?.click()}
+        disabled={isUploading}
         className="text-sm font-semibold text-brand-600 hover:text-brand-700"
       >
-        {currentPhotoUrl ? 'Cambiar foto' : 'Subir foto de perfil'}
+        {isUploading ? 'Procesando foto...' : currentPhotoUrl ? 'Cambiar foto' : 'Subir foto de perfil'}
       </button>
 
       <input

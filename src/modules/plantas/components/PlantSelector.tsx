@@ -64,7 +64,9 @@ function PlantSelector({ plantas, loading, onSelect, onCreateNew }: Props) {
             <p className="text-sm font-semibold text-slate-500">No se encontraron plantas</p>
           </div>
         ) : (
-          filtered.map((planta) => (
+          filtered.map((planta) => {
+            const imageUrl = withImageVersion(planta.imagen_url, planta.updated_at)
+            return (
             <button
               key={planta.id}
               type="button"
@@ -72,9 +74,9 @@ function PlantSelector({ plantas, loading, onSelect, onCreateNew }: Props) {
               className="w-full flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-soft transition hover:border-brand-300 hover:bg-brand-50 active:scale-[0.99]"
             >
               <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-slate-100">
-                {withImageVersion(planta.imagen_url, planta.updated_at) ? (
+                {imageUrl ? (
                   <img
-                    src={withImageVersion(planta.imagen_url, planta.updated_at) ?? undefined}
+                    src={imageUrl}
                     alt={planta.nombre_comun_principal || planta.especie}
                     className="h-full w-full object-cover"
                   />
@@ -99,7 +101,8 @@ function PlantSelector({ plantas, loading, onSelect, onCreateNew }: Props) {
                 </div>
               )}
             </button>
-          ))
+            )
+          })
         )}
       </div>
     </div>

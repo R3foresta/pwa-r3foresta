@@ -55,7 +55,6 @@ type ApiEnvelope<T> = {
 }
 
 const MAX_EVENT_EVIDENCE_PHOTOS = 5
-const MAX_EVENT_EVIDENCE_BYTES = 5 * 1024 * 1024
 const ALLOWED_EVENT_EVIDENCE_MIME = new Set(['image/jpeg', 'image/png'])
 
 export type ListViveroLotsForUiInput = {
@@ -97,9 +96,6 @@ function validateEvidencePhotos(fotos: File[], contextLabel = 'evento') {
   }
   if (fotos.some((foto) => !ALLOWED_EVENT_EVIDENCE_MIME.has(foto.type))) {
     throw new Error('Solo se aceptan fotos JPG o PNG.')
-  }
-  if (fotos.some((foto) => foto.size > MAX_EVENT_EVIDENCE_BYTES)) {
-    throw new Error('Cada foto no puede superar 5 MB.')
   }
 }
 

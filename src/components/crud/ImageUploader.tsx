@@ -3,24 +3,17 @@ import Icon from '../Icon'
 import { compressImageFile } from '../../utils/imageCompression'
 
 const ACCEPTED_MIME = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp']
-const DEFAULT_MAX_BYTES = 5 * 1024 * 1024 // 5 MB final tras comprimir
 
 type Props = {
   /** URL existente de la imagen (modo edición). */
   initialUrl?: string | null
-  maxBytes?: number
   disabled?: boolean
   onChange: (file: File | null) => void
   onError?: (message: string | null) => void
 }
 
-function formatMB(bytes: number): string {
-  return (bytes / (1024 * 1024)).toFixed(1)
-}
-
 function ImageUploader({
   initialUrl,
-  maxBytes = DEFAULT_MAX_BYTES,
   disabled = false,
   onChange,
   onError,
@@ -61,10 +54,6 @@ function ImageUploader({
     reportError(null)
     try {
       const compressed = await compressImageFile(file)
-      if (compressed.size > maxBytes) {
-        reportError(`La imagen supera ${formatMB(maxBytes)} MB incluso después de comprimir.`)
-        return
-      }
       if (objectUrl) URL.revokeObjectURL(objectUrl)
       const url = URL.createObjectURL(compressed)
       setObjectUrl(url)

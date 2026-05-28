@@ -4,7 +4,6 @@ import { compressImageFile } from '../../../../utils/imageCompression'
 
 export type Photo = { file: File; previewUrl: string }
 
-const MAX_FILE_BYTES = 5 * 1024 * 1024 // 5 MB
 const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png'])
 
 type Props = {
@@ -68,17 +67,8 @@ function FotosUploader({
     setCompressing(true)
     try {
       const compressed = await Promise.all(candidates.map((file) => compressImageFile(file)))
-      const oversized = compressed.filter((file) => file.size > MAX_FILE_BYTES)
-      const accepted = compressed.filter((file) => file.size <= MAX_FILE_BYTES)
-
-      if (oversized.length > 0) {
-        errors.push(
-          `${oversized.length === 1 ? '1 archivo supera' : `${oversized.length} archivos superan`} los 5 MB máximos incluso después de comprimir.`,
-        )
-      }
-
       setFileError(errors.length > 0 ? errors.join(' ') : null)
-      if (accepted.length > 0) onAdd(accepted)
+      if (compressed.length > 0) onAdd(compressed)
     } finally {
       setCompressing(false)
       input.value = ''

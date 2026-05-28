@@ -9,9 +9,9 @@ import { mapFormToCreateDto, validateRecoleccionForm } from "./validators/recole
 import { buildPastRange } from "../../utils/validations/date";
 import { mapToCantidadYUnidadCanonica } from "../../utils/recoleccionUnidad";
 import { MAX_DIAS_RECOLECCION } from "../../config/recoleccion";
+import { compressImageFile } from "../../utils/imageCompression";
 
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png'];
-const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
 const MAX_NEW_FILES = 5;
 
 function base64ToFile(base64: string, filename: string): File {
@@ -74,8 +74,9 @@ function RecoleccionFormResumenScreen() {
     };
   }, [newDraftFiles]);
 
-  const handleSelectNewDraftFiles = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFiles = Array.from(event.target.files || []);
+  const handleSelectNewDraftFiles = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const input = event.currentTarget;
+    const selectedFiles = Array.from(input.files || []);
     if (selectedFiles.length === 0) {
       return;
     }
@@ -84,27 +85,21 @@ function RecoleccionFormResumenScreen() {
 
     if (mergedFiles.length > MAX_NEW_FILES) {
       setError('Solo puedes agregar hasta 5 fotos nuevas por edición.');
-      event.target.value = '';
+      input.value = '';
       return;
     }
 
     const invalidType = mergedFiles.find((file) => !ALLOWED_IMAGE_TYPES.includes(file.type));
     if (invalidType) {
       setError(`Formato inválido (${invalidType.name}). Solo JPG/JPEG/PNG.`);
-      event.target.value = '';
+      input.value = '';
       return;
     }
 
-    const invalidSize = mergedFiles.find((file) => file.size > MAX_IMAGE_SIZE_BYTES);
-    if (invalidSize) {
-      setError(`La imagen ${invalidSize.name} supera el máximo de 5MB.`);
-      event.target.value = '';
-      return;
-    }
-
+    const compressedFiles = await Promise.all(selectedFiles.map((file) => compressImageFile(file)));
     setError(null);
-    setNewDraftFiles(mergedFiles);
-    event.target.value = '';
+    setNewDraftFiles((prev) => [...prev, ...compressedFiles]);
+    input.value = '';
   };
 
   const removeNewDraftFile = (indexToRemove: number) => {
@@ -350,7 +345,7 @@ function RecoleccionFormResumenScreen() {
                       accept="image/jpeg,image/jpg,image/png"
                       multiple
                       className="hidden"
-                      onChange={handleSelectNewDraftFiles}
+                      onChange={(event) => { void handleSelectNewDraftFiles(event) }}
                     />
                     Agregar fotos nuevas
                   </label>
@@ -379,7 +374,7 @@ function RecoleccionFormResumenScreen() {
                   )}
 
                   <p className="text-[11px] font-semibold text-slate-500">
-                    Máximo 5 fotos nuevas. Formatos JPG/JPEG/PNG. Tamaño máximo 5MB por foto.
+                    Máximo 5 fotos nuevas. Formatos JPG/JPEG/PNG. Se comprimen al subir.
                   </p>
                 </div>
               )}

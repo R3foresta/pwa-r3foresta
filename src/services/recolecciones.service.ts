@@ -189,7 +189,6 @@ export interface UpdateRecoleccionDraftDto {
 }
 
 const DRAFT_ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png']
-const DRAFT_MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024
 const DRAFT_MAX_NEW_FILES = 5
 
 type ApiEnvelope<T> = {
@@ -585,9 +584,6 @@ export class RecoleccionesService {
     files.forEach((file) => {
       if (!DRAFT_ALLOWED_IMAGE_TYPES.includes(file.type)) {
         throw new Error(`Formato inválido en ${file.name}. Solo JPG, JPEG o PNG.`)
-      }
-      if (file.size > DRAFT_MAX_IMAGE_SIZE_BYTES) {
-        throw new Error(`La imagen ${file.name} supera el máximo de 5MB.`)
       }
     })
   }

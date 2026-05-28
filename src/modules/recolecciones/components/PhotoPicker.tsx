@@ -13,7 +13,7 @@ type Props = {
 }
 
 function PhotoPicker({ label, photos, badgeLabel, maxPhotos = 5, onChange, onFilesAccepted, onRemove }: Props) {
-  const { validateFiles, readFilesAsBase64 } = usePhotoUpload()
+  const { validateFiles, readFilesForUpload } = usePhotoUpload()
   const [error, setError] = useState<string | null>(null)
 
   const handleFiles = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -32,10 +32,10 @@ function PhotoPicker({ label, photos, badgeLabel, maxPhotos = 5, onChange, onFil
       return
     }
 
-    const base64List = await readFilesAsBase64(acceptedTrimmed)
+    const { compressedFiles, base64List } = await readFilesForUpload(acceptedTrimmed)
     const next = [...photos, ...base64List].slice(0, maxPhotos)
     onChange(next)
-    onFilesAccepted?.(acceptedTrimmed)
+    onFilesAccepted?.(compressedFiles)
     setError(null)
     event.target.value = ''
   }
