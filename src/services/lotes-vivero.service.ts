@@ -175,6 +175,9 @@ export class LotesViveroService {
     const backendFilters: ListLotesViveroQuery = {
       page: input.page,
       limit: input.limit,
+      // NOTA: La búsqueda de texto (input.searchQuery) se delega al backend
+      // mediante el parámetro `q`. No re-filtramos localmente para evitar
+      // desincronizaciones con la paginación del servidor.
       q: input.searchQuery?.trim() || undefined,
       ...buildBackendQueryForStageFilter(input.stageFilter),
     }
@@ -194,6 +197,10 @@ export class LotesViveroService {
       throw new Error('ID de lote de vivero inválido.')
     }
 
+    // TODO(backend-pendiente): Ineficiencia conocida.
+    // Actualmente NO existe un endpoint GET /lotes-vivero/:id específico.
+    // Simulamos la obtención de detalle forzando una búsqueda en el listado
+    // con límite 1. Esto debe cambiarse cuando backend libere el endpoint de detalle.
     const response = await this.list({ lote_vivero_id: loteId, page: 1, limit: 1 })
     const lot = response.data[0]
     if (!lot) {
@@ -219,7 +226,6 @@ export class LotesViveroService {
       const validEvents = rawEvents.filter(e => e.tipo_evento);
       return validEvents.map(mapTimelineEventToView).filter(Boolean) as ViveroLotEventView[];
     } catch (error) {
-      console.error('[LotesViveroService.getEvents] Failed to load timeline:', error)
       throw new Error(error instanceof Error ? error.message : 'Error al cargar el historial del lote.')
     }
   }
@@ -351,4 +357,3 @@ export class LotesViveroService {
 // pero todavía no las consumimos desde el frontend. Agregar cuando se conecte:
 //   • GET  /lotes-vivero/:id/adaptabilidad
 //   • GET  /lotes-vivero/:id/merma
-// Ineficiencia: NO existe GET /lotes-vivero/:id (detalle por id). Se simula listando.

@@ -57,7 +57,7 @@ export default function AuditoriaSection({ detail }: AuditoriaSectionProps) {
       </button>
 
       {isOpen && (
-        <div className="border-t border-slate-50 px-5 pb-5 pt-4 animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="border-t border-slate-50 px-5 pb-5 pt-4 transition-all duration-300">
           <p className="mb-4 text-[11px] font-medium text-slate-500">Datos de trazabilidad para auditoría. Solo lectura.</p>
           
           <dl className="divide-y divide-slate-100/80">

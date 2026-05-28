@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { ViveroLotDetailView, ViveroLotEventView } from '../types/view-models';
-import { useNow } from './nowContext'; 
+import { useNow } from '../contexts/nowContext'; 
 
 export function useViveroStats(detail: ViveroLotDetailView, events: ViveroLotEventView[]) {
   const now = useNow(); 

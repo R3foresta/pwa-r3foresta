@@ -36,7 +36,7 @@ export default function CierreLoteCard({ detail, events }: { detail: ViveroLotDe
             <div>
               <p className="text-[9px] font-black uppercase tracking-widest text-blue-600/70 mb-0.5">Motivo</p>
               <p className="text-[13px] font-black text-blue-800 leading-tight">
-                {detail.motivoCierre?.replace(/_/g, ' ') || 'No especificado'}
+                {formatMotivoCierre(detail.motivoCierre)}
               </p>
             </div>
             <div className="text-right flex-shrink-0">
@@ -60,12 +60,6 @@ export default function CierreLoteCard({ detail, events }: { detail: ViveroLotDe
             <p className="text-[9px] font-black uppercase tracking-widest text-red-600 mb-1 text-center leading-tight"><br/>Pérdidas</p>
             <p className="text-[22px] font-black text-red-700 leading-none mt-1">{mermas}</p>
          </div>
-         <div>
-            <p className="text-[9px] font-black uppercase tracking-widest text-blue-600/70 mb-0.5">Motivo</p>
-            <p className="text-[13px] font-black text-blue-800 leading-tight">
-              {formatMotivoCierre(detail.motivoCierre)}
-            </p>
-          </div>
       </div>
     </section>
   );

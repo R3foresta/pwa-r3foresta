@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
-import { LotesViveroService } from '../../../services/lotes-vivero.service'
 import HeroHeader from '../components/HeroHeader'
 import SaludCard from '../components/SaludCard'
 import QuickActions from '../components/QuickActions'
@@ -13,67 +12,25 @@ import OrigenCard from '../components/OrigenCard'
 import FiltersRow from '../components/FiltersRow'
 import AuditoriaSection from '../components/AuditoriaSection'
 import GalleryModal from '../components/GalleryModal'
-import type { PhotoItem, ViveroLotDetailView, ViveroLotEventView } from '../types/view-models'
 import CierreLoteCard from '../components/CierreLoteCard'
 import Icon from '../../../components/Icon'
-import { NowContext } from '../hooks/nowContext' 
+import { NowContext } from '../contexts/nowContext' 
+import { useViveroDetail } from '../hooks/useViveroDetail'
+import type { PhotoItem, ViveroLotEventView } from '../types/view-models'
 
 export default function ViveroDetailScreen() {
   const { id } = useParams()
-
   const lotId = Number(id)
   const isInvalidId = !Number.isFinite(lotId) || lotId <= 0
 
-  const [detail, setDetail] = useState<ViveroLotDetailView | null>(null)
-  const [events, setEvents] = useState<ViveroLotEventView[]>([])
+  // 1. Lógica delegada al Custom Hook (Fix QA4)
+  const { detail, events, loading, error } = useViveroDetail(lotId, isInvalidId)
+
+  // 2. Estados locales de la vista
   const [activeTab, setActiveTab] = useState<'resumen' | 'historial' | 'evidencia'>('resumen')
   const [filter, setFilter] = useState('TODOS')
   const [selectedPhotos, setSelectedPhotos] = useState<PhotoItem[] | null>(null)
-
-  const [loading, setLoading] = useState(!isInvalidId)
-  const [error, setError] = useState<string | null>(isInvalidId ? 'ID de lote inválido.' : null)
-
   const [now, setNow] = useState<number>(() => Date.now())
-
-  useEffect(() => {
-    if (isInvalidId) return
-
-    let isMounted = true
-
-    const fetchDetailData = async () => {
-      setLoading(true)
-      setError(null)
-      
-      const [detailResult, eventsResult] = await Promise.allSettled([
-        LotesViveroService.getDetail(lotId),
-        LotesViveroService.getEvents(lotId),
-      ])
-
-      if (!isMounted) return
-
-      if (detailResult.status === 'rejected') {
-        const err = detailResult.reason as { response?: { status?: number }; status?: number };
-        const status = err?.response?.status || err?.status;
-        
-        let msg = 'No se pudo cargar la información del lote. Verifica tu conexión.';
-        if (status === 404) msg = 'El lote solicitado no existe.';
-        if (status === 403) msg = 'No tienes permisos para ver este lote.';
-        if (typeof status === 'number' && status >= 500) msg = 'Error interno del servidor.';
-        
-        setError(msg);
-        setLoading(false);
-        return;
-      }
-
-      setDetail(detailResult.value)
-      setEvents(eventsResult.status === 'fulfilled' ? eventsResult.value : [])
-      setLoading(false)
-    }
-
-    fetchDetailData()
-
-    return () => { isMounted = false }
-  }, [lotId, isInvalidId]) 
 
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 60_000)
@@ -88,11 +45,9 @@ export default function ViveroDetailScreen() {
 
   const filteredEvents = useMemo(() => {
     if (!detail) return baseFilteredEvents;
-
     return baseFilteredEvents.map(event => {
       if (event.kind === 'INICIO') {
         const unidadFormat = detail.unidadMedidaInicial === 'G' ? 'gr' : detail.unidadMedidaInicial.toLowerCase();
-        
         return {
           ...event,
           materialIngresado: `${detail.cantidadInicialEnProceso} ${unidadFormat}`
@@ -164,8 +119,8 @@ export default function ViveroDetailScreen() {
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`flex-1 py-2 rounded-full text-xs font-black capitalize ${
-                    activeTab === tab ? 'bg-brand-700 text-white' : 'text-slate-500'
+                  className={`flex-1 py-2 rounded-full text-xs font-black capitalize transition-colors ${
+                    activeTab === tab ? 'bg-brand-700 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'
                   }`}
                 >
                   {tab}
@@ -176,7 +131,7 @@ export default function ViveroDetailScreen() {
 
           <div className="px-5 pb-28 space-y-6">
             {activeTab === 'resumen' && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="space-y-6 transition-opacity duration-300">
                 {detail.estadoLote === 'FINALIZADO' ? (
                   <CierreLoteCard detail={detail} events={events} />
                 ) : (
@@ -190,7 +145,7 @@ export default function ViveroDetailScreen() {
             )}
 
             {activeTab === 'historial' && (
-              <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="space-y-4 transition-opacity duration-300">
                 <OrigenCard detail={detail} />
                 <FiltersRow active={filter} onChange={setFilter} counts={counts} />
                 <Timeline events={filteredEvents} onOpenGallery={handleOpenGalleryFromEvent} />
@@ -199,10 +154,12 @@ export default function ViveroDetailScreen() {
             )}
 
             {activeTab === 'evidencia' && (
-              <EvidenciaTab 
-                events={events} 
-                onSelectPhoto={(photo) => setSelectedPhotos(photo ? [photo] : null)} 
-              />
+              <div className="transition-opacity duration-300">
+                <EvidenciaTab 
+                  events={events} 
+                  onSelectPhoto={(photo) => setSelectedPhotos(photo ? [photo] : null)} 
+                />
+              </div>
             )}
           </div>
         </div>
