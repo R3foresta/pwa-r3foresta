@@ -218,7 +218,7 @@ export class LotesViveroService {
     if (!lot) {
       throw new Error('Lote de vivero no encontrado.')
     }
-    return payload.data
+    return lot
   }
 
   static async getDetail(loteId: number): Promise<ViveroLotDetailView> {
