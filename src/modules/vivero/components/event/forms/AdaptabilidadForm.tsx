@@ -12,6 +12,15 @@ import ObservacionesCard from '../ObservacionesCard'
 
 type Props = {
   lote: LoteViveroItem
+  /**
+   * Fecha del último EMBOLSADO del lote (de
+   * `lote.ultimo_evento_por_tipo.EMBOLSADO?.fecha_evento` en el detalle).
+   * Backend rechaza adaptabilidad con fecha_evento < fecha_embolsado
+   * (RN-VIV-10), así que la usamos como piso del rango. Null si todavía no se
+   * embolsó — en ese caso el tab no debería estar disponible; caemos a
+   * `lote.fecha_inicio` como red de seguridad.
+   */
+  fechaEmbolsado: string | null
   onCompleted: () => void
 }
 
@@ -23,16 +32,19 @@ const SUBETAPAS: { key: SubetapaAdaptabilidad; label: string; hint: string }[] =
   { key: 'SOL_DIRECTO', label: 'Sol directo', hint: 'Exposición plena' },
 ]
 
-function AdaptabilidadForm({ lote, onCompleted }: Props) {
+function AdaptabilidadForm({ lote, fechaEmbolsado, onCompleted }: Props) {
   const { user } = useAuth()
   const authId = user?.auth_id?.trim() || ''
 
   const today = todayLocalISO()
-  const fechaMin = lote.fecha_inicio
+  const fechaMin = fechaEmbolsado ?? lote.fecha_inicio
   const fechaMax = today
 
   const [subetapa, setSubetapa] = useState<SubetapaAdaptabilidad | ''>('')
-  const [fecha, setFecha] = useState(fechaMin > today ? today : today)
+  // Default a today; backend valida `fecha_evento <= today` siempre, y
+  // `fecha_evento >= fechaMin` (fecha del embolsado). En escenarios normales
+  // `fechaMin <= today`, así que today queda dentro del rango.
+  const [fecha, setFecha] = useState(today)
   const [photos, setPhotos] = useState<Photo[]>([])
   const [observaciones, setObservaciones] = useState('')
   const [showErrors, setShowErrors] = useState(false)
@@ -71,6 +83,11 @@ function AdaptabilidadForm({ lote, onCompleted }: Props) {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    // Doble guarda contra doble submit: el botón ya está disabled cuando
+    // submitting, pero un Enter dentro del form podría disparar submit antes
+    // de que React re-renderee. POST /adaptabilidad NO tiene Idempotency-Key —
+    // un retry crearía un segundo evento ADAPTABILIDAD duplicado.
+    if (submitting) return
     if (!canSubmit) {
       setShowErrors(true)
       return
@@ -98,6 +115,8 @@ function AdaptabilidadForm({ lote, onCompleted }: Props) {
             )
           : null
 
+      // Sin fotos, `evidencia_ids` va como `undefined` y JSON.stringify lo omite
+      // del body (NO se manda como `null`, que el ValidationPipe rechaza con 400).
       await LotesViveroService.registrarAdaptabilidad(
         lote.id,
         {
@@ -219,7 +238,7 @@ function AdaptabilidadForm({ lote, onCompleted }: Props) {
         </section>
 
         {submitError && (
-          <p className="rounded-2xl bg-red-50 px-3 py-2 text-center text-xs font-semibold text-red-600 ring-1 ring-red-200">
+          <p className="whitespace-pre-line rounded-2xl bg-red-50 px-3 py-2 text-center text-xs font-semibold text-red-600 ring-1 ring-red-200">
             {submitError}
           </p>
         )}

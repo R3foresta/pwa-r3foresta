@@ -26,10 +26,12 @@ import ObservacionesCard from '../ObservacionesCard'
 type Props = {
   lote: LoteViveroItem
   /**
-   * Fecha del evento EMBOLSADO del lote. El backend rechaza mermas con
-   * fecha anterior al embolsado, así que la usamos como límite inferior
-   * del rango. Si llega null (carga aún en curso o lote sin embolsado),
-   * caemos a `lote.fecha_inicio` como fallback defensivo.
+   * Fecha del último EMBOLSADO del lote (de
+   * `lote.ultimo_evento_por_tipo.EMBOLSADO?.fecha_evento` en el detalle).
+   * Backend rechaza mermas con fecha anterior al embolsado (RN-VIV-10), así
+   * que la usamos como límite inferior del rango. Null solo si el lote aún
+   * no fue embolsado — en ese caso el tab MERMA no debería estar disponible;
+   * caemos a `lote.fecha_inicio` como red de seguridad.
    */
   fechaEmbolsado: string | null
   onCompleted: () => void
@@ -272,6 +274,12 @@ function MermaForm({ lote, fechaEmbolsado, onCompleted }: Props) {
       if (data.lote_finalizado) {
         setStep('closed')
       } else {
+        // Decisión de producto: para "Registrar otra merma" reutilizamos el
+        // `saldo_vivo_despues` que ya viene en esta respuesta en vez de
+        // refetchear el detalle del lote. Ahorra ~1s de latencia en el flujo
+        // lineal de un solo usuario. Si otro actor mermó/despachó en paralelo
+        // entre medio, el siguiente POST sería rechazado por el backend con
+        // mensaje claro (falla ruidosamente, no silenciosamente).
         setSaldoOverride(data.saldo_vivo_despues)
         setStep('success')
       }
@@ -489,7 +497,7 @@ function MermaForm({ lote, fechaEmbolsado, onCompleted }: Props) {
         </section>
 
         {submitError && (
-          <p className="rounded-2xl bg-red-50 px-3 py-2 text-center text-xs font-semibold text-red-600 ring-1 ring-red-200">
+          <p className="whitespace-pre-line rounded-2xl bg-red-50 px-3 py-2 text-center text-xs font-semibold text-red-600 ring-1 ring-red-200">
             {submitError}
           </p>
         )}

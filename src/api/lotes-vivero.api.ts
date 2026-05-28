@@ -1,6 +1,7 @@
 import type {
   CreateLoteViveroInput,
   ListLotesViveroQuery,
+  LoteTimelineQuery,
   RegistrarAdaptabilidadRequest,
   RegistrarDespachoRequest,
   RegistrarEmbolsadoRequest,
@@ -13,7 +14,7 @@ import type {
 const RAW_API_URL = import.meta.env.VITE_API_URL as string | undefined
 const API_BASE_URL = `${(RAW_API_URL || '').replace(/\/$/, '')}/api`
 
-function buildQuery(filters?: ListLotesViveroQuery): string {
+function buildQuery<T extends object>(filters?: T): string {
   const params = new URLSearchParams()
   if (filters) {
     Object.entries(filters).forEach(([key, value]) => {
@@ -86,6 +87,29 @@ function buildEvidenceFormData(input: UploadEvidenciasEventoInput): FormData {
 
 export async function listLotesViveroApi(filters?: ListLotesViveroQuery): Promise<Response> {
   return fetch(`${API_BASE_URL}/lotes-vivero${buildQuery(filters)}`, {
+    method: 'GET',
+    headers: getAuthHeaders({ includeContentType: false }),
+  })
+}
+
+// Endpoint dedicado de detalle: trae el lote + `ultimo_evento_por_tipo`.
+// Backend no exige auth todavía en GETs del módulo, pero enviamos los headers
+// para no romper cuando lo cierren detrás de x-auth-id.
+export async function getLoteViveroDetalleApi(loteId: number): Promise<Response> {
+  return fetch(`${API_BASE_URL}/lotes-vivero/${loteId}`, {
+    method: 'GET',
+    headers: getAuthHeaders({ includeContentType: false }),
+  })
+}
+
+// Timeline cronológico (RF-VIV-07). Backend lo recomienda sobre los endpoints
+// por tipo (`/:id/adaptabilidad`, `/:id/merma`) porque trae `responsable_nombre`
+// embebido y `payload` discriminado. Filtros nativos via query string.
+export async function getLoteTimelineApi(
+  loteId: number,
+  query?: LoteTimelineQuery,
+): Promise<Response> {
+  return fetch(`${API_BASE_URL}/lotes-vivero/${loteId}/timeline${buildQuery(query)}`, {
     method: 'GET',
     headers: getAuthHeaders({ includeContentType: false }),
   })
@@ -213,8 +237,4 @@ export async function getTimelineApi(loteId: number): Promise<Response> {
 // Anomalía pendiente: NO existe POST /lotes-vivero/:id/despacho/evidencias-pendientes
 // en el contrato actual del backend, pero RF-VIV-05 exige evidencia obligatoria.
 // Confirmar con backend si es olvido o decisión.
-//
-// Ineficiencia: NO existe GET /lotes-vivero/:id (detalle por id). Hoy se simula
-// con `?lote_vivero_id=X&limit=1` en LotesViveroService.getById. Cuando exista,
-// agregar getLoteByIdApi y simplificar el service.
 // ──────────────────────────────────────────────────────────────────────────────

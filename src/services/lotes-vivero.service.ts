@@ -2,6 +2,8 @@ import {
   createLoteViveroApi,
   getEmbolsadoApi,
   getEmbolsadoContextApi,
+  getLoteTimelineApi,
+  getLoteViveroDetalleApi,
   listLotesViveroApi,
   registrarAdaptabilidadApi,
   registrarDespachoApi,
@@ -22,6 +24,9 @@ import type {
   EvidenciaEventoVivero,
   ListLotesViveroQuery,
   ListLotesViveroResponse,
+  LoteTimelineAdaptabilidadResponse,
+  LoteViveroDetalle,
+  LoteViveroDetalleResponse,
   LoteViveroItem,
   ObtenerEmbolsadoResponse,
   RegistrarAdaptabilidadRequest,
@@ -97,18 +102,25 @@ function validateEvidencePhotos(fotos: File[], contextLabel = 'evento') {
 }
 
 export class LotesViveroService {
+  // Contrato backend (NestJS estándar): el body de error es siempre uno de
+  //   { statusCode, message: string,   error: 'Bad Request' | ... }   ← RPC RAISE (texto en español)
+  //   { statusCode, message: string[], error: 'Bad Request' }         ← ValidationPipe (DTO)
+  // Usamos '\n' como separador para que cada mensaje del array quede en su
+  // propia línea (los <p> que renderizan `submitError` aplican `whitespace-pre-line`).
   private static normalizeErrorMessage(payload: unknown, fallback: string): string {
     if (!payload || typeof payload !== 'object') return fallback
     const source = payload as ApiEnvelope<unknown>
     if (Array.isArray(source.message)) {
-      return source.message.join(' · ') || fallback
+      const lines = source.message
+        .filter((m): m is string => typeof m === 'string' && m.trim() !== '')
+        .map((m) => m.trim())
+      return lines.length > 0 ? lines.join('\n') : fallback
     }
     if (typeof source.message === 'string' && source.message.trim()) {
-      return source.message
+      return source.message.trim()
     }
-    if (typeof source.error === 'string' && source.error.trim()) {
-      return source.error
-    }
+    // `error` queda como último recurso: en NestJS es texto genérico
+    // ("Bad Request"), peor que el fallback específico del endpoint.
     return fallback
   }
 
@@ -206,7 +218,7 @@ export class LotesViveroService {
     if (!lot) {
       throw new Error('Lote de vivero no encontrado.')
     }
-    return lot
+    return payload.data
   }
 
   static async getDetail(loteId: number): Promise<ViveroLotDetailView> {
@@ -326,6 +338,26 @@ export class LotesViveroService {
       response,
       'Error al registrar la adaptabilidad.',
     )
+  }
+
+  // Historial cronológico de adaptabilidad para el detalle del lote. Consume
+  // `/timeline?tipo_evento=ADAPTABILIDAD` (recomendado por backend sobre el
+  // dump `/adaptabilidad`) porque trae `responsable_nombre` y `payload`
+  // discriminado en una sola request. Devuelve `data.eventos` directo —
+  // resto del envelope (lote_id, codigo_trazabilidad, etc.) ya lo conoce el
+  // caller desde el detalle.
+  static async listAdaptabilidadTimeline(
+    loteId: number,
+  ): Promise<LoteTimelineAdaptabilidadResponse['data']> {
+    if (!Number.isFinite(loteId) || loteId <= 0) {
+      throw new Error('ID de lote de vivero inválido.')
+    }
+    const response = await getLoteTimelineApi(loteId, { tipo_evento: 'ADAPTABILIDAD' })
+    const payload = await this.parseJsonResponse<LoteTimelineAdaptabilidadResponse>(
+      response,
+      'Error al cargar el historial de adaptabilidad.',
+    )
+    return payload.data
   }
 
   static async registrarMerma(
