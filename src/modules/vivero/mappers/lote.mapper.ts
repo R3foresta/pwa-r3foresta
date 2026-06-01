@@ -1,5 +1,16 @@
-import type { LoteViveroItem } from '../types/contracts'
+import type { EvidenciaDto, LoteViveroItem } from '../types/contracts'
 import type { ViveroLotCardData, ViveroLotDetailView } from '../types/view-models'
+import type { TimelineEventDto, TipoEventoVivero } from '../types/contracts'
+import type { ViveroLotEventView } from '../types/view-models'
+
+const VALID_KINDS = new Set<TipoEventoVivero>([
+  'INICIO',
+  'EMBOLSADO',
+  'ADAPTABILIDAD',
+  'MERMA',
+  'DESPACHO',
+  'CIERRE_AUTOMATICO',
+]);
 
 // TODO(p1 — datos no expuestos restantes):
 //   • recoleccion.saldo_actual     → si la recolección origen sigue con saldo.
@@ -93,6 +104,7 @@ export function mapLoteToDetailView(lot: LoteViveroItem): ViveroLotDetailView {
     viveroCodigo: lot.vivero?.codigo || 'N/D',
     responsableNombre,
     responsableUsername: lot.responsable?.username || null,
+    recoleccionId: lot.recoleccion_id,
     recoleccionCodigo: lot.recoleccion?.codigo_trazabilidad || `REC-${lot.recoleccion_id}`,
     recoleccionFecha: lot.recoleccion?.fecha ?? null,
     recoleccionTipoMaterial: lot.recoleccion?.tipo_material || lot.tipo_material_snapshot,
@@ -100,4 +112,44 @@ export function mapLoteToDetailView(lot: LoteViveroItem): ViveroLotDetailView {
     createdAt: lot.created_at,
     updatedAt: lot.updated_at,
   }
+}
+
+export function mapTimelineEventToView(e: TimelineEventDto): ViveroLotEventView | null {
+  if (!VALID_KINDS.has(e.tipo_evento as TipoEventoVivero)) return null;
+
+  const p = e.payload as Record<string, unknown> | undefined;
+
+  const cantidadRaw = typeof p?.cantidad_afectada === 'number'
+    ? p.cantidad_afectada
+    : (typeof p?.plantas_vivas_iniciales === 'number' ? p.plantas_vivas_iniciales : null);
+
+  return {
+    id: e.id,
+    kind: (e.tipo_evento as TipoEventoVivero) || 'INICIO',
+    label: e.label || `${e.tipo_evento?.replace(/_/g, ' ') || 'Evento'} registrado`,
+    fecha: e.fecha_evento ? new Date(e.fecha_evento).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Sin fecha',
+    fechaIso: e.fecha_evento || new Date().toISOString(),
+    // Se oculta temporalmente la hora. El backend está enviando
+    // timestamps sin tiempo real (00:00:00 UTC), lo que en GMT-4 resulta en "20:00" falso.
+    hora: null,
+    responsableNombre: e.responsable_nombre || 'Operador de campo',
+    cantidad: cantidadRaw,
+    saldoAntes: typeof p?.saldo_vivo_antes === 'number' ? p.saldo_vivo_antes : null,
+    saldoDespues: typeof p?.saldo_vivo_despues === 'number' ? p.saldo_vivo_despues : null,
+    observacion: e.observaciones || null,
+    causa: (p?.causa_merma as string | undefined) || null,
+    subetapa: (p?.subetapa_destino as string | undefined) || null,
+    destino: (p?.destino_tipo as string | undefined) || null,
+    referencia: (p?.destino_referencia as string | undefined) || null,
+    comunidad: (p?.comunidad_destino as string | undefined) || null,
+    materialIngresado: (p?.material_ingresado as string | undefined) || null,
+    sustrato: (p?.sustrato as string | undefined) || null,
+    
+    fotos: (e.evidencias || []).map((f: EvidenciaDto) => ({
+      id: f.id,
+      url: f.public_url || '',
+      titulo: f.titulo || 'Evidencia técnica',
+      fecha: f.tomado_en ? new Date(f.tomado_en).toLocaleDateString('es-ES') : (e.fecha_evento || 'Sin fecha')
+    }))
+  };
 }

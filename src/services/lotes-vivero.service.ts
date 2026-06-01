@@ -3,7 +3,6 @@ import {
   getEmbolsadoApi,
   getEmbolsadoContextApi,
   getLoteTimelineApi,
-  getLoteViveroDetalleApi,
   listLotesViveroApi,
   registrarAdaptabilidadApi,
   registrarDespachoApi,
@@ -11,7 +10,9 @@ import {
   registrarMermaApi,
   uploadEvidenciasEventoViveroApi,
   uploadEvidenciasPendientesViveroApi,
+  getTimelineApi, 
 } from '../api/lotes-vivero.api'
+
 import { mapLoteToCardData, mapLoteToDetailView } from '../modules/vivero/mappers/lote.mapper'
 import type {
   ApiPagination,
@@ -23,8 +24,6 @@ import type {
   ListLotesViveroQuery,
   ListLotesViveroResponse,
   LoteTimelineAdaptabilidadResponse,
-  LoteViveroDetalle,
-  LoteViveroDetalleResponse,
   LoteViveroItem,
   ObtenerEmbolsadoResponse,
   RegistrarAdaptabilidadRequest,
@@ -39,12 +38,15 @@ import type {
   UploadEvidenciasEventoInput,
   UploadEvidenciasEventoResponse,
 } from '../modules/vivero/types/contracts'
-import type { ViveroLotCardData, ViveroLotDetailView } from '../modules/vivero/types/view-models'
+import type { ViveroLotCardData, ViveroLotDetailView, ViveroLotEventView } from '../modules/vivero/types/view-models'
 import {
   buildBackendQueryForStageFilter,
   matchesStageFilter,
   type StageFilter,
 } from '../modules/vivero/utils/stageFilters'
+
+import { mapTimelineEventToView } from '../modules/vivero/mappers/lote.mapper'
+import type { TimelineEventDto } from '../modules/vivero/types/contracts'
 
 type ApiEnvelope<T> = {
   success?: boolean
@@ -59,13 +61,6 @@ const ALLOWED_EVENT_EVIDENCE_MIME = new Set(['image/jpeg', 'image/png'])
 
 export type ListViveroLotsForUiInput = {
   stageFilter: StageFilter
-  /**
-   * Texto de búsqueda libre. Se delega 100% al backend mediante el parámetro
-   * `q` y este decide los matches (snapshots, código de trazabilidad, etc.).
-   * El front NO hace filtrado de texto en cliente; solo aplica el filtrado
-   * fino de sub-etapa (matchesStageFilter) sobre los resultados ya filtrados
-   * por backend.
-   */
   searchQuery?: string
   page?: number
   limit?: number
@@ -98,16 +93,6 @@ function validateEvidencePhotos(fotos: File[], contextLabel = 'evento') {
     throw new Error('Solo se aceptan fotos JPG o PNG.')
   }
 }
-
-// La búsqueda libre por texto se delega completamente al backend (`q`), que
-// cubre `codigo_trazabilidad` + snapshots de texto. NO refiltramos en cliente
-// para evitar descartar hits válidos del backend cuando coinciden por un
-// snapshot que el view-model no expone (ej. nombre científico).
-//
-// TODO(futuro — filtros discretos): si en algún momento queremos filtrar por
-// `vivero.nombre` o `subetapaActual` (campos que el `q` del backend NO cubre),
-// exponerlos como filtros propios (dropdown / chips), no metiéndolos en el
-// campo libre.
 
 export class LotesViveroService {
   // Contrato backend (NestJS estándar): el body de error es siempre uno de
@@ -168,9 +153,6 @@ export class LotesViveroService {
     const items = Array.isArray(envelope.data) ? envelope.data : []
     const fallback = defaultPagination(items.length)
 
-    // Backend siempre responde success: true en este endpoint (contrato fijo).
-    // Si alguna vez devuelve false en un 2xx, parseJsonResponse no lo detecta
-    // hoy; ese caso quedaría como deuda separada de validación de envelope.
     return {
       success: true,
       data: items,
@@ -185,7 +167,6 @@ export class LotesViveroService {
     }
   }
 
-  // Contrato técnico (backend).
   static async list(filters?: ListLotesViveroQuery): Promise<ListLotesViveroResponse> {
     const response = await listLotesViveroApi(filters)
     const payload = await this.parseJsonResponse<unknown>(
@@ -195,11 +176,13 @@ export class LotesViveroService {
     return this.normalizeListResponse(payload)
   }
 
-  // Caso de uso UI (backend filter + reglas de etapa + view model).
   static async listForUi(input: ListViveroLotsForUiInput): Promise<ListViveroLotsForUiResult> {
     const backendFilters: ListLotesViveroQuery = {
       page: input.page,
       limit: input.limit,
+      // NOTA: La búsqueda de texto (input.searchQuery) se delega al backend
+      // mediante el parámetro `q`. No re-filtramos localmente para evitar
+      // desincronizaciones con la paginación del servidor.
       q: input.searchQuery?.trim() || undefined,
       ...buildBackendQueryForStageFilter(input.stageFilter),
     }
@@ -214,29 +197,42 @@ export class LotesViveroService {
     }
   }
 
-  // TODO(p3-consistencia): este método devuelve `LoteViveroDetalle` (raw)
-  // mientras que listForUi devuelve view-models ya mapeados. Inconsistente.
-  // Considerar que getById ya devuelva ViveroLotDetailView aplicando
-  // mapLoteToDetailView, o renombrarlo para que quede claro que es raw.
-  static async getById(loteId: number): Promise<LoteViveroDetalle> {
+  static async getById(loteId: number): Promise<LoteViveroItem> {
     if (!Number.isFinite(loteId) || loteId <= 0) {
       throw new Error('ID de lote de vivero inválido.')
     }
 
-    const response = await getLoteViveroDetalleApi(loteId)
-    const payload = await this.parseJsonResponse<LoteViveroDetalleResponse>(
-      response,
-      'Error al cargar el lote de vivero.',
-    )
-    if (!payload.data) {
+    // TODO(backend-pendiente): Ineficiencia conocida.
+    // Actualmente NO existe un endpoint GET /lotes-vivero/:id específico.
+    // Simulamos la obtención de detalle forzando una búsqueda en el listado
+    // con límite 1. Esto debe cambiarse cuando backend libere el endpoint de detalle.
+    const response = await this.list({ lote_vivero_id: loteId, page: 1, limit: 1 })
+    const lot = response.data[0]
+    if (!lot) {
       throw new Error('Lote de vivero no encontrado.')
     }
-    return payload.data
+    return lot
   }
 
   static async getDetail(loteId: number): Promise<ViveroLotDetailView> {
     const lot = await this.getById(loteId)
     return mapLoteToDetailView(lot)
+  }
+
+  static async getEvents(lotId: number): Promise<ViveroLotEventView[]> {
+    try {
+      const response = await getTimelineApi(lotId)
+      
+      if (!response.ok) {
+        throw new Error(`Error del servidor: ${response.status} al recuperar el historial`)
+      }
+      const json = await response.json()
+      const rawEvents = (json.data?.eventos || json.eventos || []) as TimelineEventDto[];
+      const validEvents = rawEvents.filter(e => e.tipo_evento);
+      return validEvents.map(mapTimelineEventToView).filter(Boolean) as ViveroLotEventView[];
+    } catch (error) {
+      throw new Error(error instanceof Error ? error.message : 'Error al cargar el historial del lote.')
+    }
   }
 
   static async uploadEvidenciasPendientes(
@@ -251,7 +247,6 @@ export class LotesViveroService {
       'Error al subir evidencias pendientes.',
     )
 
-    // Backend siempre responde success: true en este endpoint (contrato fijo).
     return {
       success: true,
       data: Array.isArray(payload.data) ? payload.data : [],
@@ -370,11 +365,6 @@ export class LotesViveroService {
     )
   }
 
-  // TODO(despacho-bloqueado): este método queda inalcanzable desde la UI hasta
-  // que se levante el flag DESPACHO_EVIDENCE_ENDPOINT_READY en DespachoForm.tsx
-  // (depende del endpoint de evidencias backend + Módulo 3 Plantación). Cuando
-  // se reactive, además reemplazar `unknown` por RegistrarDespachoResponse —
-  // hoy ese tipo tampoco existe en contracts.ts.
   static async registrarDespacho(
     loteId: number,
     input: RegistrarDespachoRequest,
@@ -387,3 +377,8 @@ export class LotesViveroService {
     )
   }
 }
+
+// TODO(backend-pendiente): funciones cliente faltantes — el backend ya las expone
+// pero todavía no las consumimos desde el frontend. Agregar cuando se conecte:
+//   • GET  /lotes-vivero/:id/adaptabilidad
+//   • GET  /lotes-vivero/:id/merma

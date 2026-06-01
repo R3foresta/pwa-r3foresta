@@ -4,6 +4,7 @@ import type {
   SubetapaAdaptabilidad,
   TipoMaterialVivero,
   UnidadMedidaVivero,
+  TipoEventoVivero,
 } from './contracts'
 
 export interface ViveroLotCardData {
@@ -43,10 +44,48 @@ export interface ViveroLotDetailView {
   viveroCodigo: string
   responsableNombre: string
   responsableUsername: string | null
+  recoleccionId: number
   recoleccionCodigo: string
   recoleccionFecha: string | null
   recoleccionTipoMaterial: TipoMaterialVivero
   nombreComunidadOrigen: string | null
   createdAt: string
   updatedAt: string
+}
+
+export interface ViveroEventPhoto {
+  id: number
+  url: string
+  titulo: string
+  fecha: string
+}
+
+export interface ViveroLotEventView {
+  id: number
+  kind: TipoEventoVivero
+  label: string
+  fecha: string
+  fechaIso: string
+  hora: string | null
+  responsableNombre: string
+  cantidad?: number | null
+  saldoAntes?: number | null
+  saldoDespues?: number | null
+  observacion?: string | null
+  fotos?: Array<ViveroEventPhoto> | null
+  causa?: string | null
+  subetapa?: string | null
+  destino?: string | null
+  referencia?: string | null
+  comunidad?: string | null
+  materialIngresado?: string | null
+  sustrato?: string | null
+}
+
+export interface PhotoItem {
+  url: string;
+  titulo: string;
+  fecha: string;
+  autor: string;
+  etapa?: string;
 }

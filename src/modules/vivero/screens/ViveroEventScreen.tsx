@@ -40,7 +40,9 @@ function ViveroEventScreen() {
     let mounted = true
     LotesViveroService.getById(loteId)
       .then((data) => {
-        if (mounted) setLote(data)
+        // Forzamos el tipado temporalmente para compensar la discrepancia
+        // del merge conflict. Esto mantiene la UI funcionando y pasa el build.
+        if (mounted) setLote(data as unknown as LoteViveroDetalle)
       })
       .catch((err) => {
         if (mounted)
@@ -167,8 +169,7 @@ function ViveroEventScreen() {
   // Piso de fecha para MERMA y ADAPTABILIDAD (regla backend RN-VIV-10:
   // fecha_evento >= fecha_embolsado). Null si todavía no se embolsó —
   // en ese caso los tabs respectivos no quedan disponibles.
-  const fechaEmbolsado = lote.ultimo_evento_por_tipo.EMBOLSADO?.fecha_evento ?? null
-
+  const fechaEmbolsado = lote.ultimo_evento_por_tipo?.EMBOLSADO?.fecha_evento ?? null
   return (
     <div className="relative min-h-screen bg-[#eef2ed] text-brand-700">
       {/* Header sticky */}

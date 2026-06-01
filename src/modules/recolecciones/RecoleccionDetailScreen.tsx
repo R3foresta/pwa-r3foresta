@@ -178,7 +178,7 @@ function RecoleccionDetailScreen() {
           <button
             type="button"
             aria-label="Volver"
-            onClick={() => navigate('/app/collections')}
+            onClick={() => navigate(-1)}
             className="absolute left-4 top-6 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-brand-700 shadow-soft transition hover:bg-white"
           >
             <Icon name="arrow-left" className="h-5 w-5" />

@@ -37,3 +37,4 @@ function SurvivalBar({ alive, initial, showLabel = false, className }: Props) {
 }
 
 export default SurvivalBar
+
