@@ -54,6 +54,8 @@ export interface ViveroLotDetailView {
   nombreComunidadOrigen: string | null
   createdAt: string
   updatedAt: string
+  saldoAsignadoTotal?: number
+  saldoVivoDisponibleAsignacion?: number
 }
 
 export interface ViveroEventPhoto {

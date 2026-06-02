@@ -8,7 +8,7 @@ interface Props {
 }
 
 export default function IndicadoresRapidos({ detail, stats }: Props) {
-  
+
   const { mermas, despachadas, disponibles } = stats;
 
   const smallCards = [
@@ -16,6 +16,8 @@ export default function IndicadoresRapidos({ detail, stats }: Props) {
     { label: 'Plantas vivas iniciales', value: detail.plantasVivasIniciales ?? 0, unit: 'UNIDAD', hint: 'En EMBOLSADO' },
     { label: 'Mermas acumuladas', value: mermas, unit: 'UNIDAD', tone: 'red' },
     { label: 'Despachadas', value: despachadas, unit: 'UNIDAD', tone: 'blue' },
+    { label: 'Saldo reservado', value: detail.saldoAsignadoTotal ?? 0, unit: 'UNIDAD' },
+    { label: 'Saldo libre', value: detail.saldoVivoDisponibleAsignacion ?? 0, unit: 'UNIDAD' },
   ]
 
   return (
@@ -23,7 +25,7 @@ export default function IndicadoresRapidos({ detail, stats }: Props) {
       <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-brand-500 mb-2">
         Indicadores rápidos
       </p>
-      
+
       <div className="rounded-3xl bg-gradient-to-br from-brand-600 to-brand-700 px-4 py-4 text-white shadow-soft">
         <div className="flex items-end justify-between gap-3">
           <div className="min-w-0">

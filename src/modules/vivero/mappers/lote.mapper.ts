@@ -114,6 +114,8 @@ export function mapLoteToDetailView(lot: LoteViveroItem): ViveroLotDetailView {
     nombreComunidadOrigen: lot.nombre_comunidad_origen_snapshot,
     createdAt: lot.created_at,
     updatedAt: lot.updated_at,
+    saldoAsignadoTotal: lot.saldo_asignado_total,
+    saldoVivoDisponibleAsignacion: lot.saldo_vivo_disponible_asignacion,
   }
 }
 
