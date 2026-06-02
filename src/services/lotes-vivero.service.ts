@@ -10,7 +10,8 @@ import {
   registrarMermaApi,
   uploadEvidenciasEventoViveroApi,
   uploadEvidenciasPendientesViveroApi,
-  getTimelineApi, 
+  getTimelineApi,
+  listSubcampaniasApi,
 } from '../api/lotes-vivero.api'
 
 import { mapLoteToCardData, mapLoteToDetailView } from '../modules/vivero/mappers/lote.mapper'
@@ -64,6 +65,7 @@ export type ListViveroLotsForUiInput = {
   searchQuery?: string
   page?: number
   limit?: number
+  subcampaniaId?: number
 }
 
 export type ListViveroLotsForUiResult = {
@@ -184,6 +186,7 @@ export class LotesViveroService {
       // mediante el parámetro `q`. No re-filtramos localmente para evitar
       // desincronizaciones con la paginación del servidor.
       q: input.searchQuery?.trim() || undefined,
+      subcampania_id: input.subcampaniaId || undefined,
       ...buildBackendQueryForStageFilter(input.stageFilter),
     }
 
@@ -222,7 +225,7 @@ export class LotesViveroService {
   static async getEvents(lotId: number): Promise<ViveroLotEventView[]> {
     try {
       const response = await getTimelineApi(lotId)
-      
+
       if (!response.ok) {
         throw new Error(`Error del servidor: ${response.status} al recuperar el historial`)
       }
@@ -375,6 +378,15 @@ export class LotesViveroService {
       response,
       'Error al registrar el despacho.',
     )
+  }
+
+  static async listSubcampanias(): Promise<any[]> {
+    const response = await listSubcampaniasApi()
+    const payload = await this.parseJsonResponse<any>(
+      response,
+      'Error al cargar subcampañas.',
+    )
+    return Array.isArray(payload.data) ? payload.data : []
   }
 }
 

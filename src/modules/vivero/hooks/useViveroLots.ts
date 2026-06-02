@@ -9,6 +9,7 @@ type UseViveroLotsOptions = {
   searchQuery?: string
   page: number
   limit: number
+  subcampaniaId?: number
 }
 
 type UseViveroLotsResult = {
@@ -20,7 +21,7 @@ type UseViveroLotsResult = {
 }
 
 export function useViveroLots(options: UseViveroLotsOptions): UseViveroLotsResult {
-  const { stageFilter, searchQuery, page, limit } = options
+  const { stageFilter, searchQuery, page, limit, subcampaniaId } = options
   const [lots, setLots] = useState<ViveroLotCardData[]>([])
   const [pagination, setPagination] = useState<ApiPagination | null>(null)
   const [loading, setLoading] = useState(true)
@@ -39,6 +40,7 @@ export function useViveroLots(options: UseViveroLotsOptions): UseViveroLotsResul
         searchQuery,
         page,
         limit,
+        subcampaniaId,
       })
 
       // Evita que respuestas viejas sobreescriban estado reciente.
@@ -56,7 +58,7 @@ export function useViveroLots(options: UseViveroLotsOptions): UseViveroLotsResul
         setLoading(false)
       }
     }
-  }, [limit, page, searchQuery, stageFilter])
+  }, [limit, page, searchQuery, stageFilter, subcampaniaId])
 
   useEffect(() => {
     void refetch()

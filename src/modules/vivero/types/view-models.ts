@@ -20,6 +20,9 @@ export interface ViveroLotCardData {
   cantidadActual: number | null
   unidadMedida: UnidadMedidaVivero
   vivero: string
+  saldoAsignadoTotal?: number
+  saldoVivoDisponibleAsignacion?: number
+  cantidadAsignacionesActivas?: number
 }
 
 export interface ViveroLotDetailView {

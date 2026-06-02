@@ -220,6 +220,13 @@ export async function getTimelineApi(loteId: number): Promise<Response> {
   })
 }
 
+export async function listSubcampaniasApi(): Promise<Response> {
+  return fetch(`${API_BASE_URL}/subcampanias`, {
+    method: 'GET',
+    headers: getAuthHeaders({ includeContentType: false }),
+  })
+}
+
 // ──────────────────────────────────────────────────────────────────────────────
 // TODO(backend-pendiente): funciones cliente faltantes — el backend ya las expone
 // pero todavía no las consumimos desde el frontend. Agregar cuando se conecte

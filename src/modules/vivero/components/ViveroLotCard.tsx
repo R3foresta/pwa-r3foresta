@@ -22,15 +22,10 @@ function getEtapa(lot: ViveroLotCardData): string {
   return 'INICIO'
 }
 
-// TODO(sprint-badge-cierre): diferenciar visualmente los lotes finalizados por
-// `motivo_cierre` (PERDIDA_TOTAL → badge rojo "Pérdida total", DESPACHO_TOTAL →
-// emerald "Despachado", MIXTO → ámbar "Cerrado"). Requiere agregar
-// `motivoCierre` al `ViveroLotCardData` view-model.
-
 type Props = {
   lot: ViveroLotCardData
   onClick?: () => void
-  cta?: { label: string; onClick: () => void }
+  cta?: { label: string; onClick: () => void; disabled?: boolean }
   compact?: boolean
 }
 
@@ -60,6 +55,9 @@ function ViveroLotCard({ lot, onClick, cta, compact }: Props) {
     )
   }
 
+  const reservado = lot.saldoAsignadoTotal ?? 0
+  const stockLibre = lot.saldoVivoDisponibleAsignacion ?? (lot.cantidadActual ?? 0)
+
   return (
     <div className="w-full rounded-3xl bg-white shadow-soft ring-1 ring-black/5">
       <button
@@ -69,9 +67,21 @@ function ViveroLotCard({ lot, onClick, cta, compact }: Props) {
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 space-y-0.5">
-            <h2 className="truncate text-xl font-extrabold leading-tight text-brand-700">
-              {lot.especie}
-            </h2>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <h2 className="truncate text-xl font-extrabold leading-tight text-brand-700">
+                {lot.especie}
+              </h2>
+              {reservado > 0 && (
+                <span className="shrink-0 rounded bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 ring-1 ring-emerald-200">
+                  RESERVADO
+                </span>
+              )}
+              {stockLibre === 0 && reservado > 0 && (
+                <span className="shrink-0 rounded bg-red-50 px-1.5 py-0.5 text-[9px] font-bold text-red-700 ring-1 ring-red-200">
+                  SIN STOCK LIBRE
+                </span>
+              )}
+            </div>
             <p className="text-sm font-semibold text-brand-500">{lot.codigo}</p>
           </div>
           <span
@@ -124,17 +134,43 @@ function ViveroLotCard({ lot, onClick, cta, compact }: Props) {
             </div>
           )}
         </div>
+
+        {/* Columnas derivadas de saldos */}
+        {lot.saldoAsignadoTotal !== undefined && (
+          <div className="grid grid-cols-3 gap-2 border-t border-slate-100 pt-3 mt-4 text-center">
+            <div>
+              <p className="text-[9px] font-bold uppercase tracking-wider text-brand-600">Saldo Vivo</p>
+              <p className="text-xs font-extrabold text-slate-700 mt-1">{lot.cantidadActual ?? 0}</p>
+            </div>
+            <div>
+              <p className="text-[9px] font-bold uppercase tracking-wider text-brand-600">Reservado</p>
+              <p className="text-xs font-extrabold text-amber-600 mt-1">{lot.saldoAsignadoTotal}</p>
+            </div>
+            <div>
+              <p className="text-[9px] font-bold uppercase tracking-wider text-brand-600">Saldo Libre</p>
+              <p className={`text-xs font-extrabold mt-1 ${stockLibre === 0 ? 'text-red-500' : 'text-emerald-700'}`}>
+                {stockLibre}
+              </p>
+            </div>
+          </div>
+        )}
+
+
       </button>
 
       {cta && (
         <div className="px-4 pb-4">
           <button
             type="button"
+            disabled={cta.disabled}
             onClick={(e) => {
               e.stopPropagation()
               cta.onClick()
             }}
-            className="w-full rounded-2xl bg-brand-700 py-3 text-sm font-extrabold text-white transition hover:bg-brand-600 active:scale-[0.98]"
+            className={`w-full rounded-2xl py-3 text-sm font-extrabold text-white transition active:scale-[0.98] ${cta.disabled
+              ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
+              : 'bg-brand-700 hover:bg-brand-600'
+              }`}
           >
             {cta.label}
           </button>
