@@ -56,6 +56,7 @@ export interface ViveroLotDetailView {
   updatedAt: string
   saldoAsignadoTotal?: number
   saldoVivoDisponibleAsignacion?: number
+  cantidadAsignacionesActivas?: number
 }
 
 export interface ViveroEventPhoto {

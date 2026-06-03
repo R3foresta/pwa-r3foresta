@@ -14,10 +14,12 @@ import AuditoriaSection from '../components/AuditoriaSection'
 import GalleryModal from '../components/GalleryModal'
 import CierreLoteCard from '../components/CierreLoteCard'
 import Icon from '../../../components/Icon'
-import { NowContext } from '../contexts/nowContext' 
+import { NowContext } from '../contexts/nowContext'
 import { useViveroDetail } from '../hooks/useViveroDetail'
 import type { PhotoItem, ViveroLotEventView } from '../types/view-models'
 import { useViveroStats } from '../hooks/useViveroStats'
+import ViveroLotAsignacionesCollapsible from '../components/ViveroLotAsignacionesCollapsible'
+import ViveroLotAsignacionesTab from '../components/ViveroLotAsignacionesTab'
 
 export default function ViveroDetailScreen() {
   const { id } = useParams()
@@ -30,8 +32,7 @@ export default function ViveroDetailScreen() {
   // ✨ NUEVO: Calculamos las estadísticas UNA SOLA VEZ aquí
   const stats = useViveroStats(detail, events)
 
-  // 2. Estados locales de la vista
-  const [activeTab, setActiveTab] = useState<'resumen' | 'historial' | 'evidencia'>('resumen')
+  const [activeTab, setActiveTab] = useState<'resumen' | 'historial' | 'evidencia' | 'asignaciones'>('resumen')
   const [filter, setFilter] = useState('TODOS')
   const [selectedPhotos, setSelectedPhotos] = useState<PhotoItem[] | null>(null)
   const [now, setNow] = useState<number>(() => Date.now())
@@ -119,13 +120,12 @@ export default function ViveroDetailScreen() {
 
           <div className="sticky top-0 z-20 px-5 pt-4 pb-2 bg-[#eef2ed]/95 backdrop-blur-sm">
             <div className="flex rounded-full bg-white p-1 ring-1 ring-slate-200">
-              {(['resumen', 'historial', 'evidencia'] as const).map(tab => (
+              {(['resumen', 'asignaciones', 'historial', 'evidencia'] as const).map(tab => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`flex-1 py-2 rounded-full text-xs font-black capitalize transition-colors ${
-                    activeTab === tab ? 'bg-brand-700 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'
-                  }`}
+                  className={`flex-1 py-2 rounded-full text-xs font-black capitalize transition-colors ${activeTab === tab ? 'bg-brand-700 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                    }`}
                 >
                   {tab}
                 </button>
@@ -144,6 +144,11 @@ export default function ViveroDetailScreen() {
                 <QuickActions detail={detail} onJumpEvidencia={() => setActiveTab('evidencia')} />
                 <IndicadoresRapidos detail={detail} events={events} stats={stats} />
                 <SubetapasBar detail={detail} events={events} />
+                <ViveroLotAsignacionesCollapsible
+                  loteId={detail.id}
+                  cantidadAsignacionesActivas={detail.cantidadAsignacionesActivas}
+                  className="rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5"
+                />
                 <UltimosEventos events={events} onJumpHistorial={() => setActiveTab('historial')} />
               </div>
             )}
@@ -159,10 +164,15 @@ export default function ViveroDetailScreen() {
 
             {activeTab === 'evidencia' && (
               <div className="transition-opacity duration-300">
-                <EvidenciaTab 
-                  events={events} 
-                  onSelectPhoto={(photo) => setSelectedPhotos(photo ? [photo] : null)} 
+                <EvidenciaTab
+                  events={events}
+                  onSelectPhoto={(photo) => setSelectedPhotos(photo ? [photo] : null)}
                 />
+              </div>
+            )}
+            {activeTab === 'asignaciones' && (
+              <div className="transition-opacity duration-300">
+                <ViveroLotAsignacionesTab loteId={detail.id} />
               </div>
             )}
           </div>

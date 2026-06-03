@@ -12,6 +12,7 @@ import {
   uploadEvidenciasPendientesViveroApi,
   getTimelineApi,
   listSubcampaniasApi,
+  listAsignacionesApi,
 } from '../api/lotes-vivero.api'
 
 import { mapLoteToCardData, mapLoteToDetailView } from '../modules/vivero/mappers/lote.mapper'
@@ -385,6 +386,15 @@ export class LotesViveroService {
     const payload = await this.parseJsonResponse<any>(
       response,
       'Error al cargar subcampañas.',
+    )
+    return Array.isArray(payload.data) ? payload.data : []
+  }
+
+  static async listAsignaciones(loteId: number): Promise<any[]> {
+    const response = await listAsignacionesApi(loteId)
+    const payload = await this.parseJsonResponse<any>(
+      response,
+      'Error al cargar asignaciones.',
     )
     return Array.isArray(payload.data) ? payload.data : []
   }

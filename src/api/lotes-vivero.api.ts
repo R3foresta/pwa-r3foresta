@@ -227,6 +227,13 @@ export async function listSubcampaniasApi(): Promise<Response> {
   })
 }
 
+export async function listAsignacionesApi(loteId: number): Promise<Response> {
+  return fetch(`${API_BASE_URL}/lotes-vivero/${loteId}/asignaciones`, {
+    method: 'GET',
+    headers: getAuthHeaders({ includeContentType: false }),
+  })
+}
+
 // ──────────────────────────────────────────────────────────────────────────────
 // TODO(backend-pendiente): funciones cliente faltantes — el backend ya las expone
 // pero todavía no las consumimos desde el frontend. Agregar cuando se conecte

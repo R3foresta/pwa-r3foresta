@@ -116,6 +116,7 @@ export function mapLoteToDetailView(lot: LoteViveroItem): ViveroLotDetailView {
     updatedAt: lot.updated_at,
     saldoAsignadoTotal: lot.saldo_asignado_total,
     saldoVivoDisponibleAsignacion: lot.saldo_vivo_disponible_asignacion,
+    cantidadAsignacionesActivas: lot.cantidad_asignaciones_activas,
   }
 }
 
