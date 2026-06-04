@@ -78,9 +78,11 @@ function buildEvidenceFormData(input: UploadEvidenciasEventoInput): FormData {
   if (input.tomado_en) {
     formData.append('tomado_en', input.tomado_en)
   }
-  if (input.es_principal !== undefined) {
-    formData.append('es_principal', String(input.es_principal))
-  }
+  // Las evidencias de Vivero se suben como pendientes antes de que exista el
+  // EVENTO_LOTE_VIVERO final, por lo que backend usa entidad_id=0 como
+  // placeholder. Si se omite este campo, backend puede crear la foto como
+  // principal y chocar con el índice único parcial de la entidad temporal.
+  formData.append('es_principal', String(input.es_principal ?? false))
 
   return formData
 }
