@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Icon from '../../components/Icon'
 import { RecoleccionesService } from '../../services/recolecciones.service'
-import { MAX_FOTOS as MAX_FOTOS_FORM } from './validators/recoleccionForm'
+import { MAX_FOTOS_POR_TIPO as MAX_FOTOS_FORM } from './validators/recoleccionForm'
 import PhotoPicker from './components/PhotoPicker'
 
 function RecoleccionNuevaEvidenciaScreen() {
