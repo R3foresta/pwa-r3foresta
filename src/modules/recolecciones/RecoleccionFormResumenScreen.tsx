@@ -9,9 +9,8 @@ import { mapFormToCreateDto, validateRecoleccionForm } from "./validators/recole
 import { buildPastRange } from "../../utils/validations/date";
 import { mapToCantidadYUnidadCanonica } from "../../utils/recoleccionUnidad";
 import { MAX_DIAS_RECOLECCION } from "../../config/recoleccion";
-import { compressImageFile } from "../../utils/imageCompression";
+import { IMAGE_UPLOAD_ACCEPT, compressImageFile, getImageFileValidationError } from "../../utils/imageCompression";
 
-const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png'];
 const MAX_NEW_FILES = 5;
 
 function base64ToFile(base64: string, filename: string): File {
@@ -89,17 +88,22 @@ function RecoleccionFormResumenScreen() {
       return;
     }
 
-    const invalidType = mergedFiles.find((file) => !ALLOWED_IMAGE_TYPES.includes(file.type));
+    const invalidType = mergedFiles.find((file) => getImageFileValidationError(file));
     if (invalidType) {
-      setError(`Formato inválido (${invalidType.name}). Solo JPG/JPEG/PNG.`);
+      setError(getImageFileValidationError(invalidType));
       input.value = '';
       return;
     }
 
-    const compressedFiles = await Promise.all(selectedFiles.map((file) => compressImageFile(file)));
-    setError(null);
-    setNewDraftFiles((prev) => [...prev, ...compressedFiles]);
-    input.value = '';
+    try {
+      const compressedFiles = await Promise.all(selectedFiles.map((file) => compressImageFile(file)));
+      setError(null);
+      setNewDraftFiles((prev) => [...prev, ...compressedFiles]);
+      input.value = '';
+    } catch (processingError) {
+      setError(processingError instanceof Error ? processingError.message : 'No se pudieron procesar las fotos.');
+      input.value = '';
+    }
   };
 
   const removeNewDraftFile = (indexToRemove: number) => {
@@ -342,7 +346,7 @@ function RecoleccionFormResumenScreen() {
                   <label className="inline-flex cursor-pointer items-center rounded-xl border border-brand-200 bg-brand-50 px-3 py-2 text-xs font-bold text-brand-700 transition hover:bg-brand-100">
                     <input
                       type="file"
-                      accept="image/jpeg,image/jpg,image/png"
+                      accept={IMAGE_UPLOAD_ACCEPT}
                       multiple
                       className="hidden"
                       onChange={(event) => { void handleSelectNewDraftFiles(event) }}
@@ -374,7 +378,7 @@ function RecoleccionFormResumenScreen() {
                   )}
 
                   <p className="text-[11px] font-semibold text-slate-500">
-                    Máximo 5 fotos nuevas. Formatos JPG/JPEG/PNG. Se comprimen al subir.
+                    Máximo 5 fotos nuevas. Formatos JPG, PNG, WEBP o HEIC. Se convierten al subir.
                   </p>
                 </div>
               )}

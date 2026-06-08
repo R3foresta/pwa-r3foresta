@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import Icon from '../Icon'
-import { compressImageFile } from '../../utils/imageCompression'
-
-const ACCEPTED_MIME = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp']
+import {
+  IMAGE_UPLOAD_ACCEPT,
+  compressImageFile,
+  getImageFileValidationError,
+} from '../../utils/imageCompression'
 
 type Props = {
   /** URL existente de la imagen (modo edición). */
@@ -45,8 +47,9 @@ function ImageUploader({
       return
     }
 
-    if (!ACCEPTED_MIME.includes(file.type)) {
-      reportError('Formato no soportado. Usa PNG, JPG o WEBP.')
+    const validationError = getImageFileValidationError(file)
+    if (validationError) {
+      reportError(validationError)
       return
     }
 
@@ -105,7 +108,7 @@ function ImageUploader({
         <input
           ref={inputRef}
           type="file"
-          accept={ACCEPTED_MIME.join(',')}
+          accept={IMAGE_UPLOAD_ACCEPT}
           onChange={(event) => { void handleFile(event.currentTarget.files?.[0] ?? null) }}
           disabled={disabled || compressing}
           className="hidden"
@@ -116,7 +119,7 @@ function ImageUploader({
         <p className="text-center text-xs font-semibold text-red-600">{localError}</p>
       )}
       <p className="text-center text-[11px] font-medium text-brand-400">
-        PNG, JPG o WEBP · se comprime al subir
+        PNG, JPG, WEBP o HEIC · se convierte al subir
       </p>
     </div>
   )

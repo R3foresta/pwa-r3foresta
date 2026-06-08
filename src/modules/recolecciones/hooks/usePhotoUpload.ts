@@ -1,6 +1,4 @@
-import { compressImageFile } from '../../../utils/imageCompression'
-
-const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/jpg', 'image/png']
+import { compressImageFile, getImageFileValidationError } from '../../../utils/imageCompression'
 
 export function usePhotoUpload() {
   /**
@@ -13,8 +11,9 @@ export function usePhotoUpload() {
     let error: string | undefined
 
     for (const file of list) {
-      if (!ALLOWED_MIME_TYPES.includes(file.type)) {
-        error = error ?? `Formato inválido: ${file.name} (solo JPG/PNG)`
+      const validationError = getImageFileValidationError(file)
+      if (validationError) {
+        error = error ?? validationError
         continue
       }
       accepted.push(file)
@@ -29,11 +28,22 @@ export function usePhotoUpload() {
    */
   const readFilesForUpload = async (
     files: File[],
-  ): Promise<{ compressedFiles: File[]; base64List: string[] }> => {
+  ): Promise<{ compressedFiles: File[]; base64List: string[]; error?: string }> => {
     const compressedFiles: File[] = []
     const base64List: string[] = []
+    let error: string | undefined
+
     for (const file of files) {
-      const compressed = await compressImageFile(file)
+      let compressed: File
+      try {
+        compressed = await compressImageFile(file)
+      } catch (processingError) {
+        error = error ?? (processingError instanceof Error
+          ? processingError.message
+          : `No se pudo procesar ${file.name || 'la imagen'}.`)
+        continue
+      }
+
       compressedFiles.push(compressed)
       const base64 = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader()
@@ -43,7 +53,8 @@ export function usePhotoUpload() {
       })
       base64List.push(base64)
     }
-    return { compressedFiles, base64List }
+
+    return { compressedFiles, base64List, error }
   }
 
   return { validateFiles, readFilesForUpload }

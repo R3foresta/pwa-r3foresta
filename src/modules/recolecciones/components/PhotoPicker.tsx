@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import Icon from '../../../components/Icon'
 import { usePhotoUpload } from '../hooks/usePhotoUpload'
+import { IMAGE_UPLOAD_ACCEPT } from '../../../utils/imageCompression'
 
 type Props = {
   label: string
@@ -15,29 +16,42 @@ type Props = {
 function PhotoPicker({ label, photos, badgeLabel, maxPhotos = 5, onChange, onFilesAccepted, onRemove }: Props) {
   const { validateFiles, readFilesForUpload } = usePhotoUpload()
   const [error, setError] = useState<string | null>(null)
+  const [processing, setProcessing] = useState(false)
 
   const handleFiles = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files ?? [])
+    const input = event.currentTarget
+    const files = Array.from(input.files ?? [])
     if (!files.length) return
 
     const { accepted, error: validationError } = validateFiles(files)
     if (validationError) setError(validationError)
-    if (!accepted.length) return
+    if (!accepted.length) {
+      input.value = ''
+      return
+    }
 
     const remainingSlots = Math.max(0, maxPhotos - photos.length)
     const acceptedTrimmed = accepted.slice(0, remainingSlots)
 
     if (!acceptedTrimmed.length) {
       setError('Límite de fotos alcanzado')
+      input.value = ''
       return
     }
 
-    const { compressedFiles, base64List } = await readFilesForUpload(acceptedTrimmed)
-    const next = [...photos, ...base64List].slice(0, maxPhotos)
-    onChange(next)
-    onFilesAccepted?.(compressedFiles)
-    setError(null)
-    event.target.value = ''
+    setProcessing(true)
+    try {
+      const { compressedFiles, base64List, error: processingError } = await readFilesForUpload(acceptedTrimmed)
+      if (base64List.length > 0) {
+        const next = [...photos, ...base64List].slice(0, maxPhotos)
+        onChange(next)
+        onFilesAccepted?.(compressedFiles)
+      }
+      setError(processingError ?? null)
+    } finally {
+      setProcessing(false)
+      input.value = ''
+    }
   }
 
   const removePhoto = (index: number) => {
@@ -54,10 +68,19 @@ function PhotoPicker({ label, photos, badgeLabel, maxPhotos = 5, onChange, onFil
         </span>
       </div>
 
-      <label className="flex cursor-pointer items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-brand-200 bg-brand-50 px-4 py-4 text-sm font-semibold text-brand-700 shadow-soft transition hover:border-brand-300">
-        <input type="file" accept="image/jpeg,image/png" multiple className="hidden" onChange={handleFiles} />
+      <label
+        className={`flex items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-brand-200 bg-brand-50 px-4 py-4 text-sm font-semibold text-brand-700 shadow-soft transition hover:border-brand-300 ${processing ? 'cursor-wait opacity-70' : 'cursor-pointer'}`}
+      >
+        <input
+          type="file"
+          accept={IMAGE_UPLOAD_ACCEPT}
+          multiple
+          className="hidden"
+          onChange={handleFiles}
+          disabled={processing}
+        />
         <Icon name="photo" className="h-5 w-5" />
-        <span>Subir fotos</span>
+        <span>{processing ? 'Procesando fotos...' : 'Subir fotos'}</span>
       </label>
 
       {error && <p className="text-xs font-semibold text-red-500">{error}</p>}

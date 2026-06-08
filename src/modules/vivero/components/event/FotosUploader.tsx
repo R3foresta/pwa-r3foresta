@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import Icon from '../../../../components/Icon'
-import { compressImageFile } from '../../../../utils/imageCompression'
+import {
+  IMAGE_UPLOAD_ACCEPT,
+  compressImageFile,
+  getImageFileValidationError,
+} from '../../../../utils/imageCompression'
 
 export type Photo = { file: File; previewUrl: string }
-
-const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png'])
 
 type Props = {
   photos: Photo[]
@@ -45,15 +47,15 @@ function FotosUploader({
       return
     }
 
-    const invalidType = files.filter((file) => !ALLOWED_MIME_TYPES.has(file.type))
+    const invalidType = files.filter((file) => getImageFileValidationError(file))
     const candidates = files
-      .filter((file) => ALLOWED_MIME_TYPES.has(file.type))
+      .filter((file) => !getImageFileValidationError(file))
       .slice(0, availableSlots)
 
     const errors: string[] = []
     if (invalidType.length > 0) {
       errors.push(
-        `${invalidType.length === 1 ? '1 archivo no es JPG o PNG' : `${invalidType.length} archivos no son JPG o PNG`}.`,
+        `${invalidType.length === 1 ? '1 archivo no es una imagen soportada' : `${invalidType.length} archivos no son imágenes soportadas`}.`,
       )
     }
     if (files.length > availableSlots) {
@@ -69,6 +71,8 @@ function FotosUploader({
       const compressed = await Promise.all(candidates.map((file) => compressImageFile(file)))
       setFileError(errors.length > 0 ? errors.join(' ') : null)
       if (compressed.length > 0) onAdd(compressed)
+    } catch (error) {
+      setFileError(error instanceof Error ? error.message : 'No se pudieron procesar las fotos.')
     } finally {
       setCompressing(false)
       input.value = ''
@@ -111,12 +115,12 @@ function FotosUploader({
             {compressing ? 'Procesando fotos...' : 'Añadir fotos'}
           </span>
           <span className="text-[11px] font-semibold text-brand-500">
-            JPG o PNG · hasta {max} archivos · se comprimen al subir
+            JPG, PNG, WEBP o HEIC · hasta {max} archivos · se convierten al subir
           </span>
           <input
             type="file"
             multiple
-            accept="image/jpeg,image/jpg,image/png"
+            accept={IMAGE_UPLOAD_ACCEPT}
             onChange={(event) => {
               void handleFiles(event)
             }}
@@ -160,7 +164,7 @@ function FotosUploader({
               <input
                 type="file"
                 multiple
-                accept="image/jpeg,image/jpg,image/png"
+                accept={IMAGE_UPLOAD_ACCEPT}
                 onChange={(event) => {
                   void handleFiles(event)
                 }}

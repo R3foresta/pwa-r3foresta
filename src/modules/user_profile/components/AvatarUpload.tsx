@@ -1,6 +1,10 @@
 import React, { useRef, useState } from 'react'
 import { ProfileService } from '../profile.service'
-import { compressImageFile } from '../../../utils/imageCompression'
+import {
+  IMAGE_UPLOAD_ACCEPT,
+  compressImageFile,
+  getImageFileValidationError,
+} from '../../../utils/imageCompression'
 
 interface AvatarUploadProps {
   currentPhotoUrl?: string
@@ -16,8 +20,9 @@ export function AvatarUpload({ currentPhotoUrl, onUploadSuccess }: AvatarUploadP
     const file = input.files?.[0]
     if (!file) return
 
-    if (!file.type.startsWith('image/')) {
-      alert('Selecciona una imagen valida.')
+    const validationError = getImageFileValidationError(file)
+    if (validationError) {
+      alert(validationError)
       input.value = ''
       return
     }
@@ -72,7 +77,7 @@ export function AvatarUpload({ currentPhotoUrl, onUploadSuccess }: AvatarUploadP
         type="file"
         ref={fileInputRef}
         className="hidden"
-        accept="image/*"
+        accept={IMAGE_UPLOAD_ACCEPT}
         onChange={handleFileChange}
       />
     </div>
