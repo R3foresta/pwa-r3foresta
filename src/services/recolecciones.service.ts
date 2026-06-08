@@ -189,7 +189,7 @@ export interface UpdateRecoleccionDraftDto {
 }
 
 const DRAFT_ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png']
-const DRAFT_MAX_NEW_FILES = 5
+const DRAFT_MAX_NEW_FILES = 10
 
 type ApiEnvelope<T> = {
   success?: boolean
@@ -728,8 +728,9 @@ export class RecoleccionesService {
       throw new Error('Para unidad UNIDAD la cantidad debe ser un número entero.')
     }
 
-    if (data.fotos.length < 2 || data.fotos.length > 5) {
-      throw new Error('Debes enviar entre 2 y 5 fotos para crear la recolección.')
+    // Mínimo 4 fotos (2 de Lugar + 2 de Total) y máximo 10 (5 de Lugar + 5 de Total)
+    if (data.fotos.length < 4 || data.fotos.length > 10) {
+      throw new Error('Debes enviar entre 2 y 5 fotos por sección (Lugar y Total recolectado).')
     }
 
     const lat = Number(data.ubicacion.latitud)
