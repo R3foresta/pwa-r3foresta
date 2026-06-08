@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Icon from '../../../components/Icon'
 import { DEFAULT_VIVERO_LIST_LIMIT, DEFAULT_VIVERO_LIST_PAGE } from '../../../config/vivero'
@@ -6,6 +6,7 @@ import CollapsibleSection from '../components/CollapsibleSection'
 import ViveroLotCard from '../components/ViveroLotCard'
 import { useViveroLots } from '../hooks/useViveroLots'
 import type { ViveroLotCardData } from '../types/view-models'
+import { LotesViveroService } from '../../../services/lotes-vivero.service'
 
 function getNextAction(lot: ViveroLotCardData): { label: string; path: string } | null {
   if (lot.estadoLote === 'FINALIZADO') return null
@@ -21,16 +22,39 @@ function getNextAction(lot: ViveroLotCardData): { label: string; path: string } 
 function ViveroScreen() {
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
+  const [showFilters, setShowFilters] = useState(false)
+  const [onlyStockLibre, setOnlyStockLibre] = useState(false)
+  const [onlyActiveAssignments, setOnlyActiveAssignments] = useState(false)
+  const [selectedSubcampaniaId, setSelectedSubcampaniaId] = useState<string>('TODAS')
+  const [subcampanias, setSubcampanias] = useState<any[]>([])
+
+  useEffect(() => {
+    LotesViveroService.listSubcampanias()
+      .then((data) => setSubcampanias(data))
+      .catch((err) => console.error('Error al cargar subcampañas:', err))
+  }, [])
 
   const { lots, loading, error, refetch } = useViveroLots({
     stageFilter: 'TODOS',
     searchQuery: query,
     page: DEFAULT_VIVERO_LIST_PAGE,
     limit: DEFAULT_VIVERO_LIST_LIMIT,
+    subcampaniaId: selectedSubcampaniaId === 'TODAS' ? undefined : Number(selectedSubcampaniaId),
   })
 
-  const actionLots = lots.filter((l) => l.estadoLote === 'ACTIVO')
-  const passiveLots = lots.filter((l) => l.estadoLote === 'FINALIZADO')
+  const filteredLots = lots.filter((lot) => {
+    if (onlyStockLibre) {
+      const stockLibre = lot.saldoVivoDisponibleAsignacion ?? (lot.cantidadActual ?? 0)
+      if (stockLibre <= 0) return false
+    }
+    if (onlyActiveAssignments) {
+      if ((lot.cantidadAsignacionesActivas ?? 0) <= 0) return false
+    }
+    return true
+  })
+
+  const actionLots = filteredLots.filter((l) => l.estadoLote === 'ACTIVO')
+  const passiveLots = filteredLots.filter((l) => l.estadoLote === 'FINALIZADO')
 
   return (
     <div className="relative min-h-screen bg-[#eef2ed] text-brand-700">
@@ -55,16 +79,82 @@ function ViveroScreen() {
         </div>
 
         <div className="mt-5 space-y-4 px-5">
-          <label className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-soft ring-1 ring-black/5">
-            <Icon name="search" className="h-5 w-5 shrink-0 text-slate-400" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar por código, especie, vivero..."
-              className="w-full border-none bg-transparent text-sm font-semibold text-slate-700 outline-none placeholder:font-medium placeholder:text-slate-400"
-              type="search"
-            />
-          </label>
+          <div className="flex gap-2">
+            <label className="flex flex-1 items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-soft ring-1 ring-black/5">
+              <Icon name="search" className="h-5 w-5 shrink-0 text-slate-400" />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Buscar por código, especie, vivero..."
+                className="w-full border-none bg-transparent text-sm font-semibold text-slate-700 outline-none placeholder:font-medium placeholder:text-slate-400"
+                type="search"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={() => setShowFilters(!showFilters)}
+              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-soft ring-1 ring-black/5 transition ${
+                showFilters ? 'bg-brand-700 text-white' : 'bg-white text-slate-500 hover:bg-slate-50'
+              }`}
+            >
+              <Icon name="filter" className="h-5 w-5" />
+            </button>
+          </div>
+
+          {showFilters && (
+            <div className="rounded-3xl bg-white p-5 shadow-soft ring-1 ring-black/5 space-y-4">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-3">
+                  FILTROS OPERATIVOS
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setOnlyStockLibre(!onlyStockLibre)}
+                    className="flex items-center gap-2 rounded-full border border-slate-100 bg-slate-50/50 px-4 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-100/75"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={onlyStockLibre}
+                      onChange={() => {}} // Controlled by button click
+                      className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <span>Solo con stock libre</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setOnlyActiveAssignments(!onlyActiveAssignments)}
+                    className="flex items-center gap-2 rounded-full border border-slate-100 bg-slate-50/50 px-4 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-100/75"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={onlyActiveAssignments}
+                      onChange={() => {}} // Controlled by button click
+                      className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <span>Solo con asignaciones activas</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-500 pt-2 border-t border-slate-100">
+                <span>Por Subcampaña:</span>
+                <select
+                  value={selectedSubcampaniaId}
+                  onChange={(e) => setSelectedSubcampaniaId(e.target.value)}
+                  className="rounded-full border border-slate-200 bg-slate-50/50 px-3 py-1.5 font-bold text-slate-700 outline-none transition focus:border-emerald-500 focus:bg-white"
+                >
+                  <option value="TODAS">Todas</option>
+                  {subcampanias.map((sub) => (
+                    <option key={sub.id} value={sub.id}>
+                      {sub.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
 
           <button
             type="button"
@@ -117,6 +207,10 @@ function ViveroScreen() {
                   </div>
                   {actionLots.map((lot) => {
                     const action = getNextAction(lot)
+                    const isDespacho = action?.label === 'Registrar Despacho'
+                    const stockLibre = lot.saldoVivoDisponibleAsignacion ?? (lot.cantidadActual ?? 0)
+                    const isDisabled = isDespacho && stockLibre === 0
+
                     return (
                       <ViveroLotCard
                         key={lot.id}
@@ -124,7 +218,11 @@ function ViveroScreen() {
                         onClick={() => navigate(`/app/vivero/${lot.id}`)}
                         cta={
                           action
-                            ? { label: action.label, onClick: () => navigate(action.path) }
+                            ? {
+                                label: action.label,
+                                onClick: () => navigate(action.path),
+                                disabled: isDisabled,
+                              }
                             : undefined
                         }
                       />

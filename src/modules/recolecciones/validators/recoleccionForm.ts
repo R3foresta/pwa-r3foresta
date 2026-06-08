@@ -4,8 +4,8 @@ import { validateDateInRange, type DateRange } from '../../../utils/validations/
 import { mapToCantidadYUnidadCanonica } from '../../../utils/recoleccionUnidad'
 import type { RecoleccionFormData } from '../recoleccionFormTypes'
 
-export const MIN_FOTOS = 2
-export const MAX_FOTOS = 5
+export const MIN_FOTOS_POR_TIPO = 1
+export const MAX_FOTOS_POR_TIPO = 5
 
 export type RecoleccionFormStage = 'datos' | 'ubicacion' | 'resumen'
 
@@ -54,9 +54,15 @@ export function validateRecoleccionForm(
     errors.quantity = 'Para UNIDADES la cantidad debe ser entera'
   }
 
-  const totalFotos = (form.placePhotos?.length || 0) + (form.totalPhotos?.length || 0)
-  if (totalFotos < MIN_FOTOS || totalFotos > MAX_FOTOS) {
-    errors.fotos = `Adjunta entre ${MIN_FOTOS} y ${MAX_FOTOS} fotos` 
+  const placeCount = form.placePhotos?.length || 0
+  const totalCount = form.totalPhotos?.length || 0
+  if (
+    placeCount < MIN_FOTOS_POR_TIPO ||
+    totalCount < MIN_FOTOS_POR_TIPO ||
+    placeCount > MAX_FOTOS_POR_TIPO ||
+    totalCount > MAX_FOTOS_POR_TIPO
+  ) {
+    errors.fotos = `Debes agregar al menos ${MIN_FOTOS_POR_TIPO} foto de Lugar y ${MIN_FOTOS_POR_TIPO} de Total recolectado`
   }
 
   if (!form.metodo_id) {

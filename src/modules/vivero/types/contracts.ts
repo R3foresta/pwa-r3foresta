@@ -87,6 +87,9 @@ export interface LoteViveroItem {
   unidad_medida_inicial: UnidadMedidaVivero
   plantas_vivas_iniciales: number | null
   saldo_vivo_actual: number | null
+  saldo_asignado_total?: number
+  saldo_vivo_disponible_asignacion?: number
+  cantidad_asignaciones_activas?: number
   /**
    * @deprecated Alias backend de `saldo_vivo_actual`. Backend lo mantiene por
    * compat con código viejo; cuando todo el front migre, podrá eliminarse.
@@ -112,6 +115,7 @@ export interface ListLotesViveroQuery {
   fecha_inicio?: string
   fecha_fin?: string
   q?: string
+  subcampania_id?: number
 }
 
 export interface ListLotesViveroResponse {
@@ -402,8 +406,8 @@ export interface TimelineEventDto {
   fecha_evento?: string;
   observaciones?: string;
   responsable_nombre?: string;
-  payload?: Record<string, unknown>; 
-  evidencias?: EvidenciaDto[];   
+  payload?: Record<string, unknown>;
+  evidencias?: EvidenciaDto[];
 }
 
 export interface EvidenciaDto {

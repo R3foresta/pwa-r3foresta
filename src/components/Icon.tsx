@@ -38,6 +38,7 @@ export type IconName =
   | 'flag'
   | 'arrow-down'
   | 'file'
+  | 'filter'
 
 type Props = {
   name: IconName
@@ -332,6 +333,20 @@ function Icon({ name, className }: Props) {
         <svg className={`${common} ${className ?? ''}`} viewBox="0 0 24 24" fill="none" strokeWidth="1.8">
           <path strokeLinecap="round" strokeLinejoin="round" d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
           <path strokeLinecap="round" strokeLinejoin="round" d="M13 2v7h7" />
+        </svg>
+      )
+    case 'filter':
+      return (
+        <svg className={`${common} ${className ?? ''}`} viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="21" x2="14" y1="4" y2="4" />
+          <line x1="10" x2="3" y1="4" y2="4" />
+          <line x1="21" x2="10" y1="12" y2="12" />
+          <line x1="6" x2="3" y1="12" y2="12" />
+          <line x1="21" x2="16" y1="20" y2="20" />
+          <line x1="12" x2="3" y1="20" y2="20" />
+          <circle cx="12" cy="4" r="2" />
+          <circle cx="8" cy="12" r="2" />
+          <circle cx="14" cy="20" r="2" />
         </svg>
       )
     default:

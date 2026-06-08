@@ -72,6 +72,9 @@ export function mapLoteToCardData(lot: LoteViveroItem): ViveroLotCardData {
     cantidadActual: getCurrentBalance(lot),
     unidadMedida: lot.unidad_medida_inicial,
     vivero: lot.vivero?.nombre || `Vivero #${lot.vivero_id}`,
+    saldoAsignadoTotal: lot.saldo_asignado_total,
+    saldoVivoDisponibleAsignacion: lot.saldo_vivo_disponible_asignacion,
+    cantidadAsignacionesActivas: lot.cantidad_asignaciones_activas,
   }
 }
 
@@ -111,6 +114,9 @@ export function mapLoteToDetailView(lot: LoteViveroItem): ViveroLotDetailView {
     nombreComunidadOrigen: lot.nombre_comunidad_origen_snapshot,
     createdAt: lot.created_at,
     updatedAt: lot.updated_at,
+    saldoAsignadoTotal: lot.saldo_asignado_total,
+    saldoVivoDisponibleAsignacion: lot.saldo_vivo_disponible_asignacion,
+    cantidadAsignacionesActivas: lot.cantidad_asignaciones_activas,
   }
 }
 
@@ -144,7 +150,7 @@ export function mapTimelineEventToView(e: TimelineEventDto): ViveroLotEventView 
     comunidad: (p?.comunidad_destino as string | undefined) || null,
     materialIngresado: (p?.material_ingresado as string | undefined) || null,
     sustrato: (p?.sustrato as string | undefined) || null,
-    
+
     fotos: (e.evidencias || []).map((f: EvidenciaDto) => ({
       id: f.id,
       url: f.public_url || '',
