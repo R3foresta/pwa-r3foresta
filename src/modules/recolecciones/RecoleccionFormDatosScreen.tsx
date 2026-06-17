@@ -77,22 +77,6 @@ function RecoleccionFormDatosScreen() {
     return 'kg';
   };
 
-  const imageUrlToDataUrl = async (url: string): Promise<string | null> => {
-    try {
-      const response = await fetch(url);
-      if (!response.ok) return null;
-      const blob = await response.blob();
-      return await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.onerror = () => reject(new Error('No se pudo convertir imagen a base64'));
-        reader.readAsDataURL(blob);
-      });
-    } catch {
-      return null;
-    }
-  };
-
   useEffect(() => {
     if (!isEditMode || didHydrateEditDraft) {
       return;
@@ -112,14 +96,15 @@ function RecoleccionFormDatosScreen() {
         const isCutting = tipoMaterial === 'ESQUEJE';
         const nextType: MaterialType = isCutting ? 'cutting' : 'seed';
         const nextUnit = normalizeUnit(draft.unidad_canonica);
-        // 2. Procesamiento de Fotos (Se mantiene igual)
-        const rawPhotos = draft.fotos?.map((photo) => photo.url).filter(Boolean) ?? [];
-        const convertedPhotos = await Promise.all(rawPhotos.map((photoUrl) => imageUrlToDataUrl(photoUrl)));
-        const fotosBase64 = convertedPhotos.filter((photo): photo is string => Boolean(photo));
+        // 2. Fotos existentes: solo se usan como preview, no se vuelven a subir.
+        const existingPhotos = draft.fotos
+          ?.map((photo) => photo.url)
+          .filter((url): url is string => Boolean(url))
+          .map((previewUrl) => ({ previewUrl })) ?? [];
         // Dividimos las fotos para los dos pickers (lugar y total)
-        const splitIndex = Math.ceil(fotosBase64.length / 2);
-        const nextPlacePhotos = fotosBase64.slice(0, splitIndex);
-        const nextTotalPhotos = fotosBase64.slice(splitIndex);
+        const splitIndex = Math.ceil(existingPhotos.length / 2);
+        const nextPlacePhotos = existingPhotos.slice(0, splitIndex);
+        const nextTotalPhotos = existingPhotos.slice(splitIndex);
 
         if (!isMounted) return;
         // 3. Sincronizar Estados Locales Operativos
@@ -137,7 +122,6 @@ function RecoleccionFormDatosScreen() {
 
         updateForm({
           editId,
-          editInitialPhotos: fotosBase64,
           date: draft.fecha || formData.date,
           type: nextType,
           method: draft.metodo?.nombre || '',
@@ -253,7 +237,8 @@ function RecoleccionFormDatosScreen() {
   navigate('/app/collections/new/location')
 }
 
-  const hasMinimumPhotos = (formData.totalPhotos?.length || 0) >= 2;
+  const hasMinimumPhotos =
+    (formData.placePhotos?.length || 0) >= 1 && (formData.totalPhotos?.length || 0) >= 1;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#f6f7f3] to-[#eef1eb] text-brand-700">

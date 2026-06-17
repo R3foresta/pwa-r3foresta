@@ -188,8 +188,9 @@ export interface UpdateRecoleccionDraftDto {
   }
 }
 
-const DRAFT_ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png']
-const DRAFT_MAX_NEW_FILES = 10
+const DRAFT_ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'image/heif']
+const DRAFT_ALLOWED_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif']
+const DRAFT_MAX_NEW_FILES = 5
 
 type ApiEnvelope<T> = {
   success?: boolean
@@ -582,8 +583,9 @@ export class RecoleccionesService {
     }
 
     files.forEach((file) => {
-      if (!DRAFT_ALLOWED_IMAGE_TYPES.includes(file.type)) {
-        throw new Error(`Formato inválido en ${file.name}. Solo JPG, JPEG o PNG.`)
+      const extension = file.name.split('.').pop()?.toLowerCase() ?? ''
+      if (!DRAFT_ALLOWED_IMAGE_TYPES.includes(file.type.toLowerCase()) && !DRAFT_ALLOWED_IMAGE_EXTENSIONS.includes(extension)) {
+        throw new Error(`Formato inválido en ${file.name}. Solo JPG, PNG, WEBP, HEIC o HEIF.`)
       }
     })
   }

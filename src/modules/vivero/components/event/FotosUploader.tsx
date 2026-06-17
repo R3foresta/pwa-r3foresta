@@ -2,9 +2,8 @@ import { useState } from 'react'
 import Icon from '../../../../components/Icon'
 import {
   IMAGE_UPLOAD_ACCEPT,
-  compressImageFile,
   getImageFileValidationError,
-} from '../../../../utils/imageCompression'
+} from '../../../../utils/imageValidation'
 
 export type Photo = { file: File; previewUrl: string }
 
@@ -33,9 +32,8 @@ function FotosUploader({
   headerless = false,
 }: Props) {
   const [fileError, setFileError] = useState<string | null>(null)
-  const [compressing, setCompressing] = useState(false)
 
-  const handleFiles = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFiles = (event: React.ChangeEvent<HTMLInputElement>) => {
     const input = event.currentTarget
     const files = Array.from(input.files ?? [])
     if (files.length === 0) return
@@ -61,26 +59,18 @@ function FotosUploader({
     if (files.length > availableSlots) {
       errors.push(
         candidates.length > 0
-          ? `Solo se procesaron ${candidates.length} de ${files.length} fotos por el límite de ${max}.`
+          ? `Solo se agregaron ${candidates.length} de ${files.length} fotos por el límite de ${max}.`
           : `No se agregaron fotos porque se alcanzó el límite de ${max}.`,
       )
     }
 
-    setCompressing(true)
-    try {
-      const compressed = await Promise.all(candidates.map((file) => compressImageFile(file)))
-      setFileError(errors.length > 0 ? errors.join(' ') : null)
-      if (compressed.length > 0) onAdd(compressed)
-    } catch (error) {
-      setFileError(error instanceof Error ? error.message : 'No se pudieron procesar las fotos.')
-    } finally {
-      setCompressing(false)
-      input.value = ''
-    }
+    setFileError(errors.length > 0 ? errors.join(' ') : null)
+    if (candidates.length > 0) onAdd(candidates)
+    input.value = ''
   }
 
   const empty = photos.length === 0
-  const isDisabled = disabled || compressing
+  const isDisabled = disabled
 
   return (
     <div className="space-y-2">
@@ -111,19 +101,15 @@ function FotosUploader({
           } ${isDisabled ? 'pointer-events-none opacity-50' : ''}`}
         >
           <Icon name="photo" className="h-7 w-7" />
-          <span className="text-sm font-extrabold">
-            {compressing ? 'Procesando fotos...' : 'Añadir fotos'}
-          </span>
+          <span className="text-sm font-extrabold">Añadir fotos</span>
           <span className="text-[11px] font-semibold text-brand-500">
-            JPG, PNG, WEBP o HEIC · hasta {max} archivos · se convierten al subir
+            JPG, PNG, WEBP, HEIC o HEIF · hasta {max} archivos
           </span>
           <input
             type="file"
             multiple
             accept={IMAGE_UPLOAD_ACCEPT}
-            onChange={(event) => {
-              void handleFiles(event)
-            }}
+            onChange={handleFiles}
             disabled={isDisabled}
             className="hidden"
           />
@@ -159,15 +145,13 @@ function FotosUploader({
             >
               <Icon name="plus" className="h-6 w-6" />
               <span className="text-[10px] font-extrabold uppercase tracking-wider">
-                {compressing ? '...' : 'Añadir'}
+                Añadir
               </span>
               <input
                 type="file"
                 multiple
                 accept={IMAGE_UPLOAD_ACCEPT}
-                onChange={(event) => {
-                  void handleFiles(event)
-                }}
+                onChange={handleFiles}
                 disabled={isDisabled}
                 className="hidden"
               />

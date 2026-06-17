@@ -2,9 +2,11 @@ import React, { useRef, useState } from 'react'
 import { ProfileService } from '../profile.service'
 import {
   IMAGE_UPLOAD_ACCEPT,
-  compressImageFile,
   getImageFileValidationError,
-} from '../../../utils/imageCompression'
+} from '../../../utils/imageValidation'
+import {
+  compressNonEvidenceImageFile,
+} from '../../../utils/nonEvidenceImageCompression'
 
 interface AvatarUploadProps {
   currentPhotoUrl?: string
@@ -29,7 +31,7 @@ export function AvatarUpload({ currentPhotoUrl, onUploadSuccess }: AvatarUploadP
 
     try {
       setIsUploading(true)
-      const compressed = await compressImageFile(file)
+      const compressed = await compressNonEvidenceImageFile(file)
       const response = await ProfileService.updateProfilePhoto(compressed)
       onUploadSuccess(response.foto_perfil_url)
     } catch (error: unknown) {

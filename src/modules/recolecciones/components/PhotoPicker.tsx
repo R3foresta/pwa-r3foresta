@@ -1,24 +1,24 @@
 import { useState } from 'react'
 import Icon from '../../../components/Icon'
 import { usePhotoUpload } from '../hooks/usePhotoUpload'
-import { IMAGE_UPLOAD_ACCEPT } from '../../../utils/imageCompression'
+import { IMAGE_UPLOAD_ACCEPT } from '../../../utils/imageValidation'
+import type { RecoleccionPhoto } from '../recoleccionFormTypes'
 
 type Props = {
   label: string
-  photos: string[]
+  photos: RecoleccionPhoto[]
   badgeLabel?: string
   maxPhotos?: number
-  onChange: (next: string[]) => void
+  onChange: (next: RecoleccionPhoto[]) => void
   onFilesAccepted?: (files: File[]) => void
   onRemove?: (index: number) => void
 }
 
 function PhotoPicker({ label, photos, badgeLabel, maxPhotos = 5, onChange, onFilesAccepted, onRemove }: Props) {
-  const { validateFiles, readFilesForUpload } = usePhotoUpload()
+  const { validateFiles } = usePhotoUpload()
   const [error, setError] = useState<string | null>(null)
-  const [processing, setProcessing] = useState(false)
 
-  const handleFiles = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFiles = (event: React.ChangeEvent<HTMLInputElement>) => {
     const input = event.currentTarget
     const files = Array.from(input.files ?? [])
     if (!files.length) return
@@ -39,22 +39,24 @@ function PhotoPicker({ label, photos, badgeLabel, maxPhotos = 5, onChange, onFil
       return
     }
 
-    setProcessing(true)
-    try {
-      const { compressedFiles, base64List, error: processingError } = await readFilesForUpload(acceptedTrimmed)
-      if (base64List.length > 0) {
-        const next = [...photos, ...base64List].slice(0, maxPhotos)
-        onChange(next)
-        onFilesAccepted?.(compressedFiles)
-      }
-      setError(processingError ?? null)
-    } finally {
-      setProcessing(false)
-      input.value = ''
+    const nextPhotos = acceptedTrimmed.map((file) => ({
+      file,
+      previewUrl: URL.createObjectURL(file),
+    }))
+
+    if (nextPhotos.length > 0) {
+      onChange([...photos, ...nextPhotos].slice(0, maxPhotos))
+      onFilesAccepted?.(acceptedTrimmed)
     }
+    setError(validationError ?? null)
+    input.value = ''
   }
 
   const removePhoto = (index: number) => {
+    const removed = photos[index]
+    if (removed?.previewUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(removed.previewUrl)
+    }
     onChange(photos.filter((_, i) => i !== index))
     onRemove?.(index)
   }
@@ -69,7 +71,7 @@ function PhotoPicker({ label, photos, badgeLabel, maxPhotos = 5, onChange, onFil
       </div>
 
       <label
-        className={`flex items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-brand-200 bg-brand-50 px-4 py-4 text-sm font-semibold text-brand-700 shadow-soft transition hover:border-brand-300 ${processing ? 'cursor-wait opacity-70' : 'cursor-pointer'}`}
+        className="flex cursor-pointer items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-brand-200 bg-brand-50 px-4 py-4 text-sm font-semibold text-brand-700 shadow-soft transition hover:border-brand-300"
       >
         <input
           type="file"
@@ -77,10 +79,9 @@ function PhotoPicker({ label, photos, badgeLabel, maxPhotos = 5, onChange, onFil
           multiple
           className="hidden"
           onChange={handleFiles}
-          disabled={processing}
         />
         <Icon name="photo" className="h-5 w-5" />
-        <span>{processing ? 'Procesando fotos...' : 'Subir fotos'}</span>
+        <span>Subir fotos</span>
       </label>
 
       {error && <p className="text-xs font-semibold text-red-500">{error}</p>}
@@ -88,9 +89,9 @@ function PhotoPicker({ label, photos, badgeLabel, maxPhotos = 5, onChange, onFil
       {photos.length > 0 && (
         <div className="grid grid-cols-3 gap-3">
           {photos.map((photo, index) => (
-            <div key={`${photo}-${index}`} className="space-y-1">
+            <div key={`${photo.previewUrl}-${index}`} className="space-y-1">
               <div className="relative h-24 overflow-hidden rounded-2xl bg-slate-100">
-                <img src={photo} alt={`${label} ${index + 1}`} className="h-full w-full object-cover" />
+                <img src={photo.previewUrl} alt={`${label} ${index + 1}`} className="h-full w-full object-cover" />
                 <button
                   type="button"
                   onClick={() => removePhoto(index)}
