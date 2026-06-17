@@ -46,6 +46,7 @@ import {
   matchesStageFilter,
   type StageFilter,
 } from '../modules/vivero/utils/stageFilters'
+import { getImageFileValidationError } from '../utils/imageCompression'
 
 import { mapTimelineEventToView } from '../modules/vivero/mappers/lote.mapper'
 import type { TimelineEventDto } from '../modules/vivero/types/contracts'
@@ -59,7 +60,6 @@ type ApiEnvelope<T> = {
 }
 
 const MAX_EVENT_EVIDENCE_PHOTOS = 5
-const ALLOWED_EVENT_EVIDENCE_MIME = new Set(['image/jpeg', 'image/png'])
 
 export type ListViveroLotsForUiInput = {
   stageFilter: StageFilter
@@ -72,6 +72,26 @@ export type ListViveroLotsForUiInput = {
 export type ListViveroLotsForUiResult = {
   items: ViveroLotCardData[]
   pagination: ApiPagination
+}
+
+export type SubcampaniaResumen = {
+  id: number
+  nombre: string
+}
+
+export type AsignacionViveroResumen = {
+  id: number
+  proposito?: string | null
+  fecha_asignacion?: string | null
+  subcampania_nombre?: string | null
+  creador_nombre?: string | null
+  campania_nombre?: string | null
+  coordinador_nombre?: string | null
+  cantidad_asignada?: number | null
+  saldo_asignado_disponible?: number | null
+  cantidad_consumida?: number | null
+  cantidad_devuelta?: number | null
+  cantidad_mermada?: number | null
 }
 
 function defaultPagination(total = 0): ApiPagination {
@@ -92,8 +112,12 @@ function validateEvidencePhotos(fotos: File[], contextLabel = 'evento') {
   if (fotos.length > MAX_EVENT_EVIDENCE_PHOTOS) {
     throw new Error(`Solo se permiten hasta ${MAX_EVENT_EVIDENCE_PHOTOS} fotos por evento.`)
   }
-  if (fotos.some((foto) => !ALLOWED_EVENT_EVIDENCE_MIME.has(foto.type))) {
-    throw new Error('Solo se aceptan fotos JPG o PNG.')
+  const invalidPhoto = fotos.find((foto) => getImageFileValidationError(foto))
+  if (invalidPhoto) {
+    throw new Error(
+      getImageFileValidationError(invalidPhoto) ??
+        'Solo se aceptan fotos JPG, PNG, WEBP, HEIC o HEIF.',
+    )
   }
 }
 
@@ -381,18 +405,18 @@ export class LotesViveroService {
     )
   }
 
-  static async listSubcampanias(): Promise<any[]> {
+  static async listSubcampanias(): Promise<SubcampaniaResumen[]> {
     const response = await listSubcampaniasApi()
-    const payload = await this.parseJsonResponse<any>(
+    const payload = await this.parseJsonResponse<ApiEnvelope<SubcampaniaResumen[]>>(
       response,
       'Error al cargar subcampañas.',
     )
     return Array.isArray(payload.data) ? payload.data : []
   }
 
-  static async listAsignaciones(loteId: number): Promise<any[]> {
+  static async listAsignaciones(loteId: number): Promise<AsignacionViveroResumen[]> {
     const response = await listAsignacionesApi(loteId)
-    const payload = await this.parseJsonResponse<any>(
+    const payload = await this.parseJsonResponse<ApiEnvelope<AsignacionViveroResumen[]>>(
       response,
       'Error al cargar asignaciones.',
     )
