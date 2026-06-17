@@ -46,7 +46,7 @@ import {
   matchesStageFilter,
   type StageFilter,
 } from '../modules/vivero/utils/stageFilters'
-import { getImageFileValidationError } from '../utils/imageCompression'
+import { getImageFileValidationError } from '../utils/imageValidation'
 
 import { mapTimelineEventToView } from '../modules/vivero/mappers/lote.mapper'
 import type { TimelineEventDto } from '../modules/vivero/types/contracts'

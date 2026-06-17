@@ -3,7 +3,7 @@ import Icon from '../../../../components/Icon'
 import {
   IMAGE_UPLOAD_ACCEPT,
   getImageFileValidationError,
-} from '../../../../utils/imageCompression'
+} from '../../../../utils/imageValidation'
 
 export type Photo = { file: File; previewUrl: string }
 

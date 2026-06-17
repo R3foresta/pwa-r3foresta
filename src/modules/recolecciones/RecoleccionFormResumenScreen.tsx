@@ -9,7 +9,7 @@ import { mapFormToCreateDto, validateRecoleccionForm } from "./validators/recole
 import { buildPastRange } from "../../utils/validations/date";
 import { mapToCantidadYUnidadCanonica } from "../../utils/recoleccionUnidad";
 import { MAX_DIAS_RECOLECCION } from "../../config/recoleccion";
-import { IMAGE_UPLOAD_ACCEPT, getImageFileValidationError } from "../../utils/imageCompression";
+import { IMAGE_UPLOAD_ACCEPT, getImageFileValidationError } from "../../utils/imageValidation";
 
 const MAX_NEW_FILES = 5;
 

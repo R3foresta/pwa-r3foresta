@@ -1,4 +1,4 @@
-import { getImageFileValidationError } from '../../../utils/imageCompression'
+import { getImageFileValidationError } from '../../../utils/imageValidation'
 
 export function usePhotoUpload() {
   /**

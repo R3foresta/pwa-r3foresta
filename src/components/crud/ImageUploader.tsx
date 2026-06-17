@@ -2,9 +2,11 @@ import { useEffect, useRef, useState } from 'react'
 import Icon from '../Icon'
 import {
   IMAGE_UPLOAD_ACCEPT,
-  compressImageFile,
   getImageFileValidationError,
-} from '../../utils/imageCompression'
+} from '../../utils/imageValidation'
+import {
+  compressNonEvidenceImageFile,
+} from '../../utils/nonEvidenceImageCompression'
 
 type Props = {
   /** URL existente de la imagen (modo edición). */
@@ -56,7 +58,7 @@ function ImageUploader({
     setCompressing(true)
     reportError(null)
     try {
-      const compressed = await compressImageFile(file)
+      const compressed = await compressNonEvidenceImageFile(file)
       if (objectUrl) URL.revokeObjectURL(objectUrl)
       const url = URL.createObjectURL(compressed)
       setObjectUrl(url)

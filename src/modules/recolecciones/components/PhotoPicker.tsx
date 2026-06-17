@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import Icon from '../../../components/Icon'
 import { usePhotoUpload } from '../hooks/usePhotoUpload'
-import { IMAGE_UPLOAD_ACCEPT } from '../../../utils/imageCompression'
+import { IMAGE_UPLOAD_ACCEPT } from '../../../utils/imageValidation'
 import type { RecoleccionPhoto } from '../recoleccionFormTypes'
 
 type Props = {
