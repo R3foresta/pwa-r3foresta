@@ -8,6 +8,11 @@
 import type { MaterialType, Unit } from "./recoleccionTypes";
 import type { FuenteUbicacion } from "../../types/ubicacion";
 
+export interface RecoleccionPhoto {
+  previewUrl: string;
+  file?: File;
+}
+
 /**
  * Interfaz completa del estado del formulario de recolección
  * Agrupa datos de los 3 pasos: Datos generales, Ubicación y Resumen
@@ -24,8 +29,8 @@ export interface RecoleccionFormData {
   unit: Unit;                      // Unidad de entrada: 'kg', 'g' o 'units'
   notes: string;                   // Observaciones/notas adicionales
   isNewFind: boolean;              // ¿Es un nuevo hallazgo/especie nueva?
-  placePhotos: string[];           // Fotos del lugar (base64)
-  totalPhotos: string[];           // Fotos del total recolectado (base64)
+  placePhotos: RecoleccionPhoto[]; // Fotos del lugar (archivo original + preview)
+  totalPhotos: RecoleccionPhoto[]; // Fotos del total recolectado (archivo original + preview)
 
   // ============================================================================
   // PASO 2: Ubicación geográfica y almacenamiento
@@ -54,7 +59,6 @@ export interface RecoleccionFormData {
   nombre_cientifico?: string;      // Nombre científico de la planta
   nombre_comercial?: string;       // Nombre común/comercial de la planta
   editId?: number;                 // ID de recolección cuando el formulario está en modo edición
-  editInitialPhotos?: string[];    // Fotos iniciales del borrador para detectar nuevas evidencias
 }
 
 /**

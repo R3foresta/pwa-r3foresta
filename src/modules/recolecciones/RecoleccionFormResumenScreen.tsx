@@ -9,21 +9,9 @@ import { mapFormToCreateDto, validateRecoleccionForm } from "./validators/recole
 import { buildPastRange } from "../../utils/validations/date";
 import { mapToCantidadYUnidadCanonica } from "../../utils/recoleccionUnidad";
 import { MAX_DIAS_RECOLECCION } from "../../config/recoleccion";
-import { IMAGE_UPLOAD_ACCEPT, compressImageFile, getImageFileValidationError } from "../../utils/imageCompression";
+import { IMAGE_UPLOAD_ACCEPT, getImageFileValidationError } from "../../utils/imageCompression";
 
 const MAX_NEW_FILES = 5;
-
-function base64ToFile(base64: string, filename: string): File {
-  const arr = base64.split(',');
-  const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
-  const bstr = atob(arr[1]);
-  let n = bstr.length;
-  const u8arr = new Uint8Array(n);
-  while (n--) {
-    u8arr[n] = bstr.charCodeAt(n);
-  }
-  return new File([u8arr], filename, { type: mime });
-}
 
 function chunkArray<T>(items: T[], chunkSize: number): T[][] {
   const chunks: T[][] = [];
@@ -95,15 +83,9 @@ function RecoleccionFormResumenScreen() {
       return;
     }
 
-    try {
-      const compressedFiles = await Promise.all(selectedFiles.map((file) => compressImageFile(file)));
-      setError(null);
-      setNewDraftFiles((prev) => [...prev, ...compressedFiles]);
-      input.value = '';
-    } catch (processingError) {
-      setError(processingError instanceof Error ? processingError.message : 'No se pudieron procesar las fotos.');
-      input.value = '';
-    }
+    setError(null);
+    setNewDraftFiles((prev) => [...prev, ...selectedFiles]);
+    input.value = '';
   };
 
   const removeNewDraftFile = (indexToRemove: number) => {
@@ -158,13 +140,9 @@ function RecoleccionFormResumenScreen() {
           },
         };
 
-        const currentPhotos = [...(formData.placePhotos || []), ...(formData.totalPhotos || [])];
-        const initialPhotos = new Set(formData.editInitialPhotos || []);
-        const pickerNewPhotos = currentPhotos.filter((photo) => !initialPhotos.has(photo));
-        const pickerNewFiles = pickerNewPhotos.map((photo, index) => {
-          const extension = photo.startsWith('data:image/png') ? 'png' : 'jpg';
-          return base64ToFile(photo, `edicion_picker_${Date.now()}_${index + 1}.${extension}`);
-        });
+        const pickerNewFiles = [...(formData.placePhotos || []), ...(formData.totalPhotos || [])].flatMap((photo) =>
+          photo.file ? [photo.file] : [],
+        );
 
         const allNewFiles = [...pickerNewFiles, ...newDraftFiles];
 
@@ -324,7 +302,7 @@ function RecoleccionFormResumenScreen() {
                 {formData.placePhotos.slice(0, 2).map((photo, index) => (
                   <div key={index} className="aspect-square overflow-hidden rounded-xl bg-slate-100">
                     <img
-                      src={photo}
+                      src={photo.previewUrl}
                       alt={`Lugar ${index + 1}`}
                       className="h-full w-full object-cover"
                     />
@@ -333,7 +311,7 @@ function RecoleccionFormResumenScreen() {
                 {formData.totalPhotos.slice(0, 2).map((photo, index) => (
                   <div key={index} className="aspect-square overflow-hidden rounded-xl bg-slate-100">
                     <img
-                      src={photo}
+                      src={photo.previewUrl}
                       alt={`Total ${index + 1}`}
                       className="h-full w-full object-cover"
                     />
@@ -378,7 +356,7 @@ function RecoleccionFormResumenScreen() {
                   )}
 
                   <p className="text-[11px] font-semibold text-slate-500">
-                    Máximo 5 fotos nuevas. Formatos JPG, PNG, WEBP o HEIC. Se convierten al subir.
+                    Máximo 5 fotos nuevas. Formatos JPG, PNG, WEBP, HEIC o HEIF. Se suben como archivo original.
                   </p>
                 </div>
               )}

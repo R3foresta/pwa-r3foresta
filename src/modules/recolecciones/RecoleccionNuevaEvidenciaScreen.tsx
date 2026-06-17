@@ -4,6 +4,7 @@ import Icon from '../../components/Icon'
 import { RecoleccionesService } from '../../services/recolecciones.service'
 import { MAX_FOTOS_POR_TIPO as MAX_FOTOS_FORM } from './validators/recoleccionForm'
 import PhotoPicker from './components/PhotoPicker'
+import type { RecoleccionPhoto } from './recoleccionFormTypes'
 
 function RecoleccionNuevaEvidenciaScreen() {
   const navigate = useNavigate()
@@ -16,14 +17,13 @@ function RecoleccionNuevaEvidenciaScreen() {
   const [metadataText, setMetadataText] = useState('{"fuente":"frontend-v2"}')
   const [esPrincipal, setEsPrincipal] = useState(false)
   const [fotos, setFotos] = useState<File[]>([])
-  const [previewUrls, setPreviewUrls] = useState<string[]>([])
+  const [photoPreviews, setPhotoPreviews] = useState<RecoleccionPhoto[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const MAX_FOTOS = MAX_FOTOS_FORM
 
   const removeFoto = (index: number) => {
     setFotos((prev) => prev.filter((_, i) => i !== index))
-    setPreviewUrls((prev) => prev.filter((_, i) => i !== index))
   }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -142,9 +142,9 @@ function RecoleccionNuevaEvidenciaScreen() {
 
             <PhotoPicker
               label="Evidencias"
-              photos={previewUrls}
+              photos={photoPreviews}
               maxPhotos={MAX_FOTOS}
-              onChange={(next) => setPreviewUrls(next)}
+              onChange={(next) => setPhotoPreviews(next)}
               onFilesAccepted={(accepted) => {
                 const remaining = Math.max(0, MAX_FOTOS - fotos.length)
                 const trimmed = accepted.slice(0, remaining)

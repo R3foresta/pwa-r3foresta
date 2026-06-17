@@ -120,21 +120,8 @@ export function mapFormToCreateDto(form: RecoleccionFormData): CreateRecoleccion
       precision_m: form.precisionM ? Number(form.precisionM) : undefined,
       fuente: form.fuenteUbicacion,
     },
-    fotos: [...(form.placePhotos || []), ...(form.totalPhotos || [])].map((base64, index) => {
-      const mime = base64.startsWith('data:image/png') ? 'image/png' : 'image/jpeg'
-      return base64ToFile(base64, `foto_${index + 1}.${mime === 'image/png' ? 'png' : 'jpg'}`)
-    }),
+    fotos: [...(form.placePhotos || []), ...(form.totalPhotos || [])].flatMap((photo) =>
+      photo.file ? [photo.file] : [],
+    ),
   }
-}
-
-function base64ToFile(base64: string, filename: string): File {
-  const arr = base64.split(',')
-  const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg'
-  const bstr = atob(arr[1])
-  let n = bstr.length
-  const u8arr = new Uint8Array(n)
-  while (n--) {
-    u8arr[n] = bstr.charCodeAt(n)
-  }
-  return new File([u8arr], filename, { type: mime })
 }
