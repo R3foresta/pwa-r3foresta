@@ -6,7 +6,7 @@ import SelectorComunidad from '../comunidades/SelectorComunidad'
 import { useViveros } from '../../hooks/useViveros'
 import { UbicacionesService, type PaisCatalogo } from '../../services/ubicaciones.service'
 import type { ComunidadCard } from '../../tipos/comunidades'
-import { useRecoleccionForm } from './RecoleccionFormContext'
+import { useRecoleccionForm } from './useRecoleccionForm'
 
 function RecoleccionFormUbicacionScreen() {
   const navigate = useNavigate()

@@ -5,21 +5,13 @@
 // Permite compartir datos entre los 3 pasos del formulario sin prop drilling
 // ============================================================================
 
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { initialFormData, type RecoleccionFormData } from './recoleccionFormTypes'
-
-/**
- * Tipo de valor que expone el contexto
- * Define las operaciones disponibles para manipular el formulario
- */
-type ContextValue = {
-  formData: RecoleccionFormData              // Estado actual del formulario completo
-  updateForm: (data: Partial<RecoleccionFormData>) => void  // Actualiza campos del formulario
-  resetForm: () => void                      // Reinicia el formulario a valores iniciales
-}
-
-// Crea el contexto con valor inicial undefined (se valida en el hook personalizado)
-const RecoleccionFormContext = createContext<ContextValue | undefined>(undefined)
+import {
+  revokeRecoleccionFormPhotoPreviewUrls,
+  revokeRemovedPhotoPreviewUrls,
+} from './utils/photoPreviewUrls'
+import { RecoleccionFormContext, type RecoleccionFormContextValue } from './useRecoleccionForm'
 
 /**
  * Provider del contexto de formulario de recolección
@@ -30,6 +22,17 @@ const RecoleccionFormContext = createContext<ContextValue | undefined>(undefined
 export function RecoleccionFormProvider({ children }: { children: ReactNode }) {
   // Estado principal: almacena todos los datos del formulario multi-paso
   const [formData, setFormData] = useState<RecoleccionFormData>(initialFormData)
+  const formDataRef = useRef(formData)
+
+  useEffect(() => {
+    formDataRef.current = formData
+  }, [formData])
+
+  useEffect(() => {
+    return () => {
+      revokeRecoleccionFormPhotoPreviewUrls(formDataRef.current)
+    }
+  }, [])
 
   /**
    * Actualiza campos específicos del formulario
@@ -38,18 +41,35 @@ export function RecoleccionFormProvider({ children }: { children: ReactNode }) {
    * @param {Partial<RecoleccionFormData>} data - Campos a actualizar
    */
   const updateForm = (data: Partial<RecoleccionFormData>) => {
-    setFormData((prev) => ({ ...prev, ...data }))
+    setFormData((prev) => {
+      if (data.placePhotos) {
+        revokeRemovedPhotoPreviewUrls(prev.placePhotos, data.placePhotos)
+      }
+      if (data.totalPhotos) {
+        revokeRemovedPhotoPreviewUrls(prev.totalPhotos, data.totalPhotos)
+      }
+
+      const next = { ...prev, ...data }
+      formDataRef.current = next
+      return next
+    })
   }
 
   /**
    * Reinicia el formulario a sus valores iniciales
    * Se usa después de enviar exitosamente la recolección
    */
-  const resetForm = () => setFormData(initialFormData)
+  const resetForm = () => {
+    setFormData((prev) => {
+      revokeRecoleccionFormPhotoPreviewUrls(prev)
+      formDataRef.current = initialFormData
+      return initialFormData
+    })
+  }
 
   // Memoiza el objeto de contexto para evitar re-renderizados innecesarios
   // Solo se recalcula cuando formData cambia
-  const value = useMemo(
+  const value = useMemo<RecoleccionFormContextValue>(
     () => ({
       formData,
       updateForm,
@@ -60,19 +80,4 @@ export function RecoleccionFormProvider({ children }: { children: ReactNode }) {
 
   // Provee el contexto a todos los componentes hijos
   return <RecoleccionFormContext.Provider value={value}>{children}</RecoleccionFormContext.Provider>
-}
-
-/**
- * Hook personalizado para acceder al contexto del formulario
- * Debe usarse dentro de un RecoleccionFormProvider
- * 
- * @returns {ContextValue} Objeto con formData, updateForm y resetForm
- * @throws {Error} Si se usa fuera del Provider
- */
-export function useRecoleccionForm() {
-  const ctx = useContext(RecoleccionFormContext)
-  if (!ctx) {
-    throw new Error('useRecoleccionForm must be used within a RecoleccionFormProvider')
-  }
-  return ctx
 }

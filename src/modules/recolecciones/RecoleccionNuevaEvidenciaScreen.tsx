@@ -1,10 +1,11 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Icon from '../../components/Icon'
 import { RecoleccionesService } from '../../services/recolecciones.service'
 import { MAX_FOTOS_POR_TIPO as MAX_FOTOS_FORM } from './validators/recoleccionForm'
 import PhotoPicker from './components/PhotoPicker'
 import type { RecoleccionPhoto } from './recoleccionFormTypes'
+import { revokePhotoPreviewUrls } from './utils/photoPreviewUrls'
 
 function RecoleccionNuevaEvidenciaScreen() {
   const navigate = useNavigate()
@@ -18,9 +19,20 @@ function RecoleccionNuevaEvidenciaScreen() {
   const [esPrincipal, setEsPrincipal] = useState(false)
   const [fotos, setFotos] = useState<File[]>([])
   const [photoPreviews, setPhotoPreviews] = useState<RecoleccionPhoto[]>([])
+  const photoPreviewsRef = useRef(photoPreviews)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const MAX_FOTOS = MAX_FOTOS_FORM
+
+  useEffect(() => {
+    photoPreviewsRef.current = photoPreviews
+  }, [photoPreviews])
+
+  useEffect(() => {
+    return () => {
+      revokePhotoPreviewUrls(photoPreviewsRef.current)
+    }
+  }, [])
 
   const removeFoto = (index: number) => {
     setFotos((prev) => prev.filter((_, i) => i !== index))
