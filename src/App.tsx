@@ -27,6 +27,11 @@ import {
   ViveroNewScreen,
   ViveroScreen,
 } from './modules/vivero'
+import {
+  CrearCampanaScreen,
+  CrearSubcampanaPlaceholderScreen,
+  PlantacionDashboardScreen,
+} from './modules/plantacion'
 import MapScreen from './modules/map/MapScreen'
 import { CompleteProfileScreen, PerfilScreen } from './modules/user_profile'
 import ComunidadesScreen from './modules/comunidades/ComunidadesScreen'
@@ -114,7 +119,14 @@ function App() {
               />
             </Route>
             <Route path="nursery" element={<Navigate to="/app/vivero" replace />} />
-            <Route path="planting" element={<PlaceholderScreen title="Plantación" />} />
+            <Route path="planting">
+              <Route index element={<PlantacionDashboardScreen />} />
+              <Route path="campanias/new" element={<CrearCampanaScreen />} />
+              <Route
+                path="campanias/:campaniaId/subcampanias/new"
+                element={<CrearSubcampanaPlaceholderScreen />}
+              />
+            </Route>
             <Route path="co2" element={<PlaceholderScreen title="CO₂" />} />
             <Route path="map" element={<MapScreen />} />
             <Route path="comunidades" element={<ComunidadesScreen />} />
