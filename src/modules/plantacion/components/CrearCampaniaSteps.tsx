@@ -1,3 +1,4 @@
+import { Building2, Leaf, Trees } from 'lucide-react'
 import Icon from '../../../components/Icon'
 import {
   TIPO_CAMPANIA_DESCRIPTION,
@@ -8,7 +9,12 @@ import {
 } from '../types/contracts'
 import type { CrearCampaniaFormValues } from '../utils/crearCampaniaForm'
 
-const CAMPANIA_TYPES: TipoCampania[] = ['REFORESTACION', 'ARBORIZACION', 'FORESTACION']
+const CAMPANIA_TYPES: TipoCampania[] = ['ARBORIZACION', 'REFORESTACION', 'FORESTACION']
+const CAMPANIA_TYPE_ICONS: Record<TipoCampania, typeof Trees> = {
+  REFORESTACION: Trees,
+  ARBORIZACION: Building2,
+  FORESTACION: Leaf,
+}
 
 function formatDate(value: string): string {
   if (!value) return 'Sin fecha'
@@ -46,66 +52,6 @@ export function ProgressDots({ step }: { step: number }) {
   )
 }
 
-function TypeSelector({
-  value,
-  onChange,
-}: {
-  value: TipoCampania | ''
-  onChange: (value: TipoCampania) => void
-}) {
-  return (
-    <div>
-      <p className="mb-2 text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
-        Tipo de campaña
-      </p>
-      <div className="grid grid-cols-1 gap-2">
-        {CAMPANIA_TYPES.map((tipo) => {
-          const selected = value === tipo
-          return (
-            <button
-              key={tipo}
-              type="button"
-              onClick={() => onChange(tipo)}
-              className={`flex items-start gap-3 rounded-2xl p-3 text-left shadow-soft ring-1 transition ${
-                selected
-                  ? 'bg-brand-600 text-white ring-brand-700'
-                  : 'bg-white text-brand-800 ring-black/5 hover:ring-brand-300'
-              }`}
-            >
-              <span
-                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${
-                  selected ? 'bg-white/20 text-white' : 'bg-brand-50 text-brand-700'
-                }`}
-              >
-                <Icon name="planting" className="h-5 w-5" />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-sm font-extrabold leading-tight">
-                  {TIPO_CAMPANIA_LABEL[tipo]}
-                </span>
-                <span
-                  className={`mt-1 block text-[11px] font-semibold leading-relaxed ${
-                    selected ? 'text-white/80' : 'text-slate-500'
-                  }`}
-                >
-                  {TIPO_CAMPANIA_DESCRIPTION[tipo]}
-                </span>
-              </span>
-              <span
-                className={`mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${
-                  selected ? 'bg-white text-brand-700' : 'bg-slate-100 text-slate-400'
-                }`}
-              >
-                <Icon name={selected ? 'check' : 'plus'} className="h-3.5 w-3.5" />
-              </span>
-            </button>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
 export function CrearCampaniaStepDatos({
   values,
   onChange,
@@ -118,7 +64,48 @@ export function CrearCampaniaStepDatos({
 }) {
   return (
     <div className="space-y-4">
-      <TypeSelector value={values.tipo} onChange={(tipo) => onChange('tipo', tipo)} />
+      <div>
+        <p className="mb-2 text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
+          Tipo de campaña
+        </p>
+        <div className="grid grid-cols-3 gap-2">
+          {CAMPANIA_TYPES.map((tipo) => {
+            const selected = values.tipo === tipo
+            const TypeIcon = CAMPANIA_TYPE_ICONS[tipo]
+
+            return (
+              <button
+                key={tipo}
+                type="button"
+                onClick={() => onChange('tipo', tipo)}
+                className={`flex min-h-[154px] flex-col items-center gap-1.5 rounded-3xl p-3 text-center shadow-soft ring-1 transition ${
+                  selected
+                    ? 'bg-brand-600 text-white ring-brand-700'
+                    : 'bg-white text-brand-800 ring-black/5 hover:ring-brand-300'
+                }`}
+              >
+                <span
+                  className={`flex h-12 w-12 items-center justify-center rounded-2xl ${
+                    selected ? 'bg-white/20 text-white' : 'bg-brand-50 text-brand-700'
+                  }`}
+                >
+                  <TypeIcon className="h-6 w-6" strokeWidth={2} />
+                </span>
+                <span className="text-sm font-extrabold leading-tight">
+                  {TIPO_CAMPANIA_LABEL[tipo]}
+                </span>
+                <span
+                  className={`text-[10.5px] font-semibold leading-snug ${
+                    selected ? 'text-white/85' : 'text-slate-500'
+                  }`}
+                >
+                  {TIPO_CAMPANIA_DESCRIPTION[tipo]}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
 
       <section className="space-y-3 rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
         <div>

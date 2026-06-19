@@ -60,9 +60,9 @@ export const TIPO_CAMPANIA_LABEL: Record<TipoCampania, string> = {
 }
 
 export const TIPO_CAMPANIA_DESCRIPTION: Record<TipoCampania, string> = {
-  REFORESTACION: 'Recuperación de cobertura vegetal en zonas naturales o degradadas.',
-  ARBORIZACION: 'Plantación en áreas urbanas, barrios, calles o espacios públicos.',
-  FORESTACION: 'Creación de nueva cobertura forestal donde antes no existía.',
+  REFORESTACION: 'Plantar en zona natural',
+  ARBORIZACION: 'Plantar en zona urbana',
+  FORESTACION: 'Plantar y crear cobertura forestal',
 }
 
 export const TIPO_ORGANIZACION_LABEL: Record<TipoOrganizacion, string> = {
