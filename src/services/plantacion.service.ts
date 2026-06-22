@@ -2,16 +2,18 @@ import {
   createCampaniaApi,
   getCampaniaApi,
   listCampaniasApi,
-  listOrganizacionesApi,
 } from '../api/plantacion.api'
+import { OrganizacionesService } from './organizaciones.service'
 import type {
   ApiEnvelope,
   Campania,
   CreateCampaniaInput,
-  ListOrganizacionesQuery,
-  Organizacion,
   TipoCampania,
 } from '../modules/plantacion/types/contracts'
+import type {
+  ListOrganizacionesQuery,
+  Organizacion,
+} from '../modules/organizaciones/types'
 
 const TIPOS_CAMPANIA: TipoCampania[] = ['REFORESTACION', 'ARBORIZACION', 'FORESTACION']
 
@@ -132,11 +134,7 @@ export class PlantacionService {
   static async listOrganizaciones(
     query: ListOrganizacionesQuery = { activo: true },
   ): Promise<Organizacion[]> {
-    const response = await listOrganizacionesApi(query)
-    const payload = await parseJsonResponse<ApiEnvelope<Organizacion[]>>(
-      response,
-      'Error al cargar organizaciones.',
-    )
+    const payload = await OrganizacionesService.listOrganizaciones(query)
     return Array.isArray(payload.data) ? payload.data : []
   }
 }

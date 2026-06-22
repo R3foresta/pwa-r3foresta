@@ -40,6 +40,11 @@ import NuevaPlantaScreen from './modules/plantas/NuevaPlantaScreen'
 import EditarPlantaScreen from './modules/plantas/EditarPlantaScreen'
 import NuevaComunidadScreen from './modules/comunidades/NuevaComunidadScreen'
 import EditarComunidadScreen from './modules/comunidades/EditarComunidadScreen'
+import {
+  EditarOrganizacionScreen,
+  NuevaOrganizacionScreen,
+  OrganizacionesScreen,
+} from './modules/organizaciones'
 
 function RootRedirect() {
   const { isAuthenticated, hydrated } = useAuth()
@@ -132,6 +137,9 @@ function App() {
             <Route path="comunidades" element={<ComunidadesScreen />} />
             <Route path="comunidades/nueva" element={<NuevaComunidadScreen />} />
             <Route path="comunidades/:id/editar" element={<EditarComunidadScreen />} />
+            <Route path="organizaciones" element={<OrganizacionesScreen />} />
+            <Route path="organizaciones/nueva" element={<NuevaOrganizacionScreen />} />
+            <Route path="organizaciones/:id/editar" element={<EditarOrganizacionScreen />} />
             <Route path="plantas" element={<PlantasScreen />} />
             <Route path="plantas/nueva" element={<NuevaPlantaScreen />} />
             <Route path="plantas/:id/editar" element={<EditarPlantaScreen />} />

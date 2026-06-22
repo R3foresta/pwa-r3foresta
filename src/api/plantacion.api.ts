@@ -1,23 +1,7 @@
-import type {
-  CreateCampaniaInput,
-  ListOrganizacionesQuery,
-} from '../modules/plantacion/types/contracts'
+import type { CreateCampaniaInput } from '../modules/plantacion/types/contracts'
 
 const RAW_API_URL = import.meta.env.VITE_API_URL as string | undefined
 const API_BASE_URL = `${(RAW_API_URL || '').replace(/\/$/, '')}/api`
-
-function buildQuery<T extends object>(filters?: T): string {
-  const params = new URLSearchParams()
-  if (filters) {
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        params.append(key, String(value))
-      }
-    })
-  }
-  const query = params.toString()
-  return query ? `?${query}` : ''
-}
 
 function getRequiredAuthId(authId?: string): string {
   const resolved = authId || localStorage.getItem('auth_id') || undefined
@@ -71,14 +55,5 @@ export async function createCampaniaApi(
     method: 'POST',
     headers: getAuthHeaders({ authId, includeContentType: true }),
     body: JSON.stringify(input),
-  })
-}
-
-export async function listOrganizacionesApi(
-  query?: ListOrganizacionesQuery,
-): Promise<Response> {
-  return fetch(`${API_BASE_URL}/organizaciones${buildQuery(query)}`, {
-    method: 'GET',
-    headers: getAuthHeaders({ includeContentType: false }),
   })
 }

@@ -417,6 +417,7 @@ Mantener esta tabla actualizada.
 |---|---|---|---|---|---|---|
 | AUD-001 | `MEDIA` | `PENDIENTE` | `general` | `deuda` | Primera auditoría pendiente contra repo real. | `frontend/` |
 | AUD-002 | `ALTA` | `PENDIENTE` | `general` | `testing` | `build` no pasa por errores de TypeScript en módulos ajenos a Recolección. | `src/modules/recolecciones/components/CantidadInput.tsx`, `src/modules/vivero/screens/ViveroNewScreen.tsx` |
+| AUD-003 | `ALTA` | `PENDIENTE` | `general` | `testing` | `npm run lint` falla por deuda previa y por incluir worktrees internos. | `src/`, `.claude/worktrees/` |
 
 ---
 
@@ -488,6 +489,36 @@ Corregir primero los errores de `CantidadInput.tsx` relacionados con `onErrorCle
 #### Notas
 
 Durante esta tarea se verificó que los archivos modificados del flujo de Recolección pasan `eslint` focalizado; el bloqueo actual viene de deuda previa del repo.
+
+### AUD-003 — Lint global falla por deuda previa y worktrees internos
+
+- Estado: `PENDIENTE`
+- Severidad: `ALTA`
+- Módulo: `general`
+- Ubicación: `src/`, `.claude/worktrees/`
+- Tipo: `testing`
+- Detectado por: `IA`
+- Fecha: `2026-06-22`
+
+#### Problema
+
+`npm run lint` falla en archivos ajenos al CRUD de Organizaciones y también analiza `.claude/worktrees`, duplicando errores de worktrees internos.
+
+#### Riesgo
+
+La verificación global de lint no sirve como señal limpia para cerrar tareas y puede ocultar regresiones reales entre errores preexistentes.
+
+#### Acción sugerida
+
+Corregir los errores existentes en `src/` y ajustar la configuración de ESLint para excluir worktrees internos que no forman parte del frontend activo.
+
+#### Verificación esperada
+
+`npm run lint` debe completar sin errores sobre el workspace activo.
+
+#### Notas
+
+Durante la implementación del CRUD de Organizaciones, los archivos modificados pasaron ESLint focalizado y `npm run build` pasó correctamente.
 
 ---
 

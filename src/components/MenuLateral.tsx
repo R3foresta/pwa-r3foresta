@@ -14,6 +14,7 @@ type Props = {
 
 const ITEMS: DrawerItem[] = [
   { label: 'Comunidades', path: '/app/comunidades', icon: 'map' },
+  { label: 'Organizaciones', path: '/app/organizaciones', icon: 'flag' },
   { label: 'Plantas', path: '/app/plantas', icon: 'leaf' },
 ]
 
