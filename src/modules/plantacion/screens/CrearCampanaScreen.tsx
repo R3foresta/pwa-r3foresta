@@ -1,30 +1,21 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Icon from '../../../components/Icon'
 import { useAuth } from '../../../contexts/AuthContext'
 import { PlantacionService } from '../../../services/plantacion.service'
 import {
-  CrearCampaniaStepDatos,
-  CrearCampaniaStepOrganizaciones,
-  CrearCampaniaStepResumen,
-  ProgressDots,
-} from '../components/CrearCampaniaSteps'
+  CrearCampaniaFormFields,
+  OrganizacionSelector,
+} from '../components/CrearCampaniaForm'
 import type { Organizacion } from '../types/contracts'
 import {
-  validateCrearCampaniaStep,
+  validateCrearCampaniaForm,
   type CrearCampaniaFormValues,
 } from '../utils/crearCampaniaForm'
-
-function getStepLabel(step: number): string {
-  if (step === 1) return 'Datos generales'
-  if (step === 2) return 'Organizaciones'
-  return 'Revisión'
-}
 
 function CrearCampanaScreen() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const [step, setStep] = useState(1)
   const [values, setValues] = useState<CrearCampaniaFormValues>({
     nombre: '',
     tipo: '',
@@ -35,18 +26,14 @@ function CrearCampanaScreen() {
   })
   const [organizaciones, setOrganizaciones] = useState<Organizacion[]>([])
   const [orgQuery, setOrgQuery] = useState('')
+  const [orgSelectorOpen, setOrgSelectorOpen] = useState(false)
   const [orgLoading, setOrgLoading] = useState(false)
   const [orgError, setOrgError] = useState<string | null>(null)
-  const [stepError, setStepError] = useState<string | null>(null)
+  const [formError, setFormError] = useState<string | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
   const canCreate = (user?.rol ?? '').toUpperCase() === 'ADMIN'
-
-  const organizacionesSeleccionadas = useMemo(
-    () => organizaciones.filter((org) => values.organizacion_ids.includes(org.id)),
-    [organizaciones, values.organizacion_ids],
-  )
 
   const loadOrganizaciones = async () => {
     try {
@@ -72,7 +59,7 @@ function CrearCampanaScreen() {
     key: K,
     value: CrearCampaniaFormValues[K],
   ) => {
-    setStepError(null)
+    setFormError(null)
     setSubmitError(null)
     setValues((current) => ({ ...current, [key]: value }))
   }
@@ -89,31 +76,16 @@ function CrearCampanaScreen() {
     })
   }
 
-  const goNext = () => {
-    const validationError = validateCrearCampaniaStep(values, step)
-    if (validationError) {
-      setStepError(validationError)
-      return
-    }
-    setStepError(null)
-    setStep((current) => Math.min(3, current + 1))
-  }
-
   const goBack = () => {
-    setStepError(null)
+    setFormError(null)
     setSubmitError(null)
-    if (step === 1) {
-      navigate('/app/planting')
-      return
-    }
-    setStep((current) => current - 1)
+    navigate('/app/planting')
   }
 
   const handleSubmit = async () => {
-    const validationError = validateCrearCampaniaStep(values, 1)
+    const validationError = validateCrearCampaniaForm(values)
     if (validationError) {
-      setStepError(validationError)
-      setStep(1)
+      setFormError(validationError)
       return
     }
     if (!values.tipo) return
@@ -162,20 +134,18 @@ function CrearCampanaScreen() {
               >
                 <Icon name="arrow-left" className="h-5 w-5" />
               </button>
-              <span className="rounded-full bg-white/15 px-2.5 py-1 text-[10.5px] font-extrabold uppercase tracking-[0.16em] ring-1 ring-white/25">
-                Paso {step} de 3
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-[10.5px] font-extrabold uppercase tracking-[0.16em] ring-1 ring-white/25">
+                <Icon name="planting" className="h-3.5 w-3.5" />
+                Campaña general
               </span>
             </div>
             <p className="mt-5 text-[10.5px] font-extrabold uppercase tracking-[0.24em] text-white/80">
               Crear campaña
             </p>
-            <h1 className="mt-1 text-[28px] font-extrabold leading-tight">
-              {getStepLabel(step)}
-            </h1>
+            <h1 className="mt-1 text-[28px] font-extrabold leading-tight">Datos generales</h1>
             <p className="mt-2 text-sm font-medium leading-relaxed text-white/80">
-              La campaña es el contenedor estratégico. Lo operativo se define en sub-campañas.
+              Registra el contenedor estratégico. Después continuamos con sub-campañas.
             </p>
-            <ProgressDots step={step} />
           </div>
         </header>
 
@@ -186,33 +156,31 @@ function CrearCampanaScreen() {
             </div>
           )}
 
-          {stepError && (
+          {formError && (
             <div className="rounded-2xl bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 ring-1 ring-amber-100">
-              {stepError}
+              {formError}
             </div>
           )}
 
-          {step === 1 && <CrearCampaniaStepDatos values={values} onChange={updateValue} />}
-
-          {step === 2 && (
-            <CrearCampaniaStepOrganizaciones
-              organizaciones={organizaciones}
-              selectedIds={values.organizacion_ids}
-              loading={orgLoading}
-              error={orgError}
-              query={orgQuery}
-              onQueryChange={setOrgQuery}
-              onToggle={toggleOrganizacion}
-              onRetry={() => void loadOrganizaciones()}
-            />
-          )}
-
-          {step === 3 && (
-            <CrearCampaniaStepResumen
-              values={values}
-              organizacionesSeleccionadas={organizacionesSeleccionadas}
-            />
-          )}
+          <CrearCampaniaFormFields
+            values={values}
+            onChange={updateValue}
+            organizationSelector={
+              <OrganizacionSelector
+                organizaciones={organizaciones}
+                selectedIds={values.organizacion_ids}
+                loading={orgLoading}
+                error={orgError}
+                query={orgQuery}
+                open={orgSelectorOpen}
+                onOpen={() => setOrgSelectorOpen(true)}
+                onClose={() => setOrgSelectorOpen(false)}
+                onQueryChange={setOrgQuery}
+                onToggle={toggleOrganizacion}
+                onRetry={() => void loadOrganizaciones()}
+              />
+            }
+          />
 
           {submitError && (
             <div className="whitespace-pre-line rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 ring-1 ring-red-200">
@@ -223,30 +191,19 @@ function CrearCampanaScreen() {
 
         <div className="px-5">
           <div className="sticky bottom-0 -mx-5 bg-gradient-to-t from-[#eef2ed] via-[#eef2ed]/95 to-transparent px-5 pb-5 pt-3">
-            {step < 3 ? (
-              <button
-                type="button"
-                onClick={goNext}
-                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-600 px-4 py-4 text-base font-extrabold text-white shadow-soft transition hover:bg-brand-700 active:scale-[0.99]"
-              >
-                Continuar
-                <Icon name="chevron-right" className="h-5 w-5" />
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => void handleSubmit()}
-                disabled={!canCreate || submitting}
-                className={`flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-4 text-base font-extrabold text-white shadow-soft transition active:scale-[0.99] ${
-                  !canCreate || submitting
-                    ? 'cursor-not-allowed bg-slate-400'
-                    : 'bg-emerald-600 hover:bg-emerald-700'
-                }`}
-              >
-                <Icon name="check" className="h-5 w-5" />
-                {submitting ? 'Creando campaña...' : 'Crear campaña y continuar'}
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => void handleSubmit()}
+              disabled={!canCreate || submitting}
+              className={`flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-4 text-base font-extrabold text-white shadow-soft transition active:scale-[0.99] ${
+                !canCreate || submitting
+                  ? 'cursor-not-allowed bg-slate-400'
+                  : 'bg-emerald-600 hover:bg-emerald-700'
+              }`}
+            >
+              <Icon name="check" className="h-5 w-5" />
+              {submitting ? 'Creando campaña...' : 'Crear campaña'}
+            </button>
           </div>
         </div>
       </div>

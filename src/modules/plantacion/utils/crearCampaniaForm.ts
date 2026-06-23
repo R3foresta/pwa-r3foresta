@@ -9,24 +9,19 @@ export type CrearCampaniaFormValues = {
   organizacion_ids: number[]
 }
 
-export function validateCrearCampaniaStep(
-  values: CrearCampaniaFormValues,
-  step: number,
-): string | null {
-  if (step === 1) {
-    if (values.nombre.trim().length < 3) {
-      return 'El nombre debe tener al menos 3 caracteres.'
-    }
-    if (!values.tipo) {
-      return 'Selecciona un tipo de campaña.'
-    }
-    if (
-      values.fecha_estimada_inicio &&
-      values.fecha_estimada_fin &&
-      values.fecha_estimada_inicio > values.fecha_estimada_fin
-    ) {
-      return 'La fecha de cierre no puede ser anterior al inicio.'
-    }
+export function validateCrearCampaniaForm(values: CrearCampaniaFormValues): string | null {
+  if (values.nombre.trim().length < 3) {
+    return 'El nombre debe tener al menos 3 caracteres.'
+  }
+  if (!values.tipo) {
+    return 'Selecciona un tipo de campaña.'
+  }
+  if (
+    values.fecha_estimada_inicio &&
+    values.fecha_estimada_fin &&
+    values.fecha_estimada_inicio > values.fecha_estimada_fin
+  ) {
+    return 'La fecha de cierre no puede ser anterior al inicio.'
   }
   return null
 }
