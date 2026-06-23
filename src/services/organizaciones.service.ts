@@ -1,7 +1,7 @@
 import {
   actualizarOrganizacion,
+  borrarOrganizacion,
   crearOrganizacion,
-  desactivarOrganizacion,
   eliminarLogoOrganizacion,
   listarOrganizaciones,
   obtenerOrganizacion,
@@ -16,6 +16,13 @@ import type {
   TipoOrganizacion,
 } from '../modules/organizaciones/types'
 import { TIPOS_ORGANIZACION } from '../modules/organizaciones/types'
+
+type ApiError = Error & { status?: number }
+
+type BorrarOrganizacionResult = {
+  metodo: 'hard_delete' | 'soft_delete'
+  message: string
+}
 
 function normalizeText(value: string): string {
   return value.trim().replace(/\s+/g, ' ')
@@ -60,6 +67,18 @@ function toDataInput(input: OrganizacionFormInput): OrganizacionDataInput {
     tipo: clean.tipo,
     activo: clean.activo,
   }
+}
+
+function shouldFallbackToSoftDelete(error: unknown): boolean {
+  const apiError = error as ApiError
+  if (apiError?.status !== 422) return false
+
+  const message = apiError.message.toLowerCase()
+  return (
+    message.includes('campaña') ||
+    message.includes('campania') ||
+    message.includes('desactiv')
+  )
 }
 
 export class OrganizacionesService {
@@ -115,8 +134,34 @@ export class OrganizacionesService {
     return dataResponse.data
   }
 
-  static async desactivarOrganizacion(id: number | string): Promise<void> {
-    await desactivarOrganizacion(id)
+  static async borrarOrganizacion(id: number | string): Promise<BorrarOrganizacionResult> {
+    try {
+      const response = await borrarOrganizacion(id)
+      const metodo = response.data.metodo
+      const fallbackMessage =
+        metodo === 'hard_delete'
+          ? 'Organización eliminada correctamente.'
+          : 'Organización desactivada correctamente.'
+
+      return {
+        metodo,
+        message: response.data.message || fallbackMessage,
+      }
+    } catch (error) {
+      if (!shouldFallbackToSoftDelete(error)) {
+        throw error
+      }
+
+      const response = await actualizarOrganizacion(id, { activo: false })
+      if (!response.data) {
+        throw new Error('No se recibió la organización desactivada.')
+      }
+
+      return {
+        metodo: 'soft_delete',
+        message: 'Organización desactivada correctamente porque tiene campañas asociadas.',
+      }
+    }
   }
 
   static async reactivarOrganizacion(id: number | string): Promise<Organizacion> {

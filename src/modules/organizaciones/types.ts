@@ -59,6 +59,17 @@ export type LogoOrganizacionResponse = {
   } | null
 }
 
+export type BorrarOrganizacionResponse = {
+  success: boolean
+  data: {
+    message?: string
+    id: number
+    metodo: 'hard_delete' | 'soft_delete'
+    referencias?: number
+    organizacion?: Organizacion
+  }
+}
+
 export type OrganizacionFormInput = {
   nombre: string
   tipo: TipoOrganizacion

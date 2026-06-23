@@ -1,4 +1,5 @@
 import type {
+  BorrarOrganizacionResponse,
   ListOrganizacionesResponse,
   ListarOrganizacionesParams,
   LogoOrganizacionResponse,
@@ -159,15 +160,15 @@ export async function actualizarOrganizacion(
   return parseJsonOrThrow<OneOrganizacionResponse>(response)
 }
 
-export async function desactivarOrganizacion(
+export async function borrarOrganizacion(
   id: number | string,
-): Promise<OneOrganizacionResponse | { success: boolean }> {
+): Promise<BorrarOrganizacionResponse> {
   const response = await fetch(`${API_BASE_URL}/organizaciones/${id}`, {
     method: 'DELETE',
     headers: getAuthHeaders(false),
   })
 
-  return parseJsonOrThrow<OneOrganizacionResponse | { success: boolean }>(response)
+  return parseJsonOrThrow<BorrarOrganizacionResponse>(response)
 }
 
 export async function subirLogoOrganizacion(

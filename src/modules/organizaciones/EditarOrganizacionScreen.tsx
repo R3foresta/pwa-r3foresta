@@ -77,19 +77,19 @@ function EditarOrganizacionScreen() {
     }
   }
 
-  const handleDesactivar = async () => {
+  const handleBorrar = async () => {
     if (!id || actionLoading) return
     setActionLoading(true)
     setSubmitError(null)
 
     try {
-      await OrganizacionesService.desactivarOrganizacion(id)
+      const result = await OrganizacionesService.borrarOrganizacion(id)
       navigate('/app/organizaciones', {
-        state: { successMessage: 'Organización desactivada correctamente.' },
+        state: { successMessage: result.message },
       })
     } catch (err) {
       const apiError = err as ApiError
-      setSubmitError(apiError?.message || 'No se pudo desactivar la organización.')
+      setSubmitError(apiError?.message || 'No se pudo borrar o desactivar la organización.')
     } finally {
       setActionLoading(false)
       setConfirmOpen(false)
@@ -196,7 +196,7 @@ function EditarOrganizacionScreen() {
             disabled={actionLoading || submitting}
             className="w-full rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 shadow-soft ring-1 ring-red-200 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {actionLoading ? 'Desactivando...' : 'Desactivar organización'}
+            {actionLoading ? 'Procesando...' : 'Eliminar o desactivar organización'}
           </button>
         ) : (
           <button
@@ -212,14 +212,14 @@ function EditarOrganizacionScreen() {
 
       <ConfirmDialog
         open={confirmOpen}
-        title="¿Desactivar esta organización?"
-        description={`"${organizacion.nombre}" dejará de aparecer en selectores operativos. Podrás reactivarla más adelante.`}
-        confirmLabel="Sí, desactivar"
+        title="¿Eliminar o desactivar esta organización?"
+        description={`Si "${organizacion.nombre}" no tiene campañas asociadas se eliminará. Si tiene campañas asociadas, quedará inactiva y podrás reactivarla más adelante.`}
+        confirmLabel="Sí, continuar"
         cancelLabel="Cancelar"
         variant="danger"
         iconName="trash"
         loading={actionLoading}
-        onConfirm={() => void handleDesactivar()}
+        onConfirm={() => void handleBorrar()}
         onCancel={() => setConfirmOpen(false)}
       />
     </div>
