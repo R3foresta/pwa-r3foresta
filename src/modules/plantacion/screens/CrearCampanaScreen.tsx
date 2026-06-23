@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import heroCanopy from '../../../assets/home/hero-canopy.jpg'
 import Icon from '../../../components/Icon'
 import { useAuth } from '../../../contexts/AuthContext'
 import { PlantacionService } from '../../../services/plantacion.service'
@@ -123,7 +124,12 @@ function CrearCampanaScreen() {
     <div className="relative min-h-screen bg-[#eef2ed] text-brand-700">
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-28">
         <header className="relative overflow-hidden rounded-b-3xl bg-brand-700 text-white shadow-soft">
-          <div className="absolute inset-0 bg-gradient-to-b from-brand-700 via-brand-700 to-brand-600" />
+          <img
+            src={heroCanopy}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-brand-700/90 via-brand-700/85 to-brand-700" />
           <div className="relative px-5 pb-5 pt-6">
             <div className="flex items-center justify-between gap-3">
               <button
@@ -144,7 +150,7 @@ function CrearCampanaScreen() {
             </p>
             <h1 className="mt-1 text-[28px] font-extrabold leading-tight">Datos generales</h1>
             <p className="mt-2 text-sm font-medium leading-relaxed text-white/80">
-              Registra el contenedor estratégico. Después continuamos con sub-campañas.
+              Cada campaña tiene subcampañas. 
             </p>
           </div>
         </header>
@@ -152,7 +158,7 @@ function CrearCampanaScreen() {
         <main className="flex-1 space-y-4 px-5 pt-4">
           {!canCreate && (
             <div className="rounded-3xl bg-amber-50 px-4 py-4 text-sm font-semibold text-amber-800 shadow-soft ring-1 ring-amber-100">
-              Solo usuarios ADMIN pueden crear campañas.
+              Solo usuarios ADMIN pueden crear campañas para cada comunidad.
             </div>
           )}
 
