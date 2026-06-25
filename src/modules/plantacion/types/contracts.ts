@@ -25,6 +25,8 @@ export type Campania = {
   organizacion_ids?: number[]
   estado_derivado?: string | null
   count_subcampanias?: number | null
+  subcampanias_activas_count?: number | null
+  activas_count?: number | null
   avance_pct?: number | null
   borradores_count?: number | null
   zonas_count?: number | null

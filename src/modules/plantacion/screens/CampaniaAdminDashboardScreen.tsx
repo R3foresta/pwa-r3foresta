@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import plantacionHero from '../../../assets/home/plantacion.jpg'
 import Icon from '../../../components/Icon'
 import { useAuth } from '../../../contexts/AuthContext'
 import { PlantacionService } from '../../../services/plantacion.service'
 import {
-  TIPO_CAMPANIA_LABEL,
   type Campania,
   type Organizacion,
 } from '../types/contracts'
@@ -53,15 +52,15 @@ function getSubcampaniaCount(campania: Campania): number {
   return Math.max(0, campania.count_subcampanias ?? 0)
 }
 
+function getActiveSubcampaniaCount(campania: Campania): number {
+  const activeCount = campania.subcampanias_activas_count ?? campania.activas_count ?? 0
+  return Math.max(0, Number.isFinite(activeCount) ? Number(activeCount) : 0)
+}
+
 function getVisibleStatus(campania: Campania): string {
   const subcampaniaCount = getSubcampaniaCount(campania)
   if (subcampaniaCount === 0) return 'Creada'
   return campania.estado_derivado?.replace(/_/g, ' ') || 'Creada'
-}
-
-function getProgress(campania: Campania): number | null {
-  if (!Number.isFinite(campania.avance_pct)) return null
-  return Math.max(0, Math.min(100, Number(campania.avance_pct)))
 }
 
 function getZoneLabel(campania: Campania): string {
@@ -71,20 +70,6 @@ function getZoneLabel(campania: Campania): string {
     return `${zonas} zona${zonas === 1 ? '' : 's'}`
   }
   return 'Por definir en subcampañas'
-}
-
-function formatOrganizations(campania: Campania): string {
-  const organizations = campania.organizaciones ?? []
-  if (organizations.length > 0) {
-    return organizations.map((organization) => organization.nombre).join(' · ')
-  }
-
-  const organizationIds = campania.organizacion_ids ?? []
-  if (organizationIds.length > 0) {
-    return `${organizationIds.length} organización${organizationIds.length === 1 ? '' : 'es'} asociada${organizationIds.length === 1 ? '' : 's'}`
-  }
-
-  return 'Sin organizaciones visibles'
 }
 
 function OrganizationInlineList({ organizations }: { organizations: Organizacion[] }) {
@@ -98,29 +83,22 @@ function OrganizationInlineList({ organizations }: { organizations: Organizacion
   }
 
   return (
-    <div className="flex items-center gap-2 rounded-2xl bg-white/10 px-3 py-2.5 ring-1 ring-white/15">
-      <div className="flex -space-x-2">
-        {organizations.slice(0, 4).map((organization) => (
-          <span
-            key={organization.id}
-            className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-white/20 text-[9px] font-extrabold text-white ring-2 ring-brand-700"
-          >
+    <div className="flex flex-wrap gap-1.5">
+      {organizations.map((organization) => (
+        <span
+          key={organization.id}
+          className="inline-flex max-w-full items-center gap-2 rounded-2xl bg-white/10 px-2.5 py-2 text-[11px] font-extrabold text-white ring-1 ring-white/15"
+        >
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/20 text-[8.5px] font-extrabold text-white ring-1 ring-white/25">
             {organization.logo_url ? (
               <img src={organization.logo_url} alt="" className="h-full w-full object-cover" />
             ) : (
               getOrganizationInitials(organization.nombre)
             )}
           </span>
-        ))}
-        {organizations.length > 4 && (
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-[9px] font-extrabold text-brand-700 ring-2 ring-brand-700">
-            +{organizations.length - 4}
-          </span>
-        )}
-      </div>
-      <p className="min-w-0 flex-1 truncate text-[11.5px] font-extrabold text-white">
-        {organizations.map((organization) => organization.nombre).join(' · ')}
-      </p>
+          <span className="truncate">{organization.nombre}</span>
+        </span>
+      ))}
     </div>
   )
 }
@@ -189,30 +167,6 @@ function DCTabs({
   )
 }
 
-function KpiCard({
-  label,
-  value,
-  helper,
-}: {
-  label: string
-  value: string
-  helper: string
-}) {
-  return (
-    <div className="rounded-3xl bg-white p-3.5 shadow-soft ring-1 ring-black/5">
-      <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-brand-500">
-        {label}
-      </p>
-      <p className="mt-1 text-2xl font-extrabold leading-tight text-brand-800 tabular-nums">
-        {value}
-      </p>
-      <p className="mt-1 text-[10px] font-bold leading-snug text-slate-500">
-        {helper}
-      </p>
-    </div>
-  )
-}
-
 function PendingSetupNotice({
   canCreate,
   onCreate,
@@ -261,7 +215,8 @@ function CampaniaHeader({
   onBack: () => void
 }) {
   const status = getVisibleStatus(campania)
-  const progress = getProgress(campania)
+  const progress = 0
+  const activeCount = getActiveSubcampaniaCount(campania)
   const planted = campania.arboles_plantados
   const target = campania.meta_arboles
 
@@ -319,12 +274,12 @@ function CampaniaHeader({
           <div className="shrink-0 text-right">
             <p className="text-[10px] font-bold text-white/70">Avance</p>
             <p className="text-2xl font-extrabold tabular-nums">
-              {progress == null ? '--' : `${progress}%`}
+              {progress}%
             </p>
           </div>
         </div>
         <div className="mt-2">
-          <Progress pct={progress ?? 0} />
+          <Progress pct={progress} />
         </div>
 
         <div className="mt-3 flex flex-wrap gap-1.5">
@@ -334,7 +289,7 @@ function CampaniaHeader({
           </span>
           <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-[10.5px] font-extrabold tracking-wide ring-1 ring-white/20">
             <Icon name="shield" className="h-3 w-3" />
-            Estado heredado de subcampañas
+            {activeCount} activas
           </span>
         </div>
       </div>
@@ -342,74 +297,10 @@ function CampaniaHeader({
   )
 }
 
-function CampaignDetailsCard({ campania }: { campania: Campania }) {
-  return (
-    <section className="space-y-3 rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="text-sm font-extrabold text-brand-800">Datos generales</p>
-          <p className="mt-0.5 text-[11px] font-semibold text-slate-500">
-            Información de la campaña paraguas.
-          </p>
-        </div>
-        <StateBadge label={getVisibleStatus(campania)} />
-      </div>
-
-      <div className="space-y-2">
-        <DetailLine icon="planting" label="Tipo" value={TIPO_CAMPANIA_LABEL[campania.tipo]} />
-        <DetailLine
-          icon="shield"
-          label="Organizaciones"
-          value={formatOrganizations(campania)}
-        />
-        <DetailLine
-          icon="date"
-          label="Periodo estimado"
-          value={`${formatDate(campania.fecha_estimada_inicio)} - ${formatDate(campania.fecha_estimada_fin)}`}
-        />
-        <DetailLine icon="map" label="Zonas" value={getZoneLabel(campania)} />
-        <DetailLine
-          icon="info"
-          label="Descripción"
-          value={campania.descripcion?.trim() || 'Sin descripción registrada.'}
-        />
-      </div>
-    </section>
-  )
-}
-
-function DetailLine({
-  icon,
-  label,
-  value,
-}: {
-  icon: 'planting' | 'shield' | 'date' | 'map' | 'info'
-  label: string
-  value: string
-}) {
-  return (
-    <div className="flex items-start gap-3 rounded-2xl bg-[#f8fbf7] px-3 py-3 ring-1 ring-brand-100">
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-brand-700 ring-1 ring-brand-100">
-        <Icon name={icon} className="h-4 w-4" />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-[9.5px] font-extrabold uppercase tracking-[0.14em] text-brand-500">
-          {label}
-        </span>
-        <span className="mt-1 block text-sm font-extrabold leading-snug text-brand-800">
-          {value}
-        </span>
-      </span>
-    </div>
-  )
-}
-
 function SubcampaniasSection({
   campania,
-  onCreate,
 }: {
   campania: Campania
-  onCreate: () => void
 }) {
   const count = getSubcampaniaCount(campania)
 
@@ -436,14 +327,6 @@ function SubcampaniasSection({
             ? 'Crea la primera subcampaña para definir zona, meta, coordinador, equipo y lotes.'
             : 'El contrato actual solo entrega el conteo. El listado operativo se conectará cuando el backend exponga las subcampañas por campaña.'}
         </p>
-        <button
-          type="button"
-          onClick={onCreate}
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-extrabold text-brand-700 shadow-soft ring-1 ring-dashed ring-brand-300 hover:bg-brand-50"
-        >
-          <Icon name="plus" className="h-4 w-4" />
-          Agregar subcampaña
-        </button>
       </div>
     </section>
   )
@@ -548,24 +431,6 @@ function CampaniaAdminDashboardScreen() {
       .finally(() => setLoading(false))
   }, [hasValidCampaniaId, numericCampaniaId, state?.campania])
 
-  const summary = useMemo(() => {
-    if (!campania) return null
-    const progress = getProgress(campania)
-    const subcampaniaCount = getSubcampaniaCount(campania)
-    return {
-      progressLabel: progress == null ? 'Pendiente' : `${progress}%`,
-      borradoresLabel:
-        subcampaniaCount === 0 || !Number.isFinite(campania.borradores_count)
-          ? 'Pendiente'
-          : formatNumber(campania.borradores_count),
-      subcampaniasLabel: `${subcampaniaCount}`,
-      zonasLabel:
-        campania.zonas?.length || (campania.zonas_count ?? 0) > 0
-          ? getZoneLabel(campania)
-          : 'Por definir',
-    }
-  }, [campania])
-
   const goBack = () => navigate('/app/planting')
 
   const goToSubcampania = () => {
@@ -606,7 +471,7 @@ function CampaniaAdminDashboardScreen() {
             </div>
           )}
 
-          {campania && summary && !loading && !visibleError && (
+          {campania && !loading && !visibleError && (
             <>
               <DCTabs active={activeTab} onChange={setActiveTab} />
 
@@ -614,41 +479,7 @@ function CampaniaAdminDashboardScreen() {
 
               {activeTab === 'resumen' ? (
                 <>
-                  <div className="grid grid-cols-2 gap-2">
-                    <KpiCard
-                      label="Avance"
-                      value={summary.progressLabel}
-                      helper="Agregado desde subcampañas."
-                    />
-                    <KpiCard
-                      label="Borradores"
-                      value={summary.borradoresLabel}
-                      helper="Disponible al crear subcampañas."
-                    />
-                    <KpiCard
-                      label="Subcampañas"
-                      value={summary.subcampaniasLabel}
-                      helper="Base operativa de la campaña."
-                    />
-                    <KpiCard
-                      label="Zonas"
-                      value={summary.zonasLabel}
-                      helper="Definidas por subcampaña."
-                    />
-                    <KpiCard
-                      label="Supervivencia"
-                      value={campania.supervivencia_pct == null ? 'Pendiente' : `${campania.supervivencia_pct}%`}
-                      helper="Ponderada por subcampañas."
-                    />
-                    <KpiCard
-                      label="CO2 proyectado"
-                      value={campania.co2_proyectado_ton == null ? 'Pendiente' : `${campania.co2_proyectado_ton} T`}
-                      helper="Agregado de metas operativas."
-                    />
-                  </div>
-
-                  <CampaignDetailsCard campania={campania} />
-                  <SubcampaniasSection campania={campania} onCreate={goToSubcampania} />
+                  <SubcampaniasSection campania={campania} />
                 </>
               ) : (
                 <PendingTabPanel tab={activeTab} />
@@ -657,22 +488,6 @@ function CampaniaAdminDashboardScreen() {
           )}
         </main>
       </div>
-
-      {campania && !loading && !visibleError && (
-        <button
-          type="button"
-          onClick={goToSubcampania}
-          disabled={!canCreateSubcampania}
-          className={`fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full px-4 py-3.5 text-sm font-extrabold shadow-soft ring-4 ring-white transition active:scale-[0.97] ${
-            canCreateSubcampania
-              ? 'bg-brand-600 text-white hover:bg-brand-700'
-              : 'cursor-not-allowed bg-slate-400 text-white'
-          }`}
-        >
-          <Icon name="plus" className="h-5 w-5" />
-          Subcampaña
-        </button>
-      )}
     </div>
   )
 }
