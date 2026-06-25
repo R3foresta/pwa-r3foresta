@@ -10,7 +10,8 @@ import {
   type Organizacion,
 } from '../types/contracts'
 import {
-  loadSubcampaniaBaseDraft,
+  createSubcampaniaDraftId,
+  loadSubcampaniaBaseDrafts,
   type SubcampaniaBaseDraft,
 } from '../utils/subcampaniaDraft'
 
@@ -51,10 +52,6 @@ function getOrganizationInitials(name: string): string {
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase())
     .join('')
-}
-
-function getInitials(name: string): string {
-  return getOrganizationInitials(name)
 }
 
 function getSubcampaniaCount(campania: Campania): number {
@@ -163,6 +160,34 @@ function SubcampanaBadge({ estado }: { estado: 'BORRADOR' }) {
   )
 }
 
+function AddSubcampaniaButton({
+  canCreate,
+  onCreate,
+  compact = false,
+}: {
+  canCreate: boolean
+  onCreate: () => void
+  compact?: boolean
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onCreate}
+      disabled={!canCreate}
+      className={`flex w-full items-center justify-center gap-2 rounded-2xl text-sm font-extrabold shadow-soft transition ${
+        compact ? 'px-4 py-3' : 'px-4 py-3.5'
+      } ${
+        canCreate
+          ? 'bg-brand-600 text-white hover:bg-brand-700'
+          : 'cursor-not-allowed bg-slate-100 text-slate-500 ring-1 ring-slate-200'
+      }`}
+    >
+      <Icon name="plus" className="h-5 w-5" />
+      {canCreate ? 'Agregar nueva subcampaña' : 'Solo ADMIN puede agregar subcampañas'}
+    </button>
+  )
+}
+
 function DCTabs({
   active,
   onChange,
@@ -233,7 +258,7 @@ function SubcampaniaDraftRow({
   const guard = getDraftActivationGuard(draft)
   const municipio = getDraftMunicipio(draft)
   const coordinador = draft.coordinador?.nombre ?? ''
-  const coordinadorIniciales = coordinador ? getInitials(coordinador) : ''
+  const coordinadorIniciales = coordinador ? getOrganizationInitials(coordinador) : ''
 
   return (
     <button
@@ -323,19 +348,9 @@ function PendingSetupNotice({
           </p>
         </div>
       </div>
-      <button
-        type="button"
-        onClick={onCreate}
-        disabled={!canCreate}
-        className={`mt-4 flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3.5 text-sm font-extrabold shadow-soft transition ${
-          canCreate
-            ? 'bg-brand-600 text-white hover:bg-brand-700'
-            : 'cursor-not-allowed bg-slate-100 text-slate-500 ring-1 ring-slate-200'
-        }`}
-      >
-        <Icon name="plus" className="h-5 w-5" />
-        {canCreate ? 'Agregar subcampaña' : 'Solo ADMIN puede agregar subcampañas'}
-      </button>
+      <div className="mt-4">
+        <AddSubcampaniaButton canCreate={canCreate} onCreate={onCreate} />
+      </div>
     </section>
   )
 }
@@ -432,15 +447,15 @@ function CampaniaHeader({
 
 function SubcampaniasSection({
   campania,
-  localDraft,
+  localDrafts,
   onDraftTap,
 }: {
   campania: Campania
-  localDraft: SubcampaniaBaseDraft | null
-  onDraftTap: () => void
+  localDrafts: SubcampaniaBaseDraft[]
+  onDraftTap: (draft: SubcampaniaBaseDraft) => void
 }) {
   const count = getSubcampaniaCount(campania)
-  const visibleCount = count + (localDraft ? 1 : 0)
+  const visibleCount = count + localDrafts.length
 
   return (
     <section className="pt-1">
@@ -453,9 +468,15 @@ function SubcampaniasSection({
         </p>
       </div>
 
-      {localDraft ? (
-        <div className="mt-2">
-          <SubcampaniaDraftRow draft={localDraft} onTap={onDraftTap} />
+      {localDrafts.length > 0 ? (
+        <div className="mt-2 space-y-2">
+          {localDrafts.map((draft) => (
+            <SubcampaniaDraftRow
+              key={draft.draft_id}
+              draft={draft}
+              onTap={() => onDraftTap(draft)}
+            />
+          ))}
         </div>
       ) : (
         <div className="mt-2 rounded-3xl bg-white p-5 text-center shadow-soft ring-1 ring-black/5">
@@ -468,7 +489,7 @@ function SubcampaniasSection({
           <p className="mt-1 text-xs font-semibold leading-relaxed text-slate-500">
             {count === 0
               ? 'Crea la primera subcampaña para definir zona, meta, coordinador, equipo y lotes.'
-              : 'El contrato actual solo entrega el conteo. El listado operativo se conectará cuando el backend exponga las subcampañas por campaña.'}
+              : 'El listado operativo se conectará al endpoint de subcampañas de la campaña.'}
           </p>
         </div>
       )}
@@ -541,8 +562,8 @@ function CampaniaAdminDashboardScreen() {
   const [loading, setLoading] = useState(!state?.campania && hasValidCampaniaId)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<DashboardTab>('resumen')
-  const [localDraft] = useState<SubcampaniaBaseDraft | null>(() =>
-    hasValidCampaniaId ? loadSubcampaniaBaseDraft(numericCampaniaId) : null,
+  const [localDrafts] = useState<SubcampaniaBaseDraft[]>(() =>
+    hasValidCampaniaId ? loadSubcampaniaBaseDrafts(numericCampaniaId) : [],
   )
   const canCreateSubcampania = (user?.rol ?? '').toUpperCase() === 'ADMIN'
   const visibleError = error ?? (!hasValidCampaniaId ? 'ID de campaña inválido.' : null)
@@ -580,10 +601,18 @@ function CampaniaAdminDashboardScreen() {
 
   const goBack = () => navigate('/app/planting')
 
-  const goToSubcampania = () => {
+  const goToNewSubcampania = () => {
     if (!campania) return
-    navigate(`/app/planting/campanias/${campania.id}/subcampanias/new`, {
-      state: { campania },
+    const draftId = createSubcampaniaDraftId()
+    navigate(`/app/planting/campanias/${campania.id}/subcampanias/new?draftId=${encodeURIComponent(draftId)}`, {
+      state: { campania, draftId },
+    })
+  }
+
+  const goToDraftSubcampania = (draft: SubcampaniaBaseDraft) => {
+    if (!campania) return
+    navigate(`/app/planting/campanias/${campania.id}/subcampanias/new?draftId=${encodeURIComponent(draft.draft_id)}`, {
+      state: { campania, draftId: draft.draft_id },
     })
   }
 
@@ -622,14 +651,26 @@ function CampaniaAdminDashboardScreen() {
             <>
               <DCTabs active={activeTab} onChange={setActiveTab} />
 
-              <PendingSetupNotice canCreate={canCreateSubcampania} onCreate={goToSubcampania} />
+              {localDrafts.length === 0 && (
+                <PendingSetupNotice
+                  canCreate={canCreateSubcampania}
+                  onCreate={goToNewSubcampania}
+                />
+              )}
+              {localDrafts.length > 0 && (
+                <AddSubcampaniaButton
+                  canCreate={canCreateSubcampania}
+                  onCreate={goToNewSubcampania}
+                  compact
+                />
+              )}
 
               {activeTab === 'resumen' ? (
                 <>
                   <SubcampaniasSection
                     campania={campania}
-                    localDraft={localDraft}
-                    onDraftTap={goToSubcampania}
+                    localDrafts={localDrafts}
+                    onDraftTap={goToDraftSubcampania}
                   />
                 </>
               ) : (

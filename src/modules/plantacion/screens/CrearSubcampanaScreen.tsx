@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import plantacionHero from '../../../assets/home/plantacion.jpg'
 import Icon from '../../../components/Icon'
 import SelectorComunidad from '../../comunidades/SelectorComunidad'
@@ -12,6 +12,7 @@ import {
   type Campania,
 } from '../types/contracts'
 import {
+  createSubcampaniaDraftId,
   loadSubcampaniaBaseDraft,
   saveSubcampaniaBaseDraft,
   type SubcampaniaBaseDraft,
@@ -19,6 +20,7 @@ import {
 
 type LocationState = {
   campania?: Campania
+  draftId?: string
 }
 
 type BaseStepErrors = {
@@ -263,14 +265,17 @@ function CoordinadorSelector({
 
 function SubcampaniaBaseStep({
   campania,
+  draftId,
   onDraftSaved,
 }: {
   campania: Campania
+  draftId: string
   onDraftSaved: () => void
 }) {
   const [initialDraft] = useState<SubcampaniaBaseDraft | null>(() =>
-    loadSubcampaniaBaseDraft(campania.id),
+    loadSubcampaniaBaseDraft(campania.id, draftId),
   )
+  const [createdAt] = useState(() => initialDraft?.created_at ?? new Date().toISOString())
   const [subcampaniaNombre, setSubcampaniaNombre] = useState(
     () =>
       initialDraft?.nombre ??
@@ -353,6 +358,7 @@ function SubcampaniaBaseStep({
     }
 
     saveSubcampaniaBaseDraft({
+      draft_id: draftId,
       campania_id: campania.id,
       tipo: campania.tipo,
       nombre,
@@ -360,6 +366,8 @@ function SubcampaniaBaseStep({
       coordinador: selectedCoordinador,
       fecha_estimada_inicio: fechaInicio,
       fecha_estimada_fin: fechaFin,
+      created_at: createdAt,
+      updated_at: new Date().toISOString(),
     })
     setSubcampaniaNombre(nombre)
     if (action === 'draft') {
@@ -500,11 +508,14 @@ function SubcampaniaBaseStep({
   )
 }
 
-function CrearSubcampanaPlaceholderScreen() {
+function CrearSubcampanaScreen() {
   const navigate = useNavigate()
   const { campaniaId } = useParams()
+  const [searchParams] = useSearchParams()
   const location = useLocation()
   const state = location.state as LocationState | null
+  const routeDraftId = searchParams.get('draftId')?.trim() || state?.draftId
+  const [draftId] = useState(() => routeDraftId || createSubcampaniaDraftId())
   const numericCampaniaId = Number(campaniaId)
   const hasValidCampaniaId = Number.isFinite(numericCampaniaId) && numericCampaniaId > 0
   const [campania, setCampania] = useState<Campania | null>(state?.campania ?? null)
@@ -597,11 +608,16 @@ function CrearSubcampanaPlaceholderScreen() {
         )}
 
         {campania && !loading && !visibleError && (
-          <SubcampaniaBaseStep key={campania.id} campania={campania} onDraftSaved={goToDashboard} />
+          <SubcampaniaBaseStep
+            key={`${campania.id}-${draftId}`}
+            campania={campania}
+            draftId={draftId}
+            onDraftSaved={goToDashboard}
+          />
         )}
       </div>
     </div>
   )
 }
 
-export default CrearSubcampanaPlaceholderScreen
+export default CrearSubcampanaScreen
