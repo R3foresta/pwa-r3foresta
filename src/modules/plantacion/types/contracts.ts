@@ -3,6 +3,7 @@ import type {
   Organizacion,
   TipoOrganizacion,
 } from '../../organizaciones/types'
+import type { UsuarioResumen } from '../../../types/users'
 
 export type TipoCampania = 'REFORESTACION' | 'ARBORIZACION' | 'FORESTACION'
 
@@ -36,6 +37,9 @@ export type Campania = {
   hectareas?: number | null
   supervivencia_pct?: number | null
   co2_proyectado_ton?: number | null
+  coordinador?: UsuarioResumen | null
+  coordinador_id?: number | null
+  coordinador_nombre?: string | null
   created_at: string
   updated_at: string
 }
