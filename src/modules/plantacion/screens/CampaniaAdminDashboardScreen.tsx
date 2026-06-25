@@ -5,9 +5,14 @@ import Icon from '../../../components/Icon'
 import { useAuth } from '../../../contexts/AuthContext'
 import { PlantacionService } from '../../../services/plantacion.service'
 import {
+  TIPO_CAMPANIA_LABEL,
   type Campania,
   type Organizacion,
 } from '../types/contracts'
+import {
+  loadSubcampaniaBaseDraft,
+  type SubcampaniaBaseDraft,
+} from '../utils/subcampaniaDraft'
 
 type LocationState = {
   campania?: Campania
@@ -46,6 +51,10 @@ function getOrganizationInitials(name: string): string {
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase())
     .join('')
+}
+
+function getInitials(name: string): string {
+  return getOrganizationInitials(name)
 }
 
 function getSubcampaniaCount(campania: Campania): number {
@@ -137,6 +146,23 @@ function Progress({ pct }: { pct: number }) {
   )
 }
 
+function TipoSubBadge({ tipo }: { tipo: Campania['tipo'] }) {
+  return (
+    <span className="inline-flex rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-brand-700 ring-1 ring-brand-100">
+      {TIPO_CAMPANIA_LABEL[tipo]}
+    </span>
+  )
+}
+
+function SubcampanaBadge({ estado }: { estado: 'BORRADOR' }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-amber-800 ring-1 ring-amber-100">
+      <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+      {estado}
+    </span>
+  )
+}
+
 function DCTabs({
   active,
   onChange,
@@ -164,6 +190,113 @@ function DCTabs({
         })}
       </div>
     </div>
+  )
+}
+
+function getDraftMunicipio(draft: SubcampaniaBaseDraft): string {
+  const comunidad = draft.comunidad
+  if (!comunidad) return ''
+  return (
+    comunidad.nivel3?.nombre ||
+    comunidad.nivel2?.nombre ||
+    comunidad.nivel1?.nombre ||
+    comunidad.nombre
+  )
+}
+
+function getDraftActivationGuard(draft: SubcampaniaBaseDraft): {
+  ok: boolean
+  faltantes: string[]
+} {
+  const faltantes: string[] = []
+
+  if (!draft.nombre.trim()) faltantes.push('Nombre')
+  if (!draft.comunidad) faltantes.push('Zona')
+  if (!draft.coordinador) faltantes.push('Coordinador')
+  faltantes.push('Meta')
+  faltantes.push('Polígono')
+  faltantes.push('Reservas')
+
+  return {
+    ok: faltantes.length === 0,
+    faltantes,
+  }
+}
+
+function SubcampaniaDraftRow({
+  draft,
+  onTap,
+}: {
+  draft: SubcampaniaBaseDraft
+  onTap: () => void
+}) {
+  const guard = getDraftActivationGuard(draft)
+  const municipio = getDraftMunicipio(draft)
+  const coordinador = draft.coordinador?.nombre ?? ''
+  const coordinadorIniciales = coordinador ? getInitials(coordinador) : ''
+
+  return (
+    <button
+      type="button"
+      onClick={onTap}
+      className="block w-full rounded-2xl bg-white p-3.5 text-left shadow-soft ring-1 ring-black/5 transition hover:ring-brand-300 active:scale-[0.995]"
+    >
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <TipoSubBadge tipo={draft.tipo} />
+            <SubcampanaBadge estado="BORRADOR" />
+          </div>
+          <p className="mt-1 truncate text-[14px] font-extrabold leading-tight text-brand-800">
+            {draft.nombre}
+          </p>
+          {municipio && (
+            <p className="mt-0.5 flex items-center gap-1 truncate text-[11px] font-semibold text-slate-500">
+              <Icon name="pin" className="h-3 w-3 text-slate-400" />
+              {municipio}
+            </p>
+          )}
+        </div>
+        <Icon name="chevron-right" className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+      </div>
+
+      {guard.ok ? (
+        <div className="mt-2.5 flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 ring-1 ring-emerald-100">
+          <Icon name="check" className="h-4 w-4 shrink-0 text-emerald-700" />
+          <p className="flex-1 text-[11.5px] font-bold leading-snug text-emerald-900">
+            Configuración completa · lista para activar.
+          </p>
+          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-white">
+            <Icon name="chevron-right" className="h-3 w-3" />
+            Abrir
+          </span>
+        </div>
+      ) : (
+        <div className="mt-2.5 rounded-xl bg-amber-50 px-3 py-2 ring-1 ring-amber-100">
+          <p className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wide text-amber-800">
+            <Icon name="info" className="h-3.5 w-3.5" />
+            Falta para activar
+          </p>
+          <p className="mt-0.5 text-[11.5px] font-bold leading-snug text-amber-900">
+            {guard.faltantes.join(' · ')}
+          </p>
+        </div>
+      )}
+
+      {coordinador && (
+        <div className="mt-2.5 flex items-center gap-2">
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-100 text-[10px] font-extrabold text-brand-700">
+            {coordinadorIniciales}
+          </span>
+          <p className="flex-1 truncate text-[11px] font-semibold text-slate-600">
+            {coordinador}
+          </p>
+          <p className="whitespace-nowrap text-[10.5px] font-bold text-slate-400">
+            {formatDate(draft.fecha_estimada_inicio)} - {formatDate(draft.fecha_estimada_fin)}
+          </p>
+        </div>
+      )}
+    </button>
   )
 }
 
@@ -299,10 +432,15 @@ function CampaniaHeader({
 
 function SubcampaniasSection({
   campania,
+  localDraft,
+  onDraftTap,
 }: {
   campania: Campania
+  localDraft: SubcampaniaBaseDraft | null
+  onDraftTap: () => void
 }) {
   const count = getSubcampaniaCount(campania)
+  const visibleCount = count + (localDraft ? 1 : 0)
 
   return (
     <section className="pt-1">
@@ -311,23 +449,29 @@ function SubcampaniasSection({
           Subcampañas
         </p>
         <p className="text-[10.5px] font-bold text-slate-400">
-          {count} registradas
+          {visibleCount} visibles
         </p>
       </div>
 
-      <div className="mt-2 rounded-3xl bg-white p-5 text-center shadow-soft ring-1 ring-black/5">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-brand-50 text-brand-700">
-          <Icon name="planting" className="h-7 w-7" />
+      {localDraft ? (
+        <div className="mt-2">
+          <SubcampaniaDraftRow draft={localDraft} onTap={onDraftTap} />
         </div>
-        <p className="mt-3 text-base font-extrabold text-brand-800">
-          {count === 0 ? 'Sin subcampañas todavía' : 'Subcampañas registradas'}
-        </p>
-        <p className="mt-1 text-xs font-semibold leading-relaxed text-slate-500">
-          {count === 0
-            ? 'Crea la primera subcampaña para definir zona, meta, coordinador, equipo y lotes.'
-            : 'El contrato actual solo entrega el conteo. El listado operativo se conectará cuando el backend exponga las subcampañas por campaña.'}
-        </p>
-      </div>
+      ) : (
+        <div className="mt-2 rounded-3xl bg-white p-5 text-center shadow-soft ring-1 ring-black/5">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-brand-50 text-brand-700">
+            <Icon name="planting" className="h-7 w-7" />
+          </div>
+          <p className="mt-3 text-base font-extrabold text-brand-800">
+            {count === 0 ? 'Sin subcampañas todavía' : 'Subcampañas registradas'}
+          </p>
+          <p className="mt-1 text-xs font-semibold leading-relaxed text-slate-500">
+            {count === 0
+              ? 'Crea la primera subcampaña para definir zona, meta, coordinador, equipo y lotes.'
+              : 'El contrato actual solo entrega el conteo. El listado operativo se conectará cuando el backend exponga las subcampañas por campaña.'}
+          </p>
+        </div>
+      )}
     </section>
   )
 }
@@ -397,6 +541,9 @@ function CampaniaAdminDashboardScreen() {
   const [loading, setLoading] = useState(!state?.campania && hasValidCampaniaId)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<DashboardTab>('resumen')
+  const [localDraft] = useState<SubcampaniaBaseDraft | null>(() =>
+    hasValidCampaniaId ? loadSubcampaniaBaseDraft(numericCampaniaId) : null,
+  )
   const canCreateSubcampania = (user?.rol ?? '').toUpperCase() === 'ADMIN'
   const visibleError = error ?? (!hasValidCampaniaId ? 'ID de campaña inválido.' : null)
 
@@ -479,7 +626,11 @@ function CampaniaAdminDashboardScreen() {
 
               {activeTab === 'resumen' ? (
                 <>
-                  <SubcampaniasSection campania={campania} />
+                  <SubcampaniasSection
+                    campania={campania}
+                    localDraft={localDraft}
+                    onDraftTap={goToSubcampania}
+                  />
                 </>
               ) : (
                 <PendingTabPanel tab={activeTab} />

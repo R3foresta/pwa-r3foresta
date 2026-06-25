@@ -5,28 +5,24 @@ import Icon from '../../../components/Icon'
 import SelectorComunidad from '../../comunidades/SelectorComunidad'
 import { PlantacionService } from '../../../services/plantacion.service'
 import { UsersService } from '../../../services/users.service'
-import { loadDraft, saveDraft } from '../../../utils/formDraft'
 import type { ComunidadCard } from '../../../tipos/comunidades'
 import type { UsuarioResumen } from '../../../types/users'
 import {
   TIPO_CAMPANIA_LABEL,
   type Campania,
 } from '../types/contracts'
+import {
+  loadSubcampaniaBaseDraft,
+  saveSubcampaniaBaseDraft,
+  type SubcampaniaBaseDraft,
+} from '../utils/subcampaniaDraft'
 
 type LocationState = {
   campania?: Campania
 }
 
-type SubcampaniaBaseDraft = {
-  campania_id: number
-  tipo: Campania['tipo']
-  comunidad: ComunidadCard | null
-  coordinador: UsuarioResumen | null
-  fecha_estimada_inicio: string
-  fecha_estimada_fin: string
-}
-
 type BaseStepErrors = {
+  nombre: boolean
   comunidad: boolean
   coordinador: boolean
   fechas: boolean
@@ -35,10 +31,8 @@ type BaseStepErrors = {
 const DEFAULT_PAIS_ID = 1
 const COORDINADOR_ROL = 'GENERAL'
 const SEARCH_DEBOUNCE_MS = 300
-
-function getDraftKey(campaniaId: number): string {
-  return `r3foresta:subcampania-wizard:${campaniaId}:base`
-}
+const WIZARD_STEPS = 6
+const CURRENT_STEP = 1
 
 function toDateInputValue(value?: string | null): string {
   if (!value) return ''
@@ -64,6 +58,10 @@ function buildComunidadRuta(comunidad: ComunidadCard): string {
   ]
     .filter(Boolean)
     .join(' / ')
+}
+
+function buildDefaultSubcampaniaName(comunidad: ComunidadCard): string {
+  return `Subcampaña ${comunidad.nombre}`.trim()
 }
 
 function resolveCampaniaCoordinator(campania: Campania): UsuarioResumen | null {
@@ -263,10 +261,22 @@ function CoordinadorSelector({
   )
 }
 
-function SubcampaniaBaseStep({ campania }: { campania: Campania }) {
+function SubcampaniaBaseStep({
+  campania,
+  onDraftSaved,
+}: {
+  campania: Campania
+  onDraftSaved: () => void
+}) {
   const [initialDraft] = useState<SubcampaniaBaseDraft | null>(() =>
-    loadDraft<SubcampaniaBaseDraft>(getDraftKey(campania.id)),
+    loadSubcampaniaBaseDraft(campania.id),
   )
+  const [subcampaniaNombre, setSubcampaniaNombre] = useState(
+    () =>
+      initialDraft?.nombre ??
+      (initialDraft?.comunidad ? buildDefaultSubcampaniaName(initialDraft.comunidad) : ''),
+  )
+  const [nombreEditado, setNombreEditado] = useState(() => Boolean(initialDraft?.nombre))
   const [selectedComunidad, setSelectedComunidad] = useState<ComunidadCard | null>(
     () => initialDraft?.comunidad ?? null,
   )
@@ -279,8 +289,9 @@ function SubcampaniaBaseStep({ campania }: { campania: Campania }) {
   const [fechaFin, setFechaFin] = useState(
     () => initialDraft?.fecha_estimada_fin ?? toDateInputValue(campania.fecha_estimada_fin),
   )
-  const [stepSaved, setStepSaved] = useState(false)
+  const [statusMessage, setStatusMessage] = useState<string | null>(null)
   const [errors, setErrors] = useState<BaseStepErrors>({
+    nombre: false,
     comunidad: false,
     coordinador: false,
     fechas: false,
@@ -293,72 +304,98 @@ function SubcampaniaBaseStep({ campania }: { campania: Campania }) {
 
   const handleComunidadChange = (comunidad: ComunidadCard | null) => {
     setSelectedComunidad(comunidad)
-    setStepSaved(false)
+    setStatusMessage(null)
+    if (comunidad && !nombreEditado) {
+      setSubcampaniaNombre(buildDefaultSubcampaniaName(comunidad))
+      setErrors((current) => ({ ...current, nombre: false }))
+    }
     setErrors((current) => ({ ...current, comunidad: false }))
+  }
+
+  const handleNombreChange = (value: string) => {
+    setSubcampaniaNombre(value)
+    setNombreEditado(true)
+    setStatusMessage(null)
+    setErrors((current) => ({ ...current, nombre: false }))
   }
 
   const handleCoordinadorChange = (coordinador: UsuarioResumen | null) => {
     setSelectedCoordinador(coordinador)
-    setStepSaved(false)
+    setStatusMessage(null)
     setErrors((current) => ({ ...current, coordinador: false }))
   }
 
   const handleFechaInicioChange = (value: string) => {
     setFechaInicio(value)
-    setStepSaved(false)
+    setStatusMessage(null)
     setErrors((current) => ({ ...current, fechas: false }))
   }
 
   const handleFechaFinChange = (value: string) => {
     setFechaFin(value)
-    setStepSaved(false)
+    setStatusMessage(null)
     setErrors((current) => ({ ...current, fechas: false }))
   }
 
-  const handleContinue = () => {
+  const handleSaveStep = (action: 'draft' | 'next') => {
+    const nombre = subcampaniaNombre.trim().replace(/\s+/g, ' ')
     const nextErrors = {
+      nombre: nombre.length < 3,
       comunidad: selectedComunidad === null,
       coordinador: selectedCoordinador === null,
       fechas: Boolean(fechaInicio && fechaFin && fechaInicio > fechaFin),
     }
     setErrors(nextErrors)
-    setStepSaved(false)
+    setStatusMessage(null)
 
     if (Object.values(nextErrors).some(Boolean)) {
       return
     }
 
-    saveDraft<SubcampaniaBaseDraft>(getDraftKey(campania.id), {
+    saveSubcampaniaBaseDraft({
       campania_id: campania.id,
       tipo: campania.tipo,
+      nombre,
       comunidad: selectedComunidad,
       coordinador: selectedCoordinador,
       fecha_estimada_inicio: fechaInicio,
       fecha_estimada_fin: fechaFin,
     })
-    setStepSaved(true)
+    setSubcampaniaNombre(nombre)
+    if (action === 'draft') {
+      onDraftSaved()
+      return
+    }
+    setStatusMessage('Paso 1 guardado')
   }
 
   return (
     <>
       <main className="space-y-4 px-5 pt-4">
-        <section className="rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
-              <Icon name="planting" className="h-6 w-6" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-base font-extrabold text-brand-800">
-                {campania.nombre}
-              </p>
-              <p className="mt-1 text-xs font-semibold text-slate-500">
-                {TIPO_CAMPANIA_LABEL[campania.tipo]} · {campania.codigo_trazabilidad}
-              </p>
-            </div>
-          </div>
-        </section>
-
         <section className="space-y-3 rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
+          <div>
+            <label className="mb-1 block text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
+              Nombre de subcampaña
+            </label>
+            <input
+              type="text"
+              value={subcampaniaNombre}
+              onChange={(event) => handleNombreChange(event.target.value)}
+              placeholder="Ej. Subcampaña Achocalla"
+              maxLength={200}
+              className={`w-full rounded-2xl border bg-white px-3 py-3 text-sm font-extrabold text-brand-800 outline-none placeholder:font-medium placeholder:text-slate-400 focus:ring-2 ${
+                errors.nombre
+                  ? 'border-red-400 focus:border-red-400 focus:ring-red-200'
+                  : 'border-slate-200 focus:border-brand-500 focus:ring-brand-100'
+              }`}
+            />
+            {errors.nombre && (
+              <p className="mt-2 text-xs font-semibold text-red-500">
+                * El nombre debe tener al menos 3 caracteres.
+              </p>
+            )}
+          </div>
+
           <SelectorComunidad
             paisId={DEFAULT_PAIS_ID}
             valueId={selectedComunidad?.id}
@@ -381,9 +418,7 @@ function SubcampaniaBaseStep({ campania }: { campania: Campania }) {
               </p>
             </div>
           )}
-        </section>
 
-        <section className="space-y-3 rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
           <CoordinadorSelector
             value={selectedCoordinador}
             onChange={handleCoordinadorChange}
@@ -395,9 +430,7 @@ function SubcampaniaBaseStep({ campania }: { campania: Campania }) {
               * Selecciona un coordinador.
             </p>
           )}
-        </section>
 
-        <section className="rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="mb-1 block text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
@@ -438,19 +471,29 @@ function SubcampaniaBaseStep({ campania }: { campania: Campania }) {
 
       <div className="px-5">
         <div className="sticky bottom-0 -mx-5 bg-gradient-to-t from-[#eef2ed] via-[#eef2ed]/95 to-transparent px-5 pb-5 pt-3">
-          {stepSaved && (
+          {statusMessage && (
             <p className="mb-2 rounded-2xl bg-emerald-50 px-4 py-2 text-center text-xs font-extrabold text-emerald-700 ring-1 ring-emerald-100">
-              Paso guardado
+              {statusMessage}
             </p>
           )}
-          <button
-            type="button"
-            onClick={handleContinue}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-600 px-4 py-4 text-base font-extrabold text-white shadow-soft transition hover:bg-brand-700 active:scale-[0.99]"
-          >
-            <Icon name="check" className="h-5 w-5" />
-            Continuar
-          </button>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => handleSaveStep('draft')}
+              className="flex items-center justify-center gap-2 rounded-2xl bg-white px-3 py-4 text-sm font-extrabold text-brand-700 shadow-soft ring-1 ring-brand-100 transition hover:bg-brand-50 active:scale-[0.99]"
+            >
+              <Icon name="file" className="h-4 w-4" />
+              Guardar borrador
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSaveStep('next')}
+              className="flex items-center justify-center gap-2 rounded-2xl bg-brand-600 px-4 py-4 text-base font-extrabold text-white shadow-soft transition hover:bg-brand-700 active:scale-[0.99]"
+            >
+              Siguiente
+              <Icon name="chevron-right" className="h-5 w-5" />
+            </button>
+          </div>
         </div>
       </div>
     </>
@@ -524,6 +567,16 @@ function CrearSubcampanaPlaceholderScreen() {
                 {campania.codigo_trazabilidad}
               </p>
             )}
+            <div className="mt-4 flex items-center gap-2">
+              {Array.from({ length: WIZARD_STEPS }, (_, index) => (
+                <div
+                  key={index}
+                  className={`h-1.5 flex-1 rounded-full ${
+                    index < CURRENT_STEP ? 'bg-emerald-300' : 'bg-white/20'
+                  }`}
+                />
+              ))}
+            </div>
           </div>
         </header>
 
@@ -544,7 +597,7 @@ function CrearSubcampanaPlaceholderScreen() {
         )}
 
         {campania && !loading && !visibleError && (
-          <SubcampaniaBaseStep key={campania.id} campania={campania} />
+          <SubcampaniaBaseStep key={campania.id} campania={campania} onDraftSaved={goToDashboard} />
         )}
       </div>
     </div>
