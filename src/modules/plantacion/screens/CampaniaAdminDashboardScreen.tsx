@@ -1,0 +1,680 @@
+import { useEffect, useMemo, useState } from 'react'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import plantacionHero from '../../../assets/home/plantacion.jpg'
+import Icon from '../../../components/Icon'
+import { useAuth } from '../../../contexts/AuthContext'
+import { PlantacionService } from '../../../services/plantacion.service'
+import {
+  TIPO_CAMPANIA_LABEL,
+  type Campania,
+  type Organizacion,
+} from '../types/contracts'
+
+type LocationState = {
+  campania?: Campania
+}
+
+type DashboardTab = 'resumen' | 'equipo' | 'lotes' | 'mapa'
+
+const DASHBOARD_TABS: Array<{ key: DashboardTab; label: string }> = [
+  { key: 'resumen', label: 'Resumen' },
+  { key: 'equipo', label: 'Equipo' },
+  { key: 'lotes', label: 'Lotes' },
+  { key: 'mapa', label: 'Mapa' },
+]
+
+function formatDate(value?: string | null): string {
+  if (!value) return 'Sin fecha'
+  const [year, month, day] = value.split('-')
+  if (!year || !month || !day) return value
+  const date = new Date(Number(year), Number(month) - 1, Number(day))
+  return new Intl.DateTimeFormat('es-BO', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(date)
+}
+
+function formatNumber(value?: number | null): string {
+  if (!Number.isFinite(value)) return 'Pendiente'
+  return Number(value).toLocaleString('es-BO')
+}
+
+function getOrganizationInitials(name: string): string {
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('')
+}
+
+function getSubcampaniaCount(campania: Campania): number {
+  return Math.max(0, campania.count_subcampanias ?? 0)
+}
+
+function getVisibleStatus(campania: Campania): string {
+  const subcampaniaCount = getSubcampaniaCount(campania)
+  if (subcampaniaCount === 0) return 'Creada'
+  return campania.estado_derivado?.replace(/_/g, ' ') || 'Creada'
+}
+
+function getProgress(campania: Campania): number | null {
+  if (!Number.isFinite(campania.avance_pct)) return null
+  return Math.max(0, Math.min(100, Number(campania.avance_pct)))
+}
+
+function getZoneLabel(campania: Campania): string {
+  if (campania.zonas?.length) return campania.zonas.join(' · ')
+  if (Number.isFinite(campania.zonas_count) && Number(campania.zonas_count) > 0) {
+    const zonas = Number(campania.zonas_count)
+    return `${zonas} zona${zonas === 1 ? '' : 's'}`
+  }
+  return 'Por definir en subcampañas'
+}
+
+function formatOrganizations(campania: Campania): string {
+  const organizations = campania.organizaciones ?? []
+  if (organizations.length > 0) {
+    return organizations.map((organization) => organization.nombre).join(' · ')
+  }
+
+  const organizationIds = campania.organizacion_ids ?? []
+  if (organizationIds.length > 0) {
+    return `${organizationIds.length} organización${organizationIds.length === 1 ? '' : 'es'} asociada${organizationIds.length === 1 ? '' : 's'}`
+  }
+
+  return 'Sin organizaciones visibles'
+}
+
+function OrganizationInlineList({ organizations }: { organizations: Organizacion[] }) {
+  if (organizations.length === 0) {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-[10.5px] font-extrabold text-white ring-1 ring-white/20">
+        <Icon name="shield" className="h-3 w-3" />
+        Sin organizaciones visibles
+      </span>
+    )
+  }
+
+  return (
+    <div className="flex items-center gap-2 rounded-2xl bg-white/10 px-3 py-2.5 ring-1 ring-white/15">
+      <div className="flex -space-x-2">
+        {organizations.slice(0, 4).map((organization) => (
+          <span
+            key={organization.id}
+            className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-white/20 text-[9px] font-extrabold text-white ring-2 ring-brand-700"
+          >
+            {organization.logo_url ? (
+              <img src={organization.logo_url} alt="" className="h-full w-full object-cover" />
+            ) : (
+              getOrganizationInitials(organization.nombre)
+            )}
+          </span>
+        ))}
+        {organizations.length > 4 && (
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-[9px] font-extrabold text-brand-700 ring-2 ring-brand-700">
+            +{organizations.length - 4}
+          </span>
+        )}
+      </div>
+      <p className="min-w-0 flex-1 truncate text-[11.5px] font-extrabold text-white">
+        {organizations.map((organization) => organization.nombre).join(' · ')}
+      </p>
+    </div>
+  )
+}
+
+function StateBadge({ label, light = false }: { label: string; light?: boolean }) {
+  const normalized = label.toUpperCase()
+  const tone =
+    normalized === 'CREADA'
+      ? light
+        ? 'bg-white text-brand-700 ring-white'
+        : 'bg-brand-50 text-brand-700 ring-brand-100'
+      : normalized.includes('ACTIVA')
+        ? light
+          ? 'bg-emerald-300/20 text-emerald-100 ring-emerald-200/40'
+          : 'bg-emerald-50 text-emerald-700 ring-emerald-100'
+        : light
+          ? 'bg-white/15 text-white ring-white/20'
+          : 'bg-slate-50 text-slate-600 ring-slate-200'
+
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.14em] ring-1 ${tone}`}>
+      <span className={`h-1.5 w-1.5 rounded-full ${normalized === 'CREADA' ? 'bg-brand-500' : 'bg-current'}`} />
+      {label}
+    </span>
+  )
+}
+
+function Progress({ pct }: { pct: number }) {
+  return (
+    <div className="h-2 w-full overflow-hidden rounded-full bg-white/15">
+      <div
+        className="h-full rounded-full bg-emerald-300"
+        style={{ width: `${Math.max(0, Math.min(100, pct))}%` }}
+      />
+    </div>
+  )
+}
+
+function DCTabs({
+  active,
+  onChange,
+}: {
+  active: DashboardTab
+  onChange: (tab: DashboardTab) => void
+}) {
+  return (
+    <div className="sticky top-0 z-20 -mx-5 bg-[#eef2ed]/95 px-5 pb-2 pt-3 backdrop-blur-sm">
+      <div className="flex rounded-full bg-white p-1 shadow-soft ring-1 ring-black/5">
+        {DASHBOARD_TABS.map((tab) => {
+          const selected = active === tab.key
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => onChange(tab.key)}
+              className={`flex-1 rounded-full px-3 py-2 text-[12px] font-extrabold tracking-wide transition ${
+                selected ? 'bg-brand-600 text-white shadow-soft' : 'text-brand-700 hover:bg-brand-50'
+              }`}
+            >
+              {tab.label}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function KpiCard({
+  label,
+  value,
+  helper,
+}: {
+  label: string
+  value: string
+  helper: string
+}) {
+  return (
+    <div className="rounded-3xl bg-white p-3.5 shadow-soft ring-1 ring-black/5">
+      <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-brand-500">
+        {label}
+      </p>
+      <p className="mt-1 text-2xl font-extrabold leading-tight text-brand-800 tabular-nums">
+        {value}
+      </p>
+      <p className="mt-1 text-[10px] font-bold leading-snug text-slate-500">
+        {helper}
+      </p>
+    </div>
+  )
+}
+
+function PendingSetupNotice({
+  canCreate,
+  onCreate,
+}: {
+  canCreate: boolean
+  onCreate: () => void
+}) {
+  return (
+    <section className="rounded-3xl bg-amber-50 p-4 shadow-soft ring-1 ring-amber-100">
+      <div className="flex items-start gap-3">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-800">
+          <Icon name="info" className="h-5 w-5" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-base font-extrabold leading-tight text-amber-950">
+            Esta campaña necesita subcampañas
+          </p>
+          <p className="mt-1 text-xs font-bold leading-relaxed text-amber-900">
+            La zona, el avance, los borradores, equipo, lotes y estado operativo se
+            calculan desde las subcampañas. Crea la primera para iniciar la configuración.
+          </p>
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={onCreate}
+        disabled={!canCreate}
+        className={`mt-4 flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3.5 text-sm font-extrabold shadow-soft transition ${
+          canCreate
+            ? 'bg-brand-600 text-white hover:bg-brand-700'
+            : 'cursor-not-allowed bg-slate-100 text-slate-500 ring-1 ring-slate-200'
+        }`}
+      >
+        <Icon name="plus" className="h-5 w-5" />
+        {canCreate ? 'Agregar subcampaña' : 'Solo ADMIN puede agregar subcampañas'}
+      </button>
+    </section>
+  )
+}
+
+function CampaniaHeader({
+  campania,
+  onBack,
+}: {
+  campania: Campania
+  onBack: () => void
+}) {
+  const status = getVisibleStatus(campania)
+  const progress = getProgress(campania)
+  const planted = campania.arboles_plantados
+  const target = campania.meta_arboles
+
+  return (
+    <header className="relative overflow-hidden rounded-b-3xl bg-brand-700 text-white shadow-soft">
+      <img src={plantacionHero} alt="" className="absolute inset-0 h-full w-full object-cover opacity-45" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/30 to-brand-700/95" />
+      <div className="relative px-5 pb-5 pt-5">
+        <div className="flex items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={onBack}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 transition hover:bg-white/25"
+            aria-label="Volver"
+          >
+            <Icon name="arrow-left" className="h-5 w-5" />
+          </button>
+          <StateBadge label={status} light />
+        </div>
+
+        <p className="mt-4 text-[10.5px] font-extrabold uppercase tracking-[0.24em] text-white/85">
+          Campaña paraguas · {campania.codigo_trazabilidad}
+        </p>
+        <h1 className="mt-0.5 text-[26px] font-extrabold leading-[1.1] tracking-tight">
+          {campania.nombre}
+        </h1>
+
+        <div className="mt-3">
+          <OrganizationInlineList organizations={campania.organizaciones ?? []} />
+        </div>
+
+        <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px] font-bold text-white/80">
+          <span className="inline-flex items-center gap-1.5">
+            <Icon name="date" className="h-3.5 w-3.5" />
+            {formatDate(campania.fecha_estimada_inicio)} - {formatDate(campania.fecha_estimada_fin)}
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <Icon name="pin" className="h-3.5 w-3.5" />
+            {getZoneLabel(campania)}
+          </span>
+        </p>
+
+        <div className="mt-4 flex items-end justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-white/80">
+              Plantados agregados
+            </p>
+            <p className="mt-0.5 text-[38px] font-extrabold leading-none tracking-tight tabular-nums">
+              {formatNumber(planted)}
+              <span className="ml-1 text-base font-extrabold text-white/65">
+                / {formatNumber(target)}
+              </span>
+            </p>
+          </div>
+          <div className="shrink-0 text-right">
+            <p className="text-[10px] font-bold text-white/70">Avance</p>
+            <p className="text-2xl font-extrabold tabular-nums">
+              {progress == null ? '--' : `${progress}%`}
+            </p>
+          </div>
+        </div>
+        <div className="mt-2">
+          <Progress pct={progress ?? 0} />
+        </div>
+
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-[10.5px] font-extrabold tracking-wide ring-1 ring-white/20">
+            <Icon name="planting" className="h-3 w-3" />
+            {getSubcampaniaCount(campania)} subcampañas
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-[10.5px] font-extrabold tracking-wide ring-1 ring-white/20">
+            <Icon name="shield" className="h-3 w-3" />
+            Estado heredado de subcampañas
+          </span>
+        </div>
+      </div>
+    </header>
+  )
+}
+
+function CampaignDetailsCard({ campania }: { campania: Campania }) {
+  return (
+    <section className="space-y-3 rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-extrabold text-brand-800">Datos generales</p>
+          <p className="mt-0.5 text-[11px] font-semibold text-slate-500">
+            Información de la campaña paraguas.
+          </p>
+        </div>
+        <StateBadge label={getVisibleStatus(campania)} />
+      </div>
+
+      <div className="space-y-2">
+        <DetailLine icon="planting" label="Tipo" value={TIPO_CAMPANIA_LABEL[campania.tipo]} />
+        <DetailLine
+          icon="shield"
+          label="Organizaciones"
+          value={formatOrganizations(campania)}
+        />
+        <DetailLine
+          icon="date"
+          label="Periodo estimado"
+          value={`${formatDate(campania.fecha_estimada_inicio)} - ${formatDate(campania.fecha_estimada_fin)}`}
+        />
+        <DetailLine icon="map" label="Zonas" value={getZoneLabel(campania)} />
+        <DetailLine
+          icon="info"
+          label="Descripción"
+          value={campania.descripcion?.trim() || 'Sin descripción registrada.'}
+        />
+      </div>
+    </section>
+  )
+}
+
+function DetailLine({
+  icon,
+  label,
+  value,
+}: {
+  icon: 'planting' | 'shield' | 'date' | 'map' | 'info'
+  label: string
+  value: string
+}) {
+  return (
+    <div className="flex items-start gap-3 rounded-2xl bg-[#f8fbf7] px-3 py-3 ring-1 ring-brand-100">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-brand-700 ring-1 ring-brand-100">
+        <Icon name={icon} className="h-4 w-4" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[9.5px] font-extrabold uppercase tracking-[0.14em] text-brand-500">
+          {label}
+        </span>
+        <span className="mt-1 block text-sm font-extrabold leading-snug text-brand-800">
+          {value}
+        </span>
+      </span>
+    </div>
+  )
+}
+
+function SubcampaniasSection({
+  campania,
+  onCreate,
+}: {
+  campania: Campania
+  onCreate: () => void
+}) {
+  const count = getSubcampaniaCount(campania)
+
+  return (
+    <section className="pt-1">
+      <div className="flex items-baseline justify-between">
+        <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
+          Subcampañas
+        </p>
+        <p className="text-[10.5px] font-bold text-slate-400">
+          {count} registradas
+        </p>
+      </div>
+
+      <div className="mt-2 rounded-3xl bg-white p-5 text-center shadow-soft ring-1 ring-black/5">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-brand-50 text-brand-700">
+          <Icon name="planting" className="h-7 w-7" />
+        </div>
+        <p className="mt-3 text-base font-extrabold text-brand-800">
+          {count === 0 ? 'Sin subcampañas todavía' : 'Subcampañas registradas'}
+        </p>
+        <p className="mt-1 text-xs font-semibold leading-relaxed text-slate-500">
+          {count === 0
+            ? 'Crea la primera subcampaña para definir zona, meta, coordinador, equipo y lotes.'
+            : 'El contrato actual solo entrega el conteo. El listado operativo se conectará cuando el backend exponga las subcampañas por campaña.'}
+        </p>
+        <button
+          type="button"
+          onClick={onCreate}
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-extrabold text-brand-700 shadow-soft ring-1 ring-dashed ring-brand-300 hover:bg-brand-50"
+        >
+          <Icon name="plus" className="h-4 w-4" />
+          Agregar subcampaña
+        </button>
+      </div>
+    </section>
+  )
+}
+
+function PendingTabPanel({ tab }: { tab: DashboardTab }) {
+  const titleByTab: Record<DashboardTab, string> = {
+    resumen: 'Resumen',
+    equipo: 'Equipo agregado',
+    lotes: 'Lotes comprometidos',
+    mapa: 'Cobertura geográfica',
+  }
+
+  const copyByTab: Record<DashboardTab, string> = {
+    resumen: 'El resumen aparece en esta vista cuando existan subcampañas.',
+    equipo: 'La asignación de responsables vive en cada subcampaña.',
+    lotes: 'Los lotes se asignan a subcampañas individuales.',
+    mapa: 'La zona se define por subcampaña y luego se agrega aquí.',
+  }
+
+  return (
+    <section className="rounded-3xl bg-white p-5 text-center shadow-soft ring-1 ring-black/5">
+      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-50 text-slate-500">
+        <Icon name={tab === 'mapa' ? 'map' : tab === 'lotes' ? 'package' : 'info'} className="h-6 w-6" />
+      </div>
+      <p className="mt-3 text-base font-extrabold text-brand-800">{titleByTab[tab]}</p>
+      <p className="mt-1 text-xs font-semibold leading-relaxed text-slate-500">
+        {copyByTab[tab]}
+      </p>
+    </section>
+  )
+}
+
+function LoadingHeader({ onBack }: { onBack: () => void }) {
+  return (
+    <header className="relative overflow-hidden rounded-b-3xl bg-brand-700 text-white shadow-soft">
+      <img src={plantacionHero} alt="" className="absolute inset-0 h-full w-full object-cover opacity-35" />
+      <div className="absolute inset-0 bg-gradient-to-b from-brand-700/85 via-brand-700/85 to-brand-700" />
+      <div className="relative px-5 pb-6 pt-6">
+        <button
+          type="button"
+          onClick={onBack}
+          aria-label="Volver"
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 transition hover:bg-white/25"
+        >
+          <Icon name="arrow-left" className="h-5 w-5" />
+        </button>
+        <p className="mt-5 text-[10.5px] font-extrabold uppercase tracking-[0.24em] text-white/80">
+          Dashboard de campaña
+        </p>
+        <h1 className="mt-1 text-[28px] font-extrabold leading-tight">
+          Cargando campaña
+        </h1>
+      </div>
+    </header>
+  )
+}
+
+function CampaniaAdminDashboardScreen() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { user } = useAuth()
+  const { campaniaId } = useParams()
+  const state = location.state as LocationState | null
+  const numericCampaniaId = Number(campaniaId)
+  const hasValidCampaniaId = Number.isFinite(numericCampaniaId) && numericCampaniaId > 0
+  const [campania, setCampania] = useState<Campania | null>(state?.campania ?? null)
+  const [loading, setLoading] = useState(!state?.campania && hasValidCampaniaId)
+  const [error, setError] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<DashboardTab>('resumen')
+  const canCreateSubcampania = (user?.rol ?? '').toUpperCase() === 'ADMIN'
+  const visibleError = error ?? (!hasValidCampaniaId ? 'ID de campaña inválido.' : null)
+
+  const loadCampania = () => {
+    if (!hasValidCampaniaId) return
+
+    setLoading(true)
+    setError(null)
+    PlantacionService.getCampania(numericCampaniaId)
+      .then((data) => {
+        setCampania(data)
+        setError(null)
+      })
+      .catch((loadError) => {
+        setError(loadError instanceof Error ? loadError.message : 'No se pudo cargar la campaña.')
+      })
+      .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    if (state?.campania) return
+    if (!hasValidCampaniaId) return
+
+    PlantacionService.getCampania(numericCampaniaId)
+      .then((data) => {
+        setCampania(data)
+        setError(null)
+      })
+      .catch((loadError) => {
+        setError(loadError instanceof Error ? loadError.message : 'No se pudo cargar la campaña.')
+      })
+      .finally(() => setLoading(false))
+  }, [hasValidCampaniaId, numericCampaniaId, state?.campania])
+
+  const summary = useMemo(() => {
+    if (!campania) return null
+    const progress = getProgress(campania)
+    const subcampaniaCount = getSubcampaniaCount(campania)
+    return {
+      progressLabel: progress == null ? 'Pendiente' : `${progress}%`,
+      borradoresLabel:
+        subcampaniaCount === 0 || !Number.isFinite(campania.borradores_count)
+          ? 'Pendiente'
+          : formatNumber(campania.borradores_count),
+      subcampaniasLabel: `${subcampaniaCount}`,
+      zonasLabel:
+        campania.zonas?.length || (campania.zonas_count ?? 0) > 0
+          ? getZoneLabel(campania)
+          : 'Por definir',
+    }
+  }, [campania])
+
+  const goBack = () => navigate('/app/planting')
+
+  const goToSubcampania = () => {
+    if (!campania) return
+    navigate(`/app/planting/campanias/${campania.id}/subcampanias/new`, {
+      state: { campania },
+    })
+  }
+
+  return (
+    <div className="relative min-h-screen bg-[#eef2ed] text-brand-700">
+      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-28">
+        {campania && !loading ? (
+          <CampaniaHeader campania={campania} onBack={goBack} />
+        ) : (
+          <LoadingHeader onBack={goBack} />
+        )}
+
+        <main className="space-y-4 px-5 pt-2">
+          {loading && (
+            <div className="rounded-3xl bg-white px-4 py-6 text-center text-sm font-semibold text-slate-600 shadow-soft ring-1 ring-black/5">
+              Cargando campaña...
+            </div>
+          )}
+
+          {visibleError && !loading && (
+            <div className="rounded-3xl bg-red-50 px-4 py-6 text-center text-sm font-semibold text-red-700 shadow-soft ring-1 ring-red-200">
+              <p>{visibleError}</p>
+              {hasValidCampaniaId && (
+                <button
+                  type="button"
+                  onClick={loadCampania}
+                  className="mt-3 rounded-xl bg-red-100 px-4 py-2 text-xs font-bold text-red-700 transition hover:bg-red-200"
+                >
+                  Reintentar
+                </button>
+              )}
+            </div>
+          )}
+
+          {campania && summary && !loading && !visibleError && (
+            <>
+              <DCTabs active={activeTab} onChange={setActiveTab} />
+
+              <PendingSetupNotice canCreate={canCreateSubcampania} onCreate={goToSubcampania} />
+
+              {activeTab === 'resumen' ? (
+                <>
+                  <div className="grid grid-cols-2 gap-2">
+                    <KpiCard
+                      label="Avance"
+                      value={summary.progressLabel}
+                      helper="Agregado desde subcampañas."
+                    />
+                    <KpiCard
+                      label="Borradores"
+                      value={summary.borradoresLabel}
+                      helper="Disponible al crear subcampañas."
+                    />
+                    <KpiCard
+                      label="Subcampañas"
+                      value={summary.subcampaniasLabel}
+                      helper="Base operativa de la campaña."
+                    />
+                    <KpiCard
+                      label="Zonas"
+                      value={summary.zonasLabel}
+                      helper="Definidas por subcampaña."
+                    />
+                    <KpiCard
+                      label="Supervivencia"
+                      value={campania.supervivencia_pct == null ? 'Pendiente' : `${campania.supervivencia_pct}%`}
+                      helper="Ponderada por subcampañas."
+                    />
+                    <KpiCard
+                      label="CO2 proyectado"
+                      value={campania.co2_proyectado_ton == null ? 'Pendiente' : `${campania.co2_proyectado_ton} T`}
+                      helper="Agregado de metas operativas."
+                    />
+                  </div>
+
+                  <CampaignDetailsCard campania={campania} />
+                  <SubcampaniasSection campania={campania} onCreate={goToSubcampania} />
+                </>
+              ) : (
+                <PendingTabPanel tab={activeTab} />
+              )}
+            </>
+          )}
+        </main>
+      </div>
+
+      {campania && !loading && !visibleError && (
+        <button
+          type="button"
+          onClick={goToSubcampania}
+          disabled={!canCreateSubcampania}
+          className={`fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full px-4 py-3.5 text-sm font-extrabold shadow-soft ring-4 ring-white transition active:scale-[0.97] ${
+            canCreateSubcampania
+              ? 'bg-brand-600 text-white hover:bg-brand-700'
+              : 'cursor-not-allowed bg-slate-400 text-white'
+          }`}
+        >
+          <Icon name="plus" className="h-5 w-5" />
+          Subcampaña
+        </button>
+      )}
+    </div>
+  )
+}
+
+export default CampaniaAdminDashboardScreen

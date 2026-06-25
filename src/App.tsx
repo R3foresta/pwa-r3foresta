@@ -28,6 +28,7 @@ import {
   ViveroScreen,
 } from './modules/vivero'
 import {
+  CampaniaAdminDashboardScreen,
   CrearCampanaScreen,
   CrearSubcampanaPlaceholderScreen,
   PlantacionDashboardScreen,
@@ -127,6 +128,7 @@ function App() {
             <Route path="planting">
               <Route index element={<PlantacionDashboardScreen />} />
               <Route path="campanias/new" element={<CrearCampanaScreen />} />
+              <Route path="campanias/:campaniaId" element={<CampaniaAdminDashboardScreen />} />
               <Route
                 path="campanias/:campaniaId/subcampanias/new"
                 element={<CrearSubcampanaPlaceholderScreen />}

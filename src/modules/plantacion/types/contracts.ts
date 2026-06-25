@@ -1,10 +1,16 @@
+import type {
+  ListOrganizacionesQuery,
+  Organizacion,
+  TipoOrganizacion,
+} from '../../organizaciones/types'
+
 export type TipoCampania = 'REFORESTACION' | 'ARBORIZACION' | 'FORESTACION'
 
 export type {
   ListOrganizacionesQuery,
   Organizacion,
   TipoOrganizacion,
-} from '../../organizaciones/types'
+}
 export { TIPO_ORGANIZACION_LABEL } from '../../organizaciones/types'
 
 export type Campania = {
@@ -15,6 +21,19 @@ export type Campania = {
   descripcion?: string | null
   fecha_estimada_inicio?: string | null
   fecha_estimada_fin?: string | null
+  organizaciones?: Organizacion[]
+  organizacion_ids?: number[]
+  estado_derivado?: string | null
+  count_subcampanias?: number | null
+  avance_pct?: number | null
+  borradores_count?: number | null
+  zonas_count?: number | null
+  zonas?: string[]
+  meta_arboles?: number | null
+  arboles_plantados?: number | null
+  hectareas?: number | null
+  supervivencia_pct?: number | null
+  co2_proyectado_ton?: number | null
   created_at: string
   updated_at: string
 }

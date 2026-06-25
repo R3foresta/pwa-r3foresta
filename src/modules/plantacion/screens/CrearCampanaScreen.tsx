@@ -105,7 +105,7 @@ function CrearCampanaScreen() {
         },
         user?.auth_id,
       )
-      navigate(`/app/planting/campanias/${campania.id}/subcampanias/new`, {
+      navigate(`/app/planting/campanias/${campania.id}`, {
         replace: true,
         state: { campania },
       })

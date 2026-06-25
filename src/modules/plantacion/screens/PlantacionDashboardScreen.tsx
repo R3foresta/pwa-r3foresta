@@ -283,7 +283,11 @@ function PlantacionDashboardScreen() {
                 <CampaniaCard
                   key={campania.id}
                   campania={campania}
-                  onClick={() => navigate(`/app/planting/campanias/${campania.id}/subcampanias/new`)}
+                  onClick={() =>
+                    navigate(`/app/planting/campanias/${campania.id}`, {
+                      state: { campania },
+                    })
+                  }
                 />
               ))}
             </div>

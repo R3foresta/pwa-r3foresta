@@ -22,6 +22,9 @@ function CrearSubcampanaPlaceholderScreen() {
   const [loading, setLoading] = useState(!state?.campania && hasValidCampaniaId)
   const [error, setError] = useState<string | null>(null)
   const visibleError = error ?? (!hasValidCampaniaId ? 'ID de campaña inválido.' : null)
+  const dashboardPath = hasValidCampaniaId
+    ? `/app/planting/campanias/${numericCampaniaId}`
+    : '/app/planting'
 
   useEffect(() => {
     if (state?.campania) return
@@ -38,6 +41,10 @@ function CrearSubcampanaPlaceholderScreen() {
       .finally(() => setLoading(false))
   }, [hasValidCampaniaId, numericCampaniaId, state?.campania])
 
+  const goToDashboard = () => {
+    navigate(dashboardPath, { state: campania ? { campania } : undefined })
+  }
+
   return (
     <div className="relative min-h-screen bg-[#eef2ed] text-brand-700">
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-32">
@@ -47,7 +54,7 @@ function CrearSubcampanaPlaceholderScreen() {
             <div className="flex items-center justify-between gap-3">
               <button
                 type="button"
-                onClick={() => navigate('/app/planting')}
+                onClick={goToDashboard}
                 aria-label="Volver"
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 transition hover:bg-white/25"
               >
@@ -133,10 +140,10 @@ function CrearSubcampanaPlaceholderScreen() {
 
               <button
                 type="button"
-                onClick={() => navigate('/app/planting')}
+                onClick={goToDashboard}
                 className="flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-600 px-4 py-4 text-base font-extrabold text-white shadow-soft transition hover:bg-brand-700"
               >
-                Volver al dashboard
+                Volver al dashboard de campaña
               </button>
             </>
           )}
