@@ -239,7 +239,7 @@ function getDraftActivationGuard(draft: SubcampaniaBaseDraft): {
   if (!draft.comunidad) faltantes.push('Zona')
   if (!draft.coordinador) faltantes.push('Coordinador')
   faltantes.push('Meta')
-  faltantes.push('Polígono')
+  if (!draft.poligono_geojson) faltantes.push('Polígono')
   faltantes.push('Reservas')
 
   return {
@@ -259,6 +259,7 @@ function SubcampaniaDraftRow({
   const municipio = getDraftMunicipio(draft)
   const coordinador = draft.coordinador?.nombre ?? ''
   const coordinadorIniciales = coordinador ? getOrganizationInitials(coordinador) : ''
+  const areaHectareas = draft.area_hectareas ?? draft.area_hectareas_estimada ?? null
 
   return (
     <button
@@ -279,6 +280,18 @@ function SubcampaniaDraftRow({
             <p className="mt-0.5 flex items-center gap-1 truncate text-[11px] font-semibold text-slate-500">
               <Icon name="pin" className="h-3 w-3 text-slate-400" />
               {municipio}
+            </p>
+          )}
+          {draft.poligono_geojson && (
+            <p className="mt-0.5 flex items-center gap-1 truncate text-[11px] font-semibold text-emerald-700">
+              <Icon name="map" className="h-3 w-3 text-emerald-600" />
+              Polígono definido
+              {Number.isFinite(areaHectareas)
+                ? ` · ${Number(areaHectareas).toLocaleString('es-BO', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })} ha`
+                : ''}
             </p>
           )}
         </div>
@@ -604,14 +617,14 @@ function CampaniaAdminDashboardScreen() {
   const goToNewSubcampania = () => {
     if (!campania) return
     const draftId = createSubcampaniaDraftId()
-    navigate(`/app/planting/campanias/${campania.id}/subcampanias/new?draftId=${encodeURIComponent(draftId)}`, {
+    navigate(`/app/planting/campanias/${campania.id}/subcampanias/new?draftId=${encodeURIComponent(draftId)}&step=1`, {
       state: { campania, draftId },
     })
   }
 
   const goToDraftSubcampania = (draft: SubcampaniaBaseDraft) => {
     if (!campania) return
-    navigate(`/app/planting/campanias/${campania.id}/subcampanias/new?draftId=${encodeURIComponent(draft.draft_id)}`, {
+    navigate(`/app/planting/campanias/${campania.id}/subcampanias/new?draftId=${encodeURIComponent(draft.draft_id)}&step=1`, {
       state: { campania, draftId: draft.draft_id },
     })
   }

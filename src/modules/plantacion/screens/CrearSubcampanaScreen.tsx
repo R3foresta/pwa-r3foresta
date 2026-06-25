@@ -3,10 +3,12 @@ import { useLocation, useNavigate, useParams, useSearchParams } from 'react-rout
 import plantacionHero from '../../../assets/home/plantacion.jpg'
 import Icon from '../../../components/Icon'
 import SelectorComunidad from '../../comunidades/SelectorComunidad'
+import { useAuth } from '../../../contexts/AuthContext'
 import { PlantacionService } from '../../../services/plantacion.service'
 import { UsersService } from '../../../services/users.service'
 import type { ComunidadCard } from '../../../tipos/comunidades'
 import type { UsuarioResumen } from '../../../types/users'
+import SubcampaniaPolygonStep from '../components/SubcampaniaPolygonStep'
 import {
   TIPO_CAMPANIA_LABEL,
   type Campania,
@@ -34,7 +36,8 @@ const DEFAULT_PAIS_ID = 1
 const COORDINADOR_ROL = 'GENERAL'
 const SEARCH_DEBOUNCE_MS = 300
 const WIZARD_STEPS = 6
-const CURRENT_STEP = 1
+
+type WizardStep = 1 | 2
 
 function toDateInputValue(value?: string | null): string {
   if (!value) return ''
@@ -267,10 +270,12 @@ function SubcampaniaBaseStep({
   campania,
   draftId,
   onDraftSaved,
+  onNext,
 }: {
   campania: Campania
   draftId: string
   onDraftSaved: () => void
+  onNext: () => void
 }) {
   const [initialDraft] = useState<SubcampaniaBaseDraft | null>(() =>
     loadSubcampaniaBaseDraft(campania.id, draftId),
@@ -374,7 +379,7 @@ function SubcampaniaBaseStep({
       onDraftSaved()
       return
     }
-    setStatusMessage('Paso 1 guardado')
+    onNext()
   }
 
   return (
@@ -510,12 +515,14 @@ function SubcampaniaBaseStep({
 
 function CrearSubcampanaScreen() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const { campaniaId } = useParams()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const location = useLocation()
   const state = location.state as LocationState | null
   const routeDraftId = searchParams.get('draftId')?.trim() || state?.draftId
   const [draftId] = useState(() => routeDraftId || createSubcampaniaDraftId())
+  const currentStep: WizardStep = searchParams.get('step') === '2' ? 2 : 1
   const numericCampaniaId = Number(campaniaId)
   const hasValidCampaniaId = Number.isFinite(numericCampaniaId) && numericCampaniaId > 0
   const [campania, setCampania] = useState<Campania | null>(state?.campania ?? null)
@@ -525,6 +532,17 @@ function CrearSubcampanaScreen() {
   const dashboardPath = hasValidCampaniaId
     ? `/app/planting/campanias/${numericCampaniaId}`
     : '/app/planting'
+
+  useEffect(() => {
+    const hasDraftId = Boolean(searchParams.get('draftId')?.trim())
+    const hasStep = Boolean(searchParams.get('step')?.trim())
+    if (hasDraftId && hasStep) return
+
+    const nextParams = new URLSearchParams(searchParams)
+    nextParams.set('draftId', draftId)
+    nextParams.set('step', String(currentStep))
+    setSearchParams(nextParams, { replace: true })
+  }, [currentStep, draftId, searchParams, setSearchParams])
 
   useEffect(() => {
     if (state?.campania) return
@@ -543,6 +561,13 @@ function CrearSubcampanaScreen() {
 
   const goToDashboard = () => {
     navigate(dashboardPath, { state: campania ? { campania } : undefined })
+  }
+
+  const goToStep = (step: WizardStep) => {
+    const nextParams = new URLSearchParams(searchParams)
+    nextParams.set('draftId', draftId)
+    nextParams.set('step', String(step))
+    setSearchParams(nextParams, { replace: true })
   }
 
   return (
@@ -583,7 +608,7 @@ function CrearSubcampanaScreen() {
                 <div
                   key={index}
                   className={`h-1.5 flex-1 rounded-full ${
-                    index < CURRENT_STEP ? 'bg-emerald-300' : 'bg-white/20'
+                    index < currentStep ? 'bg-emerald-300' : 'bg-white/20'
                   }`}
                 />
               ))}
@@ -608,12 +633,24 @@ function CrearSubcampanaScreen() {
         )}
 
         {campania && !loading && !visibleError && (
-          <SubcampaniaBaseStep
-            key={`${campania.id}-${draftId}`}
-            campania={campania}
-            draftId={draftId}
-            onDraftSaved={goToDashboard}
-          />
+          currentStep === 1 ? (
+            <SubcampaniaBaseStep
+              key={`${campania.id}-${draftId}-base`}
+              campania={campania}
+              draftId={draftId}
+              onDraftSaved={goToDashboard}
+              onNext={() => goToStep(2)}
+            />
+          ) : (
+            <SubcampaniaPolygonStep
+              key={`${campania.id}-${draftId}-polygon`}
+              campania={campania}
+              draftId={draftId}
+              authId={user?.auth_id}
+              onDraftSaved={goToDashboard}
+              onBackToBase={() => goToStep(1)}
+            />
+          )
         )}
       </div>
     </div>

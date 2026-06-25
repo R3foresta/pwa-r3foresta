@@ -7,6 +7,13 @@ import type { UsuarioResumen } from '../../../types/users'
 
 export type TipoCampania = 'REFORESTACION' | 'ARBORIZACION' | 'FORESTACION'
 
+export type GeoJsonPosition = [longitud: number, latitud: number]
+
+export type GeoJsonPolygon = {
+  type: 'Polygon'
+  coordinates: GeoJsonPosition[][]
+}
+
 export type {
   ListOrganizacionesQuery,
   Organizacion,
@@ -51,6 +58,15 @@ export type CreateCampaniaInput = {
   fecha_estimada_inicio?: string
   fecha_estimada_fin?: string
   organizacion_ids?: number[]
+}
+
+export type SetSubcampaniaPoligonoInput = {
+  poligono: GeoJsonPolygon
+}
+
+export type SetSubcampaniaPoligonoData = {
+  id: number
+  area_hectareas?: number | null
 }
 
 export type ApiEnvelope<T> = {

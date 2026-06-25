@@ -1,4 +1,7 @@
-import type { CreateCampaniaInput } from '../modules/plantacion/types/contracts'
+import type {
+  CreateCampaniaInput,
+  SetSubcampaniaPoligonoInput,
+} from '../modules/plantacion/types/contracts'
 
 const RAW_API_URL = import.meta.env.VITE_API_URL as string | undefined
 const API_BASE_URL = `${(RAW_API_URL || '').replace(/\/$/, '')}/api`
@@ -52,6 +55,18 @@ export async function createCampaniaApi(
   authId?: string,
 ): Promise<Response> {
   return fetch(`${API_BASE_URL}/campanias`, {
+    method: 'POST',
+    headers: getAuthHeaders({ authId, includeContentType: true }),
+    body: JSON.stringify(input),
+  })
+}
+
+export async function setSubcampaniaPoligonoApi(
+  subcampaniaId: number,
+  input: SetSubcampaniaPoligonoInput,
+  authId?: string,
+): Promise<Response> {
+  return fetch(`${API_BASE_URL}/subcampanias/${subcampaniaId}/poligono`, {
     method: 'POST',
     headers: getAuthHeaders({ authId, includeContentType: true }),
     body: JSON.stringify(input),

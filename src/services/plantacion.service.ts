@@ -2,12 +2,15 @@ import {
   createCampaniaApi,
   getCampaniaApi,
   listCampaniasApi,
+  setSubcampaniaPoligonoApi,
 } from '../api/plantacion.api'
 import { OrganizacionesService } from './organizaciones.service'
 import type {
   ApiEnvelope,
   Campania,
   CreateCampaniaInput,
+  GeoJsonPolygon,
+  SetSubcampaniaPoligonoData,
   TipoCampania,
 } from '../modules/plantacion/types/contracts'
 import type {
@@ -90,6 +93,36 @@ function validateCampaniaInput(input: CreateCampaniaInput): CreateCampaniaInput 
   }
 }
 
+function validateGeoJsonPolygon(poligono: GeoJsonPolygon): GeoJsonPolygon {
+  const firstRing = poligono.coordinates[0]
+
+  if (poligono.type !== 'Polygon' || !firstRing || firstRing.length < 4) {
+    throw new Error('El polígono debe tener al menos 4 puntos y un anillo cerrado.')
+  }
+
+  const [firstLng, firstLat] = firstRing[0]
+  const [lastLng, lastLat] = firstRing[firstRing.length - 1]
+
+  if (firstLng !== lastLng || firstLat !== lastLat) {
+    throw new Error('El anillo del polígono debe estar cerrado.')
+  }
+
+  firstRing.forEach(([lng, lat]) => {
+    if (
+      !Number.isFinite(lng) ||
+      !Number.isFinite(lat) ||
+      lng < -180 ||
+      lng > 180 ||
+      lat < -90 ||
+      lat > 90
+    ) {
+      throw new Error('El polígono tiene coordenadas fuera de rango.')
+    }
+  })
+
+  return poligono
+}
+
 export class PlantacionService {
   static async listCampanias(): Promise<Campania[]> {
     const response = await listCampaniasApi()
@@ -128,6 +161,33 @@ export class PlantacionService {
     if (!payload.data) {
       throw new Error('No se recibió la campaña creada.')
     }
+    return payload.data
+  }
+
+  static async setSubcampaniaPoligono(
+    subcampaniaId: number,
+    poligono: GeoJsonPolygon,
+    authId?: string,
+  ): Promise<SetSubcampaniaPoligonoData> {
+    if (!Number.isFinite(subcampaniaId) || subcampaniaId <= 0) {
+      throw new Error('ID de subcampaña inválido.')
+    }
+
+    const cleanPoligono = validateGeoJsonPolygon(poligono)
+    const response = await setSubcampaniaPoligonoApi(
+      subcampaniaId,
+      { poligono: cleanPoligono },
+      authId,
+    )
+    const payload = await parseJsonResponse<ApiEnvelope<SetSubcampaniaPoligonoData>>(
+      response,
+      'Error al guardar el polígono de la subcampaña.',
+    )
+
+    if (!payload.data) {
+      throw new Error('No se recibió confirmación del polígono guardado.')
+    }
+
     return payload.data
   }
 
