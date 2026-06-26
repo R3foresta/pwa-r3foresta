@@ -20,6 +20,12 @@ type Props = {
   lote: ViveroLotDetailView
 }
 
+type AsignacionSuccess = {
+  destino: string
+  cantidad: number
+  proposito: string
+}
+
 const PROPOSITOS: Array<{
   key: PropositoAsignacionVivero
   label: string
@@ -52,6 +58,15 @@ function numberOrZero(value?: number | null) {
   return Number.isFinite(value) ? Number(value) : 0
 }
 
+function sortAsignacionesNewestFirst(items: AsignacionViveroResumen[]) {
+  return [...items].sort((a, b) => {
+    const dateA = a.fecha_asignacion ? new Date(a.fecha_asignacion).getTime() : 0
+    const dateB = b.fecha_asignacion ? new Date(b.fecha_asignacion).getTime() : 0
+    if (dateA !== dateB) return dateB - dateA
+    return Number(b.id) - Number(a.id)
+  })
+}
+
 function AssignmentMetric({ label, value, danger = false }: { label: string; value: number; danger?: boolean }) {
   return (
     <div className="rounded-2xl bg-slate-50 px-2.5 py-2 text-center ring-1 ring-slate-100">
@@ -59,6 +74,51 @@ function AssignmentMetric({ label, value, danger = false }: { label: string; val
       <p className={`mt-0.5 text-sm font-extrabold ${danger ? 'text-red-600' : 'text-brand-700'}`}>
         {value}
       </p>
+    </div>
+  )
+}
+
+function AssignmentSuccessDialog({
+  success,
+  onClose,
+}: {
+  success: AsignacionSuccess | null
+  onClose: () => void
+}) {
+  if (!success) return null
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="assignment-success-title"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+    >
+      <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl ring-1 ring-black/5">
+        <div className="flex flex-col items-center space-y-5 text-center">
+          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+            <Icon name="check" className="h-12 w-12" />
+          </div>
+          <div>
+            <h2 id="assignment-success-title" className="text-2xl font-extrabold text-brand-900">
+              Asignacion creada
+            </h2>
+            <p className="mt-2 text-sm font-semibold leading-snug text-slate-600">
+              El stock quedo reservado para {success.destino}.
+            </p>
+            <p className="mt-3 text-lg font-extrabold text-brand-800">
+              {success.cantidad} plantas - {success.proposito}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full rounded-2xl bg-brand-700 py-4 text-center text-base font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99]"
+          >
+            Entendido
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
@@ -77,6 +137,7 @@ function ViveroLotAsignacionesTab({ lote }: Props) {
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [assignmentSuccess, setAssignmentSuccess] = useState<AsignacionSuccess | null>(null)
   const [cancelTarget, setCancelTarget] = useState<AsignacionViveroResumen | null>(null)
 
   const saldoVivo = lote.saldoVivoActual ?? 0
@@ -114,7 +175,7 @@ function ViveroLotAsignacionesTab({ lote }: Props) {
   const loadAsignaciones = () => {
     setLoading(true)
     LotesViveroService.listAsignaciones(lote.id)
-      .then((data) => setAsignaciones(data))
+      .then((data) => setAsignaciones(sortAsignacionesNewestFirst(data)))
       .catch((err) => setSubmitError(err instanceof Error ? err.message : 'Error al cargar asignaciones.'))
       .finally(() => setLoading(false))
   }
@@ -152,7 +213,11 @@ function ViveroLotAsignacionesTab({ lote }: Props) {
     setSubmitting(true)
     setSubmitError(null)
     setSuccessMessage(null)
+    setAssignmentSuccess(null)
     try {
+      const selectedSubcampania = subcampanias.find((sub) => sub.id === Number(subcampaniaId))
+      const selectedProposito = PROPOSITOS.find((item) => item.key === proposito)
+
       await LotesViveroService.crearAsignacion(
         lote.id,
         {
@@ -164,8 +229,14 @@ function ViveroLotAsignacionesTab({ lote }: Props) {
       )
       setCantidad('')
       setShowErrors(false)
-      setSuccessMessage('Reserva creada correctamente.')
-      await LotesViveroService.listAsignaciones(lote.id).then(setAsignaciones)
+      setAssignmentSuccess({
+        destino: selectedSubcampania?.nombre || 'la subcampania seleccionada',
+        cantidad: cantidadNum,
+        proposito: selectedProposito?.label || 'Inicial',
+      })
+      await LotesViveroService.listAsignaciones(lote.id).then((data) =>
+        setAsignaciones(sortAsignacionesNewestFirst(data)),
+      )
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Error al crear la reserva.')
     } finally {
@@ -178,11 +249,14 @@ function ViveroLotAsignacionesTab({ lote }: Props) {
     setSubmitting(true)
     setSubmitError(null)
     setSuccessMessage(null)
+    setAssignmentSuccess(null)
     try {
       await LotesViveroService.cancelarAsignacion(lote.id, cancelTarget.id, authId)
       setSuccessMessage('Reserva cancelada. El saldo vuelve a estar libre.')
       setCancelTarget(null)
-      await LotesViveroService.listAsignaciones(lote.id).then(setAsignaciones)
+      await LotesViveroService.listAsignaciones(lote.id).then((data) =>
+        setAsignaciones(sortAsignacionesNewestFirst(data)),
+      )
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Error al cancelar la reserva.')
     } finally {
@@ -446,6 +520,11 @@ function ViveroLotAsignacionesTab({ lote }: Props) {
         loading={submitting}
         onConfirm={handleCancel}
         onCancel={() => setCancelTarget(null)}
+      />
+
+      <AssignmentSuccessDialog
+        success={assignmentSuccess}
+        onClose={() => setAssignmentSuccess(null)}
       />
     </div>
   )
