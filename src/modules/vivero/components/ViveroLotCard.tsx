@@ -1,5 +1,6 @@
 import type { ViveroLotCardData } from '../types/view-models'
 import SurvivalBar from './SurvivalBar'
+import { DISPATCH_FLOW_LABEL, getDispatchFlowStatus } from '../utils/dispatchFlow'
 
 const ETAPA_LABEL: Record<string, string> = {
   INICIO: 'Inicio',
@@ -57,6 +58,13 @@ function ViveroLotCard({ lot, onClick, cta, compact }: Props) {
 
   const reservado = lot.saldoAsignadoTotal ?? 0
   const stockLibre = lot.saldoVivoDisponibleAsignacion ?? (lot.cantidadActual ?? 0)
+  const flowStatus = getDispatchFlowStatus(lot)
+  const flowTone =
+    flowStatus === 'ASIGNADO_A_DESTINO'
+      ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
+      : flowStatus === 'LISTO_PARA_DESPACHO'
+        ? 'bg-blue-50 text-blue-700 ring-blue-200'
+        : 'bg-slate-50 text-slate-600 ring-slate-200'
 
   return (
     <div className="w-full rounded-3xl bg-white shadow-soft ring-1 ring-black/5">
@@ -81,6 +89,9 @@ function ViveroLotCard({ lot, onClick, cta, compact }: Props) {
                   SIN STOCK LIBRE
                 </span>
               )}
+              <span className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase ring-1 ${flowTone}`}>
+                {DISPATCH_FLOW_LABEL[flowStatus]}
+              </span>
             </div>
             <p className="text-sm font-semibold text-brand-500">{lot.codigo}</p>
           </div>

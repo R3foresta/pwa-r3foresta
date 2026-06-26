@@ -61,6 +61,7 @@ function ViveroEventScreen() {
     const hasEmbolsado = lote.plantas_vivas_iniciales !== null
     const isActive = lote.estado_lote === 'ACTIVO'
     const saldo = lote.saldo_vivo_actual ?? 0
+    const saldoLibre = lote.saldo_vivo_disponible_asignacion ?? saldo
     const hasSaldo = saldo > 0
 
     return [
@@ -96,13 +97,13 @@ function ViveroEventScreen() {
       {
         key: 'despacho',
         label: 'Despacho',
-        available: hasEmbolsado && isActive && hasSaldo,
+        available: hasEmbolsado && isActive && saldoLibre > 0,
         reason: !hasEmbolsado
           ? 'Requiere embolsado primero'
           : !isActive
             ? 'Lote finalizado'
-            : !hasSaldo
-              ? 'Sin saldo vivo'
+            : saldoLibre <= 0
+              ? 'Sin saldo libre'
               : undefined,
       },
     ]

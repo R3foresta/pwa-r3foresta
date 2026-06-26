@@ -172,7 +172,7 @@ export interface UploadEvidenciasPendientesResponse {
   evidencia_ids: number[]
 }
 
-export type EvidenciaEventoVivero = 'EMBOLSADO' | 'ADAPTABILIDAD' | 'MERMA'
+export type EvidenciaEventoVivero = 'EMBOLSADO' | 'ADAPTABILIDAD' | 'MERMA' | 'DESPACHO'
 
 export interface UploadEvidenciasEventoInput {
   fotos: File[]
@@ -349,6 +349,14 @@ export interface RegistrarMermaRequest {
   observaciones?: string
 }
 
+export type PropositoAsignacionVivero = 'PLANTACION_INICIAL' | 'REPOSICION'
+
+export interface CrearAsignacionViveroRequest {
+  subcampania_id: number
+  cantidad_asignada: number
+  proposito?: PropositoAsignacionVivero
+}
+
 // TODO(despacho-bloqueado): la pantalla de despacho está deshabilitada en el
 // front (DespachoForm.tsx → DESPACHO_EVIDENCE_ENDPOINT_READY = false) por dos
 // motivos cruzados:
@@ -365,6 +373,7 @@ export interface RegistrarDespachoRequest {
   cantidad_afectada: number
   destino_tipo: DestinoTipoVivero
   destino_referencia: string
+  evidencia_ids: number[]
   comunidad_destino_id?: number
   observaciones?: string
 }

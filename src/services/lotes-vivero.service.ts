@@ -13,6 +13,8 @@ import {
   getTimelineApi,
   listSubcampaniasApi,
   listAsignacionesApi,
+  crearAsignacionApi,
+  cancelarAsignacionApi,
 } from '../api/lotes-vivero.api'
 
 import { mapLoteToCardData, mapLoteToDetailView } from '../modules/vivero/mappers/lote.mapper'
@@ -20,6 +22,7 @@ import type {
   ApiPagination,
   CreateLoteViveroInput,
   CreateLoteViveroResponse,
+  CrearAsignacionViveroRequest,
   EmbolsadoContextData,
   EmbolsadoContextResponse,
   EvidenciaEventoVivero,
@@ -77,6 +80,7 @@ export type ListViveroLotsForUiResult = {
 export type SubcampaniaResumen = {
   id: number
   nombre: string
+  estado?: string | null
 }
 
 export type AsignacionViveroResumen = {
@@ -421,6 +425,52 @@ export class LotesViveroService {
       'Error al cargar asignaciones.',
     )
     return Array.isArray(payload.data) ? payload.data : []
+  }
+
+  static async crearAsignacion(
+    loteId: number,
+    input: CrearAsignacionViveroRequest,
+    authId?: string,
+  ): Promise<AsignacionViveroResumen> {
+    if (!Number.isFinite(loteId) || loteId <= 0) {
+      throw new Error('ID de lote de vivero invÃ¡lido.')
+    }
+    if (!Number.isFinite(input.subcampania_id) || input.subcampania_id <= 0) {
+      throw new Error('Selecciona una subcampaÃ±a destino.')
+    }
+    if (!Number.isFinite(input.cantidad_asignada) || input.cantidad_asignada <= 0) {
+      throw new Error('La cantidad asignada debe ser mayor a 0.')
+    }
+
+    const response = await crearAsignacionApi(loteId, input, authId)
+    const payload = await this.parseJsonResponse<ApiEnvelope<AsignacionViveroResumen>>(
+      response,
+      'Error al crear la asignaciÃ³n.',
+    )
+    if (!payload.data) {
+      throw new Error('No se recibiÃ³ la asignaciÃ³n creada.')
+    }
+    return payload.data
+  }
+
+  static async cancelarAsignacion(
+    loteId: number,
+    asignacionId: number,
+    authId?: string,
+  ): Promise<AsignacionViveroResumen | null> {
+    if (!Number.isFinite(loteId) || loteId <= 0) {
+      throw new Error('ID de lote de vivero invÃ¡lido.')
+    }
+    if (!Number.isFinite(asignacionId) || asignacionId <= 0) {
+      throw new Error('ID de asignaciÃ³n invÃ¡lido.')
+    }
+
+    const response = await cancelarAsignacionApi(loteId, asignacionId, authId)
+    const payload = await this.parseJsonResponse<ApiEnvelope<AsignacionViveroResumen>>(
+      response,
+      'Error al cancelar la asignaciÃ³n.',
+    )
+    return payload.data ?? null
   }
 }
 
