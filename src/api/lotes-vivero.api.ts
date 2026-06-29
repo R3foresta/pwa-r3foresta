@@ -9,6 +9,7 @@ import type {
   UploadEvidenciasPendientesInput,
   EvidenciaEventoVivero,
   UploadEvidenciasEventoInput,
+  CrearAsignacionViveroRequest,
 } from '../modules/vivero/types/contracts'
 
 const RAW_API_URL = import.meta.env.VITE_API_URL as string | undefined
@@ -60,6 +61,7 @@ const EVENT_EVIDENCE_PATH: Record<EvidenciaEventoVivero, string> = {
   EMBOLSADO: 'embolsado',
   ADAPTABILIDAD: 'adaptabilidad',
   MERMA: 'merma',
+  DESPACHO: 'despacho',
 }
 
 function buildEvidenceFormData(input: UploadEvidenciasEventoInput): FormData {
@@ -233,6 +235,29 @@ export async function listAsignacionesApi(loteId: number): Promise<Response> {
   return fetch(`${API_BASE_URL}/lotes-vivero/${loteId}/asignaciones`, {
     method: 'GET',
     headers: getAuthHeaders({ includeContentType: false }),
+  })
+}
+
+export async function crearAsignacionApi(
+  loteId: number,
+  input: CrearAsignacionViveroRequest,
+  authId?: string,
+): Promise<Response> {
+  return fetch(`${API_BASE_URL}/lotes-vivero/${loteId}/asignaciones`, {
+    method: 'POST',
+    headers: getAuthHeaders({ authId, includeContentType: true }),
+    body: JSON.stringify(input),
+  })
+}
+
+export async function cancelarAsignacionApi(
+  loteId: number,
+  asignacionId: number,
+  authId?: string,
+): Promise<Response> {
+  return fetch(`${API_BASE_URL}/lotes-vivero/${loteId}/asignaciones/${asignacionId}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders({ authId, includeContentType: false }),
   })
 }
 

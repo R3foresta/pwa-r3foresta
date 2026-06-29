@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Icon from '../../../../../components/Icon'
 import { useAuth } from '../../../../../contexts/AuthContext'
 import { LotesViveroService } from '../../../../../services/lotes-vivero.service'
@@ -9,6 +9,8 @@ import type { DestinoTipoVivero, LoteViveroItem } from '../../../types/contracts
 import CantidadStepper from '../CantidadStepper'
 import EventoCTABar from '../EventoCTABar'
 import FechaCard from '../FechaCard'
+import FotosUploader from '../FotosUploader'
+import type { Photo } from '../FotosUploader'
 import ObservacionesCard from '../ObservacionesCard'
 
 type Props = {
@@ -17,28 +19,18 @@ type Props = {
 }
 
 const DESTINOS: { key: DestinoTipoVivero; label: string; hint: string }[] = [
-  { key: 'PLANTACION_PROPIA', label: 'Plantación propia', hint: 'Terreno operado por R3foresta' },
-  { key: 'DONACION_COMUNIDAD', label: 'Donación a comunidad', hint: 'Entrega vinculada a una comunidad' },
+  {
+    key: 'PLANTACION_PROPIA',
+    label: 'Plantacion propia',
+    hint: 'Salida manual fuera de una campania M3',
+  },
+  { key: 'DONACION_COMUNIDAD', label: 'Donacion a comunidad', hint: 'Entrega vinculada a una comunidad' },
   { key: 'VENTA', label: 'Venta', hint: 'Salida comercial' },
   { key: 'OTRO', label: 'Otro', hint: 'Detallar en referencia' },
 ]
 
 const FORM_ID = 'vivero-despacho-form'
 const DEFAULT_PAIS_ID = 1
-
-// TODO(despacho-bloqueado): mantener en `false` mientras existan estos dos bloqueos:
-//   1. Backend no expone el endpoint de evidencias para despacho (RF-VIV-05 exige
-//      mínimo 1 evidencia, pero `RegistrarDespachoRequest` no acepta `evidencia_ids`
-//      todavía — ver TODO en contracts.ts).
-//   2. El flujo end-to-end depende del Módulo 3 (Plantación) que aún no tiene
-//      backend; sin él, despachar no cierra el ciclo trazabilidad → plantación,
-//      así que aunque el form funcionara no habría dónde despachar realmente.
-// Estado pre-producción: ningún usuario real está despachando lotes, por eso
-// dejamos la pantalla deshabilitada en vez de mantener la deuda anterior de
-// enviar despacho sin evidencias. Cuando backend de evidencias + Módulo 3 estén,
-// quitar este flag (y posiblemente reemplazarlo por una validación de fotos
-// equivalente a la de embolsado).
-const DESPACHO_EVIDENCE_ENDPOINT_READY = false
 
 function DespachoForm({ lote, onCompleted }: Props) {
   const { user } = useAuth()
@@ -48,25 +40,40 @@ function DespachoForm({ lote, onCompleted }: Props) {
   const fechaMin = lote.fecha_inicio
   const fechaMax = today
   const saldoVivo = lote.saldo_vivo_actual ?? 0
+  const saldoLibre = lote.saldo_vivo_disponible_asignacion ?? saldoVivo
+  const saldoReservado = lote.saldo_asignado_total ?? Math.max(0, saldoVivo - saldoLibre)
 
   const [cantidad, setCantidad] = useState('')
   const [destino, setDestino] = useState<DestinoTipoVivero | ''>('')
   const [referencia, setReferencia] = useState('')
   const [comunidad, setComunidad] = useState<ComunidadCard | null>(null)
   const [fecha, setFecha] = useState(today)
+  const [photos, setPhotos] = useState<Photo[]>([])
   const [observaciones, setObservaciones] = useState('')
   const [showErrors, setShowErrors] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+
+  const photosRef = useRef(photos)
+  useEffect(() => {
+    photosRef.current = photos
+  }, [photos])
+  useEffect(
+    () => () => {
+      photosRef.current.forEach((photo) => URL.revokeObjectURL(photo.previewUrl))
+    },
+    [],
+  )
 
   const cantidadNum = Number(cantidad)
   const cantidadValid =
     Number.isFinite(cantidadNum) &&
     cantidadNum > 0 &&
     Number.isInteger(cantidadNum) &&
-    cantidadNum <= saldoVivo
+    cantidadNum <= saldoLibre
 
   const saldoDespues = cantidadValid ? saldoVivo - cantidadNum : saldoVivo
+  const saldoLibreDespues = cantidadValid ? saldoLibre - cantidadNum : saldoLibre
   const finalizaLote = cantidadValid && saldoDespues === 0
 
   const destinoValid = destino !== ''
@@ -74,6 +81,7 @@ function DespachoForm({ lote, onCompleted }: Props) {
   const requiereComunidad = destino === 'DONACION_COMUNIDAD'
   const comunidadValid = !requiereComunidad || comunidad !== null
   const fechaValid = fecha >= fechaMin && fecha <= fechaMax
+  const fotosValid = photos.length >= 1 && photos.length <= 5
 
   const canSubmit =
     cantidadValid &&
@@ -81,19 +89,33 @@ function DespachoForm({ lote, onCompleted }: Props) {
     referenciaValid &&
     comunidadValid &&
     fechaValid &&
-    DESPACHO_EVIDENCE_ENDPOINT_READY &&
+    fotosValid &&
     !!authId &&
     !submitting
 
   const cantidadError = !cantidad
-    ? 'Ingresá las plantas a despachar.'
+    ? 'Ingresa las plantas a despachar.'
     : !Number.isFinite(cantidadNum) || cantidadNum <= 0
       ? 'La cantidad debe ser mayor a 0.'
       : !Number.isInteger(cantidadNum)
         ? 'Solo se aceptan enteros.'
-        : cantidadNum > saldoVivo
-          ? `Máx ${saldoVivo} plantas (saldo vivo).`
+        : cantidadNum > saldoLibre
+          ? `Max ${saldoLibre} plantas libres. El stock reservado no se puede usar en despacho manual.`
           : null
+
+  const addPhotos = (files: File[]) => {
+    const next = files.map((file) => ({ file, previewUrl: URL.createObjectURL(file) }))
+    setPhotos((prev) => [...prev, ...next].slice(0, 5))
+  }
+
+  const removePhoto = (index: number) => {
+    setPhotos((prev) => {
+      const next = [...prev]
+      const [removed] = next.splice(index, 1)
+      if (removed) URL.revokeObjectURL(removed.previewUrl)
+      return next
+    })
+  }
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -101,9 +123,23 @@ function DespachoForm({ lote, onCompleted }: Props) {
       setShowErrors(true)
       return
     }
+
     setSubmitting(true)
     setSubmitError(null)
     try {
+      const upload = await LotesViveroService.uploadEvidenciasEvento(
+        lote.id,
+        'DESPACHO',
+        {
+          fotos: photos.map((photo) => photo.file),
+          titulo: 'Despacho de lote vivero',
+          descripcion: observaciones.trim() || referencia.trim(),
+          metadata: { fuente: 'pwa-r3foresta', modulo: 'vivero', etapa: 'DESPACHO_MANUAL' },
+          tomado_en: new Date().toISOString(),
+        },
+        authId,
+      )
+
       await LotesViveroService.registrarDespacho(
         lote.id,
         {
@@ -111,6 +147,7 @@ function DespachoForm({ lote, onCompleted }: Props) {
           cantidad_afectada: cantidadNum,
           destino_tipo: destino as DestinoTipoVivero,
           destino_referencia: referencia.trim(),
+          evidencia_ids: upload.data.evidencia_ids,
           comunidad_destino_id: requiereComunidad ? comunidad?.id : undefined,
           observaciones: observaciones.trim() || undefined,
         },
@@ -124,105 +161,90 @@ function DespachoForm({ lote, onCompleted }: Props) {
     }
   }
 
-  const datosObligatoriosValidos =
-    cantidadValid && destinoValid && referenciaValid && comunidadValid && fechaValid && !!authId
   const pendingMsg = !canSubmit && !submitting
-    ? datosObligatoriosValidos
-      ? 'Falta habilitar el endpoint de evidencias para despacho.'
-      : 'Completá los campos obligatorios'
+    ? saldoLibre <= 0
+      ? 'No hay saldo libre. El stock disponible esta reservado.'
+      : 'Completa los campos obligatorios'
     : undefined
 
   return (
     <>
       <form id={FORM_ID} onSubmit={handleSubmit} className="flex flex-col gap-4 pb-[230px]">
-        {/* Aviso de bloqueo: pre-producción, sin usuarios reales. Despacho queda
-            inoperable a propósito hasta que (1) backend exponga endpoint de
-            evidencias y (2) Módulo 3 (Plantación) esté listo. Ver TODO en
-            DESPACHO_EVIDENCE_ENDPOINT_READY. */}
-        {!DESPACHO_EVIDENCE_ENDPOINT_READY && (
-          <div className="flex items-start gap-2 rounded-2xl bg-amber-100 px-3 py-2.5 text-xs font-semibold text-amber-900 ring-1 ring-amber-300">
-            <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
-            <span>
-              <strong>Despacho no operativo aún.</strong> Pendiente backend de
-              evidencias y módulo de Plantación. El formulario está visible para
-              QA del diseño; el botón se mantendrá inhabilitado.
-            </span>
-          </div>
-        )}
-
-        {/* Warning destructivo */}
         <div className="flex items-start gap-2 rounded-2xl bg-amber-50 px-3 py-2.5 text-xs font-semibold text-amber-800 ring-1 ring-amber-200">
           <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
           <span>
-            Esta acción reduce el inventario vivo del lote. Los despachos parciales son
-            permitidos.
-            {finalizaLote && ' Saldo en 0 finaliza automáticamente el lote.'}
+            Este es un despacho manual. Solo usa saldo libre; las plantas reservadas para
+            subcampanias se consumen desde Plantacion con despacho automatico.
           </span>
         </div>
 
-        {/* Antes / Después */}
+        <div className="grid grid-cols-3 gap-2">
+          <div className="rounded-2xl bg-white px-3 py-3 shadow-soft ring-1 ring-black/5">
+            <p className="text-[9px] font-extrabold uppercase tracking-wider text-brand-500">
+              Vivo
+            </p>
+            <p className="mt-1 text-xl font-extrabold leading-none text-brand-700">
+              {saldoVivo}
+            </p>
+          </div>
+          <div className="rounded-2xl bg-white px-3 py-3 shadow-soft ring-1 ring-black/5">
+            <p className="text-[9px] font-extrabold uppercase tracking-wider text-amber-600">
+              Reservado
+            </p>
+            <p className="mt-1 text-xl font-extrabold leading-none text-amber-700">
+              {saldoReservado}
+            </p>
+          </div>
+          <div className="rounded-2xl bg-emerald-50 px-3 py-3 shadow-soft ring-1 ring-emerald-200">
+            <p className="text-[9px] font-extrabold uppercase tracking-wider text-emerald-700">
+              Libre
+            </p>
+            <p className="mt-1 text-xl font-extrabold leading-none text-emerald-700">
+              {saldoLibre}
+            </p>
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 gap-2">
           <div className="rounded-2xl bg-white px-3 py-3 shadow-soft ring-1 ring-black/5">
             <p className="text-[10px] font-extrabold uppercase tracking-wider text-brand-500">
-              Plantas antes
+              Saldo vivo despues
             </p>
             <p className="mt-1 text-2xl font-extrabold leading-none text-brand-700">
-              {saldoVivo}
-              <span className="ml-1 text-xs font-bold text-brand-500">plantas</span>
+              {cantidadValid ? saldoDespues : '-'}
             </p>
           </div>
           <div
             className={`rounded-2xl px-3 py-3 shadow-soft ring-1 ${
-              finalizaLote
-                ? 'bg-slate-50 ring-slate-200'
-                : cantidadValid
-                  ? 'bg-emerald-50 ring-emerald-200'
-                  : 'bg-white ring-black/5'
+              cantidadValid ? 'bg-emerald-50 ring-emerald-200' : 'bg-white ring-black/5'
             }`}
           >
-            <p
-              className={`text-[10px] font-extrabold uppercase tracking-wider ${
-                finalizaLote ? 'text-slate-600' : cantidadValid ? 'text-emerald-700' : 'text-brand-500'
-              }`}
-            >
-              Saldo después
+            <p className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700">
+              Libre despues
             </p>
-            <p
-              className={`mt-1 text-2xl font-extrabold leading-none ${
-                finalizaLote ? 'text-slate-700' : cantidadValid ? 'text-emerald-700' : 'text-brand-300'
-              }`}
-            >
-              {cantidadValid ? saldoDespues : '—'}
-              {cantidadValid && (
-                <span
-                  className={`ml-1 text-xs font-bold ${
-                    finalizaLote ? 'text-slate-500' : 'text-emerald-500'
-                  }`}
-                >
-                  plantas
-                </span>
-              )}
+            <p className="mt-1 text-2xl font-extrabold leading-none text-emerald-700">
+              {cantidadValid ? saldoLibreDespues : '-'}
             </p>
           </div>
         </div>
 
-        {/* Cantidad a despachar */}
         <section className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
           <CantidadStepper
             value={cantidad}
             onChange={setCantidad}
-            max={saldoVivo}
+            max={saldoLibre}
             min={0}
             label="Plantas a despachar"
             unit="plantas"
             quickPercentages={[25, 50, 80, 100]}
+            bigStepSize={saldoLibre >= 50 ? 10 : undefined}
             showError={showErrors && !cantidadValid}
             errorMessage={cantidadError ?? undefined}
-            disabled={submitting}
+            hint={saldoReservado > 0 ? `${saldoReservado} plantas estan reservadas y no entran en este despacho.` : undefined}
+            disabled={submitting || saldoLibre <= 0}
           />
         </section>
 
-        {/* Tipo de destino */}
         <section className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
           <div className="mb-2 flex items-center justify-between">
             <p className="text-sm font-extrabold text-brand-700">Tipo de destino</p>
@@ -256,12 +278,11 @@ function DespachoForm({ lote, onCompleted }: Props) {
           </div>
           {showErrors && !destinoValid && (
             <p className="mt-2 text-xs font-semibold text-red-500">
-              Seleccioná el tipo de destino.
+              Selecciona el tipo de destino.
             </p>
           )}
         </section>
 
-        {/* Comunidad destino (solo si DONACION_COMUNIDAD) */}
         {requiereComunidad && (
           <section className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
             <SelectorComunidad
@@ -269,19 +290,18 @@ function DespachoForm({ lote, onCompleted }: Props) {
               valueId={comunidad?.id}
               onChange={setComunidad}
               label="Comunidad destino"
-              placeholder="Buscar comunidad…"
+              placeholder="Buscar comunidad..."
               error={showErrors && !comunidadValid}
               disabled={submitting}
             />
             {showErrors && !comunidadValid && (
               <p className="mt-2 text-xs font-semibold text-red-500">
-                Seleccioná una comunidad.
+                Selecciona una comunidad.
               </p>
             )}
           </section>
         )}
 
-        {/* Referencia */}
         <section className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
           <div className="mb-2 flex items-center justify-between">
             <p className="text-sm font-extrabold text-brand-700">Referencia del destino</p>
@@ -293,7 +313,7 @@ function DespachoForm({ lote, onCompleted }: Props) {
             type="text"
             value={referencia}
             onChange={(event) => setReferencia(event.target.value.slice(0, 200))}
-            placeholder="Nombre de la plantación, beneficiario, comprador…"
+            placeholder="Nombre de destino, beneficiario o comprador..."
             disabled={submitting}
             className={`w-full rounded-2xl border px-3 py-2.5 text-sm font-semibold text-brand-700 outline-none transition ${
               showErrors && !referenciaValid
@@ -303,12 +323,11 @@ function DespachoForm({ lote, onCompleted }: Props) {
           />
           {showErrors && !referenciaValid && (
             <p className="mt-2 text-xs font-semibold text-red-500">
-              Mínimo 3 caracteres.
+              Minimo 3 caracteres.
             </p>
           )}
         </section>
 
-        {/* Fecha */}
         <section className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
           <FechaCard
             value={fecha}
@@ -321,18 +340,18 @@ function DespachoForm({ lote, onCompleted }: Props) {
           />
         </section>
 
-        {/* Evidencia pendiente de contrato */}
-        <section className="rounded-3xl bg-amber-50 px-4 py-4 text-xs font-semibold text-amber-800 shadow-soft ring-1 ring-amber-200">
-          <div className="flex items-start gap-2">
-            <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
-            <span>
-              Despacho requiere evidencia obligatoria, pero el contrato actual no permite enviar
-              `evidencia_ids`. El registro queda bloqueado para no perder fotos ni trazabilidad.
-            </span>
-          </div>
+        <section className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
+          <FotosUploader
+            photos={photos}
+            onAdd={addPhotos}
+            onRemove={removePhoto}
+            required
+            showError={showErrors && !fotosValid}
+            errorMessage="Adjunta al menos una foto del despacho."
+            disabled={submitting}
+          />
         </section>
 
-        {/* Observaciones */}
         <section className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
           <ObservacionesCard
             value={observaciones}
@@ -340,6 +359,13 @@ function DespachoForm({ lote, onCompleted }: Props) {
             disabled={submitting}
           />
         </section>
+
+        {finalizaLote && (
+          <div className="flex items-start gap-2 rounded-2xl bg-red-50 px-3 py-2.5 text-xs font-extrabold text-red-700 ring-1 ring-red-200">
+            <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
+            <span>Este despacho dejara el lote en 0 y lo cerrara automaticamente.</span>
+          </div>
+        )}
 
         {submitError && (
           <p className="whitespace-pre-line rounded-2xl bg-red-50 px-3 py-2 text-center text-xs font-semibold text-red-600 ring-1 ring-red-200">
@@ -352,7 +378,7 @@ function DespachoForm({ lote, onCompleted }: Props) {
         formId={FORM_ID}
         label={finalizaLote ? 'Confirmar y cerrar lote' : 'Confirmar despacho'}
         loading={submitting}
-        loadingLabel="Registrando…"
+        loadingLabel="Registrando..."
         disabled={!canSubmit}
         hint={pendingMsg}
         variant="emerald"
