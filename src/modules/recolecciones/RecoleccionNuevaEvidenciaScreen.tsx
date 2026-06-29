@@ -5,10 +5,7 @@ import { RecoleccionesService } from '../../services/recolecciones.service'
 import { MAX_FOTOS_POR_TIPO as MAX_FOTOS_FORM } from './validators/recoleccionForm'
 import PhotoPicker from './components/PhotoPicker'
 import type { RecoleccionPhoto } from './recoleccionFormTypes'
-<<<<<<< HEAD
-=======
 import { revokePhotoPreviewUrls } from './utils/photoPreviewUrls'
->>>>>>> 39f969ba2faab6afc3e2bf961073b40254ecb13f
 
 function RecoleccionNuevaEvidenciaScreen() {
   const navigate = useNavigate()
@@ -22,10 +19,7 @@ function RecoleccionNuevaEvidenciaScreen() {
   const [esPrincipal, setEsPrincipal] = useState(false)
   const [fotos, setFotos] = useState<File[]>([])
   const [photoPreviews, setPhotoPreviews] = useState<RecoleccionPhoto[]>([])
-<<<<<<< HEAD
-=======
   const photoPreviewsRef = useRef(photoPreviews)
->>>>>>> 39f969ba2faab6afc3e2bf961073b40254ecb13f
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const MAX_FOTOS = MAX_FOTOS_FORM
