@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Icon from "../../components/Icon";
 import type { MaterialType, Unit } from "./recoleccionTypes";
-import { useRecoleccionForm } from "./RecoleccionFormContext";
+import { useRecoleccionForm } from "./useRecoleccionForm";
 import { RecoleccionesService } from "../../services/recolecciones.service";
 import { buildPastRange, clampDateToRange } from "../../utils/validations/date";
 import { MAX_DIAS_RECOLECCION } from "../../config/recoleccion";

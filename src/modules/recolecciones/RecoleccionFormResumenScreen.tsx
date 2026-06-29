@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Icon from "../../components/Icon";
 import RecoleccionSuccessModal from "./RecoleccionSuccessModal";
-import { useRecoleccionForm } from "./RecoleccionFormContext";
+import { useRecoleccionForm } from "./useRecoleccionForm";
 import { useAuth } from "../../contexts/AuthContext";
 import { RecoleccionesService, type TipoMaterialCanonico } from "../../services/recolecciones.service";
 import { mapFormToCreateDto, validateRecoleccionForm } from "./validators/recoleccionForm";
