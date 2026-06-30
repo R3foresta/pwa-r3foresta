@@ -6,7 +6,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-archivos_extra/*
+archivos_extra/
 
 node_modules/
 

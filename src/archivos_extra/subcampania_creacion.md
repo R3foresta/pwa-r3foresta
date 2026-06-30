@@ -468,6 +468,7 @@ Copia/adapta estos componentes:
 Reemplaza PERSONAS, organizaciones y catalogo de especies por datos reales del main.
 ```
 
+
 ## Riesgos o detalles a cuidar
 
 - El prototipo usa Tailwind por CDN; el main debe tener clases equivalentes o adaptar estilos.
