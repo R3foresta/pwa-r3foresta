@@ -45,14 +45,15 @@ function getCurrentBalance(lot: LoteViveroItem): number | null {
 
 function getLotSpecies(lot: LoteViveroItem): string {
   // `nombre_comercial_snapshot` y `nombre_cientifico_snapshot` están garantizados
-  // (el backend los hereda al crear el lote). `lot.planta?.especie` se prefiere
-  // si el catálogo está disponible.
+  // (el backend los hereda al crear el lote). El nombre comercial se usa como
+  // etiqueta principal porque es el nombre operativo visible para el usuario.
   // Fallback final 'Sin especie' como red de seguridad: si los tres vienen
   // como string vacío (caso improbable según contrato pero posible si llega
   // data legacy o un endpoint distinto), evita devolver "" y romper labels UI.
   return (
-    lot.planta?.especie ||
     lot.nombre_comercial_snapshot ||
+    lot.planta?.nombre_comun_principal ||
+    lot.planta?.especie ||
     lot.nombre_cientifico_snapshot ||
     'Sin especie'
   )
@@ -79,6 +80,7 @@ export function mapLoteToCardData(lot: LoteViveroItem): ViveroLotCardData {
 }
 
 export function mapLoteToDetailView(lot: LoteViveroItem): ViveroLotDetailView {
+  const especie = getLotSpecies(lot)
   const responsableNombre =
     lot.responsable?.nombre ||
     lot.nombre_responsable_snapshot ||
@@ -98,9 +100,10 @@ export function mapLoteToDetailView(lot: LoteViveroItem): ViveroLotDetailView {
     plantasVivasIniciales: lot.plantas_vivas_iniciales,
     saldoVivoActual: lot.saldo_vivo_actual,
     stockVivoActual: lot.stock_vivo_actual,
-    especie: getLotSpecies(lot),
-    nombreCientifico: lot.planta?.nombre_cientifico || lot.nombre_cientifico_snapshot,
-    nombreComercial: lot.planta?.nombre_comun_principal || lot.nombre_comercial_snapshot,
+    especie,
+    nombreCientifico:
+      lot.nombre_cientifico_snapshot || lot.planta?.nombre_cientifico || 'Sin nombre científico',
+    nombreComercial: lot.nombre_comercial_snapshot || lot.planta?.nombre_comun_principal || especie,
     variedad: lot.planta?.variedad || lot.variedad_snapshot || null,
     plantaImagenUrl: lot.planta?.imagen_url || null,
     viveroNombre: lot.vivero?.nombre || `Vivero #${lot.vivero_id}`,

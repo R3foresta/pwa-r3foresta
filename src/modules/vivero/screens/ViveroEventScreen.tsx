@@ -18,8 +18,9 @@ const SUBETAPA_LABEL: Record<string, string> = {
 
 function getLotEspecie(lot: LoteViveroDetalle): string {
   return (
-    lot.planta?.especie ||
     lot.nombre_comercial_snapshot ||
+    lot.planta?.nombre_comun_principal ||
+    lot.planta?.especie ||
     lot.nombre_cientifico_snapshot ||
     'Sin especie'
   )
