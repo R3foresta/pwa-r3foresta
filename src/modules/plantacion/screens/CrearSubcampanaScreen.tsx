@@ -4,6 +4,7 @@ import plantacionHero from '../../../assets/home/plantacion.jpg'
 import Icon from '../../../components/Icon'
 import SelectorComunidad from '../../comunidades/SelectorComunidad'
 import { useAuth } from '../../../contexts/AuthContext'
+import { obtenerComunidad } from '../../../api/comunidades.api'
 import { PlantacionService } from '../../../services/plantacion.service'
 import { UsersService } from '../../../services/users.service'
 import type { ComunidadCard } from '../../../tipos/comunidades'
@@ -594,7 +595,13 @@ function CrearSubcampanaScreen() {
     let cancelled = false
 
     PlantacionService.getSubcampania(routeSubcampaniaId, authId)
-      .then((subData) => {
+      .then((subData) =>
+        Promise.all([
+          Promise.resolve(subData),
+          obtenerComunidad(subData.zona_id).then((r) => r.data ?? null).catch(() => null),
+        ]),
+      )
+      .then(([subData, comunidad]) => {
         if (cancelled) return
 
         const now = new Date().toISOString()
@@ -605,7 +612,7 @@ function CrearSubcampanaScreen() {
           campania_id: campania.id,
           tipo: campania.tipo,
           nombre: subData.nombre,
-          comunidad: null,
+          comunidad,
           coordinador: null,
           fecha_estimada_inicio: subData.fecha_estimada_inicio ?? '',
           fecha_estimada_fin: subData.fecha_estimada_fin ?? '',
