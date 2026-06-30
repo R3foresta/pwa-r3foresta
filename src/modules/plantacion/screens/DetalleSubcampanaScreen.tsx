@@ -15,6 +15,7 @@ import {
   type GeoJsonPosition,
   type Subcampania,
 } from '../types/contracts'
+import { UserAvatar } from '../components/UserAvatar'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -38,14 +39,6 @@ function formatDate(value?: string | null): string {
   }).format(date)
 }
 
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? '')
-    .join('')
-}
 
 function toLatLngTuple([lng, lat]: GeoJsonPosition): LatLngTuple {
   return [lat, lng]
@@ -452,9 +445,11 @@ function ResumenTab({
         </p>
         {coordinador ? (
           <div className="mt-2 flex items-center gap-3">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-100 text-sm font-extrabold text-brand-700">
-              {getInitials(coordinador.nombre_usuario ?? 'C')}
-            </span>
+            <UserAvatar
+              nombre={coordinador.nombre_usuario ?? 'C'}
+              fotoUrl={coordinador.foto_perfil_url}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-100 text-sm font-extrabold text-brand-700"
+            />
             <div className="min-w-0">
               <p className="truncate text-sm font-extrabold text-brand-800">
                 {coordinador.nombre_usuario ?? `Usuario #${coordinador.usuario_id}`}
@@ -558,9 +553,11 @@ function EquipoTab({
               key={member.id}
               className="flex items-center gap-3 rounded-2xl bg-white p-3 shadow-soft ring-1 ring-black/5"
             >
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-50 text-sm font-extrabold text-brand-700">
-                {getInitials(member.nombre_usuario ?? 'U')}
-              </span>
+              <UserAvatar
+                nombre={member.nombre_usuario ?? 'U'}
+                fotoUrl={member.foto_perfil_url}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-50 text-sm font-extrabold text-brand-700"
+              />
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-1.5">
                   <p className="truncate text-sm font-extrabold leading-tight text-brand-800">

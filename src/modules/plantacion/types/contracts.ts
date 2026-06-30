@@ -138,6 +138,7 @@ export type EquipoMember = {
   nombre_usuario?: string | null
   rol: RolEnSubcampania
   agregado_at?: string | null
+  foto_perfil_url?: string | null
 }
 
 export type SetEquipoData = {

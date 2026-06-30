@@ -9,6 +9,7 @@ import { UsersService } from '../../../services/users.service'
 import type { ComunidadCard } from '../../../tipos/comunidades'
 import type { UsuarioResumen } from '../../../types/users'
 import SubcampaniaEquipoStep from '../components/SubcampaniaEquipoStep'
+import { UserAvatar } from '../components/UserAvatar'
 import SubcampaniaEspeciesStep from '../components/SubcampaniaEspeciesStep'
 import SubcampaniaPolygonStep from '../components/SubcampaniaPolygonStep'
 import SubcampaniaResumenStep from '../components/SubcampaniaResumenStep'
@@ -57,14 +58,6 @@ function toDateInputValue(value?: string | null): string {
   return value.includes('T') ? value.split('T')[0] : value
 }
 
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('')
-}
 
 function buildComunidadRuta(comunidad: ComunidadCard): string {
   return [
@@ -259,9 +252,11 @@ function CoordinadorSelector({
                   onClick={() => handleSelect(usuario)}
                   className="flex w-full items-center gap-3 border-b border-slate-100 px-3 py-2 text-left transition hover:bg-brand-50 last:border-b-0"
                 >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-50 text-xs font-extrabold text-brand-700">
-                    {getInitials(usuario.nombre)}
-                  </span>
+                  <UserAvatar
+                    nombre={usuario.nombre}
+                    fotoUrl={usuario.foto_perfil_url}
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-50 text-xs font-extrabold text-brand-700"
+                  />
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-semibold text-brand-700">
                       {usuario.nombre}

@@ -10,6 +10,7 @@ import {
   loadSubcampaniaBaseDraft,
 } from '../utils/subcampaniaDraft'
 import SubcampaniaSuccessOverlay from './SubcampaniaSuccessOverlay'
+import { UserAvatar } from './UserAvatar'
 
 type Props = {
   campania: Campania
@@ -35,14 +36,6 @@ function formatDate(iso?: string | null): string {
   })
 }
 
-function getInitials(nombre: string): string {
-  return nombre
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('')
-}
 
 function SubcampaniaResumenStep({
   campania,
@@ -422,13 +415,13 @@ function SubcampaniaResumenStep({
                 <div className="flex items-center gap-3">
                   <div className="flex -space-x-2">
                     {allMembers.slice(0, 5).map((m) => (
-                      <span
+                      <UserAvatar
                         key={m.usuario_id}
+                        nombre={m.nombre_usuario ?? '?'}
+                        fotoUrl={m.foto_perfil_url}
                         title={m.nombre_usuario ?? String(m.usuario_id)}
                         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-extrabold text-brand-800 ring-2 ring-white"
-                      >
-                        {getInitials(m.nombre_usuario ?? '?')}
-                      </span>
+                      />
                     ))}
                     {allMembers.length > 5 && (
                       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-extrabold text-slate-700 ring-2 ring-white">

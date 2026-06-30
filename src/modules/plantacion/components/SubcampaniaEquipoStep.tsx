@@ -8,6 +8,7 @@ import {
   loadSubcampaniaBaseDraft,
   saveSubcampaniaBaseDraft,
 } from '../utils/subcampaniaDraft'
+import { UserAvatar } from './UserAvatar'
 
 type Props = {
   campania: Campania
@@ -19,15 +20,6 @@ type Props = {
 }
 
 const SEARCH_DEBOUNCE_MS = 300
-
-function getInitials(nombre: string): string {
-  return nombre
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('')
-}
 
 function SubcampaniaEquipoStep({
   campania,
@@ -60,6 +52,7 @@ function SubcampaniaEquipoStep({
 
   const searchRequestRef = useRef(0)
   const equipoRequestRef = useRef(0)
+  const operariosIdsRef = useRef<Set<number>>(new Set())
 
   // Cargar equipo al montar
   useEffect(() => {
@@ -84,6 +77,10 @@ function SubcampaniaEquipoStep({
       })
   }, [subcampaniaId, authId])
 
+  useEffect(() => {
+    operariosIdsRef.current = new Set(operarios.map((o) => o.usuario_id))
+  }, [operarios])
+
   // Debounce del buscador
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -102,7 +99,7 @@ function SubcampaniaEquipoStep({
       .then((users) => {
         if (requestId !== searchRequestRef.current) return
         const coordinadorId = coordinador?.usuario_id
-        const operariosIds = new Set(operarios.map((o) => o.usuario_id))
+        const operariosIds = operariosIdsRef.current
         const filtered = users.filter(
           (u) => u.id !== coordinadorId && !operariosIds.has(u.id),
         )
@@ -116,7 +113,7 @@ function SubcampaniaEquipoStep({
       .finally(() => {
         if (requestId === searchRequestRef.current) setSearchLoading(false)
       })
-  }, [debouncedQuery, coordinador, operarios])
+  }, [debouncedQuery, coordinador])
 
   const persistOperariosInDraft = (nextOperarios: EquipoMember[]) => {
     const currentDraft = loadSubcampaniaBaseDraft(campania.id, draftId)
@@ -137,6 +134,23 @@ function SubcampaniaEquipoStep({
     if (!subcampaniaId) return
     setMutationError(null)
     setAddingId(usuario.id)
+
+    const optimisticMember: EquipoMember = {
+      id: -Date.now(),
+      usuario_id: usuario.id,
+      nombre_usuario: usuario.nombre,
+      rol: 'OPERARIO',
+      foto_perfil_url: usuario.foto_perfil_url ?? null,
+    }
+    const nextOperarios = [...operarios, optimisticMember]
+    const prevOperarios = operarios
+    const prevSearchResults = searchResults
+    const prevQuery = query
+    setOperarios(nextOperarios)
+    persistOperariosInDraft(nextOperarios)
+    setSearchResults((prev) => prev.filter((u) => u.id !== usuario.id))
+    setQuery('')
+
     try {
       const members = await PlantacionService.setSubcampaniaEquipo(
         subcampaniaId,
@@ -144,11 +158,15 @@ function SubcampaniaEquipoStep({
         authId,
       )
       const newOperarios = members.filter((m) => m.rol === 'OPERARIO')
-      setOperarios(newOperarios)
-      persistOperariosInDraft(newOperarios)
-      // Quitar de resultados de búsqueda
-      setSearchResults((prev) => prev.filter((u) => u.id !== usuario.id))
+      if (newOperarios.length >= nextOperarios.length) {
+        setOperarios(newOperarios)
+        persistOperariosInDraft(newOperarios)
+      }
     } catch (err) {
+      setOperarios(prevOperarios)
+      persistOperariosInDraft(prevOperarios)
+      setSearchResults(prevSearchResults)
+      setQuery(prevQuery)
       setMutationError(
         err instanceof Error ? err.message : 'No se pudo agregar el operario.',
       )
@@ -231,13 +249,13 @@ function SubcampaniaEquipoStep({
           <div className="mt-2 flex items-center gap-3">
             <div className="flex -space-x-2">
               {allMembers.slice(0, 5).map((m) => (
-                <span
+                <UserAvatar
                   key={m.usuario_id}
+                  nombre={m.nombre_usuario ?? '?'}
+                  fotoUrl={m.foto_perfil_url}
                   title={m.nombre_usuario ?? String(m.usuario_id)}
                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/20 text-xs font-extrabold text-white ring-2 ring-brand-600"
-                >
-                  {getInitials(m.nombre_usuario ?? '?')}
-                </span>
+                />
               ))}
               {allMembers.length > 5 && (
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/20 text-xs font-extrabold text-white ring-2 ring-brand-600">
@@ -274,9 +292,11 @@ function SubcampaniaEquipoStep({
 
           {!loadingEquipo && !equipoError && coordinador && (
             <div className="mt-3 flex items-center gap-3 rounded-2xl bg-brand-50 px-3 py-3 ring-1 ring-brand-100">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-200 text-xs font-extrabold text-brand-800">
-                {getInitials(coordinador.nombre_usuario ?? '?')}
-              </span>
+              <UserAvatar
+                nombre={coordinador.nombre_usuario ?? '?'}
+                fotoUrl={coordinador.foto_perfil_url}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-200 text-xs font-extrabold text-brand-800"
+              />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-extrabold text-brand-800">
                   {coordinador.nombre_usuario ?? `Usuario ${coordinador.usuario_id}`}
@@ -326,9 +346,11 @@ function SubcampaniaEquipoStep({
                 key={operario.usuario_id}
                 className="flex items-center gap-3 rounded-2xl bg-slate-50 px-3 py-3 ring-1 ring-slate-200"
               >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-extrabold text-slate-700">
-                  {getInitials(operario.nombre_usuario ?? '?')}
-                </span>
+                <UserAvatar
+                  nombre={operario.nombre_usuario ?? '?'}
+                  fotoUrl={operario.foto_perfil_url}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-extrabold text-slate-700"
+                />
                 <p className="min-w-0 flex-1 truncate text-sm font-extrabold text-brand-800">
                   {operario.nombre_usuario ?? `Usuario ${operario.usuario_id}`}
                 </p>
@@ -400,12 +422,14 @@ function SubcampaniaEquipoStep({
                     key={usuario.id}
                     type="button"
                     onClick={() => void handleAddOperario(usuario)}
-                    disabled={addingId === usuario.id || removingId !== null}
+                    disabled={addingId !== null || removingId !== null}
                     className="flex w-full items-center gap-3 rounded-2xl border border-slate-100 bg-white px-3 py-2.5 text-left transition hover:bg-brand-50 hover:ring-1 hover:ring-brand-200 disabled:cursor-wait disabled:opacity-50"
                   >
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-50 text-xs font-extrabold text-brand-700">
-                      {getInitials(usuario.nombre)}
-                    </span>
+                    <UserAvatar
+                      nombre={usuario.nombre}
+                      fotoUrl={usuario.foto_perfil_url}
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-50 text-xs font-extrabold text-brand-700"
+                    />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-extrabold text-brand-800">
                         {usuario.nombre}
