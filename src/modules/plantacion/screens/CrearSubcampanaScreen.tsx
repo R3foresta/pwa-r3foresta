@@ -762,9 +762,8 @@ function CrearSubcampanaScreen() {
             campania={campania}
             draftId={draftId}
             authId={authId}
-            onDraftSaved={goToDashboard}
             onBackToEquipo={() => goToStep(4)}
-            onPublished={(subcampaniaId) =>
+            onSaved={(subcampaniaId) =>
               navigate(`/app/planting/subcampanias/${subcampaniaId}`, { replace: true })
             }
           />

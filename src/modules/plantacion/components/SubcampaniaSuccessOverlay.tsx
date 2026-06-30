@@ -34,9 +34,9 @@ function SubcampaniaSuccessOverlay({ phase, nombre, onContinue }: Props) {
             </svg>
           </div>
           <p className="mt-6 text-[10.5px] font-extrabold uppercase tracking-[0.22em] text-white/70">
-            Activando subcampaña
+            Guardando subcampaña
           </p>
-          <p className="mt-2 text-xl font-extrabold text-white">Publicando…</p>
+          <p className="mt-2 text-xl font-extrabold text-white">Guardando...</p>
         </>
       ) : (
         <>
@@ -44,12 +44,15 @@ function SubcampaniaSuccessOverlay({ phase, nombre, onContinue }: Props) {
             <Icon name="check" className="h-10 w-10 text-emerald-300" />
           </div>
           <p className="mt-6 text-[10.5px] font-extrabold uppercase tracking-[0.22em] text-white/70">
-            Subcampaña publicada
+            Subcampaña en borrador
           </p>
           <p className="mt-2 text-xl font-extrabold text-white">
-            Subcampaña publicada correctamente
+            Subcampaña guardada correctamente
           </p>
           <p className="mt-1.5 text-sm font-semibold text-white/80">{nombre}</p>
+          <p className="mt-4 max-w-xs text-sm font-semibold leading-relaxed text-white/75">
+            La subcampaña fue guardada como borrador. Podrás completarla y activarla cuando tenga las asignaciones necesarias.
+          </p>
           <button
             type="button"
             onClick={onContinue}

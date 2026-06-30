@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Icon from '../../../components/Icon'
 import { PlantacionService } from '../../../services/plantacion.service'
 import { UsersService } from '../../../services/users.service'
@@ -52,7 +52,6 @@ function SubcampaniaEquipoStep({
 
   const searchRequestRef = useRef(0)
   const equipoRequestRef = useRef(0)
-  const operariosIdsRef = useRef<Set<number>>(new Set())
 
   // Cargar equipo al montar
   useEffect(() => {
@@ -77,10 +76,6 @@ function SubcampaniaEquipoStep({
       })
   }, [subcampaniaId, authId])
 
-  useEffect(() => {
-    operariosIdsRef.current = new Set(operarios.map((o) => o.usuario_id))
-  }, [operarios])
-
   // Debounce del buscador
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -98,12 +93,7 @@ function SubcampaniaEquipoStep({
     UsersService.listUsers(debouncedQuery || undefined)
       .then((users) => {
         if (requestId !== searchRequestRef.current) return
-        const coordinadorId = coordinador?.usuario_id
-        const operariosIds = operariosIdsRef.current
-        const filtered = users.filter(
-          (u) => u.id !== coordinadorId && !operariosIds.has(u.id),
-        )
-        setSearchResults(filtered)
+        setSearchResults(users)
       })
       .catch((err) => {
         if (requestId !== searchRequestRef.current) return
@@ -113,7 +103,15 @@ function SubcampaniaEquipoStep({
       .finally(() => {
         if (requestId === searchRequestRef.current) setSearchLoading(false)
       })
-  }, [debouncedQuery, coordinador])
+  }, [debouncedQuery])
+
+  const visibleSearchResults = useMemo(() => {
+    const coordinadorId = coordinador?.usuario_id
+    const operariosIds = new Set(operarios.map((o) => o.usuario_id))
+    return searchResults.filter(
+      (u) => u.id !== coordinadorId && !operariosIds.has(u.id),
+    )
+  }, [searchResults, coordinador, operarios])
 
   const persistOperariosInDraft = (nextOperarios: EquipoMember[]) => {
     const currentDraft = loadSubcampaniaBaseDraft(campania.id, draftId)
@@ -144,11 +142,9 @@ function SubcampaniaEquipoStep({
     }
     const nextOperarios = [...operarios, optimisticMember]
     const prevOperarios = operarios
-    const prevSearchResults = searchResults
     const prevQuery = query
     setOperarios(nextOperarios)
     persistOperariosInDraft(nextOperarios)
-    setSearchResults((prev) => prev.filter((u) => u.id !== usuario.id))
     setQuery('')
 
     try {
@@ -165,7 +161,6 @@ function SubcampaniaEquipoStep({
     } catch (err) {
       setOperarios(prevOperarios)
       persistOperariosInDraft(prevOperarios)
-      setSearchResults(prevSearchResults)
       setQuery(prevQuery)
       setMutationError(
         err instanceof Error ? err.message : 'No se pudo agregar el operario.',
@@ -407,7 +402,7 @@ function SubcampaniaEquipoStep({
               </p>
             )}
 
-            {!searchLoading && !searchError && searchResults.length === 0 && (
+            {!searchLoading && !searchError && visibleSearchResults.length === 0 && (
               <p className="px-1 py-2 text-xs font-semibold text-slate-500">
                 {debouncedQuery
                   ? 'Sin resultados para la búsqueda.'
@@ -415,9 +410,9 @@ function SubcampaniaEquipoStep({
               </p>
             )}
 
-            {!searchLoading && !searchError && searchResults.length > 0 && (
+            {!searchLoading && !searchError && visibleSearchResults.length > 0 && (
               <div className="max-h-52 space-y-1 overflow-y-auto">
-                {searchResults.map((usuario) => (
+                {visibleSearchResults.map((usuario) => (
                   <button
                     key={usuario.id}
                     type="button"

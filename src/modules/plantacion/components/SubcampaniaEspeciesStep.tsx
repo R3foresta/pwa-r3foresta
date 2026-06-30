@@ -207,7 +207,7 @@ function SubcampaniaEspeciesStep({
       // como planificación local/preselección visual.
       const currentDraft = loadSubcampaniaBaseDraft(campania.id, draftId) ?? initialDraft
 
-      let workingDraft = persistDraftLocally(currentDraft, currentDraft)
+      let workingDraft = persistDraftLocally(currentDraft, {})
 
       const coordinadorNuevo = initialDraft.coordinador
       const subcampaniaId = workingDraft.subcampania_id ?? null
@@ -227,6 +227,7 @@ function SubcampaniaEspeciesStep({
 
         const equipoActual = await PlantacionService.getSubcampaniaEquipo(subcampaniaId, authId)
         const coordinadorPersistido = equipoActual.find((member) => member.rol === 'COORDINADOR')
+        // EquipoMember.usuario_id (contrato backend) → { id } (modelo de usuario del frontend).
         await syncCoordinador(
           subcampaniaId,
           coordinadorPersistido ? { id: coordinadorPersistido.usuario_id } : null,

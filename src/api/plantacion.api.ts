@@ -53,6 +53,16 @@ export async function getCampaniaApi(campaniaId: number): Promise<Response> {
   })
 }
 
+export async function listSubcampaniasByCampaniaApi(campaniaId: number): Promise<Response> {
+  return fetch(
+    `${API_BASE_URL}/campanias/${campaniaId}/subcampanias?estados=BORRADOR,ACTIVA,COMPLETADA`,
+    {
+      method: 'GET',
+      headers: getAuthHeaders({ includeContentType: false }),
+    },
+  )
+}
+
 export async function createCampaniaApi(
   input: CreateCampaniaInput,
   authId?: string,
@@ -105,16 +115,6 @@ export async function getSubcampaniaApi(
 ): Promise<Response> {
   return fetch(`${API_BASE_URL}/subcampanias/${subcampaniaId}`, {
     method: 'GET',
-    headers: getAuthHeaders({ authId, includeContentType: false }),
-  })
-}
-
-export async function deleteSubcampaniaApi(
-  subcampaniaId: number,
-  authId?: string,
-): Promise<Response> {
-  return fetch(`${API_BASE_URL}/subcampanias/${subcampaniaId}`, {
-    method: 'DELETE',
     headers: getAuthHeaders({ authId, includeContentType: false }),
   })
 }

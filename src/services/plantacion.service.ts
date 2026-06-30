@@ -2,12 +2,12 @@ import {
   activarSubcampaniaApi,
   createCampaniaApi,
   createSubcampaniaApi,
-  deleteSubcampaniaApi,
   deleteSubcampaniaEquipoMemberApi,
   getCampaniaApi,
   getSubcampaniaApi,
   getSubcampaniaEquipoApi,
   listCampaniasApi,
+  listSubcampaniasByCampaniaApi,
   patchSubcampaniaApi,
   postSubcampaniaEquipoApi,
   setSubcampaniaPoligonoApi,
@@ -165,6 +165,18 @@ export class PlantacionService {
     return payload.data
   }
 
+  static async listSubcampaniasByCampania(campaniaId: number): Promise<Subcampania[]> {
+    if (!Number.isFinite(campaniaId) || campaniaId <= 0) {
+      throw new Error('ID de campaña inválido.')
+    }
+    const response = await listSubcampaniasByCampaniaApi(campaniaId)
+    const payload = await parseJsonResponse<ApiEnvelope<Subcampania[]>>(
+      response,
+      'Error al cargar subcampañas de la campaña.',
+    )
+    return Array.isArray(payload.data) ? payload.data : []
+  }
+
   static async createCampania(
     input: CreateCampaniaInput,
     authId?: string,
@@ -270,20 +282,6 @@ export class PlantacionService {
       throw new Error('Subcampaña no encontrada.')
     }
     return payload.data
-  }
-
-  static async deleteSubcampania(
-    subcampaniaId: number,
-    authId?: string,
-  ): Promise<void> {
-    if (!Number.isFinite(subcampaniaId) || subcampaniaId <= 0) {
-      throw new Error('ID de subcampaña inválido.')
-    }
-    const response = await deleteSubcampaniaApi(subcampaniaId, authId)
-    await parseJsonResponse<ApiEnvelope<unknown>>(
-      response,
-      'Error al eliminar la subcampaña.',
-    )
   }
 
   static async getSubcampaniaEquipo(

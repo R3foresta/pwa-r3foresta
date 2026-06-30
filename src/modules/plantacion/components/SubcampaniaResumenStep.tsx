@@ -16,12 +16,9 @@ type Props = {
   campania: Campania
   draftId: string
   authId?: string
-  onDraftSaved: () => void
   onBackToEquipo: () => void
-  onPublished: (subcampaniaId: number) => void
+  onSaved: (subcampaniaId: number) => void
 }
-
-type OverlayPhase = 'saving' | 'success'
 
 function toLatLngTuple([lng, lat]: GeoJsonPosition): LatLngTuple {
   return [lat, lng]
@@ -41,11 +38,10 @@ function SubcampaniaResumenStep({
   campania,
   draftId,
   authId,
-  onDraftSaved,
   onBackToEquipo,
-  onPublished,
+  onSaved,
 }: Props) {
-  const draft = loadSubcampaniaBaseDraft(campania.id, draftId)
+  const [draft] = useState(() => loadSubcampaniaBaseDraft(campania.id, draftId))
   const subcampaniaId = draft?.subcampania_id ?? null
 
   const [subcampania, setSubcampania] = useState<Subcampania | null>(null)
@@ -53,9 +49,8 @@ function SubcampaniaResumenStep({
   const [loading, setLoading] = useState(() => subcampaniaId !== null)
   const [loadError, setLoadError] = useState<string | null>(null)
 
-  const [publishing, setPublishing] = useState(false)
-  const [publishError, setPublishError] = useState<string | null>(null)
-  const [overlayPhase, setOverlayPhase] = useState<OverlayPhase | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [showSuccessOverlay, setShowSuccessOverlay] = useState(false)
 
   const requestRef = useRef(0)
 
@@ -84,31 +79,16 @@ function SubcampaniaResumenStep({
       })
   }, [subcampaniaId, authId])
 
-  const handleDraftSaved = () => {
+  const handleSave = () => {
+    if (!subcampaniaId || saving || loading || loadError) return
+    setSaving(true)
     clearSubcampaniaBaseDraft(campania.id, draftId)
-    onDraftSaved()
-  }
-
-  const handlePublish = async () => {
-    if (!subcampaniaId || publishing || loading) return
-    setPublishError(null)
-    setPublishing(true)
-    setOverlayPhase('saving')
-
-    try {
-      await PlantacionService.activarSubcampania(subcampaniaId, authId)
-      setOverlayPhase('success')
-    } catch (err) {
-      setPublishing(false)
-      setOverlayPhase(null)
-      setPublishError(err instanceof Error ? err.message : 'No se pudo publicar la subcampaña.')
-    }
+    setShowSuccessOverlay(true)
   }
 
   const handleOverlayContinue = () => {
-    clearSubcampaniaBaseDraft(campania.id, draftId)
     if (subcampaniaId) {
-      onPublished(subcampaniaId)
+      onSaved(subcampaniaId)
     }
   }
 
@@ -155,11 +135,6 @@ function SubcampaniaResumenStep({
     poligono?.coordinates[0]?.map(toLatLngTuple) ?? []
   const mapCenter: LatLngTuple = polygonPositions[0] ?? [-16.5, -68.15]
 
-  const areaHectareas =
-    subcampania?.saldo_vivo_actual !== undefined
-      ? null // saldo_vivo_actual no es ha, no usamos eso
-      : draft.area_hectareas ?? null
-
   const areaDisplay = draft.area_hectareas ?? null
 
   const metaTotal = subcampania?.meta_total_arboles ?? draft.meta_total_arboles ?? null
@@ -191,15 +166,11 @@ function SubcampaniaResumenStep({
         .join(' / ')
     : null
 
-  // Evitar variable no usada de TypeScript
-  void areaHectareas
-
   return (
     <div className="relative">
-      {/* Overlay de publicación */}
-      {overlayPhase && (
+      {showSuccessOverlay && (
         <SubcampaniaSuccessOverlay
-          phase={overlayPhase}
+          phase="success"
           nombre={nombreSubcampania}
           onContinue={handleOverlayContinue}
         />
@@ -445,47 +416,33 @@ function SubcampaniaResumenStep({
 
       <div className="px-5">
         <div className="sticky bottom-0 -mx-5 bg-gradient-to-t from-[#eef2ed] via-[#eef2ed]/95 to-transparent px-5 pb-5 pt-3">
-          {publishError && (
-            <p className="mb-2 whitespace-pre-line rounded-2xl bg-red-50 px-4 py-2 text-center text-xs font-extrabold text-red-700 ring-1 ring-red-100">
-              {publishError}
-            </p>
-          )}
-          <div className="mb-2 grid grid-cols-2 gap-2">
+          <div className="mb-2">
             <button
               type="button"
               onClick={onBackToEquipo}
-              disabled={publishing}
+              disabled={saving}
               className="flex items-center justify-center gap-2 rounded-2xl bg-white px-3 py-3 text-sm font-extrabold text-brand-700 shadow-soft ring-1 ring-brand-100 transition hover:bg-brand-50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Icon name="arrow-left" className="h-4 w-4" />
               Atrás
             </button>
-            <button
-              type="button"
-              onClick={handleDraftSaved}
-              disabled={publishing}
-              className="flex items-center justify-center gap-2 rounded-2xl bg-white px-3 py-3 text-sm font-extrabold text-brand-700 shadow-soft ring-1 ring-brand-100 transition hover:bg-brand-50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <Icon name="file" className="h-4 w-4" />
-              Guardar borrador
-            </button>
           </div>
           <button
             type="button"
-            onClick={() => void handlePublish()}
-            disabled={publishing || loading || loadError !== null}
+            onClick={handleSave}
+            disabled={saving || loading || loadError !== null}
             className={`flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-4 text-base font-extrabold text-white shadow-soft transition active:scale-[0.99] ${
-              publishing || loading || loadError !== null
+              saving || loading || loadError !== null
                 ? 'cursor-not-allowed bg-slate-400/70'
-                : 'bg-emerald-600 hover:bg-emerald-700'
+                : 'bg-brand-600 hover:bg-brand-700'
             }`}
           >
-            {publishing ? (
-              'Publicando…'
+            {saving ? (
+              'Guardado'
             ) : (
               <>
-                <Icon name="check" className="h-5 w-5" />
-                Publicar subcampaña
+                <Icon name="file" className="h-5 w-5" />
+                Guardar
               </>
             )}
           </button>
