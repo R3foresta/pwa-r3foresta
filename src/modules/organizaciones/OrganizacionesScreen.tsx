@@ -5,6 +5,7 @@ import FlashMessage from '../../components/crud/FlashMessage'
 import { selectWrapperClasses } from '../../components/crud/form-classes'
 import SearchBar from '../../components/crud/SearchBar'
 import Icon from '../../components/Icon'
+import { getInitials } from '../plantacion/components/UserAvatar'
 import { OrganizacionesService } from '../../services/organizaciones.service'
 import type {
   Organizacion,
@@ -22,16 +23,6 @@ const DEFAULT_PAGINATION: OrganizacionesPagination = {
   totalPages: 1,
   hasNextPage: false,
   hasPrevPage: false,
-}
-
-function getInitials(value: string): string {
-  const parts = value
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-  const initials = parts.map((part) => part.charAt(0).toUpperCase()).join('')
-  return initials || '?'
 }
 
 type OrganizacionCardProps = {
@@ -56,7 +47,7 @@ function OrganizacionCard({ organizacion, onClick }: OrganizacionCardProps) {
           />
         ) : (
           <span className="text-sm font-extrabold text-brand-500">
-            {getInitials(organizacion.nombre)}
+            {getInitials(organizacion.nombre, { fallback: '?' })}
           </span>
         )}
       </div>

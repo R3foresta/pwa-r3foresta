@@ -7,13 +7,15 @@ type UserAvatarProps = {
   title?: string
 }
 
-export function getInitials(nombre: string): string {
-  return nombre
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? '')
-    .join('')
+export function getInitials(
+  value?: string | null,
+  opts?: { fallback?: string },
+): string {
+  const fallback = opts?.fallback ?? ''
+  if (!value) return fallback
+  const parts = value.trim().split(/\s+/).filter(Boolean).slice(0, 2)
+  const initials = parts.map((p) => p.charAt(0).toUpperCase()).join('')
+  return initials || fallback
 }
 
 export function UserAvatar({ nombre, fotoUrl, className, title }: UserAvatarProps) {

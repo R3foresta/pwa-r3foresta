@@ -12,37 +12,12 @@ import {
   type EquipoMember,
   type EstadoSubcampania,
   type GeoJsonPolygon,
-  type GeoJsonPosition,
   type Subcampania,
 } from '../types/contracts'
+import { formatDate, toLatLngTuple } from '../utils/subcampaniaFormatters'
 import { UserAvatar } from '../components/UserAvatar'
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────────────────────────────────────
-
 type DetailTab = 'resumen' | 'equipo' | 'mapa'
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────────────────────
-
-function formatDate(value?: string | null): string {
-  if (!value) return 'Sin definir'
-  const [year, month, day] = value.split('-')
-  if (!year || !month || !day) return value
-  const date = new Date(Number(year), Number(month) - 1, Number(day))
-  return new Intl.DateTimeFormat('es-BO', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  }).format(date)
-}
-
-
-function toLatLngTuple([lng, lat]: GeoJsonPosition): LatLngTuple {
-  return [lat, lng]
-}
 
 function getPolygonPositions(poligono: GeoJsonPolygon | null | undefined): LatLngTuple[] {
   return (poligono?.coordinates[0] ?? []).map(toLatLngTuple)

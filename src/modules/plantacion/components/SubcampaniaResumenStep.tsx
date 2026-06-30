@@ -3,12 +3,13 @@ import { MapContainer, Polygon, TileLayer } from 'react-leaflet'
 import type { LatLngTuple } from 'leaflet'
 import Icon from '../../../components/Icon'
 import { PlantacionService } from '../../../services/plantacion.service'
-import type { Campania, EquipoMember, GeoJsonPosition, Subcampania } from '../types/contracts'
+import type { Campania, EquipoMember, Subcampania } from '../types/contracts'
 import { TIPO_CAMPANIA_LABEL } from '../types/contracts'
 import {
   clearSubcampaniaBaseDraft,
   loadSubcampaniaBaseDraft,
 } from '../utils/subcampaniaDraft'
+import { formatDate, toLatLngTuple } from '../utils/subcampaniaFormatters'
 import SubcampaniaSuccessOverlay from './SubcampaniaSuccessOverlay'
 import { UserAvatar } from './UserAvatar'
 
@@ -19,20 +20,6 @@ type Props = {
   onBackToEquipo: () => void
   onSaved: (subcampaniaId: number) => void
 }
-
-function toLatLngTuple([lng, lat]: GeoJsonPosition): LatLngTuple {
-  return [lat, lng]
-}
-
-function formatDate(iso?: string | null): string {
-  if (!iso) return '—'
-  return new Date(iso).toLocaleDateString('es-BO', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  })
-}
-
 
 function SubcampaniaResumenStep({
   campania,
@@ -303,14 +290,14 @@ function SubcampaniaResumenStep({
                   <div className="flex items-center gap-2 rounded-2xl bg-brand-50 px-3 py-2.5 ring-1 ring-brand-100">
                     <Icon name="date" className="h-4 w-4 shrink-0 text-brand-500" />
                     <p className="text-xs font-extrabold text-brand-800">
-                      {formatDate(fechaInicio)}
+                      {formatDate(fechaInicio, { fallback: '—' })}
                     </p>
                   </div>
                   <Icon name="chevron-right" className="h-4 w-4 shrink-0 text-slate-400" />
                   <div className="flex items-center gap-2 rounded-2xl bg-brand-50 px-3 py-2.5 ring-1 ring-brand-100">
                     <Icon name="date" className="h-4 w-4 shrink-0 text-brand-500" />
                     <p className="text-xs font-extrabold text-brand-800">
-                      {formatDate(fechaFin)}
+                      {formatDate(fechaFin, { fallback: '—' })}
                     </p>
                   </div>
                 </div>
