@@ -41,32 +41,38 @@ function CatalogoEspeciesPicker({ open, excludedPlantaIds, onClose, onConfirm }:
     setLoading(true)
     setError(null)
 
-    Promise.all([
+    Promise.allSettled([
       PlantasService.listPlantas({ limit: CATALOG_LIMIT, incluir_inactivas: false }),
       LotesViveroService.listStockEspecies(),
-    ])
-      .then(([plantasResponse, stockList]) => {
-        if (cancelled) return
-        setPlantas(plantasResponse.data ?? [])
-        const nextStockMap = new Map<number, EspecieStockVivero>()
-        for (const item of stockList) {
-          nextStockMap.set(item.planta_id, item)
-        }
-        setStockByPlantaId(nextStockMap)
-      })
-      .catch((loadError) => {
-        if (cancelled) return
+    ]).then(([plantasResult, stockResult]) => {
+      if (cancelled) return
+
+      if (plantasResult.status === 'rejected') {
+        const reason = plantasResult.reason
         setError(
-          loadError instanceof Error
-            ? loadError.message
-            : 'No se pudo cargar el catálogo de especies.',
+          reason instanceof Error ? reason.message : 'No se pudo cargar el catálogo de especies.',
         )
         setPlantas([])
         setStockByPlantaId(new Map())
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
+        setLoading(false)
+        return
+      }
+
+      setPlantas(plantasResult.value.data ?? [])
+
+      if (stockResult.status === 'fulfilled') {
+        const nextStockMap = new Map<number, EspecieStockVivero>()
+        for (const item of stockResult.value) {
+          nextStockMap.set(item.planta_id, item)
+        }
+        setStockByPlantaId(nextStockMap)
+      } else {
+        console.error('Stock de vivero no disponible:', stockResult.reason)
+        setStockByPlantaId(new Map())
+      }
+
+      setLoading(false)
+    })
 
     return () => {
       cancelled = true

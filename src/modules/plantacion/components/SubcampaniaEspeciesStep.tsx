@@ -32,6 +32,23 @@ function sumPct(especies: SubcampaniaEspecieDraft[]): number {
   return especies.reduce((acc, especie) => acc + especie.pct, 0)
 }
 
+function getAutomaticPctShares(
+  current: SubcampaniaEspecieDraft[],
+  newItemsCount: number,
+): number[] {
+  if (newItemsCount <= 0) return []
+
+  const remainingPct = clampPct(100 - sumPct(current))
+  if (remainingPct <= 0) return Array.from({ length: newItemsCount }, () => 0)
+
+  const baseShare = Math.floor(remainingPct / newItemsCount)
+  const remainder = remainingPct % newItemsCount
+
+  return Array.from({ length: newItemsCount }, (_, index) =>
+    index < remainder ? baseShare + 1 : baseShare,
+  )
+}
+
 function SubcampaniaEspeciesStep({
   campania,
   draftId,
@@ -46,7 +63,6 @@ function SubcampaniaEspeciesStep({
     () => initialDraft?.especies ?? [],
   )
   const [pickerOpen, setPickerOpen] = useState(false)
-  const [statusMessage, setStatusMessage] = useState<string | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
@@ -56,7 +72,6 @@ function SubcampaniaEspeciesStep({
 
   const handleMeta = (next: number) => {
     setMeta(Math.max(0, Math.min(META_MAX, Math.round(next))))
-    setStatusMessage(null)
     setSubmitError(null)
   }
 
@@ -75,7 +90,6 @@ function SubcampaniaEspeciesStep({
         especie.planta_id === plantaId ? { ...especie, pct: clampPct(nextPct) } : especie,
       ),
     )
-    setStatusMessage(null)
     setSubmitError(null)
   }
 
@@ -86,32 +100,29 @@ function SubcampaniaEspeciesStep({
     }
     setEspecies((current) => {
       const existingIds = new Set(current.map((especie) => especie.planta_id))
-      const newOnes: SubcampaniaEspecieDraft[] = items
-        .filter((item) => !existingIds.has(item.planta_id))
-        .map((item) => ({
-          planta_id: item.planta_id,
-          especie: item.especie,
-          nombre_cientifico: item.nombre_cientifico,
-          nombre_comun_principal: item.nombre_comun_principal,
-          saldo_disponible: item.saldo_disponible,
-          pct: 0,
-        }))
+      const uniqueItems = items.filter((item) => !existingIds.has(item.planta_id))
+      const automaticPctShares = getAutomaticPctShares(current, uniqueItems.length)
+      const newOnes: SubcampaniaEspecieDraft[] = uniqueItems.map((item, index) => ({
+        planta_id: item.planta_id,
+        especie: item.especie,
+        nombre_cientifico: item.nombre_cientifico,
+        nombre_comun_principal: item.nombre_comun_principal,
+        saldo_disponible: item.saldo_disponible,
+        pct: automaticPctShares[index] ?? 0,
+      }))
       return [...current, ...newOnes]
     })
     setPickerOpen(false)
-    setStatusMessage(null)
     setSubmitError(null)
   }
 
   const handleRemoveEspecie = (plantaId: number) => {
     setEspecies((current) => current.filter((especie) => especie.planta_id !== plantaId))
-    setStatusMessage(null)
     setSubmitError(null)
   }
 
   const handleSaveStep = () => {
     setSubmitError(null)
-    setStatusMessage(null)
 
     if (!initialDraft) {
       setSubmitError('No se encontró el borrador. Vuelve al paso anterior.')
@@ -259,7 +270,7 @@ function SubcampaniaEspeciesStep({
               }`}
             >
               {total}% asignado
-              {balanced ? ' ✓' : ` · falta ${Math.max(0, 100 - total)}%`}
+              {balanced ? ' ✓' : total > 100 ? ` · excede ${total - 100}%` : ` · falta ${100 - total}%`}
             </p>
           </div>
 
@@ -379,11 +390,6 @@ function SubcampaniaEspeciesStep({
 
       <div className="px-5">
         <div className="sticky bottom-0 -mx-5 bg-gradient-to-t from-[#eef2ed] via-[#eef2ed]/95 to-transparent px-5 pb-5 pt-3">
-          {statusMessage && (
-            <p className="mb-2 rounded-2xl bg-emerald-50 px-4 py-2 text-center text-xs font-extrabold text-emerald-700 ring-1 ring-emerald-100">
-              {statusMessage}
-            </p>
-          )}
           {submitError && (
             <p className="mb-2 rounded-2xl bg-red-50 px-4 py-2 text-center text-xs font-extrabold text-red-700 ring-1 ring-red-100">
               {submitError}

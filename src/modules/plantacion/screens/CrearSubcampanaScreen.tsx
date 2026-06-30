@@ -36,7 +36,7 @@ type BaseStepErrors = {
 const DEFAULT_PAIS_ID = 1
 const COORDINADOR_ROL = 'GENERAL'
 const SEARCH_DEBOUNCE_MS = 300
-const WIZARD_STEPS = 6
+const WIZARD_STEPS = 3
 
 type WizardStep = 1 | 2 | 3
 
