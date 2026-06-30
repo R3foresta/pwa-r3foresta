@@ -1,3 +1,5 @@
+import { useState } from 'react'
+
 type UserAvatarProps = {
   nombre: string
   fotoUrl?: string | null
@@ -15,10 +17,17 @@ export function getInitials(nombre: string): string {
 }
 
 export function UserAvatar({ nombre, fotoUrl, className, title }: UserAvatarProps) {
+  const [imgError, setImgError] = useState(false)
+
   return (
     <span className={className} title={title}>
-      {fotoUrl ? (
-        <img src={fotoUrl} alt={nombre} className="h-full w-full rounded-full object-cover" />
+      {fotoUrl && !imgError ? (
+        <img
+          src={fotoUrl}
+          alt={nombre}
+          className="h-full w-full rounded-full object-cover"
+          onError={() => setImgError(true)}
+        />
       ) : (
         getInitials(nombre)
       )}
