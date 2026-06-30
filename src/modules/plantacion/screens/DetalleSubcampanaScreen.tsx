@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import L from 'leaflet'
 import type { LatLngTuple } from 'leaflet'
 import { MapContainer, Polygon, TileLayer, useMap } from 'react-leaflet'
@@ -728,28 +728,42 @@ function DetalleSubcampanaScreen() {
   const [activeTab, setActiveTab] = useState<DetailTab>('resumen')
 
   const authId = user?.auth_id
+  const requestRef = useRef(0)
+
+  const fetchSubcampaniaData = useCallback(async (requestId: number) => {
+    try {
+      const [subData, equipoData] = await Promise.all([
+        PlantacionService.getSubcampania(numericId, authId),
+        PlantacionService.getSubcampaniaEquipo(numericId, authId),
+      ])
+
+      if (requestId !== requestRef.current) return
+
+      setSub(subData)
+      setEquipo(equipoData)
+      setError(null)
+    } catch (fetchError) {
+      if (requestId !== requestRef.current) return
+
+      setError(
+        fetchError instanceof Error
+          ? fetchError.message
+          : 'No se pudo cargar la subcampaña.',
+      )
+    } finally {
+      if (requestId === requestRef.current) setLoading(false)
+    }
+  }, [numericId, authId])
 
   useEffect(() => {
     if (!hasValidId) return
 
-    Promise.all([
-      PlantacionService.getSubcampania(numericId, authId),
-      PlantacionService.getSubcampaniaEquipo(numericId, authId),
-    ])
-      .then(([subData, equipoData]) => {
-        setSub(subData)
-        setEquipo(equipoData)
-        setError(null)
-      })
-      .catch((fetchError) => {
-        setError(
-          fetchError instanceof Error
-            ? fetchError.message
-            : 'No se pudo cargar la subcampaña.',
-        )
-      })
-      .finally(() => setLoading(false))
-  }, [hasValidId, numericId, authId])
+    const requestId = ++requestRef.current
+
+    setLoading(true)
+    setError(null)
+    void fetchSubcampaniaData(requestId)
+  }, [hasValidId, numericId, authId, fetchSubcampaniaData])
 
   const goBack = () => {
     if (sub) {
@@ -761,24 +775,11 @@ function DetalleSubcampanaScreen() {
 
   const handleRetry = () => {
     if (!hasValidId) return
+    const requestId = ++requestRef.current
+
     setLoading(true)
     setError(null)
-    Promise.all([
-      PlantacionService.getSubcampania(numericId, authId),
-      PlantacionService.getSubcampaniaEquipo(numericId, authId),
-    ])
-      .then(([subData, equipoData]) => {
-        setSub(subData)
-        setEquipo(equipoData)
-      })
-      .catch((fetchError) => {
-        setError(
-          fetchError instanceof Error
-            ? fetchError.message
-            : 'No se pudo cargar la subcampaña.',
-        )
-      })
-      .finally(() => setLoading(false))
+    void fetchSubcampaniaData(requestId)
   }
 
   return (
