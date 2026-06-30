@@ -261,9 +261,16 @@ function SubcampaniaEspeciesStep({
 
       onNext()
     } catch (saveError) {
-      setSubmitError(
-        saveError instanceof Error ? saveError.message : 'No se pudo guardar la subcampaña.',
-      )
+      const msg = saveError instanceof Error ? saveError.message : ''
+      if (msg === 'No hay cambios para actualizar.') {
+        if (action === 'draft') {
+          onDraftSaved()
+          return
+        }
+        onNext()
+        return
+      }
+      setSubmitError(msg || 'No se pudo guardar la subcampaña.')
     } finally {
       setSubmitting(false)
     }
