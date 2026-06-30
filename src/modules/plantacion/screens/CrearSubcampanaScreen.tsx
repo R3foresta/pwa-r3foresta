@@ -8,6 +8,7 @@ import { PlantacionService } from '../../../services/plantacion.service'
 import { UsersService } from '../../../services/users.service'
 import type { ComunidadCard } from '../../../tipos/comunidades'
 import type { UsuarioResumen } from '../../../types/users'
+import SubcampaniaEspeciesStep from '../components/SubcampaniaEspeciesStep'
 import SubcampaniaPolygonStep from '../components/SubcampaniaPolygonStep'
 import {
   TIPO_CAMPANIA_LABEL,
@@ -37,7 +38,13 @@ const COORDINADOR_ROL = 'GENERAL'
 const SEARCH_DEBOUNCE_MS = 300
 const WIZARD_STEPS = 6
 
-type WizardStep = 1 | 2
+type WizardStep = 1 | 2 | 3
+
+function parseWizardStep(raw: string | null): WizardStep {
+  if (raw === '3') return 3
+  if (raw === '2') return 2
+  return 1
+}
 
 function toDateInputValue(value?: string | null): string {
   if (!value) return ''
@@ -522,7 +529,7 @@ function CrearSubcampanaScreen() {
   const state = location.state as LocationState | null
   const routeDraftId = searchParams.get('draftId')?.trim() || state?.draftId
   const [draftId] = useState(() => routeDraftId || createSubcampaniaDraftId())
-  const currentStep: WizardStep = searchParams.get('step') === '2' ? 2 : 1
+  const currentStep: WizardStep = parseWizardStep(searchParams.get('step'))
   const numericCampaniaId = Number(campaniaId)
   const hasValidCampaniaId = Number.isFinite(numericCampaniaId) && numericCampaniaId > 0
   const [campania, setCampania] = useState<Campania | null>(state?.campania ?? null)
@@ -632,25 +639,36 @@ function CrearSubcampanaScreen() {
           </main>
         )}
 
-        {campania && !loading && !visibleError && (
-          currentStep === 1 ? (
-            <SubcampaniaBaseStep
-              key={`${campania.id}-${draftId}-base`}
-              campania={campania}
-              draftId={draftId}
-              onDraftSaved={goToDashboard}
-              onNext={() => goToStep(2)}
-            />
-          ) : (
-            <SubcampaniaPolygonStep
-              key={`${campania.id}-${draftId}-polygon`}
-              campania={campania}
-              draftId={draftId}
-              authId={user?.auth_id}
-              onDraftSaved={goToDashboard}
-              onBackToBase={() => goToStep(1)}
-            />
-          )
+        {campania && !loading && !visibleError && currentStep === 1 && (
+          <SubcampaniaBaseStep
+            key={`${campania.id}-${draftId}-base`}
+            campania={campania}
+            draftId={draftId}
+            onDraftSaved={goToDashboard}
+            onNext={() => goToStep(2)}
+          />
+        )}
+
+        {campania && !loading && !visibleError && currentStep === 2 && (
+          <SubcampaniaPolygonStep
+            key={`${campania.id}-${draftId}-polygon`}
+            campania={campania}
+            draftId={draftId}
+            authId={user?.auth_id}
+            onDraftSaved={goToDashboard}
+            onBackToBase={() => goToStep(1)}
+            onNext={() => goToStep(3)}
+          />
+        )}
+
+        {campania && !loading && !visibleError && currentStep === 3 && (
+          <SubcampaniaEspeciesStep
+            key={`${campania.id}-${draftId}-especies`}
+            campania={campania}
+            draftId={draftId}
+            onDraftSaved={goToDashboard}
+            onBackToPolygon={() => goToStep(2)}
+          />
         )}
       </div>
     </div>

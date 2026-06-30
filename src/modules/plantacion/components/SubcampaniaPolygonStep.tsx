@@ -28,6 +28,7 @@ type Props = {
   authId?: string
   onDraftSaved: () => void
   onBackToBase: () => void
+  onNext: () => void
 }
 
 const DEFAULT_CENTER: LatLngTuple = [-16.5, -68.15]
@@ -265,6 +266,7 @@ function SubcampaniaPolygonStep({
   authId,
   onDraftSaved,
   onBackToBase,
+  onNext,
 }: Props) {
   const [initialDraft] = useState<SubcampaniaBaseDraft | null>(() =>
     loadSubcampaniaBaseDraft(campania.id, draftId),
@@ -447,11 +449,7 @@ function SubcampaniaPolygonStep({
         return
       }
 
-      setStatusMessage(
-        subcampaniaId
-          ? `Polígono guardado. Área oficial: ${formatHectareas(nextAreaHectareas)} ha.`
-          : 'Polígono guardado en borrador local. Falta crear la subcampaña para sincronizarlo con backend.',
-      )
+      onNext()
     } catch (saveError) {
       setSubmitError(
         saveError instanceof Error ? saveError.message : 'No se pudo guardar el polígono.',
