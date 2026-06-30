@@ -11,8 +11,6 @@ import CatalogoEspeciesPicker, {
   type EspecieCatalogoItem,
 } from './CatalogoEspeciesPicker'
 
-type SaveAction = 'draft'
-
 type Props = {
   campania: Campania
   draftId: string
@@ -111,7 +109,7 @@ function SubcampaniaEspeciesStep({
     setSubmitError(null)
   }
 
-  const handleSaveStep = (_action: SaveAction) => {
+  const handleSaveStep = () => {
     setSubmitError(null)
     setStatusMessage(null)
 
@@ -402,7 +400,7 @@ function SubcampaniaEspeciesStep({
             </button>
             <button
               type="button"
-              onClick={() => handleSaveStep('draft')}
+              onClick={handleSaveStep}
               disabled={submitting || !canSave}
               className={`flex items-center justify-center gap-2 rounded-2xl px-4 py-4 text-base font-extrabold text-white shadow-soft transition active:scale-[0.99] ${
                 submitting || !canSave

@@ -73,13 +73,6 @@ function CatalogoEspeciesPicker({ open, excludedPlantaIds, onClose, onConfirm }:
     }
   }, [open])
 
-  useEffect(() => {
-    if (!open) {
-      setQuery('')
-      setSelectedIds(new Set())
-    }
-  }, [open])
-
   const excludedSet = useMemo(() => new Set(excludedPlantaIds), [excludedPlantaIds])
 
   const items: EspecieCatalogoItem[] = useMemo(() => {
@@ -123,9 +116,20 @@ function CatalogoEspeciesPicker({ open, excludedPlantaIds, onClose, onConfirm }:
     })
   }
 
+  const resetPickerState = () => {
+    setQuery('')
+    setSelectedIds(new Set())
+  }
+
+  const handleClose = () => {
+    resetPickerState()
+    onClose()
+  }
+
   const handleConfirm = () => {
     if (selectedIds.size === 0) return
     const selectedItems = items.filter((item) => selectedIds.has(item.planta_id))
+    resetPickerState()
     onConfirm(selectedItems)
   }
 
@@ -157,7 +161,7 @@ function CatalogoEspeciesPicker({ open, excludedPlantaIds, onClose, onConfirm }:
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             aria-label="Cerrar"
             className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200"
           >
@@ -258,7 +262,7 @@ function CatalogoEspeciesPicker({ open, excludedPlantaIds, onClose, onConfirm }:
         <footer className="grid grid-cols-2 gap-2 border-t border-slate-100 px-5 pb-5 pt-3">
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             className="flex items-center justify-center gap-2 rounded-2xl bg-white px-3 py-3 text-sm font-extrabold text-brand-700 shadow-soft ring-1 ring-brand-100 transition hover:bg-brand-50 active:scale-[0.99]"
           >
             Cancelar
