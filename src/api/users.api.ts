@@ -32,3 +32,17 @@ export async function listUsersByRoleApi(rol: string, q?: string): Promise<Respo
     headers: getAuthHeaders(false),
   })
 }
+
+export async function listUsersApi(params?: { q?: string; rol?: string }): Promise<Response> {
+  const search = new URLSearchParams()
+  const normalizedQ = params?.q?.trim()
+  const normalizedRol = params?.rol?.trim()
+  if (normalizedQ) search.set('q', normalizedQ)
+  if (normalizedRol) search.set('rol', normalizedRol)
+
+  const query = search.toString()
+  return fetch(`${API_BASE_URL}/users${query ? `?${query}` : ''}`, {
+    method: 'GET',
+    headers: getAuthHeaders(false),
+  })
+}

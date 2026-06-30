@@ -8,8 +8,10 @@ import { PlantacionService } from '../../../services/plantacion.service'
 import { UsersService } from '../../../services/users.service'
 import type { ComunidadCard } from '../../../tipos/comunidades'
 import type { UsuarioResumen } from '../../../types/users'
+import SubcampaniaEquipoStep from '../components/SubcampaniaEquipoStep'
 import SubcampaniaEspeciesStep from '../components/SubcampaniaEspeciesStep'
 import SubcampaniaPolygonStep from '../components/SubcampaniaPolygonStep'
+import SubcampaniaResumenStep from '../components/SubcampaniaResumenStep'
 import {
   TIPO_CAMPANIA_LABEL,
   type Campania,
@@ -34,13 +36,17 @@ type BaseStepErrors = {
 }
 
 const DEFAULT_PAIS_ID = 1
+// Regla actual de negocio: los coordinadores disponibles se filtran desde
+// usuarios con rol GENERAL.
 const COORDINADOR_ROL = 'GENERAL'
 const SEARCH_DEBOUNCE_MS = 300
-const WIZARD_STEPS = 3
+const WIZARD_STEPS = 5
 
-type WizardStep = 1 | 2 | 3
+type WizardStep = 1 | 2 | 3 | 4 | 5
 
 function parseWizardStep(raw: string | null): WizardStep {
+  if (raw === '5') return 5
+  if (raw === '4') return 4
   if (raw === '3') return 3
   if (raw === '2') return 2
   return 1
@@ -454,18 +460,22 @@ function SubcampaniaBaseStep({
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="mb-1 block text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
-                Inicio estimado
+                Inicio estimado <span className="text-slate-400">(opcional)</span>
               </label>
               <input
                 type="date"
                 value={fechaInicio}
                 onChange={(event) => handleFechaInicioChange(event.target.value)}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm font-extrabold text-brand-800 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+                className={`w-full rounded-2xl border bg-white px-3 py-3 text-sm font-extrabold text-brand-800 outline-none focus:ring-2 ${
+                  errors.fechas
+                    ? 'border-red-400 focus:border-red-400 focus:ring-red-200'
+                    : 'border-slate-200 focus:border-brand-500 focus:ring-brand-100'
+                }`}
               />
             </div>
             <div>
               <label className="mb-1 block text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
-                Cierre estimado
+                Cierre estimado <span className="text-slate-400">(opcional)</span>
               </label>
               <input
                 type="date"
@@ -620,6 +630,9 @@ function CrearSubcampanaScreen() {
                 />
               ))}
             </div>
+            <p className="mt-2 text-[10px] font-extrabold uppercase tracking-[0.18em] text-white/70">
+              Paso {currentStep} de {WIZARD_STEPS}
+            </p>
           </div>
         </header>
 
@@ -650,8 +663,8 @@ function CrearSubcampanaScreen() {
         )}
 
         {campania && !loading && !visibleError && currentStep === 2 && (
-          <SubcampaniaPolygonStep
-            key={`${campania.id}-${draftId}-polygon`}
+          <SubcampaniaEspeciesStep
+            key={`${campania.id}-${draftId}-especies`}
             campania={campania}
             draftId={draftId}
             authId={user?.auth_id}
@@ -662,12 +675,40 @@ function CrearSubcampanaScreen() {
         )}
 
         {campania && !loading && !visibleError && currentStep === 3 && (
-          <SubcampaniaEspeciesStep
-            key={`${campania.id}-${draftId}-especies`}
+          <SubcampaniaPolygonStep
+            key={`${campania.id}-${draftId}-polygon`}
             campania={campania}
             draftId={draftId}
+            authId={user?.auth_id}
             onDraftSaved={goToDashboard}
-            onBackToPolygon={() => goToStep(2)}
+            onBackToBase={() => goToStep(2)}
+            onNext={() => goToStep(4)}
+          />
+        )}
+
+        {campania && !loading && !visibleError && currentStep === 4 && (
+          <SubcampaniaEquipoStep
+            key={`${campania.id}-${draftId}-equipo`}
+            campania={campania}
+            draftId={draftId}
+            authId={user?.auth_id}
+            onDraftSaved={goToDashboard}
+            onBackToPolygon={() => goToStep(3)}
+            onNext={() => goToStep(5)}
+          />
+        )}
+
+        {campania && !loading && !visibleError && currentStep === 5 && (
+          <SubcampaniaResumenStep
+            key={`${campania.id}-${draftId}-resumen`}
+            campania={campania}
+            draftId={draftId}
+            authId={user?.auth_id}
+            onDraftSaved={goToDashboard}
+            onBackToEquipo={() => goToStep(4)}
+            onPublished={(subcampaniaId) =>
+              navigate(`/app/planting/subcampanias/${subcampaniaId}`, { replace: true })
+            }
           />
         )}
       </div>

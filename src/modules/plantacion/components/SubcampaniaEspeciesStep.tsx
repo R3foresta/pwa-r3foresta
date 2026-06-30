@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import Icon from '../../../components/Icon'
+import { PlantacionService } from '../../../services/plantacion.service'
 import type { Campania } from '../types/contracts'
 import {
   loadSubcampaniaBaseDraft,
@@ -14,8 +15,10 @@ import CatalogoEspeciesPicker, {
 type Props = {
   campania: Campania
   draftId: string
+  authId?: string
   onDraftSaved: () => void
-  onBackToPolygon: () => void
+  onBackToBase: () => void
+  onNext: () => void
 }
 
 const META_FINE_STEP = 100
@@ -52,8 +55,10 @@ function getAutomaticPctShares(
 function SubcampaniaEspeciesStep({
   campania,
   draftId,
+  authId,
   onDraftSaved,
-  onBackToPolygon,
+  onBackToBase,
+  onNext,
 }: Props) {
   const [initialDraft] = useState<SubcampaniaBaseDraft | null>(() =>
     loadSubcampaniaBaseDraft(campania.id, draftId),
@@ -68,6 +73,7 @@ function SubcampaniaEspeciesStep({
 
   const total = useMemo(() => sumPct(especies), [especies])
   const balanced = total === 100
+  const canSaveDraft = meta > 0
   const canSave = meta > 0 && balanced && especies.length > 0
 
   const handleMeta = (next: number) => {
@@ -121,38 +127,142 @@ function SubcampaniaEspeciesStep({
     setSubmitError(null)
   }
 
-  const handleSaveStep = () => {
+  const persistDraftLocally = (
+    base: SubcampaniaBaseDraft,
+    overrides: Partial<SubcampaniaBaseDraft>,
+  ): SubcampaniaBaseDraft => {
+    const nextDraft: SubcampaniaBaseDraft = {
+      ...base,
+      ...overrides,
+      meta_total_arboles: meta,
+      especies,
+      updated_at: new Date().toISOString(),
+    }
+    saveSubcampaniaBaseDraft(nextDraft)
+    return nextDraft
+  }
+
+  const syncCoordinador = async (
+    subcampaniaId: number,
+    coordinadorActual: { id: number } | null,
+    coordinadorNuevo: { id: number },
+  ) => {
+    if (coordinadorActual && coordinadorActual.id === coordinadorNuevo.id) return
+
+    if (coordinadorActual) {
+      await PlantacionService.removeSubcampaniaEquipoMember(
+        subcampaniaId,
+        coordinadorActual.id,
+        authId,
+      )
+    }
+
+    await PlantacionService.setSubcampaniaEquipo(
+      subcampaniaId,
+      [{ usuario_id: coordinadorNuevo.id, rol: 'COORDINADOR' }],
+      authId,
+    )
+  }
+
+  const handleSaveStep = async (action: 'draft' | 'next') => {
     setSubmitError(null)
 
     if (!initialDraft) {
       setSubmitError('No se encontró el borrador. Vuelve al paso anterior.')
       return
     }
+    if (!initialDraft.comunidad?.id) {
+      setSubmitError('Falta la comunidad/zona del paso 1.')
+      return
+    }
+    if (!initialDraft.coordinador?.id) {
+      setSubmitError('Falta el coordinador del paso 1.')
+      return
+    }
+    if (!initialDraft.nombre || initialDraft.nombre.trim().length < 3) {
+      setSubmitError('Falta el nombre de la subcampaña del paso 1.')
+      return
+    }
     if (meta <= 0) {
       setSubmitError('Define una meta de árboles mayor a 0.')
       return
     }
-    if (especies.length === 0) {
-      setSubmitError('Agrega al menos una especie al mix.')
-      return
-    }
-    if (!balanced) {
-      setSubmitError('La suma de porcentajes debe ser 100%.')
-      return
+    if (action === 'next') {
+      if (especies.length === 0) {
+        setSubmitError('Agrega al menos una especie al mix.')
+        return
+      }
+      if (!balanced) {
+        setSubmitError('La suma de porcentajes debe ser 100%.')
+        return
+      }
     }
 
     try {
       setSubmitting(true)
-      saveSubcampaniaBaseDraft({
-        ...initialDraft,
-        meta_total_arboles: meta,
-        especies,
-        updated_at: new Date().toISOString(),
-      })
-      onDraftSaved()
+
+      // TODO: El mix porcentual de especies aún no se persiste en backend.
+      // Actualmente la composición real se genera mediante reservas de vivero:
+      // POST /lotes-vivero/:loteId/reservas. Por ahora esta selección queda
+      // como planificación local/preselección visual.
+      const currentDraft = loadSubcampaniaBaseDraft(campania.id, draftId) ?? initialDraft
+
+      let workingDraft = persistDraftLocally(currentDraft, currentDraft)
+
+      const coordinadorNuevo = initialDraft.coordinador
+      const subcampaniaId = workingDraft.subcampania_id ?? null
+
+      if (subcampaniaId) {
+        await PlantacionService.updateSubcampania(
+          subcampaniaId,
+          {
+            nombre: workingDraft.nombre,
+            meta_total_arboles: meta,
+            zona_id: workingDraft.comunidad?.id,
+            fecha_estimada_inicio: workingDraft.fecha_estimada_inicio || undefined,
+            fecha_estimada_fin: workingDraft.fecha_estimada_fin || undefined,
+          },
+          authId,
+        )
+
+        const equipoActual = await PlantacionService.getSubcampaniaEquipo(subcampaniaId, authId)
+        const coordinadorPersistido = equipoActual.find((member) => member.rol === 'COORDINADOR')
+        await syncCoordinador(
+          subcampaniaId,
+          coordinadorPersistido ? { id: coordinadorPersistido.usuario_id } : null,
+          coordinadorNuevo,
+        )
+      } else {
+        const created = await PlantacionService.createSubcampania(
+          {
+            campania_id: campania.id,
+            nombre: workingDraft.nombre,
+            zona_id: workingDraft.comunidad?.id as number,
+            meta_total_arboles: meta,
+            fecha_estimada_inicio: workingDraft.fecha_estimada_inicio || undefined,
+            fecha_estimada_fin: workingDraft.fecha_estimada_fin || undefined,
+          },
+          authId,
+        )
+
+        workingDraft = persistDraftLocally(workingDraft, { subcampania_id: created.id })
+
+        await PlantacionService.setSubcampaniaEquipo(
+          created.id,
+          [{ usuario_id: coordinadorNuevo.id, rol: 'COORDINADOR' }],
+          authId,
+        )
+      }
+
+      if (action === 'draft') {
+        onDraftSaved()
+        return
+      }
+
+      onNext()
     } catch (saveError) {
       setSubmitError(
-        saveError instanceof Error ? saveError.message : 'No se pudo guardar el borrador.',
+        saveError instanceof Error ? saveError.message : 'No se pudo guardar la subcampaña.',
       )
     } finally {
       setSubmitting(false)
@@ -170,7 +280,7 @@ function SubcampaniaEspeciesStep({
               </div>
               <div>
                 <p className="text-sm font-extrabold text-amber-950">
-                  Guarda primero los pasos anteriores
+                  Guarda primero los datos base
                 </p>
                 <p className="mt-1 text-xs font-bold leading-relaxed text-amber-900">
                   El mix de especies se guarda sobre el mismo borrador de la subcampaña.
@@ -183,7 +293,7 @@ function SubcampaniaEspeciesStep({
           <div className="sticky bottom-0 -mx-5 bg-gradient-to-t from-[#eef2ed] via-[#eef2ed]/95 to-transparent px-5 pb-5 pt-3">
             <button
               type="button"
-              onClick={onBackToPolygon}
+              onClick={onBackToBase}
               className="flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-600 px-4 py-4 text-base font-extrabold text-white shadow-soft transition hover:bg-brand-700 active:scale-[0.99]"
             >
               Volver al paso anterior
@@ -391,33 +501,46 @@ function SubcampaniaEspeciesStep({
       <div className="px-5">
         <div className="sticky bottom-0 -mx-5 bg-gradient-to-t from-[#eef2ed] via-[#eef2ed]/95 to-transparent px-5 pb-5 pt-3">
           {submitError && (
-            <p className="mb-2 rounded-2xl bg-red-50 px-4 py-2 text-center text-xs font-extrabold text-red-700 ring-1 ring-red-100">
+            <p className="mb-2 whitespace-pre-line rounded-2xl bg-red-50 px-4 py-2 text-center text-xs font-extrabold text-red-700 ring-1 ring-red-100">
               {submitError}
             </p>
           )}
-          <div className="grid grid-cols-2 gap-2">
+          <div className="mb-2 grid grid-cols-2 gap-2">
             <button
               type="button"
-              onClick={onBackToPolygon}
-              className="flex items-center justify-center gap-2 rounded-2xl bg-white px-3 py-4 text-sm font-extrabold text-brand-700 shadow-soft ring-1 ring-brand-100 transition hover:bg-brand-50 active:scale-[0.99]"
+              onClick={onBackToBase}
+              className="flex items-center justify-center gap-2 rounded-2xl bg-white px-3 py-3 text-sm font-extrabold text-brand-700 shadow-soft ring-1 ring-brand-100 transition hover:bg-brand-50 active:scale-[0.99]"
             >
               <Icon name="arrow-left" className="h-4 w-4" />
               Atrás
             </button>
             <button
               type="button"
-              onClick={handleSaveStep}
-              disabled={submitting || !canSave}
-              className={`flex items-center justify-center gap-2 rounded-2xl px-4 py-4 text-base font-extrabold text-white shadow-soft transition active:scale-[0.99] ${
-                submitting || !canSave
-                  ? 'cursor-not-allowed bg-slate-400/70'
-                  : 'bg-brand-600 hover:bg-brand-700'
+              onClick={() => void handleSaveStep('draft')}
+              disabled={submitting || !canSaveDraft}
+              className={`flex items-center justify-center gap-2 rounded-2xl px-3 py-3 text-sm font-extrabold shadow-soft transition active:scale-[0.99] ${
+                submitting || !canSaveDraft
+                  ? 'cursor-not-allowed bg-slate-200 text-slate-400'
+                  : 'bg-white text-brand-700 ring-1 ring-brand-100 hover:bg-brand-50'
               }`}
             >
               <Icon name="file" className="h-4 w-4" />
               Guardar borrador
             </button>
           </div>
+          <button
+            type="button"
+            onClick={() => void handleSaveStep('next')}
+            disabled={submitting || !canSave}
+            className={`flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-4 text-base font-extrabold text-white shadow-soft transition active:scale-[0.99] ${
+              submitting || !canSave
+                ? 'cursor-not-allowed bg-slate-400/70'
+                : 'bg-brand-600 hover:bg-brand-700'
+            }`}
+          >
+            {submitting ? 'Guardando…' : 'Siguiente'}
+            {!submitting && <Icon name="chevron-right" className="h-5 w-5" />}
+          </button>
         </div>
       </div>
 

@@ -36,6 +36,7 @@ export type SubcampaniaBaseDraft = {
   poligono_backend_sincronizado_at?: string | null
   meta_total_arboles?: number | null
   especies?: SubcampaniaEspecieDraft[]
+  equipo_operarios?: UsuarioResumen[]
   created_at: string
   updated_at: string
 }
@@ -114,6 +115,26 @@ function normalizePolygonLocation(value: unknown): SubcampaniaPolygonLocationDra
   }
 }
 
+function normalizeEquipoOperariosDraft(value: unknown): UsuarioResumen[] | undefined {
+  if (!Array.isArray(value)) return undefined
+  return value.flatMap((raw) => {
+    if (!isRecord(raw)) return []
+    const id = Number(raw.id)
+    if (!Number.isFinite(id) || id <= 0) return []
+    return [
+      {
+        id,
+        nombre: typeof raw.nombre === 'string' ? raw.nombre : '',
+        rol: typeof raw.rol === 'string' ? raw.rol : 'OPERARIO',
+        apellido: typeof raw.apellido === 'string' ? raw.apellido : null,
+        username: typeof raw.username === 'string' ? raw.username : null,
+        correo: typeof raw.correo === 'string' ? raw.correo : null,
+        auth_id: typeof raw.auth_id === 'string' ? raw.auth_id : null,
+      },
+    ]
+  })
+}
+
 function normalizeEspeciesDraft(value: unknown): SubcampaniaEspecieDraft[] | undefined {
   if (!Array.isArray(value)) return undefined
   return value.flatMap((raw) => {
@@ -168,6 +189,7 @@ function normalizeSubcampaniaBaseDraft(
   const rawPoligonoBackendSincronizadoAt = value.poligono_backend_sincronizado_at
   const rawMetaTotalArboles = normalizeNullableNumber(value.meta_total_arboles)
   const rawEspecies = normalizeEspeciesDraft(value.especies)
+  const rawEquipoOperarios = normalizeEquipoOperariosDraft(value.equipo_operarios)
 
   return {
     draft_id:
@@ -200,6 +222,7 @@ function normalizeSubcampaniaBaseDraft(
         : undefined,
     meta_total_arboles: rawMetaTotalArboles,
     especies: rawEspecies,
+    equipo_operarios: rawEquipoOperarios,
     created_at: typeof rawCreatedAt === 'string' ? rawCreatedAt : now,
     updated_at: typeof rawUpdatedAt === 'string' ? rawUpdatedAt : now,
   }
@@ -269,5 +292,22 @@ export function saveSubcampaniaBaseDraft(draft: SubcampaniaBaseDraft): void {
   saveDraft<SubcampaniaBaseDraft[]>(
     getSubcampaniaBaseDraftsKey(draft.campania_id),
     sortDrafts(nextDrafts),
+  )
+}
+
+export function clearSubcampaniaBaseDraft(campaniaId: number, draftId: string): void {
+  const currentDrafts = loadSubcampaniaBaseDrafts(campaniaId)
+  const remainingDrafts = currentDrafts.filter((draft) => draft.draft_id !== draftId)
+
+  if (remainingDrafts.length === currentDrafts.length) return
+
+  if (remainingDrafts.length === 0) {
+    clearDraft(getSubcampaniaBaseDraftsKey(campaniaId))
+    return
+  }
+
+  saveDraft<SubcampaniaBaseDraft[]>(
+    getSubcampaniaBaseDraftsKey(campaniaId),
+    sortDrafts(remainingDrafts),
   )
 }

@@ -486,7 +486,7 @@ function SubcampaniaPolygonStep({
               onClick={onBackToBase}
               className="flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-600 px-4 py-4 text-base font-extrabold text-white shadow-soft transition hover:bg-brand-700 active:scale-[0.99]"
             >
-              Volver al paso 1
+              Volver al paso anterior
             </button>
           </div>
         </div>
@@ -512,7 +512,7 @@ function SubcampaniaPolygonStep({
               onClick={onBackToBase}
               className="shrink-0 rounded-full bg-brand-50 px-3 py-2 text-[11px] font-extrabold text-brand-700 ring-1 ring-brand-100 transition hover:bg-brand-100"
             >
-              Paso 1
+              Atrás
             </button>
           </div>
 
@@ -590,7 +590,7 @@ function SubcampaniaPolygonStep({
               className="flex items-center justify-center gap-2 rounded-2xl bg-white px-3 py-3 text-xs font-extrabold text-brand-700 shadow-soft ring-1 ring-brand-100 transition hover:bg-brand-50 disabled:cursor-wait disabled:opacity-60"
             >
               <Icon name="pin" className="h-4 w-4" />
-              GPS actual
+              {locating ? 'Obteniendo GPS…' : 'GPS actual'}
             </button>
             <button
               type="button"
@@ -607,7 +607,7 @@ function SubcampaniaPolygonStep({
               disabled={vertices.length === 0 || submitting}
               className="flex items-center justify-center gap-2 rounded-2xl bg-white px-3 py-3 text-xs font-extrabold text-slate-700 shadow-soft ring-1 ring-slate-200 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <Icon name="arrow-left" className="h-4 w-4" />
+              <Icon name="x" className="h-4 w-4" />
               Quitar último
             </button>
             <button
@@ -673,8 +673,8 @@ function SubcampaniaPolygonStep({
               disabled={submitting}
               className="flex items-center justify-center gap-2 rounded-2xl bg-brand-600 px-4 py-4 text-base font-extrabold text-white shadow-soft transition hover:bg-brand-700 active:scale-[0.99] disabled:cursor-wait disabled:opacity-60"
             >
-              Continuar
-              <Icon name="chevron-right" className="h-5 w-5" />
+              {submitting ? 'Guardando…' : 'Siguiente'}
+              {!submitting && <Icon name="chevron-right" className="h-5 w-5" />}
             </button>
           </div>
         </div>

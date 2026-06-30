@@ -67,6 +67,100 @@ export type SetSubcampaniaPoligonoInput = {
 export type SetSubcampaniaPoligonoData = {
   id: number
   area_hectareas?: number | null
+  poligono?: GeoJsonPolygon | null
+  updated_at?: string | null
+}
+
+export type EstadoSubcampania =
+  | 'BORRADOR'
+  | 'ACTIVA'
+  | 'COMPLETADA'
+  | 'FINALIZADA_PARCIAL'
+  | 'PAUSADA'
+  | 'CANCELADA'
+
+export type FaseMantenimientoSubcampania =
+  | 'NO_APLICA'
+  | 'MANTENIMIENTO_ACTIVO'
+  | 'MONITOREO_HISTORICO'
+
+export type RolEnSubcampania = 'COORDINADOR' | 'OPERARIO'
+
+export type CreateSubcampaniaInput = {
+  campania_id: number
+  nombre: string
+  zona_id: number
+  meta_total_arboles: number
+  descripcion?: string
+  fecha_estimada_inicio?: string
+  fecha_estimada_fin?: string
+  tolerancia_gps_metros?: number
+}
+
+export type UpdateSubcampaniaInput = {
+  nombre?: string
+  descripcion?: string
+  zona_id?: number
+  meta_total_arboles?: number
+  fecha_estimada_inicio?: string
+  fecha_estimada_fin?: string
+  tolerancia_gps_metros?: number
+}
+
+export type Subcampania = {
+  id: number
+  campania_id: number
+  nombre: string
+  descripcion?: string | null
+  tipo?: TipoCampania
+  zona_id: number
+  meta_total_arboles: number
+  fecha_estimada_inicio?: string | null
+  fecha_estimada_fin?: string | null
+  tolerancia_gps_metros?: number | null
+  estado: EstadoSubcampania
+  fase_mantenimiento?: FaseMantenimientoSubcampania | null
+  poligono?: GeoJsonPolygon | null
+  saldo_vivo_actual?: number | null
+  codigo_trazabilidad?: string | null
+  created_at: string
+  updated_at?: string | null
+}
+
+export type EquipoMemberInput = {
+  usuario_id: number
+  rol: RolEnSubcampania
+}
+
+export type EquipoMember = {
+  id: number
+  usuario_id: number
+  nombre_usuario?: string | null
+  rol: RolEnSubcampania
+  agregado_at?: string | null
+}
+
+export type SetEquipoData = {
+  message?: string
+  miembros: EquipoMember[]
+}
+
+export type ComposicionReservadaItem = {
+  planta_id: number
+  especie?: string | null
+  nombre_cientifico?: string | null
+  saldo_reservado: number
+}
+
+export type ActivarSubcampaniaData = {
+  message?: string
+  id: number
+  estado: EstadoSubcampania
+  nombre_zona_snapshot?: string | null
+  nombre_coordinador_snapshot?: string | null
+  nombres_organizaciones_snapshot?: string[]
+  composicion_reservada?: ComposicionReservadaItem[]
+  updated_at?: string | null
 }
 
 export type ApiEnvelope<T> = {
