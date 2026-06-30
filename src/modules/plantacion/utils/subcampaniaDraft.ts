@@ -129,7 +129,6 @@ function normalizeEquipoOperariosDraft(value: unknown): UsuarioResumen[] | undef
         apellido: typeof raw.apellido === 'string' ? raw.apellido : null,
         username: typeof raw.username === 'string' ? raw.username : null,
         correo: typeof raw.correo === 'string' ? raw.correo : null,
-        auth_id: typeof raw.auth_id === 'string' ? raw.auth_id : null,
       },
     ]
   })
