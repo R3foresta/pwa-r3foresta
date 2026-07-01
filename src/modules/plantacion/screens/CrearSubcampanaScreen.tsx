@@ -4,11 +4,16 @@ import plantacionHero from '../../../assets/home/plantacion.jpg'
 import Icon from '../../../components/Icon'
 import SelectorComunidad from '../../comunidades/SelectorComunidad'
 import { useAuth } from '../../../contexts/AuthContext'
+import { obtenerComunidad } from '../../../api/comunidades.api'
 import { PlantacionService } from '../../../services/plantacion.service'
 import { UsersService } from '../../../services/users.service'
 import type { ComunidadCard } from '../../../tipos/comunidades'
 import type { UsuarioResumen } from '../../../types/users'
+import SubcampaniaEquipoStep from '../components/SubcampaniaEquipoStep'
+import { UserAvatar } from '../components/UserAvatar'
+import SubcampaniaEspeciesStep from '../components/SubcampaniaEspeciesStep'
 import SubcampaniaPolygonStep from '../components/SubcampaniaPolygonStep'
+import SubcampaniaResumenStep from '../components/SubcampaniaResumenStep'
 import {
   TIPO_CAMPANIA_LABEL,
   type Campania,
@@ -33,25 +38,27 @@ type BaseStepErrors = {
 }
 
 const DEFAULT_PAIS_ID = 1
+// Regla actual de negocio: los coordinadores disponibles se filtran desde
+// usuarios con rol GENERAL.
 const COORDINADOR_ROL = 'GENERAL'
 const SEARCH_DEBOUNCE_MS = 300
-const WIZARD_STEPS = 6
+const WIZARD_STEPS = 5
 
-type WizardStep = 1 | 2
+type WizardStep = 1 | 2 | 3 | 4 | 5
+
+function parseWizardStep(raw: string | null): WizardStep {
+  if (raw === '5') return 5
+  if (raw === '4') return 4
+  if (raw === '3') return 3
+  if (raw === '2') return 2
+  return 1
+}
 
 function toDateInputValue(value?: string | null): string {
   if (!value) return ''
   return value.includes('T') ? value.split('T')[0] : value
 }
 
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('')
-}
 
 function buildComunidadRuta(comunidad: ComunidadCard): string {
   return [
@@ -246,9 +253,11 @@ function CoordinadorSelector({
                   onClick={() => handleSelect(usuario)}
                   className="flex w-full items-center gap-3 border-b border-slate-100 px-3 py-2 text-left transition hover:bg-brand-50 last:border-b-0"
                 >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-50 text-xs font-extrabold text-brand-700">
-                    {getInitials(usuario.nombre)}
-                  </span>
+                  <UserAvatar
+                    nombre={usuario.nombre}
+                    fotoUrl={usuario.foto_perfil_url}
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-50 text-xs font-extrabold text-brand-700"
+                  />
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-semibold text-brand-700">
                       {usuario.nombre}
@@ -447,18 +456,22 @@ function SubcampaniaBaseStep({
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="mb-1 block text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
-                Inicio estimado
+                Inicio estimado <span className="text-slate-400">(opcional)</span>
               </label>
               <input
                 type="date"
                 value={fechaInicio}
                 onChange={(event) => handleFechaInicioChange(event.target.value)}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm font-extrabold text-brand-800 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+                className={`w-full rounded-2xl border bg-white px-3 py-3 text-sm font-extrabold text-brand-800 outline-none focus:ring-2 ${
+                  errors.fechas
+                    ? 'border-red-400 focus:border-red-400 focus:ring-red-200'
+                    : 'border-slate-200 focus:border-brand-500 focus:ring-brand-100'
+                }`}
               />
             </div>
             <div>
               <label className="mb-1 block text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
-                Cierre estimado
+                Cierre estimado <span className="text-slate-400">(opcional)</span>
               </label>
               <input
                 type="date"
@@ -516,19 +529,33 @@ function SubcampaniaBaseStep({
 function CrearSubcampanaScreen() {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const authId = user?.auth_id
   const { campaniaId } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
   const location = useLocation()
   const state = location.state as LocationState | null
-  const routeDraftId = searchParams.get('draftId')?.trim() || state?.draftId
+  const routeDraftId = searchParams.get('draftId')?.trim() || state?.draftId?.trim()
+  const [draftIdWasGenerated] = useState(() => !routeDraftId)
   const [draftId] = useState(() => routeDraftId || createSubcampaniaDraftId())
-  const currentStep: WizardStep = searchParams.get('step') === '2' ? 2 : 1
+  const rawRouteSubcampaniaId = searchParams.get('subcampaniaId')?.trim() || ''
+  const routeSubcampaniaId = Number(rawRouteSubcampaniaId || '') || null
+  const currentStep: WizardStep = parseWizardStep(searchParams.get('step'))
   const numericCampaniaId = Number(campaniaId)
   const hasValidCampaniaId = Number.isFinite(numericCampaniaId) && numericCampaniaId > 0
   const [campania, setCampania] = useState<Campania | null>(state?.campania ?? null)
   const [loading, setLoading] = useState(!state?.campania && hasValidCampaniaId)
+  const [draftHydrationVersion, setDraftHydrationVersion] = useState(0)
   const [error, setError] = useState<string | null>(null)
+  const routeSubcampaniaDraft = campania ? loadSubcampaniaBaseDraft(campania.id, draftId) : null
+  const needsRouteSubcampaniaHydration = Boolean(
+    routeSubcampaniaId &&
+      draftIdWasGenerated &&
+      campania &&
+      routeSubcampaniaDraft?.subcampania_id !== routeSubcampaniaId,
+  )
   const visibleError = error ?? (!hasValidCampaniaId ? 'ID de campaña inválido.' : null)
+  const loadingMessage = loading ? 'Cargando campaña...' : 'Cargando subcampaña...'
+  const isLoading = loading || (needsRouteSubcampaniaHydration && error === null)
   const dashboardPath = hasValidCampaniaId
     ? `/app/planting/campanias/${numericCampaniaId}`
     : '/app/planting'
@@ -541,8 +568,11 @@ function CrearSubcampanaScreen() {
     const nextParams = new URLSearchParams(searchParams)
     nextParams.set('draftId', draftId)
     nextParams.set('step', String(currentStep))
+    if (rawRouteSubcampaniaId) {
+      nextParams.set('subcampaniaId', rawRouteSubcampaniaId)
+    }
     setSearchParams(nextParams, { replace: true })
-  }, [currentStep, draftId, searchParams, setSearchParams])
+  }, [currentStep, draftId, rawRouteSubcampaniaId, searchParams, setSearchParams])
 
   useEffect(() => {
     if (state?.campania) return
@@ -558,6 +588,51 @@ function CrearSubcampanaScreen() {
       })
       .finally(() => setLoading(false))
   }, [hasValidCampaniaId, numericCampaniaId, state?.campania])
+
+  useEffect(() => {
+    if (!needsRouteSubcampaniaHydration || !routeSubcampaniaId || !campania) return
+
+    let cancelled = false
+
+    PlantacionService.getSubcampania(routeSubcampaniaId, authId)
+      .then((subData) =>
+        Promise.all([
+          Promise.resolve(subData),
+          obtenerComunidad(subData.zona_id).then((r) => r.data ?? null).catch(() => null),
+        ]),
+      )
+      .then(([subData, comunidad]) => {
+        if (cancelled) return
+
+        const now = new Date().toISOString()
+
+        saveSubcampaniaBaseDraft({
+          draft_id: draftId,
+          subcampania_id: routeSubcampaniaId,
+          campania_id: campania.id,
+          tipo: campania.tipo,
+          nombre: subData.nombre,
+          comunidad,
+          coordinador: null,
+          fecha_estimada_inicio: subData.fecha_estimada_inicio ?? '',
+          fecha_estimada_fin: subData.fecha_estimada_fin ?? '',
+          created_at: now,
+          updated_at: now,
+        })
+        setError(null)
+        setDraftHydrationVersion((current) => current + 1)
+      })
+      .catch((loadError) => {
+        if (cancelled) return
+        setError(
+          loadError instanceof Error ? loadError.message : 'No se pudo cargar la subcampaña.',
+        )
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [authId, campania, draftId, needsRouteSubcampaniaHydration, routeSubcampaniaId])
 
   const goToDashboard = () => {
     navigate(dashboardPath, { state: campania ? { campania } : undefined })
@@ -613,18 +688,21 @@ function CrearSubcampanaScreen() {
                 />
               ))}
             </div>
+            <p className="mt-2 text-[10px] font-extrabold uppercase tracking-[0.18em] text-white/70">
+              Paso {currentStep} de {WIZARD_STEPS}
+            </p>
           </div>
         </header>
 
-        {loading && (
+        {isLoading && (
           <main className="space-y-4 px-5 pt-4">
             <div className="rounded-3xl bg-white px-4 py-6 text-center text-sm font-semibold text-slate-600 shadow-soft ring-1 ring-black/5">
-              Cargando campaña...
+              {loadingMessage}
             </div>
           </main>
         )}
 
-        {visibleError && !loading && (
+        {visibleError && !isLoading && (
           <main className="space-y-4 px-5 pt-4">
             <div className="rounded-3xl bg-red-50 px-4 py-6 text-center text-sm font-semibold text-red-700 shadow-soft ring-1 ring-red-200">
               {visibleError}
@@ -632,25 +710,63 @@ function CrearSubcampanaScreen() {
           </main>
         )}
 
-        {campania && !loading && !visibleError && (
-          currentStep === 1 ? (
-            <SubcampaniaBaseStep
-              key={`${campania.id}-${draftId}-base`}
-              campania={campania}
-              draftId={draftId}
-              onDraftSaved={goToDashboard}
-              onNext={() => goToStep(2)}
-            />
-          ) : (
-            <SubcampaniaPolygonStep
-              key={`${campania.id}-${draftId}-polygon`}
-              campania={campania}
-              draftId={draftId}
-              authId={user?.auth_id}
-              onDraftSaved={goToDashboard}
-              onBackToBase={() => goToStep(1)}
-            />
-          )
+        {campania && !isLoading && !visibleError && currentStep === 1 && (
+          <SubcampaniaBaseStep
+            key={`${campania.id}-${draftId}-base`}
+            campania={campania}
+            draftId={draftId}
+            onDraftSaved={goToDashboard}
+            onNext={() => goToStep(2)}
+          />
+        )}
+
+        {campania && !isLoading && !visibleError && currentStep === 2 && (
+          <SubcampaniaEspeciesStep
+            key={`${campania.id}-${draftId}-especies`}
+            campania={campania}
+            draftId={draftId}
+            authId={authId}
+            onDraftSaved={goToDashboard}
+            onBackToBase={() => goToStep(1)}
+            onNext={() => goToStep(3)}
+          />
+        )}
+
+        {campania && !isLoading && !visibleError && currentStep === 3 && (
+          <SubcampaniaPolygonStep
+            key={`${campania.id}-${draftId}-polygon`}
+            campania={campania}
+            draftId={draftId}
+            authId={authId}
+            onDraftSaved={goToDashboard}
+            onBackToBase={() => goToStep(2)}
+            onNext={() => goToStep(4)}
+          />
+        )}
+
+        {campania && !isLoading && !visibleError && currentStep === 4 && (
+          <SubcampaniaEquipoStep
+            key={`${campania.id}-${draftId}-equipo`}
+            campania={campania}
+            draftId={draftId}
+            authId={authId}
+            onDraftSaved={goToDashboard}
+            onBackToPolygon={() => goToStep(3)}
+            onNext={() => goToStep(5)}
+          />
+        )}
+
+        {campania && !isLoading && !visibleError && currentStep === 5 && (
+          <SubcampaniaResumenStep
+            key={`${campania.id}-${draftId}-resumen-${draftHydrationVersion}`}
+            campania={campania}
+            draftId={draftId}
+            authId={authId}
+            onBackToEquipo={() => goToStep(4)}
+            onSaved={(subcampaniaId) =>
+              navigate(`/app/planting/subcampanias/${subcampaniaId}`, { replace: true })
+            }
+          />
         )}
       </div>
     </div>

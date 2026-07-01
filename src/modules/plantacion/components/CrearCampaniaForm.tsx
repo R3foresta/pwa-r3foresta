@@ -9,21 +9,13 @@ import {
   type TipoCampania,
 } from '../types/contracts'
 import type { CrearCampaniaFormValues } from '../utils/crearCampaniaForm'
+import { getInitials } from './UserAvatar'
 
 const CAMPANIA_TYPES: TipoCampania[] = ['ARBORIZACION', 'REFORESTACION', 'FORESTACION']
 const CAMPANIA_TYPE_ICONS: Record<TipoCampania, typeof Trees> = {
   REFORESTACION: Trees,
   ARBORIZACION: Building2,
   FORESTACION: Leaf,
-}
-
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('')
 }
 
 function OrganizationLogo({

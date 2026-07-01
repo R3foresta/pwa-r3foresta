@@ -224,6 +224,13 @@ export async function getTimelineApi(loteId: number): Promise<Response> {
   })
 }
 
+export async function listStockEspeciesApi(): Promise<Response> {
+  return fetch(`${API_BASE_URL}/lotes-vivero/stock/especies`, {
+    method: 'GET',
+    headers: getAuthHeaders({ includeContentType: false }),
+  })
+}
+
 export async function listSubcampaniasApi(): Promise<Response> {
   return fetch(`${API_BASE_URL}/subcampanias`, {
     method: 'GET',

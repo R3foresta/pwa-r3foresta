@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import plantacionHero from '../../../assets/home/plantacion.jpg'
 import Icon from '../../../components/Icon'
@@ -7,7 +7,9 @@ import { PlantacionService } from '../../../services/plantacion.service'
 import {
   TIPO_CAMPANIA_LABEL,
   type Campania,
+  type EstadoSubcampania,
   type Organizacion,
+  type Subcampania,
 } from '../types/contracts'
 import {
   createSubcampaniaDraftId,
@@ -58,13 +60,15 @@ function getSubcampaniaCount(campania: Campania): number {
   return Math.max(0, campania.count_subcampanias ?? 0)
 }
 
-function getActiveSubcampaniaCount(campania: Campania): number {
-  const activeCount = campania.subcampanias_activas_count ?? campania.activas_count ?? 0
+function getActiveSubcampaniaCount(campania: Campania, subcampanias: Subcampania[]): number {
+  const activeCount =
+    subcampanias.length > 0
+      ? subcampanias.filter((subcampania) => subcampania.estado === 'ACTIVA').length
+      : campania.subcampanias_activas_count ?? campania.activas_count ?? 0
   return Math.max(0, Number.isFinite(activeCount) ? Number(activeCount) : 0)
 }
 
-function getVisibleStatus(campania: Campania): string {
-  const subcampaniaCount = getSubcampaniaCount(campania)
+function getVisibleStatus(campania: Campania, subcampaniaCount: number): string {
   if (subcampaniaCount === 0) return 'Creada'
   return campania.estado_derivado?.replace(/_/g, ' ') || 'Creada'
 }
@@ -151,11 +155,19 @@ function TipoSubBadge({ tipo }: { tipo: Campania['tipo'] }) {
   )
 }
 
-function SubcampanaBadge({ estado }: { estado: 'BORRADOR' }) {
+function getSubcampaniaBadgeTone(estado: EstadoSubcampania): string {
+  if (estado === 'BORRADOR') return 'bg-amber-50 text-amber-800 ring-amber-100'
+  if (estado === 'ACTIVA') return 'bg-emerald-50 text-emerald-700 ring-emerald-100'
+  if (estado === 'PAUSADA') return 'bg-orange-50 text-orange-700 ring-orange-100'
+  if (estado === 'CANCELADA') return 'bg-red-50 text-red-700 ring-red-100'
+  return 'bg-slate-50 text-slate-700 ring-slate-200'
+}
+
+function SubcampanaBadge({ estado }: { estado: EstadoSubcampania }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-amber-800 ring-1 ring-amber-100">
-      <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-      {estado}
+    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.14em] ring-1 ${getSubcampaniaBadgeTone(estado)}`}>
+      <span className="h-1.5 w-1.5 rounded-full bg-current" />
+      {estado.replace(/_/g, ' ')}
     </span>
   )
 }
@@ -302,7 +314,7 @@ function SubcampaniaDraftRow({
         <div className="mt-2.5 flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 ring-1 ring-emerald-100">
           <Icon name="check" className="h-4 w-4 shrink-0 text-emerald-700" />
           <p className="flex-1 text-[11.5px] font-bold leading-snug text-emerald-900">
-            Configuración completa · lista para activar.
+            Configuración local completa.
           </p>
           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-white">
             <Icon name="chevron-right" className="h-3 w-3" />
@@ -313,7 +325,7 @@ function SubcampaniaDraftRow({
         <div className="mt-2.5 rounded-xl bg-amber-50 px-3 py-2 ring-1 ring-amber-100">
           <p className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wide text-amber-800">
             <Icon name="info" className="h-3.5 w-3.5" />
-            Falta para activar
+            Falta por completar
           </p>
           <p className="mt-0.5 text-[11.5px] font-bold leading-snug text-amber-900">
             {guard.faltantes.join(' · ')}
@@ -370,14 +382,18 @@ function PendingSetupNotice({
 
 function CampaniaHeader({
   campania,
+  subcampanias,
   onBack,
 }: {
   campania: Campania
+  subcampanias: Subcampania[]
   onBack: () => void
 }) {
-  const status = getVisibleStatus(campania)
+  const subcampaniaCount =
+    subcampanias.length > 0 ? subcampanias.length : getSubcampaniaCount(campania)
+  const status = getVisibleStatus(campania, subcampaniaCount)
   const progress = 0
-  const activeCount = getActiveSubcampaniaCount(campania)
+  const activeCount = getActiveSubcampaniaCount(campania, subcampanias)
   const planted = campania.arboles_plantados
   const target = campania.meta_arboles
 
@@ -446,7 +462,7 @@ function CampaniaHeader({
         <div className="mt-3 flex flex-wrap gap-1.5">
           <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-[10.5px] font-extrabold tracking-wide ring-1 ring-white/20">
             <Icon name="planting" className="h-3 w-3" />
-            {getSubcampaniaCount(campania)} subcampañas
+            {subcampaniaCount} subcampañas
           </span>
           <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-[10.5px] font-extrabold tracking-wide ring-1 ring-white/20">
             <Icon name="shield" className="h-3 w-3" />
@@ -458,17 +474,76 @@ function CampaniaHeader({
   )
 }
 
+function SubcampaniaRow({
+  campania,
+  subcampania,
+  onTap,
+}: {
+  campania: Campania
+  subcampania: Subcampania
+  onTap: () => void
+}) {
+  const tipo = subcampania.tipo ?? campania.tipo
+  const hasPoligono = Boolean(subcampania.poligono)
+
+  return (
+    <button
+      type="button"
+      onClick={onTap}
+      className="block w-full rounded-2xl bg-white p-3.5 text-left shadow-soft ring-1 ring-black/5 transition hover:ring-brand-300 active:scale-[0.995]"
+    >
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <TipoSubBadge tipo={tipo} />
+            <SubcampanaBadge estado={subcampania.estado} />
+          </div>
+          <p className="mt-1 truncate text-[14px] font-extrabold leading-tight text-brand-800">
+            {subcampania.nombre}
+          </p>
+          <p className="mt-0.5 flex items-center gap-1 truncate text-[11px] font-semibold text-slate-500">
+            <Icon name="planting" className="h-3 w-3 text-slate-400" />
+            Meta: {subcampania.meta_total_arboles.toLocaleString('es-BO')} árboles
+          </p>
+          {hasPoligono && (
+            <p className="mt-0.5 flex items-center gap-1 truncate text-[11px] font-semibold text-emerald-700">
+              <Icon name="map" className="h-3 w-3 text-emerald-600" />
+              Polígono definido
+            </p>
+          )}
+        </div>
+        <Icon name="chevron-right" className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+      </div>
+
+      <div className="mt-2.5 flex items-center gap-2">
+        {subcampania.codigo_trazabilidad && (
+          <span className="inline-flex max-w-[52%] truncate rounded-full bg-slate-50 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-slate-500 ring-1 ring-slate-100">
+            {subcampania.codigo_trazabilidad}
+          </span>
+        )}
+        <p className="ml-auto whitespace-nowrap text-[10.5px] font-bold text-slate-400">
+          {formatDate(subcampania.fecha_estimada_inicio)} - {formatDate(subcampania.fecha_estimada_fin)}
+        </p>
+      </div>
+    </button>
+  )
+}
+
 function SubcampaniasSection({
   campania,
+  subcampanias,
   localDrafts,
+  onSubcampaniaTap,
   onDraftTap,
 }: {
   campania: Campania
+  subcampanias: Subcampania[]
   localDrafts: SubcampaniaBaseDraft[]
+  onSubcampaniaTap: (subcampania: Subcampania) => void
   onDraftTap: (draft: SubcampaniaBaseDraft) => void
 }) {
-  const count = getSubcampaniaCount(campania)
-  const visibleCount = count + localDrafts.length
+  const visibleCount = subcampanias.length + localDrafts.length
+  const hasVisibleSubcampanias = visibleCount > 0
 
   return (
     <section className="pt-1">
@@ -481,8 +556,16 @@ function SubcampaniasSection({
         </p>
       </div>
 
-      {localDrafts.length > 0 ? (
+      {hasVisibleSubcampanias ? (
         <div className="mt-2 space-y-2">
+          {subcampanias.map((subcampania) => (
+            <SubcampaniaRow
+              key={subcampania.id}
+              campania={campania}
+              subcampania={subcampania}
+              onTap={() => onSubcampaniaTap(subcampania)}
+            />
+          ))}
           {localDrafts.map((draft) => (
             <SubcampaniaDraftRow
               key={draft.draft_id}
@@ -497,12 +580,10 @@ function SubcampaniasSection({
             <Icon name="planting" className="h-7 w-7" />
           </div>
           <p className="mt-3 text-base font-extrabold text-brand-800">
-            {count === 0 ? 'Sin subcampañas todavía' : 'Subcampañas registradas'}
+            Sin subcampañas todavía
           </p>
           <p className="mt-1 text-xs font-semibold leading-relaxed text-slate-500">
-            {count === 0
-              ? 'Crea la primera subcampaña para definir zona, meta, coordinador, equipo y lotes.'
-              : 'El listado operativo se conectará al endpoint de subcampañas de la campaña.'}
+            Crea la primera subcampaña para definir zona, meta, coordinador, equipo y lotes.
           </p>
         </div>
       )}
@@ -572,45 +653,72 @@ function CampaniaAdminDashboardScreen() {
   const numericCampaniaId = Number(campaniaId)
   const hasValidCampaniaId = Number.isFinite(numericCampaniaId) && numericCampaniaId > 0
   const [campania, setCampania] = useState<Campania | null>(state?.campania ?? null)
-  const [loading, setLoading] = useState(!state?.campania && hasValidCampaniaId)
+  const [subcampanias, setSubcampanias] = useState<Subcampania[]>([])
+  const [loading, setLoading] = useState(hasValidCampaniaId)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<DashboardTab>('resumen')
   const [localDrafts] = useState<SubcampaniaBaseDraft[]>(() =>
     hasValidCampaniaId ? loadSubcampaniaBaseDrafts(numericCampaniaId) : [],
   )
+  const visibleLocalDrafts = localDrafts.filter((draft) => !draft.subcampania_id)
+  const hasVisibleSubcampanias = subcampanias.length > 0 || visibleLocalDrafts.length > 0
   const canCreateSubcampania = (user?.rol ?? '').toUpperCase() === 'ADMIN'
   const visibleError = error ?? (!hasValidCampaniaId ? 'ID de campaña inválido.' : null)
 
-  const loadCampania = () => {
+  const fetchDashboard = useCallback(async (): Promise<[Campania, Subcampania[]] | null> => {
+    if (!hasValidCampaniaId) return null
+    return Promise.all([
+      PlantacionService.getCampania(numericCampaniaId),
+      PlantacionService.listSubcampaniasByCampania(numericCampaniaId),
+    ])
+  }, [hasValidCampaniaId, numericCampaniaId])
+
+  const loadDashboard = useCallback(() => {
     if (!hasValidCampaniaId) return
 
     setLoading(true)
     setError(null)
-    PlantacionService.getCampania(numericCampaniaId)
-      .then((data) => {
+    fetchDashboard()
+      .then((result) => {
+        if (!result) return
+        const [data, subcampaniasData] = result
         setCampania(data)
+        setSubcampanias(subcampaniasData)
         setError(null)
       })
       .catch((loadError) => {
+        setSubcampanias([])
         setError(loadError instanceof Error ? loadError.message : 'No se pudo cargar la campaña.')
       })
       .finally(() => setLoading(false))
-  }
+  }, [fetchDashboard, hasValidCampaniaId])
 
   useEffect(() => {
-    if (state?.campania) return
     if (!hasValidCampaniaId) return
 
-    PlantacionService.getCampania(numericCampaniaId)
-      .then((data) => {
+    let cancelled = false
+
+    fetchDashboard()
+      .then((result) => {
+        if (cancelled || !result) return
+        const [data, subcampaniasData] = result
         setCampania(data)
+        setSubcampanias(subcampaniasData)
         setError(null)
       })
       .catch((loadError) => {
+        if (cancelled) return
+        setSubcampanias([])
         setError(loadError instanceof Error ? loadError.message : 'No se pudo cargar la campaña.')
       })
-      .finally(() => setLoading(false))
-  }, [hasValidCampaniaId, numericCampaniaId, state?.campania])
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [fetchDashboard, hasValidCampaniaId])
 
   const goBack = () => navigate('/app/planting')
 
@@ -629,11 +737,15 @@ function CampaniaAdminDashboardScreen() {
     })
   }
 
+  const goToSubcampania = (subcampania: Subcampania) => {
+    navigate(`/app/planting/subcampanias/${subcampania.id}`)
+  }
+
   return (
     <div className="relative min-h-screen bg-[#eef2ed] text-brand-700">
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-28">
         {campania && !loading ? (
-          <CampaniaHeader campania={campania} onBack={goBack} />
+          <CampaniaHeader campania={campania} subcampanias={subcampanias} onBack={goBack} />
         ) : (
           <LoadingHeader onBack={goBack} />
         )}
@@ -651,7 +763,7 @@ function CampaniaAdminDashboardScreen() {
               {hasValidCampaniaId && (
                 <button
                   type="button"
-                  onClick={loadCampania}
+                  onClick={loadDashboard}
                   className="mt-3 rounded-xl bg-red-100 px-4 py-2 text-xs font-bold text-red-700 transition hover:bg-red-200"
                 >
                   Reintentar
@@ -664,13 +776,13 @@ function CampaniaAdminDashboardScreen() {
             <>
               <DCTabs active={activeTab} onChange={setActiveTab} />
 
-              {localDrafts.length === 0 && (
+              {!hasVisibleSubcampanias && (
                 <PendingSetupNotice
                   canCreate={canCreateSubcampania}
                   onCreate={goToNewSubcampania}
                 />
               )}
-              {localDrafts.length > 0 && (
+              {hasVisibleSubcampanias && (
                 <AddSubcampaniaButton
                   canCreate={canCreateSubcampania}
                   onCreate={goToNewSubcampania}
@@ -682,7 +794,9 @@ function CampaniaAdminDashboardScreen() {
                 <>
                   <SubcampaniasSection
                     campania={campania}
-                    localDrafts={localDrafts}
+                    subcampanias={subcampanias}
+                    localDrafts={visibleLocalDrafts}
+                    onSubcampaniaTap={goToSubcampania}
                     onDraftTap={goToDraftSubcampania}
                   />
                 </>

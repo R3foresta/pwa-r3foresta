@@ -15,6 +15,7 @@ import {
   listAsignacionesApi,
   crearAsignacionApi,
   cancelarAsignacionApi,
+  listStockEspeciesApi,
 } from '../api/lotes-vivero.api'
 
 import { mapLoteToCardData, mapLoteToDetailView } from '../modules/vivero/mappers/lote.mapper'
@@ -81,6 +82,16 @@ export type SubcampaniaResumen = {
   id: number
   nombre: string
   estado?: string | null
+}
+
+export type EspecieStockVivero = {
+  planta_id: number
+  especie: string
+  nombre_cientifico: string
+  nombre_comun_principal: string | null
+  saldo_vivo_actual_total: number
+  saldo_reservado_total: number
+  saldo_disponible_total: number
 }
 
 export type AsignacionViveroResumen = {
@@ -407,6 +418,41 @@ export class LotesViveroService {
       response,
       'Error al registrar el despacho.',
     )
+  }
+
+  static async listStockEspecies(): Promise<EspecieStockVivero[]> {
+    const response = await listStockEspeciesApi()
+    const payload = await this.parseJsonResponse<ApiEnvelope<unknown>>(
+      response,
+      'Error al cargar el stock por especie.',
+    )
+    const rawList = Array.isArray(payload.data) ? payload.data : []
+    return rawList.flatMap((raw) => {
+      if (!raw || typeof raw !== 'object') return []
+      const item = raw as Record<string, unknown>
+      const plantaId = Number(item.planta_id)
+      if (!Number.isFinite(plantaId) || plantaId <= 0) return []
+      const toNumber = (value: unknown) => {
+        const parsed = Number(value)
+        return Number.isFinite(parsed) ? parsed : 0
+      }
+      const especie = typeof item.especie === 'string' ? item.especie : ''
+      const nombreCientifico =
+        typeof item.nombre_cientifico === 'string' ? item.nombre_cientifico : ''
+      const nombreComun =
+        typeof item.nombre_comun_principal === 'string' ? item.nombre_comun_principal : null
+      return [
+        {
+          planta_id: plantaId,
+          especie,
+          nombre_cientifico: nombreCientifico,
+          nombre_comun_principal: nombreComun,
+          saldo_vivo_actual_total: toNumber(item.saldo_vivo_actual_total),
+          saldo_reservado_total: toNumber(item.saldo_reservado_total),
+          saldo_disponible_total: toNumber(item.saldo_disponible_total),
+        },
+      ]
+    })
   }
 
   static async listSubcampanias(): Promise<SubcampaniaResumen[]> {

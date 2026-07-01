@@ -2,6 +2,7 @@ export { default as PlantacionDashboardScreen } from './screens/PlantacionDashbo
 export { default as CrearCampanaScreen } from './screens/CrearCampanaScreen'
 export { default as CrearSubcampanaScreen } from './screens/CrearSubcampanaScreen'
 export { default as CampaniaAdminDashboardScreen } from './screens/CampaniaAdminDashboardScreen'
+export { default as DetalleSubcampanaScreen } from './screens/DetalleSubcampanaScreen'
 
 export type {
   Campania,

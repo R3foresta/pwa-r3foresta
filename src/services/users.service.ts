@@ -1,4 +1,4 @@
-import { listUsersByRoleApi } from '../api/users.api'
+import { listUsersApi, listUsersByRoleApi } from '../api/users.api'
 import type { UsuarioResumen, UsuarioRol } from '../types/users'
 
 type ApiEnvelope<T> = {
@@ -61,6 +61,20 @@ export class UsersService {
     }
 
     const response = await listUsersByRoleApi(rol, query)
+    const payload = await parseJsonResponse<ApiEnvelope<UsuarioResumen[]> | UsuarioResumen[]>(
+      response,
+      'Error al cargar usuarios.',
+    )
+
+    if (Array.isArray(payload)) {
+      return payload
+    }
+
+    return Array.isArray(payload.data) ? payload.data : []
+  }
+
+  static async listUsers(query?: string, rol?: UsuarioRol | string): Promise<UsuarioResumen[]> {
+    const response = await listUsersApi({ q: query, rol })
     const payload = await parseJsonResponse<ApiEnvelope<UsuarioResumen[]> | UsuarioResumen[]>(
       response,
       'Error al cargar usuarios.',

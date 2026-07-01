@@ -10,6 +10,15 @@ export type SubcampaniaPolygonLocationDraft = {
   fuente: 'GPS_MOVIL' | 'PRUEBA'
 }
 
+export type SubcampaniaEspecieDraft = {
+  planta_id: number
+  especie: string
+  nombre_cientifico: string
+  nombre_comun_principal?: string | null
+  saldo_disponible: number
+  pct: number
+}
+
 export type SubcampaniaBaseDraft = {
   draft_id: string
   subcampania_id?: number | null
@@ -25,6 +34,9 @@ export type SubcampaniaBaseDraft = {
   area_hectareas_estimada?: number | null
   ubicacion_poligono?: SubcampaniaPolygonLocationDraft | null
   poligono_backend_sincronizado_at?: string | null
+  meta_total_arboles?: number | null
+  especies?: SubcampaniaEspecieDraft[]
+  equipo_operarios?: UsuarioResumen[]
   created_at: string
   updated_at: string
 }
@@ -103,6 +115,49 @@ function normalizePolygonLocation(value: unknown): SubcampaniaPolygonLocationDra
   }
 }
 
+function normalizeEquipoOperariosDraft(value: unknown): UsuarioResumen[] | undefined {
+  if (!Array.isArray(value)) return undefined
+  return value.flatMap((raw) => {
+    if (!isRecord(raw)) return []
+    const id = Number(raw.id)
+    if (!Number.isFinite(id) || id <= 0) return []
+    return [
+      {
+        id,
+        nombre: typeof raw.nombre === 'string' ? raw.nombre : '',
+        rol: typeof raw.rol === 'string' ? raw.rol : 'OPERARIO',
+        apellido: typeof raw.apellido === 'string' ? raw.apellido : null,
+        username: typeof raw.username === 'string' ? raw.username : null,
+        correo: typeof raw.correo === 'string' ? raw.correo : null,
+      },
+    ]
+  })
+}
+
+function normalizeEspeciesDraft(value: unknown): SubcampaniaEspecieDraft[] | undefined {
+  if (!Array.isArray(value)) return undefined
+  return value.flatMap((raw) => {
+    if (!isRecord(raw)) return []
+    const plantaId = Number(raw.planta_id)
+    const pct = Number(raw.pct)
+    const saldo = Number(raw.saldo_disponible)
+    if (!Number.isFinite(plantaId) || plantaId <= 0) return []
+    if (!Number.isFinite(pct)) return []
+    return [
+      {
+        planta_id: plantaId,
+        especie: typeof raw.especie === 'string' ? raw.especie : '',
+        nombre_cientifico:
+          typeof raw.nombre_cientifico === 'string' ? raw.nombre_cientifico : '',
+        nombre_comun_principal:
+          typeof raw.nombre_comun_principal === 'string' ? raw.nombre_comun_principal : null,
+        saldo_disponible: Number.isFinite(saldo) ? saldo : 0,
+        pct: Math.max(0, Math.min(100, Math.round(pct))),
+      },
+    ]
+  })
+}
+
 function normalizeSubcampaniaBaseDraft(
   value: unknown,
   campaniaId: number,
@@ -131,6 +186,9 @@ function normalizeSubcampaniaBaseDraft(
   const rawAreaHectareasEstimada = normalizeNullableNumber(value.area_hectareas_estimada)
   const rawUbicacionPoligono = normalizePolygonLocation(value.ubicacion_poligono)
   const rawPoligonoBackendSincronizadoAt = value.poligono_backend_sincronizado_at
+  const rawMetaTotalArboles = normalizeNullableNumber(value.meta_total_arboles)
+  const rawEspecies = normalizeEspeciesDraft(value.especies)
+  const rawEquipoOperarios = normalizeEquipoOperariosDraft(value.equipo_operarios)
 
   return {
     draft_id:
@@ -161,6 +219,9 @@ function normalizeSubcampaniaBaseDraft(
       typeof rawPoligonoBackendSincronizadoAt === 'string'
         ? rawPoligonoBackendSincronizadoAt
         : undefined,
+    meta_total_arboles: rawMetaTotalArboles,
+    especies: rawEspecies,
+    equipo_operarios: rawEquipoOperarios,
     created_at: typeof rawCreatedAt === 'string' ? rawCreatedAt : now,
     updated_at: typeof rawUpdatedAt === 'string' ? rawUpdatedAt : now,
   }
@@ -230,5 +291,22 @@ export function saveSubcampaniaBaseDraft(draft: SubcampaniaBaseDraft): void {
   saveDraft<SubcampaniaBaseDraft[]>(
     getSubcampaniaBaseDraftsKey(draft.campania_id),
     sortDrafts(nextDrafts),
+  )
+}
+
+export function clearSubcampaniaBaseDraft(campaniaId: number, draftId: string): void {
+  const currentDrafts = loadSubcampaniaBaseDrafts(campaniaId)
+  const remainingDrafts = currentDrafts.filter((draft) => draft.draft_id !== draftId)
+
+  if (remainingDrafts.length === currentDrafts.length) return
+
+  if (remainingDrafts.length === 0) {
+    clearDraft(getSubcampaniaBaseDraftsKey(campaniaId))
+    return
+  }
+
+  saveDraft<SubcampaniaBaseDraft[]>(
+    getSubcampaniaBaseDraftsKey(campaniaId),
+    sortDrafts(remainingDrafts),
   )
 }
