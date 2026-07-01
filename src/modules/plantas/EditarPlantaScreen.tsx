@@ -216,7 +216,7 @@ function EditarPlantaScreen() {
       <ConfirmDialog
         open={confirmOpen}
         title="¿Desactivar esta especie?"
-        description={`"${planta.nombre_comun_principal || planta.especie}" dejará de aparecer en los selectores. Podrás reactivarla más adelante.`}
+        description={`"${planta.nombre_comun_principal || planta.especie}" dejará de aparecer en los selectores si no tiene recolecciones o lotes de vivero en proceso. Podrás reactivarla más adelante.`}
         confirmLabel="Sí, desactivar"
         cancelLabel="Cancelar"
         variant="danger"
