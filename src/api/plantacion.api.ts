@@ -1,7 +1,9 @@
 import type {
+  CancelarSubcampaniaInput,
   CreateCampaniaInput,
   CreateSubcampaniaInput,
   EquipoMemberInput,
+  PutPlanInput,
   SetSubcampaniaPoligonoInput,
   UpdateSubcampaniaInput,
 } from '../modules/plantacion/types/contracts'
@@ -162,5 +164,39 @@ export async function activarSubcampaniaApi(
   return fetch(`${API_BASE_URL}/subcampanias/${subcampaniaId}/activar`, {
     method: 'POST',
     headers: getAuthHeaders({ authId, includeContentType: false }),
+  })
+}
+
+export async function getSubcampaniaPlanApi(
+  subcampaniaId: number,
+  authId?: string,
+): Promise<Response> {
+  return fetch(`${API_BASE_URL}/subcampanias/${subcampaniaId}/plan`, {
+    method: 'GET',
+    headers: getAuthHeaders({ authId, includeContentType: false }),
+  })
+}
+
+export async function putSubcampaniaPlanApi(
+  subcampaniaId: number,
+  input: PutPlanInput,
+  authId?: string,
+): Promise<Response> {
+  return fetch(`${API_BASE_URL}/subcampanias/${subcampaniaId}/plan`, {
+    method: 'PUT',
+    headers: getAuthHeaders({ authId, includeContentType: true }),
+    body: JSON.stringify(input),
+  })
+}
+
+export async function cancelarSubcampaniaApi(
+  subcampaniaId: number,
+  input: CancelarSubcampaniaInput,
+  authId?: string,
+): Promise<Response> {
+  return fetch(`${API_BASE_URL}/subcampanias/${subcampaniaId}/cancelar`, {
+    method: 'POST',
+    headers: getAuthHeaders({ authId, includeContentType: true }),
+    body: JSON.stringify(input),
   })
 }

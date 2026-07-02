@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Icon from '../../../components/Icon'
 import { PlantacionService } from '../../../services/plantacion.service'
-import type { Campania } from '../types/contracts'
+import type { Campania, PlanEspecieMetaInput } from '../types/contracts'
 import {
   loadSubcampaniaBaseDraft,
   saveSubcampaniaBaseDraft,
@@ -52,6 +52,52 @@ function getAutomaticPctShares(
   )
 }
 
+// Reparte el residuo del `floor` para que SUM(cantidad_objetivo) === meta cuando SUM(pct) === 100.
+function buildPlanMetasPayload(
+  meta: number,
+  especies: SubcampaniaEspecieDraft[],
+): PlanEspecieMetaInput[] {
+  const withPct = especies.filter((especie) => especie.pct > 0)
+  if (withPct.length === 0) return []
+
+  const draft = withPct.map((especie) => ({
+    planta_id: especie.planta_id,
+    porcentaje_objetivo: especie.pct,
+    cantidad_objetivo: Math.max(1, Math.floor((meta * especie.pct) / 100)),
+  }))
+
+  const totalPct = draft.reduce((acc, item) => acc + item.porcentaje_objetivo, 0)
+  if (totalPct !== 100) return draft
+
+  const suma = draft.reduce((acc, item) => acc + item.cantidad_objetivo, 0)
+  let residuo = meta - suma
+
+  const indices = draft
+    .map((_, index) => index)
+    .sort((a, b) => draft[b].porcentaje_objetivo - draft[a].porcentaje_objetivo)
+
+  let cursor = 0
+  while (residuo > 0 && indices.length > 0) {
+    draft[indices[cursor % indices.length]].cantidad_objetivo += 1
+    residuo -= 1
+    cursor += 1
+  }
+
+  const reversed = [...indices].reverse()
+  cursor = 0
+  while (residuo < 0 && reversed.length > 0) {
+    const idx = reversed[cursor % reversed.length]
+    if (draft[idx].cantidad_objetivo > 1) {
+      draft[idx].cantidad_objetivo -= 1
+      residuo += 1
+    }
+    cursor += 1
+    if (cursor > reversed.length * 200) break
+  }
+
+  return draft
+}
+
 function SubcampaniaEspeciesStep({
   campania,
   draftId,
@@ -70,6 +116,42 @@ function SubcampaniaEspeciesStep({
   const [pickerOpen, setPickerOpen] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const planLoadRef = useRef(0)
+
+  // Si ya existe la subcampaña en backend, precargar el plan de metas por especie.
+  // El GET /plan trae planta_id/especie/nombre_cientifico; se mergean con el draft
+  // local por planta_id para preservar saldo_disponible y nombre_comun_principal.
+  useEffect(() => {
+    const subcampaniaId = initialDraft?.subcampania_id
+    if (!subcampaniaId) return
+
+    const requestId = ++planLoadRef.current
+
+    PlantacionService.getSubcampaniaPlan(subcampaniaId, authId)
+      .then((plan) => {
+        if (requestId !== planLoadRef.current) return
+        if (!plan.metas || plan.metas.length === 0) return
+
+        setEspecies((current) => {
+          const byId = new Map(current.map((e) => [e.planta_id, e]))
+          return plan.metas.map((meta) => {
+            const local = byId.get(meta.planta_id)
+            return {
+              planta_id: meta.planta_id,
+              especie: local?.especie ?? meta.planta?.especie ?? '',
+              nombre_cientifico:
+                local?.nombre_cientifico ?? meta.planta?.nombre_cientifico ?? '',
+              nombre_comun_principal: local?.nombre_comun_principal ?? null,
+              saldo_disponible: local?.saldo_disponible ?? 0,
+              pct: clampPct(meta.porcentaje_objetivo),
+            }
+          })
+        })
+      })
+      .catch(() => {
+        // Silencioso: si el GET falla se sigue con el draft local; el usuario reintenta al guardar.
+      })
+  }, [authId, initialDraft?.subcampania_id])
 
   const total = useMemo(() => sumPct(especies), [especies])
   const balanced = total === 100
@@ -201,29 +283,30 @@ function SubcampaniaEspeciesStep({
     try {
       setSubmitting(true)
 
-      // TODO: El mix porcentual de especies aún no se persiste en backend.
-      // Actualmente la composición real se genera mediante reservas de vivero:
-      // POST /lotes-vivero/:loteId/reservas. Por ahora esta selección queda
-      // como planificación local/preselección visual.
       const currentDraft = loadSubcampaniaBaseDraft(campania.id, draftId) ?? initialDraft
 
       let workingDraft = persistDraftLocally(currentDraft, {})
 
       const coordinadorNuevo = initialDraft.coordinador
-      const subcampaniaId = workingDraft.subcampania_id ?? null
+      let subcampaniaId = workingDraft.subcampania_id ?? null
 
       if (subcampaniaId) {
-        await PlantacionService.updateSubcampania(
-          subcampaniaId,
-          {
-            nombre: workingDraft.nombre,
-            meta_total_arboles: meta,
-            zona_id: workingDraft.comunidad?.id,
-            fecha_estimada_inicio: workingDraft.fecha_estimada_inicio || undefined,
-            fecha_estimada_fin: workingDraft.fecha_estimada_fin || undefined,
-          },
-          authId,
-        )
+        try {
+          await PlantacionService.updateSubcampania(
+            subcampaniaId,
+            {
+              nombre: workingDraft.nombre,
+              meta_total_arboles: meta,
+              zona_id: workingDraft.comunidad?.id,
+              fecha_estimada_inicio: workingDraft.fecha_estimada_inicio || undefined,
+              fecha_estimada_fin: workingDraft.fecha_estimada_fin || undefined,
+            },
+            authId,
+          )
+        } catch (updateError) {
+          const msg = updateError instanceof Error ? updateError.message : ''
+          if (msg !== 'No hay cambios para actualizar.') throw updateError
+        }
 
         const equipoActual = await PlantacionService.getSubcampaniaEquipo(subcampaniaId, authId)
         const coordinadorPersistido = equipoActual.find((member) => member.rol === 'COORDINADOR')
@@ -247,12 +330,20 @@ function SubcampaniaEspeciesStep({
         )
 
         workingDraft = persistDraftLocally(workingDraft, { subcampania_id: created.id })
+        subcampaniaId = created.id
 
         await PlantacionService.setSubcampaniaEquipo(
           created.id,
           [{ usuario_id: coordinadorNuevo.id, rol: 'COORDINADOR' }],
           authId,
         )
+      }
+
+      // Plan por especie: enviar solo las especies con pct>0. Backend valida
+      // consistencia total (SUM(%)=100, SUM(cantidad)=meta) al activar, no aquí.
+      const planPayload = buildPlanMetasPayload(meta, especies)
+      if (subcampaniaId && planPayload.length > 0) {
+        await PlantacionService.putSubcampaniaPlan(subcampaniaId, planPayload, authId)
       }
 
       if (action === 'draft') {
@@ -263,14 +354,6 @@ function SubcampaniaEspeciesStep({
       onNext()
     } catch (saveError) {
       const msg = saveError instanceof Error ? saveError.message : ''
-      if (msg === 'No hay cambios para actualizar.') {
-        if (action === 'draft') {
-          onDraftSaved()
-          return
-        }
-        onNext()
-        return
-      }
       setSubmitError(msg || 'No se pudo guardar la subcampaña.')
     } finally {
       setSubmitting(false)

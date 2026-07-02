@@ -40,6 +40,7 @@ export type Campania = {
   zonas_count?: number | null
   zonas?: string[]
   meta_arboles?: number | null
+  meta_planificada_campania?: number | null
   arboles_plantados?: number | null
   hectareas?: number | null
   supervivencia_pct?: number | null
@@ -122,6 +123,9 @@ export type Subcampania = {
   fase_mantenimiento?: FaseMantenimientoSubcampania | null
   poligono?: GeoJsonPolygon | null
   saldo_vivo_actual?: number | null
+  total_plantado_inicial?: number | null
+  total_repuesto?: number | null
+  total_muerto_acumulado?: number | null
   codigo_trazabilidad?: string | null
   created_at: string
   updated_at?: string | null
@@ -151,6 +155,50 @@ export type ComposicionReservadaItem = {
   especie?: string | null
   nombre_cientifico?: string | null
   saldo_reservado: number
+}
+
+export type PlanEspecieMetaInput = {
+  planta_id: number
+  porcentaje_objetivo: number
+  cantidad_objetivo: number
+}
+
+export type PlanEspecieMeta = PlanEspecieMetaInput & {
+  planta?: {
+    id: number
+    especie?: string | null
+    nombre_cientifico?: string | null
+  } | null
+}
+
+export type GetPlanData = {
+  subcampania_id: number
+  estado: EstadoSubcampania
+  meta_total_arboles: number
+  metas: PlanEspecieMeta[]
+}
+
+export type PutPlanInput = {
+  metas: PlanEspecieMetaInput[]
+}
+
+export type PutPlanData = {
+  message?: string
+  subcampania_id: number
+  metas: PlanEspecieMetaInput[]
+}
+
+export type CancelarSubcampaniaInput = {
+  motivo: string
+}
+
+export type CancelarSubcampaniaData = {
+  message?: string
+  id: number
+  estado: EstadoSubcampania
+  deleted_at?: string | null
+  deleted_by?: number | null
+  motivo?: string | null
 }
 
 export type ActivarSubcampaniaData = {

@@ -468,6 +468,16 @@ function CampaniaHeader({
             <Icon name="shield" className="h-3 w-3" />
             {activeCount} activas
           </span>
+          {Number.isFinite(campania.meta_planificada_campania) &&
+            Number(campania.meta_planificada_campania) > 0 && (
+              <span
+                title="Suma de metas de subcampañas activas y borradores (excluye canceladas)."
+                className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-[10.5px] font-extrabold tracking-wide ring-1 ring-white/20"
+              >
+                <Icon name="file" className="h-3 w-3" />
+                Planificado: {Number(campania.meta_planificada_campania).toLocaleString('es-BO')}
+              </span>
+            )}
         </div>
       </div>
     </header>

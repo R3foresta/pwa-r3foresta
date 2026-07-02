@@ -1,27 +1,34 @@
 import {
   activarSubcampaniaApi,
+  cancelarSubcampaniaApi,
   createCampaniaApi,
   createSubcampaniaApi,
   deleteSubcampaniaEquipoMemberApi,
   getCampaniaApi,
   getSubcampaniaApi,
   getSubcampaniaEquipoApi,
+  getSubcampaniaPlanApi,
   listCampaniasApi,
   listSubcampaniasByCampaniaApi,
   patchSubcampaniaApi,
   postSubcampaniaEquipoApi,
+  putSubcampaniaPlanApi,
   setSubcampaniaPoligonoApi,
 } from '../api/plantacion.api'
 import { OrganizacionesService } from './organizaciones.service'
 import type {
   ActivarSubcampaniaData,
   ApiEnvelope,
+  CancelarSubcampaniaData,
   Campania,
   CreateCampaniaInput,
   CreateSubcampaniaInput,
   EquipoMember,
   EquipoMemberInput,
   GeoJsonPolygon,
+  GetPlanData,
+  PlanEspecieMetaInput,
+  PutPlanData,
   RolEnSubcampania,
   SetEquipoData,
   SetSubcampaniaPoligonoData,
@@ -351,6 +358,75 @@ export class PlantacionService {
     }
     return payload.data
   }
+
+  static async getSubcampaniaPlan(
+    subcampaniaId: number,
+    authId?: string,
+  ): Promise<GetPlanData> {
+    if (!Number.isFinite(subcampaniaId) || subcampaniaId <= 0) {
+      throw new Error('ID de subcampaña inválido.')
+    }
+    const response = await getSubcampaniaPlanApi(subcampaniaId, authId)
+    const payload = await parseJsonResponse<ApiEnvelope<GetPlanData>>(
+      response,
+      'Error al cargar el plan de metas por especie.',
+    )
+    if (!payload.data) {
+      throw new Error('No se recibió el plan de metas.')
+    }
+    return payload.data
+  }
+
+  static async putSubcampaniaPlan(
+    subcampaniaId: number,
+    metas: PlanEspecieMetaInput[],
+    authId?: string,
+  ): Promise<PutPlanData> {
+    if (!Number.isFinite(subcampaniaId) || subcampaniaId <= 0) {
+      throw new Error('ID de subcampaña inválido.')
+    }
+    const cleanMetas = validatePlanMetas(metas)
+    const response = await putSubcampaniaPlanApi(
+      subcampaniaId,
+      { metas: cleanMetas },
+      authId,
+    )
+    const payload = await parseJsonResponse<ApiEnvelope<PutPlanData>>(
+      response,
+      'Error al guardar el plan de metas.',
+    )
+    if (!payload.data) {
+      throw new Error('No se recibió confirmación del plan guardado.')
+    }
+    return payload.data
+  }
+
+  static async cancelarSubcampania(
+    subcampaniaId: number,
+    motivo: string,
+    authId?: string,
+  ): Promise<CancelarSubcampaniaData> {
+    if (!Number.isFinite(subcampaniaId) || subcampaniaId <= 0) {
+      throw new Error('ID de subcampaña inválido.')
+    }
+    const cleanMotivo = motivo.trim().replace(/\s+/g, ' ')
+    if (cleanMotivo.length < 3 || cleanMotivo.length > 1000) {
+      throw new Error('El motivo debe tener entre 3 y 1000 caracteres.')
+    }
+    const response = await cancelarSubcampaniaApi(
+      subcampaniaId,
+      { motivo: cleanMotivo },
+      authId,
+    )
+    const payload = await parseJsonResponse<ApiEnvelope<CancelarSubcampaniaData>>(
+      response,
+      'Error al cancelar la subcampaña.',
+    )
+    if (!payload.data) {
+      throw new Error('No se recibió confirmación de la cancelación.')
+    }
+    return payload.data
+  }
 }
 
 function validateCreateSubcampaniaInput(
@@ -446,6 +522,40 @@ function validateUpdateSubcampaniaInput(
   }
 
   return cleanInput
+}
+
+function validatePlanMetas(metas: PlanEspecieMetaInput[]): PlanEspecieMetaInput[] {
+  if (!Array.isArray(metas) || metas.length === 0) {
+    throw new Error('Agrega al menos una especie al plan de metas.')
+  }
+
+  const seen = new Set<number>()
+
+  return metas.map((meta) => {
+    const plantaId = Number(meta.planta_id)
+    const pct = Number(meta.porcentaje_objetivo)
+    const cantidad = Number(meta.cantidad_objetivo)
+
+    if (!Number.isFinite(plantaId) || plantaId <= 0) {
+      throw new Error('Especie inválida en el plan de metas.')
+    }
+    if (seen.has(plantaId)) {
+      throw new Error('No se puede repetir una especie en el plan de metas.')
+    }
+    seen.add(plantaId)
+    if (!Number.isFinite(pct) || pct <= 0 || pct > 100) {
+      throw new Error('El porcentaje por especie debe estar entre 1 y 100.')
+    }
+    if (!Number.isFinite(cantidad) || cantidad <= 0) {
+      throw new Error('La cantidad por especie debe ser mayor a 0.')
+    }
+
+    return {
+      planta_id: plantaId,
+      porcentaje_objetivo: pct,
+      cantidad_objetivo: Math.floor(cantidad),
+    }
+  })
 }
 
 function validateEquipoMembers(miembros: EquipoMemberInput[]): EquipoMemberInput[] {

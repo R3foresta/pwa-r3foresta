@@ -3,7 +3,12 @@ import { MapContainer, Polygon, TileLayer } from 'react-leaflet'
 import type { LatLngTuple } from 'leaflet'
 import Icon from '../../../components/Icon'
 import { PlantacionService } from '../../../services/plantacion.service'
-import type { Campania, EquipoMember, Subcampania } from '../types/contracts'
+import type {
+  ActivarSubcampaniaData,
+  Campania,
+  EquipoMember,
+  Subcampania,
+} from '../types/contracts'
 import { TIPO_CAMPANIA_LABEL } from '../types/contracts'
 import {
   clearSubcampaniaBaseDraft,
@@ -19,6 +24,7 @@ type Props = {
   authId?: string
   onBackToEquipo: () => void
   onSaved: (subcampaniaId: number) => void
+  onActivated: (subcampaniaId: number, data: ActivarSubcampaniaData) => void
 }
 
 function SubcampaniaResumenStep({
@@ -27,6 +33,7 @@ function SubcampaniaResumenStep({
   authId,
   onBackToEquipo,
   onSaved,
+  onActivated,
 }: Props) {
   const [draft] = useState(() => loadSubcampaniaBaseDraft(campania.id, draftId))
   const subcampaniaId = draft?.subcampania_id ?? null
@@ -37,6 +44,8 @@ function SubcampaniaResumenStep({
   const [loadError, setLoadError] = useState<string | null>(null)
 
   const [saving, setSaving] = useState(false)
+  const [activating, setActivating] = useState(false)
+  const [activateError, setActivateError] = useState<string | null>(null)
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false)
 
   const requestRef = useRef(0)
@@ -76,6 +85,25 @@ function SubcampaniaResumenStep({
   const handleOverlayContinue = () => {
     if (subcampaniaId) {
       onSaved(subcampaniaId)
+    }
+  }
+
+  const handleActivate = async () => {
+    if (!subcampaniaId || !subcampania || activating || saving || loading) return
+    setActivating(true)
+    setActivateError(null)
+    try {
+      const data = await PlantacionService.activarSubcampania(subcampaniaId, authId)
+      clearSubcampaniaBaseDraft(campania.id, draftId)
+      onActivated(subcampaniaId, data)
+    } catch (activateErr) {
+      setActivateError(
+        activateErr instanceof Error
+          ? activateErr.message
+          : 'No se pudo activar la subcampaña.',
+      )
+    } finally {
+      setActivating(false)
     }
   }
 
@@ -152,6 +180,27 @@ function SubcampaniaResumenStep({
         .filter(Boolean)
         .join(' / ')
     : null
+
+  // Precondiciones espejo del backend para habilitar Activar (RN-PLA-08).
+  // El plan por especie (SUM %=100 y SUM cantidad=meta) lo valida el backend
+  // al recibir POST /activar; si falta, responde 422 con el mensaje exacto.
+  const isBorrador = subcampania?.estado === 'BORRADOR'
+  const hasCoordinadorBackend = !!coordinador
+  const hasPoligonoBackend = !!subcampania?.poligono
+  const hasMetaBackend = (subcampania?.meta_total_arboles ?? 0) >= 1
+  const canActivate =
+    isBorrador && hasCoordinadorBackend && hasPoligonoBackend && hasMetaBackend
+  const activationBlockedReason = !isBorrador
+    ? subcampania
+      ? `La subcampaña está en estado ${subcampania.estado}.`
+      : 'No se pudo confirmar el estado de la subcampaña.'
+    : !hasPoligonoBackend
+      ? 'Falta definir el polígono (paso 3).'
+      : !hasCoordinadorBackend
+        ? 'Falta asignar un coordinador (paso 4).'
+        : !hasMetaBackend
+          ? 'La meta total debe ser mayor a 0.'
+          : ''
 
   return (
     <div className="relative">
@@ -359,7 +408,7 @@ function SubcampaniaResumenStep({
                   {especiesLabel}
                 </p>
                 <p className="mt-1.5 text-[10.5px] font-semibold italic text-slate-400">
-                  Planificación local — aún no reservada en vivero.
+                  Metas planificadas. Las reservas de stock se asignan tras activar.
                 </p>
               </section>
             )}
@@ -403,36 +452,55 @@ function SubcampaniaResumenStep({
 
       <div className="px-5">
         <div className="sticky bottom-0 -mx-5 bg-gradient-to-t from-[#eef2ed] via-[#eef2ed]/95 to-transparent px-5 pb-5 pt-3">
-          <div className="mb-2">
+          {activateError && (
+            <p className="mb-2 whitespace-pre-line rounded-2xl bg-red-50 px-4 py-2 text-center text-xs font-extrabold text-red-700 ring-1 ring-red-100">
+              {activateError}
+            </p>
+          )}
+          <div className="mb-2 grid grid-cols-2 gap-2">
             <button
               type="button"
               onClick={onBackToEquipo}
-              disabled={saving}
+              disabled={saving || activating}
               className="flex items-center justify-center gap-2 rounded-2xl bg-white px-3 py-3 text-sm font-extrabold text-brand-700 shadow-soft ring-1 ring-brand-100 transition hover:bg-brand-50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Icon name="arrow-left" className="h-4 w-4" />
               Atrás
             </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving || activating || loading || loadError !== null}
+              className={`flex items-center justify-center gap-2 rounded-2xl px-3 py-3 text-sm font-extrabold shadow-soft transition active:scale-[0.99] ${
+                saving || activating || loading || loadError !== null
+                  ? 'cursor-not-allowed bg-slate-200 text-slate-400'
+                  : 'bg-white text-brand-700 ring-1 ring-brand-100 hover:bg-brand-50'
+              }`}
+            >
+              <Icon name="file" className="h-4 w-4" />
+              {saving ? 'Guardado' : 'Guardar borrador'}
+            </button>
           </div>
           <button
             type="button"
-            onClick={handleSave}
-            disabled={saving || loading || loadError !== null}
+            onClick={handleActivate}
+            disabled={
+              activating || saving || loading || loadError !== null || !canActivate
+            }
             className={`flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-4 text-base font-extrabold text-white shadow-soft transition active:scale-[0.99] ${
-              saving || loading || loadError !== null
+              activating || saving || loading || loadError !== null || !canActivate
                 ? 'cursor-not-allowed bg-slate-400/70'
-                : 'bg-brand-600 hover:bg-brand-700'
+                : 'bg-emerald-600 hover:bg-emerald-700'
             }`}
           >
-            {saving ? (
-              'Guardado'
-            ) : (
-              <>
-                <Icon name="file" className="h-5 w-5" />
-                Guardar
-              </>
-            )}
+            <Icon name="check" className="h-5 w-5" />
+            {activating ? 'Activando…' : 'Activar subcampaña'}
           </button>
+          {!canActivate && !loading && !loadError && subcampania && (
+            <p className="mt-2 text-center text-[11px] font-semibold text-slate-500">
+              {activationBlockedReason}
+            </p>
+          )}
         </div>
       </div>
     </div>

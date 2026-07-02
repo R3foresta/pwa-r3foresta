@@ -9,6 +9,7 @@ import { useAuth } from '../../../contexts/AuthContext'
 import { PlantacionService } from '../../../services/plantacion.service'
 import {
   TIPO_CAMPANIA_LABEL,
+  type ActivarSubcampaniaData,
   type EquipoMember,
   type EstadoSubcampania,
   type GeoJsonPolygon,
@@ -16,6 +17,7 @@ import {
 } from '../types/contracts'
 import { formatDate, toLatLngTuple } from '../utils/subcampaniaFormatters'
 import { UserAvatar } from '../components/UserAvatar'
+import CancelarSubcampaniaModal from '../components/CancelarSubcampaniaModal'
 
 type DetailTab = 'resumen' | 'equipo' | 'mapa'
 
@@ -213,28 +215,50 @@ function BorradorActivationBanner({
   sub,
   equipo,
   campania_id,
+  onActivated,
 }: {
   sub: Subcampania
   equipo: EquipoMember[]
   campania_id: number
+  onActivated: (data: ActivarSubcampaniaData) => void
 }) {
   const navigate = useNavigate()
+  const { user } = useAuth()
+  const [activating, setActivating] = useState(false)
+  const [activationError, setActivationError] = useState<string | null>(null)
 
   const hasCoordinador = equipo.some((m) => m.rol === 'COORDINADOR')
   const hasPoligono = !!sub.poligono
   const hasMeta = sub.meta_total_arboles >= 1
+  const canActivate = hasCoordinador && hasPoligono && hasMeta
 
   const precondiciones = [
     { label: 'Polígono definido', ok: hasPoligono },
     { label: 'Coordinador asignado', ok: hasCoordinador },
     { label: `Meta de árboles ≥ 1 (${sub.meta_total_arboles.toLocaleString('es-BO')})`, ok: hasMeta },
-    { label: 'Reservas de vivero suficientes', ok: null }, // no verificable desde aquí
   ]
 
   const goToContinueWizard = () => {
     navigate(
       `/app/planting/campanias/${campania_id}/subcampanias/new?subcampaniaId=${sub.id}&step=5`,
     )
+  }
+
+  const handleActivate = async () => {
+    setActivating(true)
+    setActivationError(null)
+    try {
+      const data = await PlantacionService.activarSubcampania(sub.id, user?.auth_id)
+      onActivated(data)
+    } catch (activateError) {
+      setActivationError(
+        activateError instanceof Error
+          ? activateError.message
+          : 'No se pudo activar la subcampaña.',
+      )
+    } finally {
+      setActivating(false)
+    }
   }
 
   return (
@@ -252,7 +276,8 @@ function BorradorActivationBanner({
               Esta subcampaña está en BORRADOR
             </p>
             <p className="mt-1 text-[11px] font-semibold leading-snug text-amber-900">
-              Completa los requisitos antes de activarla.
+              Completa los requisitos antes de activarla. El stock de vivero se puede asignar
+              después.
             </p>
           </div>
         </div>
@@ -260,24 +285,14 @@ function BorradorActivationBanner({
         <ul className="mt-3 space-y-1.5">
           {precondiciones.map((p) => (
             <li key={p.label} className="flex items-center gap-2">
-              {p.ok === true && (
+              {p.ok ? (
                 <Icon name="check" className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
-              )}
-              {p.ok === false && (
+              ) : (
                 <Icon name="x" className="h-3.5 w-3.5 shrink-0 text-red-500" />
-              )}
-              {p.ok === null && (
-                <span className="h-3.5 w-3.5 shrink-0 text-center text-[11px] font-extrabold leading-none text-slate-400">
-                  —
-                </span>
               )}
               <span
                 className={`text-[11.5px] font-bold leading-snug ${
-                  p.ok === true
-                    ? 'text-emerald-800'
-                    : p.ok === false
-                      ? 'text-red-800'
-                      : 'text-slate-500'
+                  p.ok ? 'text-emerald-800' : 'text-red-800'
                 }`}
               >
                 {p.label}
@@ -287,14 +302,35 @@ function BorradorActivationBanner({
         </ul>
       </div>
 
-      <button
-        type="button"
-        onClick={goToContinueWizard}
-        className="flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-600 px-4 py-3.5 text-sm font-extrabold text-white shadow-soft transition hover:bg-brand-700 active:scale-[0.99]"
-      >
-        <Icon name="chevron-right" className="h-4 w-4" />
-        Continuar configurando
-      </button>
+      {activationError && (
+        <p className="whitespace-pre-line rounded-2xl bg-red-50 px-4 py-2 text-center text-xs font-extrabold text-red-700 ring-1 ring-red-100">
+          {activationError}
+        </p>
+      )}
+
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={goToContinueWizard}
+          disabled={activating}
+          className="flex items-center justify-center gap-2 rounded-2xl bg-white px-3 py-3.5 text-sm font-extrabold text-brand-700 shadow-soft ring-1 ring-brand-100 transition hover:bg-brand-50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <Icon name="chevron-right" className="h-4 w-4" />
+          Continuar configurando
+        </button>
+        <button
+          type="button"
+          onClick={handleActivate}
+          disabled={!canActivate || activating}
+          className={`flex items-center justify-center gap-2 rounded-2xl px-4 py-3.5 text-sm font-extrabold text-white shadow-soft transition active:scale-[0.99] ${
+            !canActivate || activating
+              ? 'cursor-not-allowed bg-slate-400/70'
+              : 'bg-emerald-600 hover:bg-emerald-700'
+          }`}
+        >
+          {activating ? 'Activando…' : 'Activar'}
+        </button>
+      </div>
     </section>
   )
 }
@@ -303,13 +339,23 @@ function ResumenTab({
   sub,
   equipo,
   onTabMapa,
+  onActivated,
+  onRequestCancel,
 }: {
   sub: Subcampania
   equipo: EquipoMember[]
   onTabMapa: () => void
+  onActivated: (data: ActivarSubcampaniaData) => void
+  onRequestCancel: () => void
 }) {
   const coordinador = equipo.find((m) => m.rol === 'COORDINADOR')
   const isBorrador = sub.estado === 'BORRADOR'
+  // BORRADOR: siempre cancelable. ACTIVA: solo si no hay plantaciones registradas.
+  // Si `total_plantado_inicial` no viene del backend, la ACTIVA no expone el botón
+  // (comportamiento conservador; el backend igual protege con 409).
+  const canCancel =
+    isBorrador ||
+    (sub.estado === 'ACTIVA' && sub.total_plantado_inicial === 0)
 
   return (
     <div className="space-y-3">
@@ -477,7 +523,29 @@ function ResumenTab({
           sub={sub}
           equipo={equipo}
           campania_id={sub.campania_id}
+          onActivated={onActivated}
         />
+      )}
+
+      {canCancel && (
+        <section className="rounded-3xl bg-white p-4 shadow-soft ring-1 ring-red-100">
+          <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-red-500">
+            Zona peligrosa
+          </p>
+          <p className="mt-1 text-[12px] font-bold leading-snug text-slate-600">
+            {isBorrador
+              ? 'Podés cancelar la subcampaña mientras esté en borrador. El registro se conserva pero deja de aparecer en los listados.'
+              : 'Podés cancelar la subcampaña porque aún no hay plantaciones registradas. Si ya se plantó algo, usá el cierre FINALIZADA_PARCIAL.'}
+          </p>
+          <button
+            type="button"
+            onClick={onRequestCancel}
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-red-50 px-4 py-3 text-sm font-extrabold text-red-700 ring-1 ring-red-100 transition hover:bg-red-100 active:scale-[0.99]"
+          >
+            <Icon name="trash" className="h-4 w-4" />
+            Cancelar subcampaña
+          </button>
+        </section>
       )}
     </div>
   )
@@ -701,6 +769,10 @@ function DetalleSubcampanaScreen() {
     hasValidId ? null : 'ID de subcampaña inválido.',
   )
   const [activeTab, setActiveTab] = useState<DetailTab>('resumen')
+  const [activationNotice, setActivationNotice] = useState<string | null>(null)
+  const [cancelModalOpen, setCancelModalOpen] = useState(false)
+  const [cancelSubmitting, setCancelSubmitting] = useState(false)
+  const [cancelError, setCancelError] = useState<string | null>(null)
 
   const authId = user?.auth_id
   const requestRef = useRef(0)
@@ -757,6 +829,58 @@ function DetalleSubcampanaScreen() {
     void fetchSubcampaniaData(requestId)
   }
 
+  const handleRequestCancel = () => {
+    setCancelError(null)
+    setCancelModalOpen(true)
+  }
+
+  const handleCloseCancelModal = () => {
+    if (cancelSubmitting) return
+    setCancelModalOpen(false)
+    setCancelError(null)
+  }
+
+  const handleConfirmCancel = async (motivo: string) => {
+    if (!sub) return
+    setCancelSubmitting(true)
+    setCancelError(null)
+    try {
+      await PlantacionService.cancelarSubcampania(sub.id, motivo, authId)
+      setCancelModalOpen(false)
+      navigate(`/app/planting/campanias/${sub.campania_id}`)
+    } catch (cancelErr) {
+      setCancelError(
+        cancelErr instanceof Error
+          ? cancelErr.message
+          : 'No se pudo cancelar la subcampaña.',
+      )
+    } finally {
+      setCancelSubmitting(false)
+    }
+  }
+
+  const handleActivated = (data: ActivarSubcampaniaData) => {
+    const cobertura = data.composicion_reservada ?? []
+    const reservadoTotal = cobertura.reduce(
+      (acc, item) => acc + (Number.isFinite(item.saldo_reservado) ? item.saldo_reservado : 0),
+      0,
+    )
+    const metaTotal = sub?.meta_total_arboles ?? 0
+    let notice: string
+    if (cobertura.length === 0 || reservadoTotal === 0) {
+      notice =
+        'Subcampaña activada. Aún no hay stock reservado — podés asignar lotes de vivero cuando estén disponibles.'
+    } else if (metaTotal > 0 && reservadoTotal < metaTotal) {
+      const cobPct = Math.floor((reservadoTotal / metaTotal) * 100)
+      notice = `Subcampaña activada. Cobertura actual del stock reservado: ${cobPct}% (${reservadoTotal.toLocaleString('es-BO')} / ${metaTotal.toLocaleString('es-BO')}). Podés seguir asignando lotes.`
+    } else {
+      notice = 'Subcampaña activada con stock completo reservado.'
+    }
+    setActivationNotice(notice)
+    const requestId = ++requestRef.current
+    void fetchSubcampaniaData(requestId)
+  }
+
   return (
     <div className="relative min-h-screen bg-[#eef2ed] text-brand-700">
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-28">
@@ -809,11 +933,32 @@ function DetalleSubcampanaScreen() {
             <>
               <DetailTabs active={activeTab} onChange={setActiveTab} />
 
+              {activationNotice && (
+                <div className="flex items-start gap-3 rounded-3xl bg-emerald-50 p-4 shadow-soft ring-1 ring-emerald-100">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+                    <Icon name="check" className="h-5 w-5" />
+                  </div>
+                  <p className="min-w-0 flex-1 text-[12px] font-bold leading-snug text-emerald-900">
+                    {activationNotice}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setActivationNotice(null)}
+                    aria-label="Cerrar aviso"
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 transition hover:bg-emerald-200"
+                  >
+                    <Icon name="x" className="h-3 w-3" />
+                  </button>
+                </div>
+              )}
+
               {activeTab === 'resumen' && (
                 <ResumenTab
                   sub={sub}
                   equipo={equipo}
                   onTabMapa={() => setActiveTab('mapa')}
+                  onActivated={handleActivated}
+                  onRequestCancel={handleRequestCancel}
                 />
               )}
 
@@ -828,6 +973,15 @@ function DetalleSubcampanaScreen() {
           )}
         </main>
       </div>
+
+      <CancelarSubcampaniaModal
+        open={cancelModalOpen}
+        subcampaniaNombre={sub?.nombre ?? ''}
+        submitting={cancelSubmitting}
+        error={cancelError}
+        onClose={handleCloseCancelModal}
+        onConfirm={handleConfirmCancel}
+      />
     </div>
   )
 }

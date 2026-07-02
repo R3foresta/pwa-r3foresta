@@ -766,6 +766,9 @@ function CrearSubcampanaScreen() {
             onSaved={(subcampaniaId) =>
               navigate(`/app/planting/subcampanias/${subcampaniaId}`, { replace: true })
             }
+            onActivated={(subcampaniaId) =>
+              navigate(`/app/planting/subcampanias/${subcampaniaId}`, { replace: true })
+            }
           />
         )}
       </div>
