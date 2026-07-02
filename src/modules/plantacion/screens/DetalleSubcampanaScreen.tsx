@@ -16,8 +16,24 @@ import {
   type Subcampania,
 } from '../types/contracts'
 import { formatDate, toLatLngTuple } from '../utils/subcampaniaFormatters'
+import { loadSubcampaniaBaseDrafts } from '../utils/subcampaniaDraft'
 import { UserAvatar } from '../components/UserAvatar'
 import CancelarSubcampaniaModal from '../components/CancelarSubcampaniaModal'
+
+function buildWizardUrl(
+  campaniaId: number,
+  subcampaniaId: number,
+  step: number,
+): string {
+  const drafts = loadSubcampaniaBaseDrafts(campaniaId)
+  const existingDraft = drafts.find((d) => d.subcampania_id === subcampaniaId)
+  const params = new URLSearchParams({
+    subcampaniaId: String(subcampaniaId),
+    step: String(step),
+  })
+  if (existingDraft) params.set('draftId', existingDraft.draft_id)
+  return `/app/planting/campanias/${campaniaId}/subcampanias/new?${params.toString()}`
+}
 
 type DetailTab = 'resumen' | 'equipo' | 'mapa'
 
@@ -228,7 +244,9 @@ function BorradorActivationBanner({
   const [activationError, setActivationError] = useState<string | null>(null)
 
   const hasCoordinador = equipo.some((m) => m.rol === 'COORDINADOR')
-  const hasPoligono = !!sub.poligono
+  const localDrafts = loadSubcampaniaBaseDrafts(campania_id)
+  const localDraft = localDrafts.find((d) => d.subcampania_id === sub.id)
+  const hasPoligono = !!sub.poligono || !!localDraft?.poligono_geojson
   const hasMeta = sub.meta_total_arboles >= 1
   const canActivate = hasCoordinador && hasPoligono && hasMeta
 
@@ -239,9 +257,7 @@ function BorradorActivationBanner({
   ]
 
   const goToContinueWizard = () => {
-    navigate(
-      `/app/planting/campanias/${campania_id}/subcampanias/new?subcampaniaId=${sub.id}&step=5`,
-    )
+    navigate(buildWizardUrl(campania_id, sub.id, 5))
   }
 
   const handleActivate = async () => {
@@ -566,9 +582,7 @@ function EquipoTab({
   const isBorrador = sub.estado === 'BORRADOR'
 
   const goToEditEquipo = () => {
-    navigate(
-      `/app/planting/campanias/${sub.campania_id}/subcampanias/new?subcampaniaId=${sub.id}&step=4`,
-    )
+    navigate(buildWizardUrl(sub.campania_id, sub.id, 4))
   }
 
   return (
@@ -680,11 +694,7 @@ function MapaTab({
         {isBorrador && (
           <button
             type="button"
-            onClick={() =>
-              navigate(
-                `/app/planting/campanias/${campania_id}/subcampanias/new?subcampaniaId=${sub.id}&step=3`,
-              )
-            }
+            onClick={() => navigate(buildWizardUrl(campania_id, sub.id, 3))}
             className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-extrabold text-white shadow-soft transition hover:bg-brand-700"
           >
             <Icon name="map" className="h-4 w-4" />

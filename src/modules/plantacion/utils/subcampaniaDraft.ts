@@ -239,8 +239,13 @@ export function createSubcampaniaDraftId(): string {
   return `draft-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
 }
 
+const SUBCAMPANIA_DRAFT_TTL_MS = 30 * 24 * 60 * 60 * 1000
+
 export function loadSubcampaniaBaseDrafts(campaniaId: number): SubcampaniaBaseDraft[] {
-  const storedDrafts = loadDraft<unknown>(getSubcampaniaBaseDraftsKey(campaniaId))
+  const storedDrafts = loadDraft<unknown>(
+    getSubcampaniaBaseDraftsKey(campaniaId),
+    { ttlMs: SUBCAMPANIA_DRAFT_TTL_MS },
+  )
   const normalizedDrafts = Array.isArray(storedDrafts)
     ? storedDrafts
         .map((draft, index) =>
@@ -254,7 +259,10 @@ export function loadSubcampaniaBaseDrafts(campaniaId: number): SubcampaniaBaseDr
   }
 
   const legacyDraft = normalizeSubcampaniaBaseDraft(
-    loadDraft<unknown>(getLegacySubcampaniaBaseDraftKey(campaniaId)),
+    loadDraft<unknown>(
+      getLegacySubcampaniaBaseDraftKey(campaniaId),
+      { ttlMs: SUBCAMPANIA_DRAFT_TTL_MS },
+    ),
     campaniaId,
     `legacy-${campaniaId}`,
   )

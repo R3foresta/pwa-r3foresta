@@ -633,7 +633,7 @@ function CrearSubcampanaScreen() {
           fecha_estimada_inicio: subData.fecha_estimada_inicio ?? '',
           fecha_estimada_fin: subData.fecha_estimada_fin ?? '',
           meta_total_arboles: subData.meta_total_arboles ?? null,
-          poligono_geojson: subData.poligono ?? null,
+          ...(subData.poligono != null ? { poligono_geojson: subData.poligono } : {}),
           created_at: now,
           updated_at: now,
         })
@@ -656,13 +656,6 @@ function CrearSubcampanaScreen() {
 
   const goToDashboard = () => {
     navigate(dashboardPath, { state: campania ? { campania } : undefined })
-  }
-
-  const clearDraftAndGoToDashboard = () => {
-    if (campania) {
-      clearSubcampaniaBaseDraft(campania.id, draftId)
-    }
-    goToDashboard()
   }
 
   const clearDraftAndGoToSubcampania = (subcampaniaId: number) => {
@@ -760,7 +753,7 @@ function CrearSubcampanaScreen() {
             campania={campania}
             draftId={draftId}
             authId={authId}
-            onDraftSaved={clearDraftAndGoToDashboard}
+            onDraftSaved={goToDashboard}
             onBackToBase={() => goToStep(1)}
             onNext={() => goToStep(3)}
           />
@@ -772,7 +765,7 @@ function CrearSubcampanaScreen() {
             campania={campania}
             draftId={draftId}
             authId={authId}
-            onDraftSaved={clearDraftAndGoToDashboard}
+            onDraftSaved={goToDashboard}
             onBackToBase={() => goToStep(2)}
             onNext={() => goToStep(4)}
           />
@@ -784,7 +777,7 @@ function CrearSubcampanaScreen() {
             campania={campania}
             draftId={draftId}
             authId={authId}
-            onDraftSaved={clearDraftAndGoToDashboard}
+            onDraftSaved={goToDashboard}
             onBackToPolygon={() => goToStep(3)}
             onNext={() => goToStep(5)}
           />

@@ -186,7 +186,7 @@ function SubcampaniaResumenStep({
   // al recibir POST /activar; si falta, responde 422 con el mensaje exacto.
   const isBorrador = subcampania?.estado === 'BORRADOR'
   const hasCoordinadorBackend = !!coordinador
-  const hasPoligonoBackend = !!subcampania?.poligono
+  const hasPoligonoBackend = !!subcampania?.poligono || !!draft.poligono_geojson
   const hasMetaBackend = (subcampania?.meta_total_arboles ?? 0) >= 1
   const canActivate =
     isBorrador && hasCoordinadorBackend && hasPoligonoBackend && hasMetaBackend
