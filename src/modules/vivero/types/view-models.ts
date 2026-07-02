@@ -23,6 +23,7 @@ export interface ViveroLotCardData {
   saldoAsignadoTotal?: number
   saldoVivoDisponibleAsignacion?: number
   cantidadAsignacionesActivas?: number
+  puedeDescartarPreEmbolsado: boolean
 }
 
 export interface ViveroLotDetailView {
@@ -57,6 +58,7 @@ export interface ViveroLotDetailView {
   saldoAsignadoTotal?: number
   saldoVivoDisponibleAsignacion?: number
   cantidadAsignacionesActivas?: number
+  puedeDescartarPreEmbolsado: boolean
 }
 
 export interface ViveroEventPhoto {
@@ -75,6 +77,7 @@ export interface ViveroLotEventView {
   hora: string | null
   responsableNombre: string
   cantidad?: number | null
+  unidadMedidaEvento?: UnidadMedidaVivero | null
   saldoAntes?: number | null
   saldoDespues?: number | null
   observacion?: string | null

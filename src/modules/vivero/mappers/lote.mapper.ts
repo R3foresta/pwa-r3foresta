@@ -1,4 +1,4 @@
-import type { EvidenciaDto, LoteViveroItem } from '../types/contracts'
+import type { EvidenciaDto, LoteViveroDetalle, LoteViveroItem } from '../types/contracts'
 import type { ViveroLotCardData, ViveroLotDetailView } from '../types/view-models'
 import type { TimelineEventDto, TipoEventoVivero } from '../types/contracts'
 import type { ViveroLotEventView } from '../types/view-models'
@@ -6,6 +6,7 @@ import type { ViveroLotEventView } from '../types/view-models'
 const VALID_KINDS = new Set<TipoEventoVivero>([
   'INICIO',
   'EMBOLSADO',
+  'DESCARTE_PRE_EMBOLSADO',
   'ADAPTABILIDAD',
   'MERMA',
   'DESPACHO',
@@ -59,6 +60,25 @@ function getLotSpecies(lot: LoteViveroItem): string {
   )
 }
 
+function getUltimoEventoPorTipo(
+  lot: LoteViveroItem,
+): LoteViveroDetalle['ultimo_evento_por_tipo'] | undefined {
+  return 'ultimo_evento_por_tipo' in lot
+    ? (lot as LoteViveroDetalle).ultimo_evento_por_tipo
+    : undefined
+}
+
+function canDescartarPreEmbolsado(lot: LoteViveroItem): boolean {
+  const ultimoEvento = getUltimoEventoPorTipo(lot)
+  return (
+    lot.estado_lote === 'ACTIVO' &&
+    ultimoEvento?.INICIO !== null &&
+    ultimoEvento?.INICIO !== undefined &&
+    ultimoEvento?.EMBOLSADO === null &&
+    ultimoEvento?.DESCARTE_PRE_EMBOLSADO === null
+  )
+}
+
 export function mapLoteToCardData(lot: LoteViveroItem): ViveroLotCardData {
   return {
     id: lot.id,
@@ -76,6 +96,7 @@ export function mapLoteToCardData(lot: LoteViveroItem): ViveroLotCardData {
     saldoAsignadoTotal: lot.saldo_asignado_total,
     saldoVivoDisponibleAsignacion: lot.saldo_vivo_disponible_asignacion,
     cantidadAsignacionesActivas: lot.cantidad_asignaciones_activas,
+    puedeDescartarPreEmbolsado: canDescartarPreEmbolsado(lot),
   }
 }
 
@@ -120,6 +141,7 @@ export function mapLoteToDetailView(lot: LoteViveroItem): ViveroLotDetailView {
     saldoAsignadoTotal: lot.saldo_asignado_total,
     saldoVivoDisponibleAsignacion: lot.saldo_vivo_disponible_asignacion,
     cantidadAsignacionesActivas: lot.cantidad_asignaciones_activas,
+    puedeDescartarPreEmbolsado: canDescartarPreEmbolsado(lot),
   }
 }
 
@@ -130,7 +152,9 @@ export function mapTimelineEventToView(e: TimelineEventDto): ViveroLotEventView 
 
   const cantidadRaw = typeof p?.cantidad_afectada === 'number'
     ? p.cantidad_afectada
-    : (typeof p?.plantas_vivas_iniciales === 'number' ? p.plantas_vivas_iniciales : null);
+    : (typeof p?.plantas_vivas_iniciales === 'number'
+        ? p.plantas_vivas_iniciales
+        : (typeof p?.cantidad_material_afectado === 'number' ? p.cantidad_material_afectado : null));
 
   return {
     id: e.id,
@@ -143,10 +167,17 @@ export function mapTimelineEventToView(e: TimelineEventDto): ViveroLotEventView 
     hora: null,
     responsableNombre: e.responsable_nombre || 'Operador de campo',
     cantidad: cantidadRaw,
+    unidadMedidaEvento: p?.unidad_medida_evento === 'UNIDAD' || p?.unidad_medida_evento === 'G'
+      ? p.unidad_medida_evento
+      : null,
     saldoAntes: typeof p?.saldo_vivo_antes === 'number' ? p.saldo_vivo_antes : null,
     saldoDespues: typeof p?.saldo_vivo_despues === 'number' ? p.saldo_vivo_despues : null,
     observacion: e.observaciones || null,
-    causa: (p?.causa_merma as string | undefined) || null,
+    causa:
+      (p?.causa_merma as string | undefined) ||
+      (p?.causa_descarte_pre_embolsado as string | undefined) ||
+      (p?.motivo_cierre_calculado as string | undefined) ||
+      null,
     subetapa: (p?.subetapa_destino as string | undefined) || null,
     destino: (p?.destino_tipo as string | undefined) || null,
     referencia: (p?.destino_referencia as string | undefined) || null,

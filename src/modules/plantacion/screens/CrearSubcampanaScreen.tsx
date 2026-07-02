@@ -633,6 +633,7 @@ function CrearSubcampanaScreen() {
           fecha_estimada_inicio: subData.fecha_estimada_inicio ?? '',
           fecha_estimada_fin: subData.fecha_estimada_fin ?? '',
           meta_total_arboles: subData.meta_total_arboles ?? null,
+          poligono_geojson: subData.poligono ?? null,
           created_at: now,
           updated_at: now,
         })

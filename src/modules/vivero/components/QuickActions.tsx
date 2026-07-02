@@ -5,49 +5,57 @@ import type { ViveroLotDetailView } from '../types/view-models'
 
 interface QuickActionsProps {
   detail: ViveroLotDetailView
-  onJumpEvidencia: () => void 
+  onJumpEvidencia: () => void
 }
 
 export default function QuickActions({ detail, onJumpEvidencia }: QuickActionsProps) {
   const navigate = useNavigate()
   const closed = detail.estadoLote === 'FINALIZADO'
   const yaEmbolsado = detail.plantasVivasIniciales !== null;
+  const puedeDescartarPreEmbolsado = detail.puedeDescartarPreEmbolsado
 
   const actions = [
-    ...(!yaEmbolsado ? [{ 
-      key: 'embolsado', 
-      label: 'Embolsado', 
-      icon: 'box' as IconName, 
-      onClick: () => navigate(`/app/vivero/${detail.id}/event/new`), 
-      disabled: false 
+    ...(!yaEmbolsado ? [{
+      key: 'embolsado',
+      label: 'Embolsado',
+      icon: 'box' as IconName,
+      onClick: () => navigate(`/app/vivero/${detail.id}/event/embolsado`),
+      disabled: false
     }] : []),
-    { 
-      key: 'merma', 
-      label: 'Merma', 
-      icon: 'loss' as IconName, 
+    ...(puedeDescartarPreEmbolsado ? [{
+      key: 'descarte-pre-embolsado',
+      label: 'Descarte',
+      icon: 'trash' as IconName,
+      onClick: () => navigate(`/app/vivero/${detail.id}/event/descarte-pre-embolsado`),
+      disabled: false,
+    }] : []),
+    {
+      key: 'merma',
+      label: 'Merma',
+      icon: 'loss' as IconName,
       onClick: () => navigate(`/app/vivero/${detail.id}/event/merma`),
-      disabled: detail.plantasVivasIniciales === null 
+      disabled: detail.plantasVivasIniciales === null
     },
-    { 
-      key: 'adapt', 
-      label: 'Subetapa', 
-      icon: 'sun' as IconName, 
+    {
+      key: 'adapt',
+      label: 'Subetapa',
+      icon: 'sun' as IconName,
       onClick: () => navigate(`/app/vivero/${detail.id}/event/adaptabilidad`),
-      disabled: detail.plantasVivasIniciales === null 
+      disabled: detail.plantasVivasIniciales === null
     },
-    { 
-      key: 'despacho', 
-      label: 'Despacho', 
-      icon: 'truck' as IconName, 
+    {
+      key: 'despacho',
+      label: 'Despacho',
+      icon: 'truck' as IconName,
       onClick: () => navigate(`/app/vivero/${detail.id}/event/despacho`),
-      disabled: (detail.saldoVivoActual ?? detail.plantasVivasIniciales ?? 0) === 0 
+      disabled: (detail.saldoVivoActual ?? detail.plantasVivasIniciales ?? 0) === 0
     },
-    { 
-      key: 'foto', 
-      label: 'Evidencia', 
-      icon: 'photo', 
-      onClick: onJumpEvidencia, 
-      disabled: false 
+    {
+      key: 'foto',
+      label: 'Evidencia',
+      icon: 'photo',
+      onClick: onJumpEvidencia,
+      disabled: false
     },
   ]
 

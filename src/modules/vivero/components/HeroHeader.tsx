@@ -9,9 +9,15 @@ interface HeroHeaderProps {
 
 export default function HeroHeader({ detail, customImage }: HeroHeaderProps) {
   const navigate = useNavigate();
-  const disponibles = detail.saldoVivoActual ?? detail.plantasVivasIniciales ?? 0;
-  
+  const isDescartePreEmbolsado = detail.motivoCierre === 'DESCARTE_PRE_EMBOLSADO';
+  const disponibles = isDescartePreEmbolsado
+    ? null
+    : detail.saldoVivoActual ?? detail.plantasVivasIniciales ?? 0;
+
   const isFinalizado = detail.estadoLote === 'FINALIZADO';
+  const motivoCierreLabel = isDescartePreEmbolsado
+    ? 'Descarte pre-embolsado'
+    : detail.motivoCierre;
 
   return (
     <header className="relative h-[300px] w-full overflow-hidden rounded-b-3xl bg-[#002b15] shadow-md">
@@ -59,7 +65,7 @@ export default function HeroHeader({ detail, customImage }: HeroHeaderProps) {
 
             {isFinalizado && detail.motivoCierre && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-[9px] font-black tracking-widest text-[#002b15] shadow-sm">
-                <Icon name="truck" className="h-3 w-3" /> {detail.motivoCierre}
+                <Icon name={isDescartePreEmbolsado ? 'trash' : 'truck'} className="h-3 w-3" /> {motivoCierreLabel}
               </span>
             )}
           </div>
@@ -68,8 +74,12 @@ export default function HeroHeader({ detail, customImage }: HeroHeaderProps) {
         {/* Cifra de Saldo */}
         <div className="text-right flex-shrink-0">
           <p className="text-[9px] uppercase font-black tracking-widest text-white/70">Saldo Vivo</p>
-          <p className="text-[44px] font-black leading-none tracking-tighter mt-0.5">{disponibles}</p>
-          <p className="text-[8px] font-bold uppercase tracking-widest text-white/60 mt-1">Plantas · Unidad</p>
+          <p className="text-[44px] font-black leading-none tracking-tighter mt-0.5">
+            {disponibles ?? 'N/A'}
+          </p>
+          <p className="text-[8px] font-bold uppercase tracking-widest text-white/60 mt-1">
+            {isDescartePreEmbolsado ? 'No nació saldo vivo' : 'Plantas · Unidad'}
+          </p>
         </div>
       </div>
     </header>

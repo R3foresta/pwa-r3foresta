@@ -6,12 +6,12 @@ import CollapsibleSection from '../components/CollapsibleSection'
 import ViveroLotCard from '../components/ViveroLotCard'
 import { useViveroLots } from '../hooks/useViveroLots'
 import type { ViveroLotCardData } from '../types/view-models'
-import { LotesViveroService } from '../../../services/lotes-vivero.service'
+import { LotesViveroService, type SubcampaniaResumen } from '../../../services/lotes-vivero.service'
 
 function getNextAction(lot: ViveroLotCardData): { label: string; path: string } | null {
   if (lot.estadoLote === 'FINALIZADO') return null
   if (lot.plantasVivasIniciales === null && lot.subetapaActual === null) {
-    return { label: 'Registrar Embolsado', path: `/app/vivero/${lot.id}/event/new` }
+    return { label: 'Registrar Embolsado', path: `/app/vivero/${lot.id}/event/embolsado` }
   }
   if (lot.subetapaActual === null) {
     return { label: 'Registrar Adaptabilidad', path: `/app/vivero/${lot.id}` }
@@ -26,7 +26,7 @@ function ViveroScreen() {
   const [onlyStockLibre, setOnlyStockLibre] = useState(false)
   const [onlyActiveAssignments, setOnlyActiveAssignments] = useState(false)
   const [selectedSubcampaniaId, setSelectedSubcampaniaId] = useState<string>('TODAS')
-  const [subcampanias, setSubcampanias] = useState<any[]>([])
+  const [subcampanias, setSubcampanias] = useState<SubcampaniaResumen[]>([])
 
   useEffect(() => {
     LotesViveroService.listSubcampanias()

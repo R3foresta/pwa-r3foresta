@@ -3,6 +3,7 @@ import type {
   ListLotesViveroQuery,
   LoteTimelineQuery,
   RegistrarAdaptabilidadRequest,
+  RegistrarDescartePreEmbolsadoRequest,
   RegistrarDespachoRequest,
   RegistrarEmbolsadoRequest,
   RegistrarMermaRequest,
@@ -59,6 +60,7 @@ function getAuthHeaders(options?: {
 
 const EVENT_EVIDENCE_PATH: Record<EvidenciaEventoVivero, string> = {
   EMBOLSADO: 'embolsado',
+  DESCARTE_PRE_EMBOLSADO: 'descarte-pre-embolsado',
   ADAPTABILIDAD: 'adaptabilidad',
   MERMA: 'merma',
   DESPACHO: 'despacho',
@@ -199,6 +201,18 @@ export async function registrarMermaApi(
   authId?: string,
 ): Promise<Response> {
   return fetch(`${API_BASE_URL}/lotes-vivero/${loteId}/merma`, {
+    method: 'POST',
+    headers: getAuthHeaders({ authId, includeContentType: true }),
+    body: JSON.stringify(input),
+  })
+}
+
+export async function registrarDescartePreEmbolsadoApi(
+  loteId: number,
+  input: RegistrarDescartePreEmbolsadoRequest,
+  authId?: string,
+): Promise<Response> {
+  return fetch(`${API_BASE_URL}/lotes-vivero/${loteId}/descarte-pre-embolsado`, {
     method: 'POST',
     headers: getAuthHeaders({ authId, includeContentType: true }),
     body: JSON.stringify(input),

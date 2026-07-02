@@ -498,22 +498,13 @@ function SubcampaniaPolygonStep({
     <>
       <main className="space-y-4 px-5 pt-4">
         <section className="space-y-3 rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
-                Delimitación territorial
-              </p>
-              <h2 className="mt-1 text-lg font-extrabold leading-tight text-brand-800">
-                {initialDraft.nombre || 'Subcampaña sin nombre'}
-              </h2>
-            </div>
-            <button
-              type="button"
-              onClick={onBackToBase}
-              className="shrink-0 rounded-full bg-brand-50 px-3 py-2 text-[11px] font-extrabold text-brand-700 ring-1 ring-brand-100 transition hover:bg-brand-100"
-            >
-              Atrás
-            </button>
+          <div>
+            <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
+              Delimitación territorial
+            </p>
+            <h2 className="mt-1 text-lg font-extrabold leading-tight text-brand-800">
+              {initialDraft.nombre || 'Subcampaña sin nombre'}
+            </h2>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
@@ -657,7 +648,16 @@ function SubcampaniaPolygonStep({
               {submitError}
             </p>
           )}
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              type="button"
+              onClick={onBackToBase}
+              disabled={submitting}
+              className="flex items-center justify-center gap-2 rounded-2xl bg-white px-3 py-4 text-sm font-extrabold text-slate-700 shadow-soft ring-1 ring-slate-200 transition hover:bg-slate-50 active:scale-[0.99] disabled:cursor-wait disabled:opacity-60"
+            >
+              <Icon name="arrow-left" className="h-4 w-4" />
+              Atrás
+            </button>
             <button
               type="button"
               onClick={() => void handleSaveStep('draft')}
@@ -665,7 +665,7 @@ function SubcampaniaPolygonStep({
               className="flex items-center justify-center gap-2 rounded-2xl bg-white px-3 py-4 text-sm font-extrabold text-brand-700 shadow-soft ring-1 ring-brand-100 transition hover:bg-brand-50 active:scale-[0.99] disabled:cursor-wait disabled:opacity-60"
             >
               <Icon name="file" className="h-4 w-4" />
-              Guardar borrador
+              Borrador
             </button>
             <button
               type="button"

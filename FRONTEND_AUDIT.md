@@ -136,6 +136,36 @@ Estados sugeridos para esta tabla:
 - `RIESGO`
 - `CRITICO`
 
+### AUD-001 — Lint global falla por deuda existente y worktrees locales
+
+- Estado: `PENDIENTE`
+- Severidad: `MEDIA`
+- Módulo: `shared`
+- Ubicación: `eslint.config.js`, `.claude/worktrees`, varios módulos legacy
+- Tipo: `testing`
+- Detectado por: `Codex`
+- Fecha: `2026-07-02`
+
+#### Problema
+
+`npm run lint` ejecuta `eslint .` y hoy falla por errores existentes fuera del cambio de Vivero, incluyendo archivos duplicados dentro de `.claude/worktrees` y reglas en módulos legacy.
+
+#### Riesgo
+
+La verificación global no permite distinguir rápidamente si una tarea nueva introdujo errores o si está chocando con deuda previa.
+
+#### Acción sugerida
+
+Excluir worktrees locales del lint o limpiar esos errores existentes por módulo; mientras tanto, usar lint acotado a archivos modificados como verificación complementaria.
+
+#### Verificación esperada
+
+`npm run lint` debe pasar desde la raíz del repo.
+
+#### Notas
+
+Detectado al implementar `DESCARTE_PRE_EMBOLSADO` en Vivero; el lint acotado a los archivos modificados pasó.
+
 ---
 
 ## 7. Checklist general de auditoría

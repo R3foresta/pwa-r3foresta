@@ -2,9 +2,11 @@ import {
   createLoteViveroApi,
   getEmbolsadoApi,
   getEmbolsadoContextApi,
+  getLoteViveroDetalleApi,
   getLoteTimelineApi,
   listLotesViveroApi,
   registrarAdaptabilidadApi,
+  registrarDescartePreEmbolsadoApi,
   registrarDespachoApi,
   registrarEmbolsadoApi,
   registrarMermaApi,
@@ -30,10 +32,14 @@ import type {
   ListLotesViveroQuery,
   ListLotesViveroResponse,
   LoteTimelineAdaptabilidadResponse,
+  LoteViveroDetalle,
+  LoteViveroDetalleResponse,
   LoteViveroItem,
   ObtenerEmbolsadoResponse,
   RegistrarAdaptabilidadRequest,
   RegistrarAdaptabilidadResponse,
+  RegistrarDescartePreEmbolsadoRequest,
+  RegistrarDescartePreEmbolsadoResponse,
   RegistrarDespachoRequest,
   RegistrarEmbolsadoRequest,
   RegistrarEmbolsadoResponse,
@@ -240,21 +246,20 @@ export class LotesViveroService {
     }
   }
 
-  static async getById(loteId: number): Promise<LoteViveroItem> {
+  static async getById(loteId: number): Promise<LoteViveroDetalle> {
     if (!Number.isFinite(loteId) || loteId <= 0) {
       throw new Error('ID de lote de vivero inválido.')
     }
 
-    // TODO(backend-pendiente): Ineficiencia conocida.
-    // Actualmente NO existe un endpoint GET /lotes-vivero/:id específico.
-    // Simulamos la obtención de detalle forzando una búsqueda en el listado
-    // con límite 1. Esto debe cambiarse cuando backend libere el endpoint de detalle.
-    const response = await this.list({ lote_vivero_id: loteId, page: 1, limit: 1 })
-    const lot = response.data[0]
-    if (!lot) {
+    const response = await getLoteViveroDetalleApi(loteId)
+    const payload = await this.parseJsonResponse<LoteViveroDetalleResponse>(
+      response,
+      'Error al cargar el detalle del lote de vivero.',
+    )
+    if (!payload.data) {
       throw new Error('Lote de vivero no encontrado.')
     }
-    return lot
+    return payload.data
   }
 
   static async getDetail(loteId: number): Promise<ViveroLotDetailView> {
@@ -405,6 +410,18 @@ export class LotesViveroService {
     return this.parseJsonResponse<RegistrarMermaResponse>(
       response,
       'Error al registrar la merma.',
+    )
+  }
+
+  static async registrarDescartePreEmbolsado(
+    loteId: number,
+    input: RegistrarDescartePreEmbolsadoRequest,
+    authId?: string,
+  ): Promise<RegistrarDescartePreEmbolsadoResponse> {
+    const response = await registrarDescartePreEmbolsadoApi(loteId, input, authId)
+    return this.parseJsonResponse<RegistrarDescartePreEmbolsadoResponse>(
+      response,
+      'Error al registrar el descarte pre-embolsado.',
     )
   }
 
