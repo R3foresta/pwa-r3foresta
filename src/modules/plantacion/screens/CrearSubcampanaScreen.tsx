@@ -632,6 +632,7 @@ function CrearSubcampanaScreen() {
           equipo_operarios: operarios.map(equipoMemberToUsuarioResumen),
           fecha_estimada_inicio: subData.fecha_estimada_inicio ?? '',
           fecha_estimada_fin: subData.fecha_estimada_fin ?? '',
+          meta_total_arboles: subData.meta_total_arboles ?? null,
           created_at: now,
           updated_at: now,
         })

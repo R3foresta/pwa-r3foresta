@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Icon from '../../../components/Icon'
 import { PlantacionService } from '../../../services/plantacion.service'
-import type { Campania, PlanEspecieMetaInput } from '../types/contracts'
+import type { Campania, PlanEspecieMeta, PlanEspecieMetaInput } from '../types/contracts'
 import {
   loadSubcampaniaBaseDraft,
   saveSubcampaniaBaseDraft,
@@ -98,6 +98,26 @@ function buildPlanMetasPayload(
   return draft
 }
 
+function mergeDraftEspeciesWithPlan(
+  baseEspecies: SubcampaniaEspecieDraft[],
+  metas: PlanEspecieMeta[] | undefined,
+): SubcampaniaEspecieDraft[] {
+  if (!metas || metas.length === 0) return baseEspecies
+
+  const byId = new Map(baseEspecies.map((especie) => [especie.planta_id, especie]))
+  return metas.map((meta) => {
+    const local = byId.get(meta.planta_id)
+    return {
+      planta_id: meta.planta_id,
+      especie: local?.especie ?? meta.planta?.especie ?? '',
+      nombre_cientifico: local?.nombre_cientifico ?? meta.planta?.nombre_cientifico ?? '',
+      nombre_comun_principal: local?.nombre_comun_principal ?? null,
+      saldo_disponible: local?.saldo_disponible ?? 0,
+      pct: clampPct(meta.porcentaje_objetivo),
+    }
+  })
+}
+
 function SubcampaniaEspeciesStep({
   campania,
   draftId,
@@ -130,28 +150,32 @@ function SubcampaniaEspeciesStep({
     PlantacionService.getSubcampaniaPlan(subcampaniaId, authId)
       .then((plan) => {
         if (requestId !== planLoadRef.current) return
-        if (!plan.metas || plan.metas.length === 0) return
 
-        setEspecies((current) => {
-          const byId = new Map(current.map((e) => [e.planta_id, e]))
-          return plan.metas.map((meta) => {
-            const local = byId.get(meta.planta_id)
-            return {
-              planta_id: meta.planta_id,
-              especie: local?.especie ?? meta.planta?.especie ?? '',
-              nombre_cientifico:
-                local?.nombre_cientifico ?? meta.planta?.nombre_cientifico ?? '',
-              nombre_comun_principal: local?.nombre_comun_principal ?? null,
-              saldo_disponible: local?.saldo_disponible ?? 0,
-              pct: clampPct(meta.porcentaje_objetivo),
-            }
+        if (Number.isFinite(plan.meta_total_arboles) && plan.meta_total_arboles > 0) {
+          setMeta(plan.meta_total_arboles)
+        }
+
+        const nextEspecies = mergeDraftEspeciesWithPlan(initialDraft?.especies ?? [], plan.metas)
+
+        setEspecies((current) => mergeDraftEspeciesWithPlan(current, plan.metas))
+
+        const currentDraft = loadSubcampaniaBaseDraft(campania.id, draftId)
+        if (currentDraft) {
+          saveSubcampaniaBaseDraft({
+            ...currentDraft,
+            meta_total_arboles:
+              Number.isFinite(plan.meta_total_arboles) && plan.meta_total_arboles > 0
+                ? plan.meta_total_arboles
+                : currentDraft.meta_total_arboles ?? null,
+            especies: nextEspecies,
+            updated_at: new Date().toISOString(),
           })
-        })
+        }
       })
       .catch(() => {
         // Silencioso: si el GET falla se sigue con el draft local; el usuario reintenta al guardar.
       })
-  }, [authId, initialDraft?.subcampania_id])
+  }, [authId, campania.id, draftId, initialDraft?.especies, initialDraft?.subcampania_id])
 
   const total = useMemo(() => sumPct(especies), [especies])
   const balanced = total === 100
