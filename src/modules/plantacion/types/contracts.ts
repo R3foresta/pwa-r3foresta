@@ -127,6 +127,7 @@ export type Subcampania = {
   total_repuesto?: number | null
   total_muerto_acumulado?: number | null
   codigo_trazabilidad?: string | null
+  equipo?: EquipoMember[]
   created_at: string
   updated_at?: string | null
 }

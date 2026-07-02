@@ -17,8 +17,10 @@ import SubcampaniaResumenStep from '../components/SubcampaniaResumenStep'
 import {
   TIPO_CAMPANIA_LABEL,
   type Campania,
+  type EquipoMember,
 } from '../types/contracts'
 import {
+  clearSubcampaniaBaseDraft,
   createSubcampaniaDraftId,
   loadSubcampaniaBaseDraft,
   saveSubcampaniaBaseDraft,
@@ -90,6 +92,15 @@ function resolveCampaniaCoordinator(campania: Campania): UsuarioResumen | null {
   }
 
   return null
+}
+
+function equipoMemberToUsuarioResumen(member: EquipoMember): UsuarioResumen {
+  return {
+    id: member.usuario_id,
+    nombre: member.nombre_usuario?.trim() || `Usuario ${member.usuario_id}`,
+    rol: member.rol,
+    foto_perfil_url: member.foto_perfil_url ?? null,
+  }
 }
 
 function CoordinadorSelector({
@@ -535,7 +546,6 @@ function CrearSubcampanaScreen() {
   const location = useLocation()
   const state = location.state as LocationState | null
   const routeDraftId = searchParams.get('draftId')?.trim() || state?.draftId?.trim()
-  const [draftIdWasGenerated] = useState(() => !routeDraftId)
   const [draftId] = useState(() => routeDraftId || createSubcampaniaDraftId())
   const rawRouteSubcampaniaId = searchParams.get('subcampaniaId')?.trim() || ''
   const routeSubcampaniaId = Number(rawRouteSubcampaniaId || '') || null
@@ -549,7 +559,6 @@ function CrearSubcampanaScreen() {
   const routeSubcampaniaDraft = campania ? loadSubcampaniaBaseDraft(campania.id, draftId) : null
   const needsRouteSubcampaniaHydration = Boolean(
     routeSubcampaniaId &&
-      draftIdWasGenerated &&
       campania &&
       routeSubcampaniaDraft?.subcampania_id !== routeSubcampaniaId,
   )
@@ -594,16 +603,22 @@ function CrearSubcampanaScreen() {
 
     let cancelled = false
 
-    PlantacionService.getSubcampania(routeSubcampaniaId, authId)
-      .then((subData) =>
-        Promise.all([
-          Promise.resolve(subData),
+    const hydrateSubcampaniaDraft = async () => {
+      try {
+        const subData = await PlantacionService.getSubcampania(routeSubcampaniaId, authId)
+        const [comunidad, equipoFallback] = await Promise.all([
           obtenerComunidad(subData.zona_id).then((r) => r.data ?? null).catch(() => null),
-        ]),
-      )
-      .then(([subData, comunidad]) => {
+          Array.isArray(subData.equipo)
+            ? Promise.resolve(null)
+            : PlantacionService.getSubcampaniaEquipo(routeSubcampaniaId, authId).catch(() => []),
+        ])
+
         if (cancelled) return
 
+        const equipo = Array.isArray(subData.equipo) ? subData.equipo : equipoFallback ?? []
+        const coordinador =
+          equipo.find((member) => member.rol === 'COORDINADOR') ?? null
+        const operarios = equipo.filter((member) => member.rol === 'OPERARIO')
         const now = new Date().toISOString()
 
         saveSubcampaniaBaseDraft({
@@ -613,7 +628,8 @@ function CrearSubcampanaScreen() {
           tipo: campania.tipo,
           nombre: subData.nombre,
           comunidad,
-          coordinador: null,
+          coordinador: coordinador ? equipoMemberToUsuarioResumen(coordinador) : null,
+          equipo_operarios: operarios.map(equipoMemberToUsuarioResumen),
           fecha_estimada_inicio: subData.fecha_estimada_inicio ?? '',
           fecha_estimada_fin: subData.fecha_estimada_fin ?? '',
           created_at: now,
@@ -621,13 +637,15 @@ function CrearSubcampanaScreen() {
         })
         setError(null)
         setDraftHydrationVersion((current) => current + 1)
-      })
-      .catch((loadError) => {
+      } catch (loadError) {
         if (cancelled) return
         setError(
           loadError instanceof Error ? loadError.message : 'No se pudo cargar la subcampaña.',
         )
-      })
+      }
+    }
+
+    void hydrateSubcampaniaDraft()
 
     return () => {
       cancelled = true
@@ -636,6 +654,20 @@ function CrearSubcampanaScreen() {
 
   const goToDashboard = () => {
     navigate(dashboardPath, { state: campania ? { campania } : undefined })
+  }
+
+  const clearDraftAndGoToDashboard = () => {
+    if (campania) {
+      clearSubcampaniaBaseDraft(campania.id, draftId)
+    }
+    goToDashboard()
+  }
+
+  const clearDraftAndGoToSubcampania = (subcampaniaId: number) => {
+    if (campania) {
+      clearSubcampaniaBaseDraft(campania.id, draftId)
+    }
+    navigate(`/app/planting/subcampanias/${subcampaniaId}`, { replace: true })
   }
 
   const goToStep = (step: WizardStep) => {
@@ -726,7 +758,7 @@ function CrearSubcampanaScreen() {
             campania={campania}
             draftId={draftId}
             authId={authId}
-            onDraftSaved={goToDashboard}
+            onDraftSaved={clearDraftAndGoToDashboard}
             onBackToBase={() => goToStep(1)}
             onNext={() => goToStep(3)}
           />
@@ -738,7 +770,7 @@ function CrearSubcampanaScreen() {
             campania={campania}
             draftId={draftId}
             authId={authId}
-            onDraftSaved={goToDashboard}
+            onDraftSaved={clearDraftAndGoToDashboard}
             onBackToBase={() => goToStep(2)}
             onNext={() => goToStep(4)}
           />
@@ -750,7 +782,7 @@ function CrearSubcampanaScreen() {
             campania={campania}
             draftId={draftId}
             authId={authId}
-            onDraftSaved={goToDashboard}
+            onDraftSaved={clearDraftAndGoToDashboard}
             onBackToPolygon={() => goToStep(3)}
             onNext={() => goToStep(5)}
           />
@@ -763,12 +795,8 @@ function CrearSubcampanaScreen() {
             draftId={draftId}
             authId={authId}
             onBackToEquipo={() => goToStep(4)}
-            onSaved={(subcampaniaId) =>
-              navigate(`/app/planting/subcampanias/${subcampaniaId}`, { replace: true })
-            }
-            onActivated={(subcampaniaId) =>
-              navigate(`/app/planting/subcampanias/${subcampaniaId}`, { replace: true })
-            }
+            onSaved={clearDraftAndGoToSubcampania}
+            onActivated={(subcampaniaId) => clearDraftAndGoToSubcampania(subcampaniaId)}
           />
         )}
       </div>
