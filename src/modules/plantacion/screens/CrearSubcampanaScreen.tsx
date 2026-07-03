@@ -50,8 +50,8 @@ const WIZARD_STEP_ORDER: WizardStep[] = [1, 2, 3, 4, 5]
 const WIZARD_STEPS = WIZARD_STEP_ORDER.length
 
 const WIZARD_STEP_LABELS: Record<WizardStep, string> = {
-  1: 'Base',
-  2: 'Especies',
+  1: 'Nombre',
+  2: 'Meta',
   3: 'Zona',
   4: 'Equipo',
   5: 'Resumen',
@@ -378,10 +378,10 @@ function SubcampaniaBaseStep({
     () => initialDraft?.coordinador ?? resolveCampaniaCoordinator(campania),
   )
   const [fechaInicio, setFechaInicio] = useState(
-    () => initialDraft?.fecha_estimada_inicio ?? toDateInputValue(campania.fecha_estimada_inicio),
+    () => initialDraft?.fecha_estimada_inicio || toDateInputValue(campania.fecha_estimada_inicio),
   )
   const [fechaFin, setFechaFin] = useState(
-    () => initialDraft?.fecha_estimada_fin ?? toDateInputValue(campania.fecha_estimada_fin),
+    () => initialDraft?.fecha_estimada_fin || toDateInputValue(campania.fecha_estimada_fin),
   )
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
   const [errors, setErrors] = useState<BaseStepErrors>({
