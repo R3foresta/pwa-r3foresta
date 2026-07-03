@@ -231,11 +231,13 @@ function BorradorActivationBanner({
   sub,
   equipo,
   campania_id,
+  localPoligonoFallback,
   onActivated,
 }: {
   sub: Subcampania
   equipo: EquipoMember[]
   campania_id: number
+  localPoligonoFallback: GeoJsonPolygon | null
   onActivated: (data: ActivarSubcampaniaData) => void
 }) {
   const navigate = useNavigate()
@@ -244,9 +246,7 @@ function BorradorActivationBanner({
   const [activationError, setActivationError] = useState<string | null>(null)
 
   const hasCoordinador = equipo.some((m) => m.rol === 'COORDINADOR')
-  const localDrafts = loadSubcampaniaBaseDrafts(campania_id)
-  const localDraft = localDrafts.find((d) => d.subcampania_id === sub.id)
-  const hasPoligono = !!sub.poligono || !!localDraft?.poligono_geojson
+  const hasPoligono = !!sub.poligono || !!localPoligonoFallback
   const hasMeta = sub.meta_total_arboles >= 1
   const canActivate = hasCoordinador && hasPoligono && hasMeta
 
@@ -264,6 +264,16 @@ function BorradorActivationBanner({
     setActivating(true)
     setActivationError(null)
     try {
+      // Si el backend aún no tiene el polígono (por ejemplo, se cargó como
+      // fallback desde el draft local), lo subimos antes de activar para
+      // evitar el 422 de precondición del backend.
+      if (!sub.poligono && localPoligonoFallback) {
+        await PlantacionService.setSubcampaniaPoligono(
+          sub.id,
+          localPoligonoFallback,
+          user?.auth_id,
+        )
+      }
       const data = await PlantacionService.activarSubcampania(sub.id, user?.auth_id)
       onActivated(data)
     } catch (activateError) {
@@ -354,18 +364,21 @@ function BorradorActivationBanner({
 function ResumenTab({
   sub,
   equipo,
+  localPoligonoFallback,
   onTabMapa,
   onActivated,
   onRequestCancel,
 }: {
   sub: Subcampania
   equipo: EquipoMember[]
+  localPoligonoFallback: GeoJsonPolygon | null
   onTabMapa: () => void
   onActivated: (data: ActivarSubcampaniaData) => void
   onRequestCancel: () => void
 }) {
   const coordinador = equipo.find((m) => m.rol === 'COORDINADOR')
   const isBorrador = sub.estado === 'BORRADOR'
+  const displayPoligono = sub.poligono ?? localPoligonoFallback
   // BORRADOR: siempre cancelable. ACTIVA: solo si no hay plantaciones registradas.
   // Si `total_plantado_inicial` no viene del backend, la ACTIVA no expone el botón
   // (comportamiento conservador; el backend igual protege con 409).
@@ -516,7 +529,7 @@ function ResumenTab({
       </section>
 
       {/* Mapa mini: botón que lleva al tab mapa */}
-      {sub.poligono && (
+      {displayPoligono && (
         <button
           type="button"
           onClick={onTabMapa}
@@ -539,6 +552,7 @@ function ResumenTab({
           sub={sub}
           equipo={equipo}
           campania_id={sub.campania_id}
+          localPoligonoFallback={localPoligonoFallback}
           onActivated={onActivated}
         />
       )}
@@ -668,20 +682,23 @@ function MapFitBounds({ positions }: { positions: LatLngTuple[] }) {
 function MapaTab({
   sub,
   campania_id,
+  localPoligonoFallback,
 }: {
   sub: Subcampania
   campania_id: number
+  localPoligonoFallback: GeoJsonPolygon | null
 }) {
   const navigate = useNavigate()
 
+  const displayPoligono = sub.poligono ?? localPoligonoFallback
   const polygonPositions = useMemo(
-    () => getPolygonPositions(sub.poligono),
-    [sub.poligono],
+    () => getPolygonPositions(displayPoligono),
+    [displayPoligono],
   )
 
   const isBorrador = sub.estado === 'BORRADOR'
 
-  if (!sub.poligono || polygonPositions.length === 0) {
+  if (!displayPoligono || polygonPositions.length === 0) {
     return (
       <section className="rounded-3xl bg-white p-6 text-center shadow-soft ring-1 ring-black/5">
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-50 text-slate-400">
@@ -744,7 +761,7 @@ function MapaTab({
             Vértices
           </p>
           <p className="mt-1 text-sm font-extrabold text-brand-800 tabular-nums">
-            {sub.poligono.coordinates[0].length - 1}
+            {displayPoligono.coordinates[0].length - 1}
           </p>
         </div>
         <div className="rounded-2xl bg-white p-3 text-center shadow-soft ring-1 ring-black/5">
@@ -786,6 +803,17 @@ function DetalleSubcampanaScreen() {
 
   const authId = user?.auth_id
   const requestRef = useRef(0)
+
+  // Fallback: si el backend no incluye `poligono` en GET /subcampanias/:id,
+  // reutilizamos el `poligono_geojson` del draft local (persistido durante el
+  // wizard) para que el mapa no desaparezca al entrar al detalle.
+  const localPoligonoFallback = useMemo<GeoJsonPolygon | null>(() => {
+    if (!sub || sub.poligono) return null
+    const draft = loadSubcampaniaBaseDrafts(sub.campania_id).find(
+      (d) => d.subcampania_id === sub.id,
+    )
+    return draft?.poligono_geojson ?? null
+  }, [sub])
 
   const fetchSubcampaniaData = useCallback(async (requestId: number) => {
     try {
@@ -966,6 +994,7 @@ function DetalleSubcampanaScreen() {
                 <ResumenTab
                   sub={sub}
                   equipo={equipo}
+                  localPoligonoFallback={localPoligonoFallback}
                   onTabMapa={() => setActiveTab('mapa')}
                   onActivated={handleActivated}
                   onRequestCancel={handleRequestCancel}
@@ -977,7 +1006,11 @@ function DetalleSubcampanaScreen() {
               )}
 
               {activeTab === 'mapa' && (
-                <MapaTab sub={sub} campania_id={sub.campania_id} />
+                <MapaTab
+                  sub={sub}
+                  campania_id={sub.campania_id}
+                  localPoligonoFallback={localPoligonoFallback}
+                />
               )}
             </>
           )}

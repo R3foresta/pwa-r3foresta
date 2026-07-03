@@ -7,9 +7,10 @@ export function formatDate(
 ): string {
   const fallback = opts?.fallback ?? 'Sin definir'
   if (!value) return fallback
-  const [y, m, d] = value.split('-')
+  const dateOnly = value.length >= 10 ? value.slice(0, 10) : value
+  const [y, m, d] = dateOnly.split('-')
   const date =
-    y && m && d && value.length === 10
+    y && m && d && dateOnly.length === 10
       ? new Date(Number(y), Number(m) - 1, Number(d))
       : new Date(value)
   if (Number.isNaN(date.getTime())) return value

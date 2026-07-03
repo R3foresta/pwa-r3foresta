@@ -10,10 +10,7 @@ import type {
   Subcampania,
 } from '../types/contracts'
 import { TIPO_CAMPANIA_LABEL } from '../types/contracts'
-import {
-  clearSubcampaniaBaseDraft,
-  loadSubcampaniaBaseDraft,
-} from '../utils/subcampaniaDraft'
+import { loadSubcampaniaBaseDraft } from '../utils/subcampaniaDraft'
 import { formatDate, toLatLngTuple } from '../utils/subcampaniaFormatters'
 import SubcampaniaSuccessOverlay from './SubcampaniaSuccessOverlay'
 import { UserAvatar } from './UserAvatar'
@@ -44,6 +41,7 @@ function SubcampaniaResumenStep({
   const [loadError, setLoadError] = useState<string | null>(null)
 
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [activating, setActivating] = useState(false)
   const [activateError, setActivateError] = useState<string | null>(null)
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false)
@@ -75,11 +73,32 @@ function SubcampaniaResumenStep({
       })
   }, [subcampaniaId, authId])
 
-  const handleSave = () => {
-    if (!subcampaniaId || saving || loading || loadError) return
+  // Sube el polígono al backend si sólo existe en el draft local.
+  // Evita perderlo cuando se limpia el borrador tras "Guardar" o "Activar".
+  const ensurePolygonSynced = async (id: number): Promise<void> => {
+    const backendPolygon = subcampania?.poligono ?? null
+    const localPolygon = draft?.poligono_geojson ?? null
+    if (backendPolygon || !localPolygon) return
+    await PlantacionService.setSubcampaniaPoligono(id, localPolygon, authId)
+  }
+
+  const handleSave = async () => {
+    if (!subcampaniaId || saving || activating || loading || loadError) return
     setSaving(true)
-    clearSubcampaniaBaseDraft(campania.id, draftId)
-    setShowSuccessOverlay(true)
+    setSaveError(null)
+    try {
+      await ensurePolygonSynced(subcampaniaId)
+      // Mantener el draft local: sirve de fallback al detalle si el backend
+      // no incluye `poligono` en GET /subcampanias/:id. El draft se auto-purga
+      // por TTL (30 días) o al activar la subcampaña.
+      setShowSuccessOverlay(true)
+    } catch (err) {
+      setSaveError(
+        err instanceof Error ? err.message : 'No se pudo guardar la subcampaña.',
+      )
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleOverlayContinue = () => {
@@ -93,8 +112,9 @@ function SubcampaniaResumenStep({
     setActivating(true)
     setActivateError(null)
     try {
+      await ensurePolygonSynced(subcampaniaId)
       const data = await PlantacionService.activarSubcampania(subcampaniaId, authId)
-      clearSubcampaniaBaseDraft(campania.id, draftId)
+      // El draft se mantiene aquí; CrearSubcampanaScreen decide cuándo purgarlo.
       onActivated(subcampaniaId, data)
     } catch (activateErr) {
       setActivateError(
@@ -452,9 +472,9 @@ function SubcampaniaResumenStep({
 
       <div className="px-5">
         <div className="sticky bottom-0 -mx-5 bg-gradient-to-t from-[#eef2ed] via-[#eef2ed]/95 to-transparent px-5 pb-5 pt-3">
-          {activateError && (
+          {(activateError || saveError) && (
             <p className="mb-2 whitespace-pre-line rounded-2xl bg-red-50 px-4 py-2 text-center text-xs font-extrabold text-red-700 ring-1 ring-red-100">
-              {activateError}
+              {activateError ?? saveError}
             </p>
           )}
           <div className="mb-2 grid grid-cols-2 gap-2">
@@ -469,7 +489,7 @@ function SubcampaniaResumenStep({
             </button>
             <button
               type="button"
-              onClick={handleSave}
+              onClick={() => void handleSave()}
               disabled={saving || activating || loading || loadError !== null}
               className={`flex items-center justify-center gap-2 rounded-2xl px-3 py-3 text-sm font-extrabold shadow-soft transition active:scale-[0.99] ${
                 saving || activating || loading || loadError !== null
@@ -478,7 +498,7 @@ function SubcampaniaResumenStep({
               }`}
             >
               <Icon name="file" className="h-4 w-4" />
-              {saving ? 'Guardado' : 'Guardar borrador'}
+              {saving ? 'Guardando…' : 'Guardar borrador'}
             </button>
           </div>
           <button

@@ -16,6 +16,7 @@ import {
   loadSubcampaniaBaseDrafts,
   type SubcampaniaBaseDraft,
 } from '../utils/subcampaniaDraft'
+import { formatDate as formatFullDate } from '../utils/subcampaniaFormatters'
 
 type LocationState = {
   campania?: Campania
@@ -31,15 +32,7 @@ const DASHBOARD_TABS: Array<{ key: DashboardTab; label: string }> = [
 ]
 
 function formatDate(value?: string | null): string {
-  if (!value) return 'Sin fecha'
-  const [year, month, day] = value.split('-')
-  if (!year || !month || !day) return value
-  const date = new Date(Number(year), Number(month) - 1, Number(day))
-  return new Intl.DateTimeFormat('es-BO', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  }).format(date)
+  return formatFullDate(value, { fallback: 'Sin fecha' })
 }
 
 function formatNumber(value?: number | null): string {

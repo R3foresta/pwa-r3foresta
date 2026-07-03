@@ -20,7 +20,6 @@ import {
   type EquipoMember,
 } from '../types/contracts'
 import {
-  clearSubcampaniaBaseDraft,
   createSubcampaniaDraftId,
   loadSubcampaniaBaseDraft,
   saveSubcampaniaBaseDraft,
@@ -44,9 +43,19 @@ const DEFAULT_PAIS_ID = 1
 // usuarios con rol GENERAL.
 const COORDINADOR_ROL = 'GENERAL'
 const SEARCH_DEBOUNCE_MS = 300
-const WIZARD_STEPS = 5
 
 type WizardStep = 1 | 2 | 3 | 4 | 5
+
+const WIZARD_STEP_ORDER: WizardStep[] = [1, 2, 3, 4, 5]
+const WIZARD_STEPS = WIZARD_STEP_ORDER.length
+
+const WIZARD_STEP_LABELS: Record<WizardStep, string> = {
+  1: 'Base',
+  2: 'Especies',
+  3: 'Zona',
+  4: 'Equipo',
+  5: 'Resumen',
+}
 
 function parseWizardStep(raw: string | null): WizardStep {
   if (raw === '5') return 5
@@ -54,6 +63,61 @@ function parseWizardStep(raw: string | null): WizardStep {
   if (raw === '3') return 3
   if (raw === '2') return 2
   return 1
+}
+
+function WizardStepper({
+  currentStep,
+  onStepChange,
+}: {
+  currentStep: WizardStep
+  onStepChange: (step: WizardStep) => void
+}) {
+  return (
+    <>
+      <div className="mt-4 flex items-center gap-1">
+        {WIZARD_STEP_ORDER.map((step) => {
+          const isCurrent = step === currentStep
+          const isCompleted = step < currentStep
+          return (
+            <button
+              key={step}
+              type="button"
+              onClick={() => onStepChange(step)}
+              aria-label={`Ir al paso ${step}: ${WIZARD_STEP_LABELS[step]}`}
+              aria-current={isCurrent ? 'step' : undefined}
+              className="flex flex-1 flex-col items-center gap-1.5 rounded-lg py-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+            >
+              <span
+                className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-extrabold ring-1 transition ${
+                  isCurrent
+                    ? 'bg-white text-brand-800 ring-white shadow-soft'
+                    : isCompleted
+                      ? 'bg-emerald-300 text-brand-900 ring-emerald-200'
+                      : 'bg-white/10 text-white/80 ring-white/25 hover:bg-white/20'
+                }`}
+              >
+                {isCompleted ? '✓' : step}
+              </span>
+              <span
+                className={`text-[9px] font-extrabold uppercase tracking-[0.12em] transition ${
+                  isCurrent
+                    ? 'text-white'
+                    : isCompleted
+                      ? 'text-emerald-100'
+                      : 'text-white/60'
+                }`}
+              >
+                {WIZARD_STEP_LABELS[step]}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+      <p className="mt-3 text-[10px] font-extrabold uppercase tracking-[0.18em] text-white/70">
+        Paso {currentStep} de {WIZARD_STEPS} · {WIZARD_STEP_LABELS[currentStep]}
+      </p>
+    </>
+  )
 }
 
 function toDateInputValue(value?: string | null): string {
@@ -658,10 +722,10 @@ function CrearSubcampanaScreen() {
     navigate(dashboardPath, { state: campania ? { campania } : undefined })
   }
 
-  const clearDraftAndGoToSubcampania = (subcampaniaId: number) => {
-    if (campania) {
-      clearSubcampaniaBaseDraft(campania.id, draftId)
-    }
+  // El draft se conserva a propósito: sirve de fallback si el backend no
+  // devuelve el `poligono` en GET /subcampanias/:id. Se filtra del dashboard
+  // porque tiene `subcampania_id` y se purga por TTL (30 días).
+  const goToSubcampania = (subcampaniaId: number) => {
     navigate(`/app/planting/subcampanias/${subcampaniaId}`, { replace: true })
   }
 
@@ -705,19 +769,7 @@ function CrearSubcampanaScreen() {
                 {campania.codigo_trazabilidad}
               </p>
             )}
-            <div className="mt-4 flex items-center gap-2">
-              {Array.from({ length: WIZARD_STEPS }, (_, index) => (
-                <div
-                  key={index}
-                  className={`h-1.5 flex-1 rounded-full ${
-                    index < currentStep ? 'bg-emerald-300' : 'bg-white/20'
-                  }`}
-                />
-              ))}
-            </div>
-            <p className="mt-2 text-[10px] font-extrabold uppercase tracking-[0.18em] text-white/70">
-              Paso {currentStep} de {WIZARD_STEPS}
-            </p>
+            <WizardStepper currentStep={currentStep} onStepChange={goToStep} />
           </div>
         </header>
 
@@ -790,8 +842,8 @@ function CrearSubcampanaScreen() {
             draftId={draftId}
             authId={authId}
             onBackToEquipo={() => goToStep(4)}
-            onSaved={clearDraftAndGoToSubcampania}
-            onActivated={(subcampaniaId) => clearDraftAndGoToSubcampania(subcampaniaId)}
+            onSaved={goToSubcampania}
+            onActivated={goToSubcampania}
           />
         )}
       </div>

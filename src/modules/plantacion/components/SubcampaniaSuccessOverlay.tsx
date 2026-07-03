@@ -8,7 +8,11 @@ type Props = {
 
 function SubcampaniaSuccessOverlay({ phase, nombre, onContinue }: Props) {
   return (
-    <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-brand-700/95 px-8 text-center backdrop-blur-sm">
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-brand-700/95 px-8 text-center backdrop-blur-sm"
+    >
       {phase === 'saving' ? (
         <>
           <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/10 ring-2 ring-white/20">
