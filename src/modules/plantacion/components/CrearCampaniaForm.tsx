@@ -70,6 +70,8 @@ export function CrearCampaniaFormFields({
   values,
   onChange,
   organizationSelector,
+  tipoLocked = false,
+  tipoLockedReason,
 }: {
   values: CrearCampaniaFormValues
   onChange: <K extends keyof CrearCampaniaFormValues>(
@@ -77,6 +79,8 @@ export function CrearCampaniaFormFields({
     value: CrearCampaniaFormValues[K],
   ) => void
   organizationSelector: ReactNode
+  tipoLocked?: boolean
+  tipoLockedReason?: string
 }) {
   return (
     <div className="space-y-4">
@@ -88,21 +92,32 @@ export function CrearCampaniaFormFields({
           {CAMPANIA_TYPES.map((tipo) => {
             const selected = values.tipo === tipo
             const TypeIcon = CAMPANIA_TYPE_ICONS[tipo]
+            const disabled = tipoLocked && !selected
 
             return (
               <button
                 key={tipo}
                 type="button"
-                onClick={() => onChange('tipo', tipo)}
+                onClick={() => {
+                  if (tipoLocked) return
+                  onChange('tipo', tipo)
+                }}
+                disabled={disabled}
                 className={`flex min-h-[154px] flex-col items-center gap-1.5 rounded-3xl p-3 text-center shadow-soft ring-1 transition ${
                   selected
                     ? 'bg-brand-600 text-white ring-brand-700'
-                    : 'bg-white text-brand-800 ring-black/5 hover:ring-brand-300'
+                    : disabled
+                      ? 'cursor-not-allowed bg-slate-50 text-slate-400 ring-black/5'
+                      : 'bg-white text-brand-800 ring-black/5 hover:ring-brand-300'
                 }`}
               >
                 <span
                   className={`flex h-12 w-12 items-center justify-center rounded-2xl ${
-                    selected ? 'bg-white/20 text-white' : 'bg-brand-50 text-brand-700'
+                    selected
+                      ? 'bg-white/20 text-white'
+                      : disabled
+                        ? 'bg-slate-100 text-slate-400'
+                        : 'bg-brand-50 text-brand-700'
                   }`}
                 >
                   <TypeIcon className="h-6 w-6" strokeWidth={2} />
@@ -121,6 +136,11 @@ export function CrearCampaniaFormFields({
             )
           })}
         </div>
+        {tipoLocked && tipoLockedReason && (
+          <p className="mt-2 text-[11px] font-semibold text-slate-500">
+            {tipoLockedReason}
+          </p>
+        )}
       </div>
 
       <section className="space-y-3 rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">

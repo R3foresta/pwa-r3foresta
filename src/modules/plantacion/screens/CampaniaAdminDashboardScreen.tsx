@@ -1,12 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import plantacionHero from '../../../assets/home/plantacion.jpg'
+import ConfirmDialog from '../../../components/ConfirmDialog'
 import Icon from '../../../components/Icon'
 import { useAuth } from '../../../contexts/AuthContext'
 import { PlantacionService } from '../../../services/plantacion.service'
 import {
   TIPO_CAMPANIA_LABEL,
   TIPO_ORGANIZACION_LABEL,
+  type CampaniaActivityItem,
+  type CampaniaActivityTipo,
+  type CampaniaMetrics,
+  type CampaniaMetricsUltimaActividad,
   type Campania,
   type EstadoSubcampania,
   type Organizacion,
@@ -36,6 +41,7 @@ type SubcampaniaFilter = 'todas' | 'activa' | 'borrador'
 
 // ================= Utilidades =================
 
+// Question: Esta funcion de format Date no debería estar absatradia para todos los modulos? Osea tener solo un tipo de formatDate para todos los modulos?
 function formatDate(value?: string | null): string {
   return formatFullDate(value, { fallback: 'Sin fecha' })
 }
@@ -90,27 +96,9 @@ function getZoneLabel(campania: Campania, subcampanias: Subcampania[]): string {
   return 'Por definir'
 }
 
-function mockHash(seed: number, ...keys: string[]): number {
-  let h = seed >>> 0
-  const str = keys.join('|')
-  for (let i = 0; i < str.length; i += 1) {
-    h = ((h << 5) - h + str.charCodeAt(i)) >>> 0
-  }
-  return h
-}
+// ================= Backend accessors =================
 
-// ================= Mock data (TODO backend) =================
-
-const MOCK_COORDINADORES = [
-  'María López',
-  'Daniel Mendoza',
-  'Ana Vargas',
-  'Carlos Apaza',
-  'Rosa Torrico',
-  'Juan Mamani',
-]
-
-type SubcampaniaActivaMock = {
+type SubcampaniaActivaData = {
   coordinadorNombre: string
   coordinadorIniciales: string
   areaHectareas: number
@@ -122,21 +110,22 @@ type SubcampaniaActivaMock = {
   eventos: number
 }
 
-// TODO(backend): reemplazar por datos reales por sub-campaña
-// (coordinador desde equipo real, área desde polígono, plantados y eventos desde el registro).
-function getMockActivaData(subcampania: Subcampania): SubcampaniaActivaMock {
-  const seed = subcampania.id || subcampania.nombre.length
-  const h = mockHash(seed, 'activa', subcampania.nombre)
+function getSubcampaniaActivaData(subcampania: Subcampania): SubcampaniaActivaData {
   const coordinadorNombre =
+    subcampania.coordinador?.nombre ||
     subcampania.equipo?.find((m) => m.rol === 'COORDINADOR')?.nombre_usuario ||
-    MOCK_COORDINADORES[h % MOCK_COORDINADORES.length]
-  const meta = subcampania.meta_total_arboles || 500 + (h % 700)
-  const avancePct = 55 + (h % 40)
-  const plantados = Math.round((meta * avancePct) / 100)
-  const areaHectareas = Number((0.4 + (((h >> 3) % 30) / 10)).toFixed(1))
-  const personas = 2 + (h % 5)
-  const lotes = 1 + (h % 3)
-  const eventos = 6 + (h % 24)
+    'Sin coordinador'
+  const meta = subcampania.meta_total_arboles ?? 0
+  const plantados = Number(subcampania.plantados ?? subcampania.total_plantado_inicial ?? 0)
+  const avancePct = Number.isFinite(subcampania.avance_pct)
+    ? Math.max(0, Math.min(100, Number(subcampania.avance_pct)))
+    : meta > 0
+      ? Math.max(0, Math.min(100, Math.round((plantados / meta) * 100)))
+      : 0
+  const areaHectareas = Number(subcampania.area_hectareas ?? 0)
+  const personas = Number(subcampania.personas_count ?? subcampania.equipo?.length ?? 0)
+  const lotes = Number(subcampania.lotes_count ?? 0)
+  const eventos = Number(subcampania.eventos_count ?? 0)
   return {
     coordinadorNombre,
     coordinadorIniciales: getInitials(coordinadorNombre),
@@ -150,127 +139,64 @@ function getMockActivaData(subcampania: Subcampania): SubcampaniaActivaMock {
   }
 }
 
-// TODO(backend): exponer has_plan_especies para no depender del hash.
-function getBackendSubcampaniaFaltantes(subcampania: Subcampania): string[] {
+function getSubcampaniaFaltantes(subcampania: Subcampania): string[] {
   const faltantes: string[] = []
   const equipo = subcampania.equipo ?? []
-  const hasCoordinador = equipo.some((m) => m.rol === 'COORDINADOR')
+  const hasCoordinador = Boolean(
+    subcampania.coordinador?.id ?? equipo.some((m) => m.rol === 'COORDINADOR'),
+  )
   if (!hasCoordinador) faltantes.push('coordinador')
   if (!subcampania.fecha_estimada_inicio || !subcampania.fecha_estimada_fin) {
     faltantes.push('fechas')
   }
   if (!subcampania.poligono) faltantes.push('cobertura')
-  const h = mockHash(subcampania.id, 'mix', subcampania.nombre)
-  if (h % 3 === 0) faltantes.push('mix de especies')
+  if (subcampania.has_plan_especies === false) faltantes.push('mix de especies')
   return faltantes
 }
 
-function getBackendSubcampaniaCoordinador(
-  subcampania: Subcampania,
-): { nombre: string; iniciales: string } | null {
-  const coord = subcampania.equipo?.find((m) => m.rol === 'COORDINADOR')
-  if (coord?.nombre_usuario) {
-    return { nombre: coord.nombre_usuario, iniciales: getInitials(coord.nombre_usuario) }
-  }
-  return null
-}
-
-type DashboardMetrics = {
-  supervivenciaPct: number
-  co2ProyectadoTon: number
-  hectareas: number
-  comunidadesCount: number
-  eventosCount: number
-  ultimaActividadHint: string
-}
-
-// TODO(backend): los cuatro contadores deberían venir del backend agregado.
-function computeDashboardMetrics(
+function getSubcampaniaUbicacion(
   campania: Campania,
-  subcampanias: Subcampania[],
-): DashboardMetrics {
-  const active = subcampanias.filter((s) => s.estado === 'ACTIVA')
-
-  const supervivenciaPct = Number.isFinite(campania.supervivencia_pct)
-    ? Number(campania.supervivencia_pct)
-    : 91
-
-  const co2ProyectadoTon = Number.isFinite(campania.co2_proyectado_ton)
-    ? Number(campania.co2_proyectado_ton)
-    : 54
-
-  const hectareas = Number.isFinite(campania.hectareas)
-    ? Number(campania.hectareas)
-    : Number(
-        active.reduce((acc, s) => acc + getMockActivaData(s).areaHectareas, 0).toFixed(1),
-      ) || 3.4
-
-  const comunidadesCount = Number.isFinite(campania.zonas_count)
-    ? Number(campania.zonas_count)
-    : campania.zonas?.length || active.length || 3
-
-  const eventosCount = active.length
-    ? active.reduce((acc, s) => acc + getMockActivaData(s).eventos, 0)
-    : 31
-
-  const ultimaActividadHint =
-    active.length > 0 ? 'hace 2 horas · Juan Mamani · 12 ár...' : 'Sin eventos aún'
-
-  return {
-    supervivenciaPct,
-    co2ProyectadoTon,
-    hectareas,
-    comunidadesCount,
-    eventosCount,
-    ultimaActividadHint,
-  }
+  subcampania: Subcampania,
+): string {
+  if (subcampania.zona_nombre) return subcampania.zona_nombre
+  if (campania.zonas?.length) return campania.zonas[0]
+  return ''
 }
 
-type ActividadRecienteItem = {
-  id: string
-  type: 'plantacion' | 'nueva_subcampana'
-  autor: string
-  detalle: string
-  ubicacion: string
-  hace: string
+function formatMetricNumber(value?: number | null, fractionDigits = 0): string {
+  if (value === null || value === undefined || !Number.isFinite(value)) return '—'
+  return Number(value).toLocaleString('es-BO', {
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  })
 }
 
-// TODO(backend): reemplazar con endpoint de actividad reciente por campaña.
-function getMockActivityFeed(subcampanias: Subcampania[]): ActividadRecienteItem[] {
-  const active = subcampanias.filter((s) => s.estado === 'ACTIVA')
-  const drafts = subcampanias.filter((s) => s.estado === 'BORRADOR')
-  const items: ActividadRecienteItem[] = []
-  if (active[0]) {
-    items.push({
-      id: `plant-${active[0].id}`,
-      type: 'plantacion',
-      autor: 'Juan Mamani',
-      detalle: '12 árboles',
-      ubicacion: active[0].nombre,
-      hace: 'hace 2 h',
-    })
-  }
-  if (active[1]) {
-    items.push({
-      id: `plant-${active[1].id}`,
-      type: 'plantacion',
-      autor: 'Carlos Apaza',
-      detalle: '28 árboles',
-      ubicacion: active[1].nombre,
-      hace: 'ayer',
-    })
-  }
-  if (drafts[0]) {
-    items.push({
-      id: `draft-${drafts[0].id}`,
-      type: 'nueva_subcampana',
-      autor: 'Nueva sub-campaña en borrador',
-      detalle: '',
-      ubicacion: drafts[0].nombre,
-      hace: 'hace 1 día',
-    })
-  }
-  return items
+function formatRelativeTime(iso?: string | null): string {
+  if (!iso) return 'Sin fecha'
+  const then = new Date(iso).getTime()
+  if (!Number.isFinite(then)) return 'Sin fecha'
+  const diffSec = Math.floor((Date.now() - then) / 1000)
+  if (diffSec < 60) return 'hace instantes'
+  const diffMin = Math.floor(diffSec / 60)
+  if (diffMin < 60) return `hace ${diffMin} min`
+  const diffHours = Math.floor(diffMin / 60)
+  if (diffHours < 24) return `hace ${diffHours} h`
+  const diffDays = Math.floor(diffHours / 24)
+  if (diffDays === 1) return 'ayer'
+  if (diffDays < 7) return `hace ${diffDays} días`
+  const diffWeeks = Math.floor(diffDays / 7)
+  if (diffWeeks < 5) return `hace ${diffWeeks} sem`
+  const diffMonths = Math.floor(diffDays / 30)
+  if (diffMonths < 12) return `hace ${diffMonths} m`
+  return formatDate(iso)
+}
+
+function formatUltimaActividadHint(item: CampaniaMetricsUltimaActividad | null): string {
+  if (!item) return 'Sin eventos aún'
+  const parts = [formatRelativeTime(item.timestamp), item.autor, item.detalle].filter(
+    (p) => p && p.trim().length > 0,
+  )
+  return parts.join(' · ')
 }
 
 // ================= Draft utils =================
@@ -424,10 +350,16 @@ function OrganizationInlineList({ organizations }: { organizations: Organizacion
 
 function KebabMenu({
   onEditar,
-  onCancelar,
+  onDesactivar,
+  desactivarDisabled = false,
+  desactivarDisabledReason,
+  canManage,
 }: {
   onEditar: () => void
-  onCancelar: () => void
+  onDesactivar: () => void
+  desactivarDisabled?: boolean
+  desactivarDisabledReason?: string
+  canManage: boolean
 }) {
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement | null>(null)
@@ -442,6 +374,8 @@ function KebabMenu({
     document.addEventListener('mousedown', onClickOutside)
     return () => document.removeEventListener('mousedown', onClickOutside)
   }, [open])
+
+  if (!canManage) return null
 
   return (
     <div ref={containerRef} className="relative">
@@ -459,7 +393,7 @@ function KebabMenu({
         </svg>
       </button>
       {open && (
-        <div className="absolute right-0 top-11 z-30 w-56 overflow-hidden rounded-2xl bg-white text-brand-700 shadow-soft ring-1 ring-black/10">
+        <div className="absolute right-0 top-11 z-30 w-64 overflow-hidden rounded-2xl bg-white text-brand-700 shadow-soft ring-1 ring-black/10">
           <button
             type="button"
             onClick={() => {
@@ -474,13 +408,27 @@ function KebabMenu({
           <button
             type="button"
             onClick={() => {
+              if (desactivarDisabled) return
               setOpen(false)
-              onCancelar()
+              onDesactivar()
             }}
-            className="flex w-full items-center gap-2.5 border-t border-slate-100 px-4 py-3 text-left text-sm font-bold text-red-700 hover:bg-red-50"
+            disabled={desactivarDisabled}
+            title={desactivarDisabled ? desactivarDisabledReason : undefined}
+            className={`flex w-full items-start gap-2.5 border-t border-slate-100 px-4 py-3 text-left text-sm font-bold ${
+              desactivarDisabled
+                ? 'cursor-not-allowed text-slate-400'
+                : 'text-red-700 hover:bg-red-50'
+            }`}
           >
-            <Icon name="trash" className="h-4 w-4" />
-            Cancelar campaña
+            <Icon name="trash" className="mt-0.5 h-4 w-4 shrink-0" />
+            <span className="min-w-0 flex-1">
+              Desactivar campaña
+              {desactivarDisabled && desactivarDisabledReason && (
+                <span className="mt-0.5 block text-[11px] font-semibold text-slate-500">
+                  {desactivarDisabledReason}
+                </span>
+              )}
+            </span>
           </button>
         </div>
       )}
@@ -495,13 +443,19 @@ function CampaniaHeader({
   subcampanias,
   onBack,
   onEditar,
-  onCancelar,
+  onDesactivar,
+  desactivarDisabled,
+  desactivarDisabledReason,
+  canManage,
 }: {
   campania: Campania
   subcampanias: Subcampania[]
   onBack: () => void
   onEditar: () => void
-  onCancelar: () => void
+  onDesactivar: () => void
+  desactivarDisabled: boolean
+  desactivarDisabledReason?: string
+  canManage: boolean
 }) {
   const totalSub = getTotalSubcampanias(campania, subcampanias)
   const activasCount = countByEstado(subcampanias, 'ACTIVA')
@@ -535,7 +489,13 @@ function CampaniaHeader({
           </button>
           <div className="flex items-center gap-2">
             <StateBadge label={status} light />
-            <KebabMenu onEditar={onEditar} onCancelar={onCancelar} />
+            <KebabMenu
+              onEditar={onEditar}
+              onDesactivar={onDesactivar}
+              desactivarDisabled={desactivarDisabled}
+              desactivarDisabledReason={desactivarDisabledReason}
+              canManage={canManage}
+            />
           </div>
         </div>
 
@@ -668,26 +628,44 @@ function MetricCard({
   )
 }
 
-function MetricsGrid({ metrics }: { metrics: DashboardMetrics }) {
+function MetricsGrid({ metrics }: { metrics: CampaniaMetrics | null }) {
+  const supervivencia = metrics ? Math.max(0, Math.min(100, metrics.supervivencia_pct)) : 0
+  const comunidades = metrics?.comunidades_count ?? 0
   return (
     <section className="grid grid-cols-2 gap-3">
-      <MetricCard label="Supervivencia pond." value={`${metrics.supervivenciaPct}%`}>
-        <Progress pct={metrics.supervivenciaPct} tone="emerald" />
+      <MetricCard
+        label="Supervivencia pond."
+        value={metrics ? `${formatMetricNumber(metrics.supervivencia_pct, 1)}%` : '—'}
+      >
+        <Progress pct={supervivencia} tone="emerald" />
       </MetricCard>
-      <MetricCard label="CO₂ proyectado" value={`${metrics.co2ProyectadoTon}`} unit="T">
+      <MetricCard
+        label="CO₂ proyectado"
+        value={formatMetricNumber(metrics?.co2_proyectado_ton, 1)}
+        unit="T"
+      >
         <p className="text-[11px] font-semibold leading-tight text-slate-500">
-          Agregado de sub-campañas
+          Agregado (estimado)
         </p>
       </MetricCard>
-      <MetricCard label="Hectáreas" value={`${metrics.hectareas}`} unit="ha">
+      <MetricCard
+        label="Hectáreas"
+        value={formatMetricNumber(metrics?.hectareas, 2)}
+        unit="ha"
+      >
         <p className="text-[11px] font-semibold leading-tight text-slate-500">
-          {metrics.comunidadesCount} comunidad
-          {metrics.comunidadesCount === 1 ? '' : 'es'}
+          {metrics ? (
+            <>
+              {comunidades} comunidad{comunidades === 1 ? '' : 'es'}
+            </>
+          ) : (
+            '—'
+          )}
         </p>
       </MetricCard>
-      <MetricCard label="Eventos" value={`${metrics.eventosCount}`}>
+      <MetricCard label="Eventos" value={formatMetricNumber(metrics?.eventos_count)}>
         <p className="truncate text-[11px] font-semibold leading-tight text-slate-500">
-          {metrics.ultimaActividadHint}
+          {formatUltimaActividadHint(metrics?.ultima_actividad ?? null)}
         </p>
       </MetricCard>
     </section>
@@ -1154,7 +1132,7 @@ function SubcampaniasSection({
 
             const sub = item.subcampania
             const tipo = sub.tipo ?? campania.tipo
-            const ubicacion = campania.zonas?.[0] ?? ''
+            const ubicacion = getSubcampaniaUbicacion(campania, sub)
             const header = (
               <SubcampaniaCardHeader
                 tipo={tipo}
@@ -1166,15 +1144,14 @@ function SubcampaniasSection({
             const onTap = () => onSubcampaniaTap(sub)
 
             if (sub.estado === 'ACTIVA') {
-              const activaData = getMockActivaData(sub)
-              const coord = getBackendSubcampaniaCoordinador(sub)
+              const activaData = getSubcampaniaActivaData(sub)
               return (
                 <SubcampaniaCardActiva
                   key={`sub-${sub.id}`}
                   onTap={onTap}
                   header={header}
-                  coordinadorNombre={coord?.nombre ?? activaData.coordinadorNombre}
-                  coordinadorIniciales={coord?.iniciales ?? activaData.coordinadorIniciales}
+                  coordinadorNombre={activaData.coordinadorNombre}
+                  coordinadorIniciales={activaData.coordinadorIniciales}
                   areaHectareas={activaData.areaHectareas}
                   plantados={activaData.plantados}
                   meta={activaData.meta}
@@ -1187,7 +1164,7 @@ function SubcampaniasSection({
             }
 
             if (sub.estado === 'BORRADOR') {
-              const faltantes = getBackendSubcampaniaFaltantes(sub)
+              const faltantes = getSubcampaniaFaltantes(sub)
               if (faltantes.length === 0) {
                 return (
                   <SubcampaniaCardBorradorCompleto
@@ -1228,7 +1205,29 @@ function SubcampaniasSection({
 
 // ================= Actividad reciente =================
 
-function ActivityFeed({ items }: { items: ActividadRecienteItem[] }) {
+const ACTIVITY_ICON_BY_TIPO: Record<CampaniaActivityTipo, {
+  iconName: 'planting' | 'plus' | 'check' | 'trash' | 'user'
+  tone: 'emerald' | 'brand' | 'amber' | 'red' | 'slate'
+}> = {
+  plantacion: { iconName: 'planting', tone: 'emerald' },
+  nueva_subcampana: { iconName: 'plus', tone: 'brand' },
+  activacion: { iconName: 'check', tone: 'emerald' },
+  cancelacion: { iconName: 'trash', tone: 'red' },
+  cambio_coordinador: { iconName: 'user', tone: 'amber' },
+}
+
+const ACTIVITY_TONE_CLASSES: Record<
+  'emerald' | 'brand' | 'amber' | 'red' | 'slate',
+  string
+> = {
+  emerald: 'bg-emerald-50 text-emerald-700',
+  brand: 'bg-brand-50 text-brand-700',
+  amber: 'bg-amber-50 text-amber-700',
+  red: 'bg-red-50 text-red-700',
+  slate: 'bg-slate-50 text-slate-600',
+}
+
+function ActivityFeed({ items }: { items: CampaniaActivityItem[] }) {
   if (items.length === 0) return null
   return (
     <section className="rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
@@ -1236,29 +1235,44 @@ function ActivityFeed({ items }: { items: ActividadRecienteItem[] }) {
         Actividad reciente
       </p>
       <ul className="mt-3 divide-y divide-slate-100">
-        {items.map((item) => (
-          <li key={item.id} className="flex items-start gap-3 py-2.5 first:pt-1 last:pb-1">
-            <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
-              <Icon
-                name={item.type === 'nueva_subcampana' ? 'plus' : 'planting'}
-                className="h-4 w-4"
-              />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[13px] font-extrabold text-brand-900">
-                {item.autor}
-                {item.detalle && <span className="text-brand-800"> · {item.detalle}</span>}
+        {items.map((item) => {
+          const meta =
+            ACTIVITY_ICON_BY_TIPO[item.tipo] ?? {
+              iconName: 'info',
+              tone: 'slate' as const,
+            }
+          return (
+            <li
+              key={item.id}
+              className="flex items-start gap-3 py-2.5 first:pt-1 last:pb-1"
+            >
+              <span
+                className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
+                  ACTIVITY_TONE_CLASSES[meta.tone]
+                }`}
+              >
+                <Icon name={meta.iconName} className="h-4 w-4" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[13px] font-extrabold text-brand-900">
+                  {item.autor}
+                  {item.detalle && (
+                    <span className="text-brand-800"> · {item.detalle}</span>
+                  )}
+                </p>
+                {item.ubicacion && (
+                  <p className="mt-0.5 flex items-center gap-1 truncate text-[11.5px] font-semibold text-slate-500">
+                    <Icon name="chevron-right" className="h-3 w-3 text-slate-400" />
+                    {item.ubicacion}
+                  </p>
+                )}
+              </div>
+              <p className="whitespace-nowrap text-[11px] font-bold text-slate-400">
+                {formatRelativeTime(item.timestamp)}
               </p>
-              <p className="mt-0.5 flex items-center gap-1 truncate text-[11.5px] font-semibold text-slate-500">
-                <Icon name="chevron-right" className="h-3 w-3 text-slate-400" />
-                {item.ubicacion}
-              </p>
-            </div>
-            <p className="whitespace-nowrap text-[11px] font-bold text-slate-400">
-              {item.hace}
-            </p>
-          </li>
-        ))}
+            </li>
+          )
+        })}
       </ul>
     </section>
   )
@@ -1359,6 +1373,8 @@ function CampaniaAdminDashboardScreen() {
   const hasValidCampaniaId = Number.isFinite(numericCampaniaId) && numericCampaniaId > 0
   const [campania, setCampania] = useState<Campania | null>(state?.campania ?? null)
   const [subcampanias, setSubcampanias] = useState<Subcampania[]>([])
+  const [metrics, setMetrics] = useState<CampaniaMetrics | null>(null)
+  const [activityFeed, setActivityFeed] = useState<CampaniaActivityItem[]>([])
   const [loading, setLoading] = useState(hasValidCampaniaId)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<DashboardTab>('resumen')
@@ -1366,17 +1382,36 @@ function CampaniaAdminDashboardScreen() {
   const [localDrafts] = useState<SubcampaniaBaseDraft[]>(() =>
     hasValidCampaniaId ? loadSubcampaniaBaseDrafts(numericCampaniaId) : [],
   )
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [deletingCampania, setDeletingCampania] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   const visibleLocalDrafts = localDrafts.filter((draft) => !draft.subcampania_id)
   const canCreateSubcampania = (user?.rol ?? '').toUpperCase() === 'ADMIN'
+  const isAdmin = (user?.rol ?? '').toUpperCase() === 'ADMIN'
   const visibleError = error ?? (!hasValidCampaniaId ? 'ID de campaña inválido.' : null)
 
-  const fetchDashboard = useCallback(async (): Promise<[Campania, Subcampania[]] | null> => {
+  const fetchDashboard = useCallback(async (): Promise<{
+    campania: Campania
+    subs: Subcampania[]
+    metrics: CampaniaMetrics | null
+    activity: CampaniaActivityItem[]
+  } | null> => {
     if (!hasValidCampaniaId) return null
-    return Promise.all([
+    const [campaniaResult, subsResult, metricsResult, activityResult] = await Promise.all([
       PlantacionService.getCampania(numericCampaniaId),
       PlantacionService.listSubcampaniasByCampania(numericCampaniaId),
+      PlantacionService.getCampaniaMetrics(numericCampaniaId).catch(() => null),
+      PlantacionService.getCampaniaActivity(numericCampaniaId, 5).catch(
+        () => [] as CampaniaActivityItem[],
+      ),
     ])
+    return {
+      campania: campaniaResult,
+      subs: subsResult,
+      metrics: metricsResult,
+      activity: activityResult,
+    }
   }, [hasValidCampaniaId, numericCampaniaId])
 
   const loadDashboard = useCallback(() => {
@@ -1386,13 +1421,16 @@ function CampaniaAdminDashboardScreen() {
     fetchDashboard()
       .then((result) => {
         if (!result) return
-        const [data, subs] = result
-        setCampania(data)
-        setSubcampanias(subs)
+        setCampania(result.campania)
+        setSubcampanias(result.subs)
+        setMetrics(result.metrics)
+        setActivityFeed(result.activity)
         setError(null)
       })
       .catch((loadError) => {
         setSubcampanias([])
+        setMetrics(null)
+        setActivityFeed([])
         setError(
           loadError instanceof Error ? loadError.message : 'No se pudo cargar la campaña.',
         )
@@ -1406,14 +1444,17 @@ function CampaniaAdminDashboardScreen() {
     fetchDashboard()
       .then((result) => {
         if (cancelled || !result) return
-        const [data, subs] = result
-        setCampania(data)
-        setSubcampanias(subs)
+        setCampania(result.campania)
+        setSubcampanias(result.subs)
+        setMetrics(result.metrics)
+        setActivityFeed(result.activity)
         setError(null)
       })
       .catch((loadError) => {
         if (cancelled) return
         setSubcampanias([])
+        setMetrics(null)
+        setActivityFeed([])
         setError(
           loadError instanceof Error ? loadError.message : 'No se pudo cargar la campaña.',
         )
@@ -1453,14 +1494,33 @@ function CampaniaAdminDashboardScreen() {
     navigate(`/app/planting/subcampanias/${subcampania.id}`)
   }
 
-  // TODO: implementar navegación real a pantalla de edición.
   const onEditarCampania = () => {
-    window.alert('Editar campaña próximamente')
+    if (!campania) return
+    navigate(`/app/planting/campanias/${campania.id}/edit`, {
+      state: { campania },
+    })
   }
 
-  // TODO: reemplazar por confirmación + llamada backend cuando exista endpoint.
-  const onCancelarCampania = () => {
-    window.alert('Cancelar campaña próximamente')
+  const onDesactivarCampania = () => {
+    setDeleteError(null)
+    setDeleteDialogOpen(true)
+  }
+
+  const confirmDesactivarCampania = async () => {
+    if (!campania) return
+    try {
+      setDeletingCampania(true)
+      setDeleteError(null)
+      await PlantacionService.deleteCampania(campania.id, user?.auth_id)
+      setDeleteDialogOpen(false)
+      navigate('/app/planting', { replace: true })
+    } catch (error) {
+      setDeleteError(
+        error instanceof Error ? error.message : 'No se pudo desactivar la campaña.',
+      )
+    } finally {
+      setDeletingCampania(false)
+    }
   }
 
   const allItems: SubcampaniaItem[] = useMemo(() => {
@@ -1493,19 +1553,18 @@ function CampaniaAdminDashboardScreen() {
     return allItems
   }, [allItems, subcampaniaFilter])
 
-  const metrics = useMemo(
-    () => (campania ? computeDashboardMetrics(campania, subcampanias) : null),
-    [campania, subcampanias],
-  )
-
-  const activityFeed = useMemo(() => getMockActivityFeed(subcampanias), [subcampanias])
-
   const sinCoordinadorCount = useMemo(() => {
     return subcampanias.filter((s) => {
       if (s.estado === 'CANCELADA' || s.estado === 'COMPLETADA') return false
+      if (s.coordinador?.id) return false
       const equipo = s.equipo ?? []
       return !equipo.some((m) => m.rol === 'COORDINADOR')
     }).length
+  }, [subcampanias])
+
+  const canDeactivateCampania = useMemo(() => {
+    if (subcampanias.length === 0) return true
+    return subcampanias.every((s) => s.estado === 'CANCELADA')
   }, [subcampanias])
 
   const activeSubCount = countByEstado(subcampanias, 'ACTIVA')
@@ -1520,7 +1579,14 @@ function CampaniaAdminDashboardScreen() {
             subcampanias={subcampanias}
             onBack={goBack}
             onEditar={onEditarCampania}
-            onCancelar={onCancelarCampania}
+            onDesactivar={onDesactivarCampania}
+            desactivarDisabled={!canDeactivateCampania}
+            desactivarDisabledReason={
+              canDeactivateCampania
+                ? undefined
+                : 'Cancela primero las sub-campañas activas para poder desactivar.'
+            }
+            canManage={isAdmin}
           />
         ) : (
           <LoadingHeader onBack={goBack} />
@@ -1548,7 +1614,7 @@ function CampaniaAdminDashboardScreen() {
             </div>
           )}
 
-          {campania && !loading && !visibleError && metrics && (
+          {campania && !loading && !visibleError && (
             <>
               <DCTabs active={activeTab} onChange={setActiveTab} />
 
@@ -1557,7 +1623,7 @@ function CampaniaAdminDashboardScreen() {
                   <MetricsGrid metrics={metrics} />
                   <NoCoordinadorAlert count={sinCoordinadorCount} />
                   <CoverageMapPreview
-                    hectareas={metrics.hectareas}
+                    hectareas={metrics?.hectareas ?? 0}
                     activeCount={activeSubCount}
                     draftCount={draftBackendCount + visibleLocalDrafts.length}
                     onOpen={() => setActiveTab('mapa')}
@@ -1589,6 +1655,27 @@ function CampaniaAdminDashboardScreen() {
           onCreate={goToNewSubcampania}
         />
       )}
+
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        title="Desactivar campaña"
+        description={
+          deleteError
+            ? deleteError
+            : 'Esta acción se puede revertir contactando al administrador. La campaña dejará de estar visible en el listado.'
+        }
+        confirmLabel="Desactivar campaña"
+        cancelLabel="Cancelar"
+        variant="danger"
+        iconName="trash"
+        loading={deletingCampania}
+        onConfirm={() => void confirmDesactivarCampania()}
+        onCancel={() => {
+          if (deletingCampania) return
+          setDeleteDialogOpen(false)
+          setDeleteError(null)
+        }}
+      />
     </div>
   )
 }

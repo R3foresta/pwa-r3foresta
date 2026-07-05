@@ -3,14 +3,20 @@ import {
   cancelarSubcampaniaApi,
   createCampaniaApi,
   createSubcampaniaApi,
+  deleteCampaniaApi,
+  deleteCampaniaOrganizacionApi,
   deleteSubcampaniaEquipoMemberApi,
+  getCampaniaActivityApi,
   getCampaniaApi,
+  getCampaniaMetricsApi,
   getSubcampaniaApi,
   getSubcampaniaEquipoApi,
   getSubcampaniaPlanApi,
   listCampaniasApi,
   listSubcampaniasByCampaniaApi,
+  patchCampaniaApi,
   patchSubcampaniaApi,
+  postCampaniaOrganizacionesApi,
   postSubcampaniaEquipoApi,
   putSubcampaniaPlanApi,
   setSubcampaniaPoligonoApi,
@@ -19,10 +25,13 @@ import { OrganizacionesService } from './organizaciones.service'
 import type {
   ActivarSubcampaniaData,
   ApiEnvelope,
+  CampaniaActivityItem,
+  CampaniaMetrics,
   CancelarSubcampaniaData,
   Campania,
   CreateCampaniaInput,
   CreateSubcampaniaInput,
+  DeleteCampaniaData,
   EquipoMember,
   EquipoMemberInput,
   GeoJsonPolygon,
@@ -34,6 +43,7 @@ import type {
   SetSubcampaniaPoligonoData,
   Subcampania,
   TipoCampania,
+  UpdateCampaniaInput,
   UpdateSubcampaniaInput,
 } from '../modules/plantacion/types/contracts'
 import type {
@@ -182,6 +192,122 @@ export class PlantacionService {
       'Error al cargar subcampañas de la campaña.',
     )
     return Array.isArray(payload.data) ? payload.data : []
+  }
+
+  static async getCampaniaMetrics(campaniaId: number): Promise<CampaniaMetrics> {
+    if (!Number.isFinite(campaniaId) || campaniaId <= 0) {
+      throw new Error('ID de campaña inválido.')
+    }
+    const response = await getCampaniaMetricsApi(campaniaId)
+    const payload = await parseJsonResponse<ApiEnvelope<CampaniaMetrics>>(
+      response,
+      'Error al cargar métricas de la campaña.',
+    )
+    if (!payload.data) {
+      throw new Error('No se recibieron métricas de la campaña.')
+    }
+    return payload.data
+  }
+
+  static async getCampaniaActivity(
+    campaniaId: number,
+    limit = 5,
+  ): Promise<CampaniaActivityItem[]> {
+    if (!Number.isFinite(campaniaId) || campaniaId <= 0) {
+      throw new Error('ID de campaña inválido.')
+    }
+    const clampedLimit = Math.max(1, Math.min(50, Math.floor(limit)))
+    const response = await getCampaniaActivityApi(campaniaId, clampedLimit)
+    const payload = await parseJsonResponse<ApiEnvelope<CampaniaActivityItem[]>>(
+      response,
+      'Error al cargar la actividad reciente.',
+    )
+    return Array.isArray(payload.data) ? payload.data : []
+  }
+
+  static async updateCampania(
+    campaniaId: number,
+    input: UpdateCampaniaInput,
+    authId?: string,
+  ): Promise<Campania> {
+    if (!Number.isFinite(campaniaId) || campaniaId <= 0) {
+      throw new Error('ID de campaña inválido.')
+    }
+    const cleanInput = validateUpdateCampaniaInput(input)
+    if (Object.keys(cleanInput).length === 0) {
+      throw new Error('No hay cambios para actualizar.')
+    }
+    const response = await patchCampaniaApi(campaniaId, cleanInput, authId)
+    const payload = await parseJsonResponse<ApiEnvelope<Campania>>(
+      response,
+      'Error al actualizar la campaña.',
+    )
+    if (!payload.data) {
+      throw new Error('No se recibió la campaña actualizada.')
+    }
+    return payload.data
+  }
+
+  static async deleteCampania(
+    campaniaId: number,
+    authId?: string,
+  ): Promise<DeleteCampaniaData> {
+    if (!Number.isFinite(campaniaId) || campaniaId <= 0) {
+      throw new Error('ID de campaña inválido.')
+    }
+    const response = await deleteCampaniaApi(campaniaId, authId)
+    const payload = await parseJsonResponse<ApiEnvelope<DeleteCampaniaData>>(
+      response,
+      'Error al desactivar la campaña.',
+    )
+    return payload.data ?? { id: campaniaId }
+  }
+
+  static async addCampaniaOrganizaciones(
+    campaniaId: number,
+    organizacionIds: number[],
+    authId?: string,
+  ): Promise<void> {
+    if (!Number.isFinite(campaniaId) || campaniaId <= 0) {
+      throw new Error('ID de campaña inválido.')
+    }
+    const cleanIds = (organizacionIds || []).filter(
+      (id) => Number.isFinite(id) && id > 0,
+    )
+    if (cleanIds.length === 0) {
+      throw new Error('Selecciona al menos una organización.')
+    }
+    const response = await postCampaniaOrganizacionesApi(
+      campaniaId,
+      { organizacion_ids: cleanIds },
+      authId,
+    )
+    await parseJsonResponse<ApiEnvelope<unknown>>(
+      response,
+      'Error al asociar organizaciones a la campaña.',
+    )
+  }
+
+  static async removeCampaniaOrganizacion(
+    campaniaId: number,
+    organizacionId: number,
+    authId?: string,
+  ): Promise<void> {
+    if (!Number.isFinite(campaniaId) || campaniaId <= 0) {
+      throw new Error('ID de campaña inválido.')
+    }
+    if (!Number.isFinite(organizacionId) || organizacionId <= 0) {
+      throw new Error('ID de organización inválido.')
+    }
+    const response = await deleteCampaniaOrganizacionApi(
+      campaniaId,
+      organizacionId,
+      authId,
+    )
+    await parseJsonResponse<ApiEnvelope<unknown>>(
+      response,
+      'Error al quitar la organización de la campaña.',
+    )
   }
 
   static async createCampania(
@@ -427,6 +553,47 @@ export class PlantacionService {
     }
     return payload.data
   }
+}
+
+function validateUpdateCampaniaInput(input: UpdateCampaniaInput): UpdateCampaniaInput {
+  const cleanInput: UpdateCampaniaInput = {}
+
+  if (input.nombre !== undefined) {
+    const nombre = normalizeText(input.nombre)
+    if (nombre.length < 3 || nombre.length > 200) {
+      throw new Error('El nombre de la campaña debe tener entre 3 y 200 caracteres.')
+    }
+    cleanInput.nombre = nombre
+  }
+  if (input.tipo !== undefined) {
+    if (!TIPOS_CAMPANIA.includes(input.tipo)) {
+      throw new Error('Selecciona un tipo de campaña válido.')
+    }
+    cleanInput.tipo = input.tipo
+  }
+  if (input.descripcion !== undefined) {
+    const descripcion = input.descripcion.trim()
+    if (descripcion.length > 1000) {
+      throw new Error('La descripción no puede superar los 1000 caracteres.')
+    }
+    cleanInput.descripcion = descripcion
+  }
+  if (input.fecha_estimada_inicio !== undefined) {
+    cleanInput.fecha_estimada_inicio = input.fecha_estimada_inicio || undefined
+  }
+  if (input.fecha_estimada_fin !== undefined) {
+    cleanInput.fecha_estimada_fin = input.fecha_estimada_fin || undefined
+  }
+
+  if (
+    cleanInput.fecha_estimada_inicio &&
+    cleanInput.fecha_estimada_fin &&
+    cleanInput.fecha_estimada_inicio > cleanInput.fecha_estimada_fin
+  ) {
+    throw new Error('La fecha de cierre estimada no puede ser anterior al inicio.')
+  }
+
+  return cleanInput
 }
 
 function validateCreateSubcampaniaInput(

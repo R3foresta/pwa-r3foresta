@@ -61,6 +61,23 @@ export type CreateCampaniaInput = {
   organizacion_ids?: number[]
 }
 
+export type UpdateCampaniaInput = {
+  nombre?: string
+  tipo?: TipoCampania
+  descripcion?: string
+  fecha_estimada_inicio?: string
+  fecha_estimada_fin?: string
+}
+
+export type DeleteCampaniaData = {
+  message?: string
+  id: number
+}
+
+export type SetCampaniaOrganizacionesInput = {
+  organizacion_ids: number[]
+}
+
 export type SetSubcampaniaPoligonoInput = {
   poligono: GeoJsonPolygon
 }
@@ -115,6 +132,7 @@ export type Subcampania = {
   descripcion?: string | null
   tipo?: TipoCampania
   zona_id: number
+  zona_nombre?: string | null
   meta_total_arboles: number
   fecha_estimada_inicio?: string | null
   fecha_estimada_fin?: string | null
@@ -122,12 +140,20 @@ export type Subcampania = {
   estado: EstadoSubcampania
   fase_mantenimiento?: FaseMantenimientoSubcampania | null
   poligono?: GeoJsonPolygon | null
+  area_hectareas?: number | null
   saldo_vivo_actual?: number | null
   total_plantado_inicial?: number | null
   total_repuesto?: number | null
   total_muerto_acumulado?: number | null
+  plantados?: number | null
+  avance_pct?: number | null
+  has_plan_especies?: boolean | null
+  personas_count?: number | null
+  lotes_count?: number | null
+  eventos_count?: number | null
   codigo_trazabilidad?: string | null
   equipo?: EquipoMember[]
+  coordinador?: { id: number; nombre: string } | null
   created_at: string
   updated_at?: string | null
 }
@@ -218,6 +244,37 @@ export type ApiEnvelope<T> = {
   data?: T
   message?: string | string[]
   error?: string
+}
+
+export type CampaniaMetricsUltimaActividad = {
+  autor: string
+  detalle: string
+  timestamp: string
+}
+
+export type CampaniaMetrics = {
+  supervivencia_pct: number
+  co2_proyectado_ton: number
+  hectareas: number
+  comunidades_count: number
+  eventos_count: number
+  ultima_actividad: CampaniaMetricsUltimaActividad | null
+}
+
+export type CampaniaActivityTipo =
+  | 'plantacion'
+  | 'nueva_subcampana'
+  | 'activacion'
+  | 'cancelacion'
+  | 'cambio_coordinador'
+
+export type CampaniaActivityItem = {
+  id: string
+  tipo: CampaniaActivityTipo
+  autor: string
+  detalle: string
+  ubicacion: string
+  timestamp: string
 }
 
 export const TIPO_CAMPANIA_LABEL: Record<TipoCampania, string> = {

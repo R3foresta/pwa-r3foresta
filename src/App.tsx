@@ -32,6 +32,7 @@ import {
   CrearCampanaScreen,
   CrearSubcampanaScreen,
   DetalleSubcampanaScreen,
+  EditarCampanaScreen,
   PlantacionDashboardScreen,
 } from './modules/plantacion'
 import MapScreen from './modules/map/MapScreen'
@@ -130,6 +131,10 @@ function App() {
               <Route index element={<PlantacionDashboardScreen />} />
               <Route path="campanias/new" element={<CrearCampanaScreen />} />
               <Route path="campanias/:campaniaId" element={<CampaniaAdminDashboardScreen />} />
+              <Route
+                path="campanias/:campaniaId/edit"
+                element={<EditarCampanaScreen />}
+              />
               <Route
                 path="campanias/:campaniaId/subcampanias/new"
                 element={<CrearSubcampanaScreen />}

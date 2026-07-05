@@ -4,7 +4,9 @@ import type {
   CreateSubcampaniaInput,
   EquipoMemberInput,
   PutPlanInput,
+  SetCampaniaOrganizacionesInput,
   SetSubcampaniaPoligonoInput,
+  UpdateCampaniaInput,
   UpdateSubcampaniaInput,
 } from '../modules/plantacion/types/contracts'
 
@@ -61,6 +63,71 @@ export async function listSubcampaniasByCampaniaApi(campaniaId: number): Promise
     {
       method: 'GET',
       headers: getAuthHeaders({ includeContentType: false }),
+    },
+  )
+}
+
+export async function getCampaniaMetricsApi(campaniaId: number): Promise<Response> {
+  return fetch(`${API_BASE_URL}/campanias/${campaniaId}/metrics`, {
+    method: 'GET',
+    headers: getAuthHeaders({ includeContentType: false }),
+  })
+}
+
+export async function getCampaniaActivityApi(
+  campaniaId: number,
+  limit = 5,
+): Promise<Response> {
+  return fetch(`${API_BASE_URL}/campanias/${campaniaId}/activity?limit=${limit}`, {
+    method: 'GET',
+    headers: getAuthHeaders({ includeContentType: false }),
+  })
+}
+
+export async function patchCampaniaApi(
+  campaniaId: number,
+  input: UpdateCampaniaInput,
+  authId?: string,
+): Promise<Response> {
+  return fetch(`${API_BASE_URL}/campanias/${campaniaId}`, {
+    method: 'PATCH',
+    headers: getAuthHeaders({ authId, includeContentType: true }),
+    body: JSON.stringify(input),
+  })
+}
+
+export async function deleteCampaniaApi(
+  campaniaId: number,
+  authId?: string,
+): Promise<Response> {
+  return fetch(`${API_BASE_URL}/campanias/${campaniaId}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders({ authId, includeContentType: false }),
+  })
+}
+
+export async function postCampaniaOrganizacionesApi(
+  campaniaId: number,
+  input: SetCampaniaOrganizacionesInput,
+  authId?: string,
+): Promise<Response> {
+  return fetch(`${API_BASE_URL}/campanias/${campaniaId}/organizaciones`, {
+    method: 'POST',
+    headers: getAuthHeaders({ authId, includeContentType: true }),
+    body: JSON.stringify(input),
+  })
+}
+
+export async function deleteCampaniaOrganizacionApi(
+  campaniaId: number,
+  organizacionId: number,
+  authId?: string,
+): Promise<Response> {
+  return fetch(
+    `${API_BASE_URL}/campanias/${campaniaId}/organizaciones/${organizacionId}`,
+    {
+      method: 'DELETE',
+      headers: getAuthHeaders({ authId, includeContentType: false }),
     },
   )
 }
