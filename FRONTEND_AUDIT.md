@@ -448,6 +448,8 @@ Mantener esta tabla actualizada.
 | AUD-001 | `MEDIA` | `PENDIENTE` | `general` | `deuda` | Primera auditoría pendiente contra repo real. | `frontend/` |
 | AUD-002 | `ALTA` | `PENDIENTE` | `general` | `testing` | `build` no pasa por errores de TypeScript en módulos ajenos a Recolección. | `src/modules/recolecciones/components/CantidadInput.tsx`, `src/modules/vivero/screens/ViveroNewScreen.tsx` |
 | AUD-003 | `ALTA` | `PENDIENTE` | `general` | `testing` | `npm run lint` falla por deuda previa y por incluir worktrees internos. | `src/`, `.claude/worktrees/` |
+| AUD-004 | `BAJA` | `PENDIENTE` | `general` | `deuda` | `formatDate` y `formatRelativeTime` viven duplicados/en línea por módulo; conviene extraerlos a un util compartido. | `src/modules/plantacion/utils/subcampaniaFormatters.ts`, `src/modules/plantacion/screens/CampaniaAdminDashboardScreen.tsx` |
+| AUD-005 | `BAJA` | `PENDIENTE` | `plantacion` | `deuda` | `CAMPANIA_TYPES` está definido dos veces con distinto orden (validación en service, orden visual en form). | `src/services/plantacion.service.ts`, `src/modules/plantacion/components/CrearCampaniaForm.tsx` |
 
 ---
 
@@ -549,6 +551,58 @@ Corregir los errores existentes en `src/` y ajustar la configuración de ESLint 
 #### Notas
 
 Durante la implementación del CRUD de Organizaciones, los archivos modificados pasaron ESLint focalizado y `npm run build` pasó correctamente.
+
+### AUD-004 — Formatters de fecha/tiempo relativo dispersos por módulo
+
+- Estado: `PENDIENTE`
+- Severidad: `BAJA`
+- Módulo: `general`
+- Ubicación: `src/modules/plantacion/utils/subcampaniaFormatters.ts`, `src/modules/plantacion/screens/CampaniaAdminDashboardScreen.tsx`
+- Tipo: `deuda`
+- Detectado por: `equipo`
+- Fecha: `2026-07-05`
+
+#### Problema
+
+`formatDate` está definido en `plantacion/utils/subcampaniaFormatters.ts` y re-envuelto en cada pantalla que necesita un fallback distinto (por ejemplo `CampaniaAdminDashboardScreen` con `"Sin fecha"`). `formatRelativeTime` vive inline en el dashboard de campañas y es útil para cualquier feed con timestamps.
+
+#### Riesgo
+
+Duplicación cuando otros módulos (vivero, recolección) sumen timelines/actividades. Divergencia de estilos ("hace 2 h" vs "hace 2 horas"). Difícil unificar el locale/formato desde un solo lugar.
+
+#### Acción sugerida
+
+Extraer a `src/utils/datetime.ts` (o similar) helpers compartidos: `formatDate(value, opts)`, `formatRelativeTime(iso)`. Actualizar consumidores.
+
+#### Verificación esperada
+
+Una sola implementación por helper, consumidores importan desde el util compartido.
+
+### AUD-005 — Duplicidad de `CAMPANIA_TYPES` con distinto orden
+
+- Estado: `PENDIENTE`
+- Severidad: `BAJA`
+- Módulo: `plantacion`
+- Ubicación: `src/services/plantacion.service.ts`, `src/modules/plantacion/components/CrearCampaniaForm.tsx`
+- Tipo: `deuda`
+- Detectado por: `equipo`
+- Fecha: `2026-07-05`
+
+#### Problema
+
+El service declara `TIPOS_CAMPANIA: TipoCampania[] = ['REFORESTACION', 'ARBORIZACION', 'FORESTACION']` para validación de entrada. El form declara `CAMPANIA_TYPES: TipoCampania[] = ['ARBORIZACION', 'REFORESTACION', 'FORESTACION']` con el orden invertido para el layout visual.
+
+#### Riesgo
+
+Un futuro cambio de enum puede quedar desincronizado. También confunde al lector: sugiere que el orden "correcto" es alguno de los dos.
+
+#### Acción sugerida
+
+Documentar por qué los órdenes difieren (validación vs display) o extraer a `contracts.ts` un `CAMPANIA_TYPE_ORDER` compartido si algún día se decide unificar.
+
+#### Verificación esperada
+
+Los dos arrays incluyen exactamente los mismos elementos (comparados por `sort()`), con un comentario explicando la diferencia de orden.
 
 ---
 

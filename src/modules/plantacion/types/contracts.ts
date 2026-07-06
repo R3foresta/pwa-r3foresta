@@ -277,6 +277,12 @@ export type CampaniaActivityItem = {
   timestamp: string
 }
 
+export const TIPO_CAMPANIA_VALUES: TipoCampania[] = [
+  'REFORESTACION',
+  'ARBORIZACION',
+  'FORESTACION',
+]
+
 export const TIPO_CAMPANIA_LABEL: Record<TipoCampania, string> = {
   REFORESTACION: 'Reforestación',
   ARBORIZACION: 'Arborización',

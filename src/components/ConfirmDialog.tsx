@@ -16,6 +16,8 @@ type Props = {
   /** Ícono decorativo opcional en la cabecera del dialog. */
   iconName?: IconName
   loading?: boolean
+  /** Mensaje de error mostrado como banner rojo bajo la descripción. */
+  errorMessage?: string | null
   onConfirm: () => void
   onCancel: () => void
 }
@@ -29,6 +31,7 @@ function ConfirmDialog({
   variant = 'default',
   iconName,
   loading = false,
+  errorMessage,
   onConfirm,
   onCancel,
 }: Props) {
@@ -73,6 +76,11 @@ function ConfirmDialog({
         </h2>
         {description && (
           <p className="mt-1 text-sm font-semibold text-brand-500">{description}</p>
+        )}
+        {errorMessage && (
+          <div className="mt-3 rounded-2xl bg-red-50 px-3 py-2 text-[12.5px] font-semibold text-red-700 ring-1 ring-red-200">
+            {errorMessage}
+          </div>
         )}
 
         <div className="mt-5 flex flex-col gap-2">

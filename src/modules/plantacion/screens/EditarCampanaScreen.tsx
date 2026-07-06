@@ -1,11 +1,16 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import heroCanopy from '../../../assets/home/hero-canopy.jpg'
 import Icon from '../../../components/Icon'
 import { useAuth } from '../../../contexts/AuthContext'
 import { PlantacionService } from '../../../services/plantacion.service'
 import { CrearCampaniaFormFields } from '../components/CrearCampaniaForm'
-import type { Campania, Subcampania, TipoCampania } from '../types/contracts'
+import {
+  TIPO_CAMPANIA_VALUES,
+  type Campania,
+  type Subcampania,
+  type TipoCampania,
+} from '../types/contracts'
 import {
   validateCrearCampaniaForm,
   type CrearCampaniaFormValues,
@@ -14,6 +19,29 @@ import {
 function toDateInput(value?: string | null): string {
   if (!value) return ''
   return value.length >= 10 ? value.slice(0, 10) : value
+}
+
+function isValidTipo(value: unknown): value is TipoCampania {
+  return (
+    typeof value === 'string' &&
+    (TIPO_CAMPANIA_VALUES as string[]).includes(value)
+  )
+}
+
+function areFormValuesEqual(
+  a: CrearCampaniaFormValues,
+  b: CrearCampaniaFormValues,
+): boolean {
+  if (a.nombre !== b.nombre) return false
+  if (a.tipo !== b.tipo) return false
+  if (a.descripcion !== b.descripcion) return false
+  if (a.fecha_estimada_inicio !== b.fecha_estimada_inicio) return false
+  if (a.fecha_estimada_fin !== b.fecha_estimada_fin) return false
+  if (a.organizacion_ids.length !== b.organizacion_ids.length) return false
+  for (let i = 0; i < a.organizacion_ids.length; i += 1) {
+    if (a.organizacion_ids[i] !== b.organizacion_ids[i]) return false
+  }
+  return true
 }
 
 function EditarCampanaScreen() {
@@ -38,6 +66,7 @@ function EditarCampanaScreen() {
   const [formError, setFormError] = useState<string | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const initialValuesRef = useRef<CrearCampaniaFormValues | null>(null)
 
   const canEdit = (user?.rol ?? '').toUpperCase() === 'ADMIN'
   const tipoLocked = subcampanias.length > 0
@@ -59,9 +88,9 @@ function EditarCampanaScreen() {
         if (cancelled) return
         setCampania(campaniaResult)
         setSubcampanias(subsResult)
-        setValues({
+        const nextValues: CrearCampaniaFormValues = {
           nombre: campaniaResult.nombre ?? '',
-          tipo: (campaniaResult.tipo as TipoCampania) ?? '',
+          tipo: isValidTipo(campaniaResult.tipo) ? campaniaResult.tipo : '',
           descripcion: campaniaResult.descripcion ?? '',
           fecha_estimada_inicio: toDateInput(campaniaResult.fecha_estimada_inicio),
           fecha_estimada_fin: toDateInput(campaniaResult.fecha_estimada_fin),
@@ -69,7 +98,9 @@ function EditarCampanaScreen() {
             campaniaResult.organizacion_ids ??
             campaniaResult.organizaciones?.map((org) => org.id) ??
             [],
-        })
+        }
+        initialValuesRef.current = nextValues
+        setValues(nextValues)
       })
       .catch((error) => {
         if (cancelled) return
@@ -93,6 +124,11 @@ function EditarCampanaScreen() {
     setSubmitError(null)
     setValues((current) => ({ ...current, [key]: value }))
   }
+
+  const isDirty = useMemo(() => {
+    if (!initialValuesRef.current) return false
+    return !areFormValuesEqual(values, initialValuesRef.current)
+  }, [values])
 
   const goBack = () => {
     if (campania) {
@@ -230,15 +266,19 @@ function EditarCampanaScreen() {
               <button
                 type="button"
                 onClick={() => void handleSubmit()}
-                disabled={!canEdit || submitting}
+                disabled={!canEdit || submitting || !isDirty}
                 className={`flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-4 text-base font-extrabold text-white shadow-soft transition active:scale-[0.99] ${
-                  !canEdit || submitting
+                  !canEdit || submitting || !isDirty
                     ? 'cursor-not-allowed bg-slate-400'
                     : 'bg-emerald-600 hover:bg-emerald-700'
                 }`}
               >
                 <Icon name="check" className="h-5 w-5" />
-                {submitting ? 'Guardando cambios...' : 'Guardar cambios'}
+                {submitting
+                  ? 'Guardando cambios...'
+                  : isDirty
+                    ? 'Guardar cambios'
+                    : 'Sin cambios'}
               </button>
             </div>
           </div>

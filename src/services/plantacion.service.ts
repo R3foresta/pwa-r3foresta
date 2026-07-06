@@ -194,7 +194,7 @@ export class PlantacionService {
     return Array.isArray(payload.data) ? payload.data : []
   }
 
-  static async getCampaniaMetrics(campaniaId: number): Promise<CampaniaMetrics> {
+  static async getCampaniaMetrics(campaniaId: number): Promise<CampaniaMetrics | null> {
     if (!Number.isFinite(campaniaId) || campaniaId <= 0) {
       throw new Error('ID de campaña inválido.')
     }
@@ -203,10 +203,7 @@ export class PlantacionService {
       response,
       'Error al cargar métricas de la campaña.',
     )
-    if (!payload.data) {
-      throw new Error('No se recibieron métricas de la campaña.')
-    }
-    return payload.data
+    return payload.data ?? null
   }
 
   static async getCampaniaActivity(
@@ -576,7 +573,7 @@ function validateUpdateCampaniaInput(input: UpdateCampaniaInput): UpdateCampania
     if (descripcion.length > 1000) {
       throw new Error('La descripción no puede superar los 1000 caracteres.')
     }
-    cleanInput.descripcion = descripcion
+    cleanInput.descripcion = descripcion || undefined
   }
   if (input.fecha_estimada_inicio !== undefined) {
     cleanInput.fecha_estimada_inicio = input.fecha_estimada_inicio || undefined

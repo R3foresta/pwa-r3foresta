@@ -5,6 +5,7 @@ import ConfirmDialog from '../../../components/ConfirmDialog'
 import Icon from '../../../components/Icon'
 import { useAuth } from '../../../contexts/AuthContext'
 import { PlantacionService } from '../../../services/plantacion.service'
+import { formatRelativeTime } from '../../../utils/datetime'
 import {
   TIPO_CAMPANIA_LABEL,
   TIPO_ORGANIZACION_LABEL,
@@ -41,7 +42,6 @@ type SubcampaniaFilter = 'todas' | 'activa' | 'borrador'
 
 // ================= Utilidades =================
 
-// Question: Esta funcion de format Date no debería estar absatradia para todos los modulos? Osea tener solo un tipo de formatDate para todos los modulos?
 function formatDate(value?: string | null): string {
   return formatFullDate(value, { fallback: 'Sin fecha' })
 }
@@ -101,13 +101,19 @@ function getZoneLabel(campania: Campania, subcampanias: Subcampania[]): string {
 type SubcampaniaActivaData = {
   coordinadorNombre: string
   coordinadorIniciales: string
-  areaHectareas: number
-  plantados: number
-  meta: number
-  avancePct: number
+  areaHectareas: number | null
+  plantados: number | null
+  meta: number | null
+  avancePct: number | null
   personas: number
   lotes: number
   eventos: number
+}
+
+function toNullableNumber(value: unknown): number | null {
+  if (value === null || value === undefined) return null
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : null
 }
 
 function getSubcampaniaActivaData(subcampania: Subcampania): SubcampaniaActivaData {
@@ -115,14 +121,18 @@ function getSubcampaniaActivaData(subcampania: Subcampania): SubcampaniaActivaDa
     subcampania.coordinador?.nombre ||
     subcampania.equipo?.find((m) => m.rol === 'COORDINADOR')?.nombre_usuario ||
     'Sin coordinador'
-  const meta = subcampania.meta_total_arboles ?? 0
-  const plantados = Number(subcampania.plantados ?? subcampania.total_plantado_inicial ?? 0)
-  const avancePct = Number.isFinite(subcampania.avance_pct)
-    ? Math.max(0, Math.min(100, Number(subcampania.avance_pct)))
-    : meta > 0
-      ? Math.max(0, Math.min(100, Math.round((plantados / meta) * 100)))
-      : 0
-  const areaHectareas = Number(subcampania.area_hectareas ?? 0)
+  const meta = toNullableNumber(subcampania.meta_total_arboles)
+  const plantados = toNullableNumber(
+    subcampania.plantados ?? subcampania.total_plantado_inicial,
+  )
+  const backendAvance = toNullableNumber(subcampania.avance_pct)
+  const avancePct =
+    backendAvance !== null
+      ? Math.max(0, Math.min(100, backendAvance))
+      : meta && meta > 0 && plantados !== null
+        ? Math.max(0, Math.min(100, Math.round((plantados / meta) * 100)))
+        : null
+  const areaHectareas = toNullableNumber(subcampania.area_hectareas)
   const personas = Number(subcampania.personas_count ?? subcampania.equipo?.length ?? 0)
   const lotes = Number(subcampania.lotes_count ?? 0)
   const eventos = Number(subcampania.eventos_count ?? 0)
@@ -163,32 +173,52 @@ function getSubcampaniaUbicacion(
   return ''
 }
 
+type CampaniaAggregatedTotals = {
+  planted: number
+  target: number
+  progress: number
+}
+
+// El endpoint de campaña no expone totales agregados de árboles: los derivamos
+// de las subcampañas activas y completadas (BORRADOR queda fuera porque su meta
+// aún no es un compromiso).
+function getCampaniaAggregatedTotals(
+  campania: Campania,
+  subcampanias: Subcampania[],
+): CampaniaAggregatedTotals {
+  const relevant = subcampanias.filter(
+    (s) => s.estado === 'ACTIVA' || s.estado === 'COMPLETADA',
+  )
+  const derivedPlanted = relevant.reduce(
+    (acc, s) => acc + Number(s.plantados ?? s.total_plantado_inicial ?? 0),
+    0,
+  )
+  const derivedTarget = relevant.reduce(
+    (acc, s) => acc + Number(s.meta_total_arboles ?? 0),
+    0,
+  )
+
+  const backendPlanted = Number(campania.arboles_plantados ?? 0)
+  const backendTarget = Number(campania.meta_arboles ?? 0)
+  const planted = backendPlanted > 0 ? backendPlanted : derivedPlanted
+  const target = backendTarget > 0 ? backendTarget : derivedTarget
+
+  const backendProgress = Number(campania.avance_pct)
+  const progress = Number.isFinite(backendProgress) && backendProgress > 0
+    ? Math.max(0, Math.min(100, backendProgress))
+    : target > 0
+      ? Math.max(0, Math.min(100, Math.round((planted / target) * 100)))
+      : 0
+
+  return { planted, target, progress }
+}
+
 function formatMetricNumber(value?: number | null, fractionDigits = 0): string {
   if (value === null || value === undefined || !Number.isFinite(value)) return '—'
   return Number(value).toLocaleString('es-BO', {
     minimumFractionDigits: fractionDigits,
     maximumFractionDigits: fractionDigits,
   })
-}
-
-function formatRelativeTime(iso?: string | null): string {
-  if (!iso) return 'Sin fecha'
-  const then = new Date(iso).getTime()
-  if (!Number.isFinite(then)) return 'Sin fecha'
-  const diffSec = Math.floor((Date.now() - then) / 1000)
-  if (diffSec < 60) return 'hace instantes'
-  const diffMin = Math.floor(diffSec / 60)
-  if (diffMin < 60) return `hace ${diffMin} min`
-  const diffHours = Math.floor(diffMin / 60)
-  if (diffHours < 24) return `hace ${diffHours} h`
-  const diffDays = Math.floor(diffHours / 24)
-  if (diffDays === 1) return 'ayer'
-  if (diffDays < 7) return `hace ${diffDays} días`
-  const diffWeeks = Math.floor(diffDays / 7)
-  if (diffWeeks < 5) return `hace ${diffWeeks} sem`
-  const diffMonths = Math.floor(diffDays / 30)
-  if (diffMonths < 12) return `hace ${diffMonths} m`
-  return formatDate(iso)
 }
 
 function formatUltimaActividadHint(item: CampaniaMetricsUltimaActividad | null): string {
@@ -461,13 +491,11 @@ function CampaniaHeader({
   const activasCount = countByEstado(subcampanias, 'ACTIVA')
   const borradoresCount = countByEstado(subcampanias, 'BORRADOR')
   const status = getVisibleStatus(campania, totalSub, activasCount)
-  const planted = campania.arboles_plantados ?? 0
-  const target = campania.meta_arboles ?? 0
-  const progress = Number.isFinite(campania.avance_pct)
-    ? Number(campania.avance_pct)
-    : target > 0
-      ? Math.round((planted / target) * 100)
-      : 0
+  const { planted, target, progress } = getCampaniaAggregatedTotals(
+    campania,
+    subcampanias,
+  )
+  const showTargetPlaceholder = target === 0
 
   return (
     <header className="relative overflow-hidden rounded-b-3xl bg-brand-700 text-white shadow-soft">
@@ -528,19 +556,29 @@ function CampaniaHeader({
             </p>
             <p className="mt-0.5 text-[38px] font-extrabold leading-none tracking-tight tabular-nums">
               {formatNumber(planted)}
-              <span className="ml-1 text-base font-extrabold text-white/60">
-                / {formatNumber(target)}
-              </span>
+              {showTargetPlaceholder ? (
+                <span className="ml-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-white/60">
+                  Sin meta activa
+                </span>
+              ) : (
+                <span className="ml-1 text-base font-extrabold text-white/60">
+                  / {formatNumber(target)}
+                </span>
+              )}
             </p>
           </div>
-          <div className="shrink-0 text-right">
-            <p className="text-[10px] font-bold text-white/70">Avance</p>
-            <p className="text-2xl font-extrabold tabular-nums">{progress}%</p>
+          {!showTargetPlaceholder && (
+            <div className="shrink-0 text-right">
+              <p className="text-[10px] font-bold text-white/70">Avance</p>
+              <p className="text-2xl font-extrabold tabular-nums">{progress}%</p>
+            </div>
+          )}
+        </div>
+        {!showTargetPlaceholder && (
+          <div className="mt-2">
+            <Progress pct={progress} />
           </div>
-        </div>
-        <div className="mt-2">
-          <Progress pct={progress} />
-        </div>
+        )}
 
         <div className="mt-3 flex flex-wrap gap-1.5">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-white/12 px-2.5 py-1 text-[11px] font-extrabold tracking-wide ring-1 ring-white/20">
@@ -979,10 +1017,10 @@ function SubcampaniaCardActiva({
   header: React.ReactNode
   coordinadorNombre: string
   coordinadorIniciales: string
-  areaHectareas: number
-  plantados: number
-  meta: number
-  avancePct: number
+  areaHectareas: number | null
+  plantados: number | null
+  meta: number | null
+  avancePct: number | null
   personas: number
   lotes: number
   eventos: number
@@ -1002,7 +1040,7 @@ function SubcampaniaCardActiva({
           {coordinadorNombre}
         </p>
         <p className="whitespace-nowrap text-[11.5px] font-bold text-slate-400">
-          {areaHectareas} ha
+          {areaHectareas === null ? 'Sin cobertura' : `${areaHectareas} ha`}
         </p>
       </div>
       <div className="mt-3 flex items-baseline justify-between">
@@ -1010,13 +1048,15 @@ function SubcampaniaCardActiva({
           Avance
         </p>
         <p className="text-[12.5px] font-extrabold tabular-nums text-brand-900">
-          <span>{plantados.toLocaleString('es-BO')}</span>
-          <span className="mx-1 text-slate-400"> / {meta.toLocaleString('es-BO')}</span>
-          <span className="ml-1 text-emerald-700">{avancePct}%</span>
+          <span>{formatMetricNumber(plantados)}</span>
+          <span className="mx-1 text-slate-400"> / {formatMetricNumber(meta)}</span>
+          {avancePct !== null && (
+            <span className="ml-1 text-emerald-700">{avancePct}%</span>
+          )}
         </p>
       </div>
       <div className="mt-2">
-        <Progress pct={avancePct} tone="brand" />
+        <Progress pct={avancePct ?? 0} tone="brand" />
       </div>
       <p className="mt-3 text-[11.5px] font-semibold text-slate-500">
         {personas} pers · {lotes} lote{lotes === 1 ? '' : 's'} · {eventos} eventos
@@ -1391,81 +1431,46 @@ function CampaniaAdminDashboardScreen() {
   const isAdmin = (user?.rol ?? '').toUpperCase() === 'ADMIN'
   const visibleError = error ?? (!hasValidCampaniaId ? 'ID de campaña inválido.' : null)
 
-  const fetchDashboard = useCallback(async (): Promise<{
-    campania: Campania
-    subs: Subcampania[]
-    metrics: CampaniaMetrics | null
-    activity: CampaniaActivityItem[]
-  } | null> => {
-    if (!hasValidCampaniaId) return null
-    const [campaniaResult, subsResult, metricsResult, activityResult] = await Promise.all([
-      PlantacionService.getCampania(numericCampaniaId),
-      PlantacionService.listSubcampaniasByCampania(numericCampaniaId),
-      PlantacionService.getCampaniaMetrics(numericCampaniaId).catch(() => null),
-      PlantacionService.getCampaniaActivity(numericCampaniaId, 5).catch(
-        () => [] as CampaniaActivityItem[],
-      ),
-    ])
-    return {
-      campania: campaniaResult,
-      subs: subsResult,
-      metrics: metricsResult,
-      activity: activityResult,
+  const requestIdRef = useRef(0)
+
+  const refetchDashboard = useCallback(async () => {
+    if (!hasValidCampaniaId) return
+    const requestId = ++requestIdRef.current
+    setLoading(true)
+    setError(null)
+    try {
+      const [campaniaResult, subsResult, metricsResult, activityResult] = await Promise.all([
+        PlantacionService.getCampania(numericCampaniaId),
+        PlantacionService.listSubcampaniasByCampania(numericCampaniaId),
+        PlantacionService.getCampaniaMetrics(numericCampaniaId).catch(() => null),
+        PlantacionService.getCampaniaActivity(numericCampaniaId, 5).catch(
+          () => [] as CampaniaActivityItem[],
+        ),
+      ])
+      if (requestId !== requestIdRef.current) return
+      setCampania(campaniaResult)
+      setSubcampanias(subsResult)
+      setMetrics(metricsResult)
+      setActivityFeed(activityResult)
+      setError(null)
+    } catch (loadError) {
+      if (requestId !== requestIdRef.current) return
+      setSubcampanias([])
+      setMetrics(null)
+      setActivityFeed([])
+      setError(
+        loadError instanceof Error ? loadError.message : 'No se pudo cargar la campaña.',
+      )
+    } finally {
+      if (requestId === requestIdRef.current) {
+        setLoading(false)
+      }
     }
   }, [hasValidCampaniaId, numericCampaniaId])
 
-  const loadDashboard = useCallback(() => {
-    if (!hasValidCampaniaId) return
-    setLoading(true)
-    setError(null)
-    fetchDashboard()
-      .then((result) => {
-        if (!result) return
-        setCampania(result.campania)
-        setSubcampanias(result.subs)
-        setMetrics(result.metrics)
-        setActivityFeed(result.activity)
-        setError(null)
-      })
-      .catch((loadError) => {
-        setSubcampanias([])
-        setMetrics(null)
-        setActivityFeed([])
-        setError(
-          loadError instanceof Error ? loadError.message : 'No se pudo cargar la campaña.',
-        )
-      })
-      .finally(() => setLoading(false))
-  }, [fetchDashboard, hasValidCampaniaId])
-
   useEffect(() => {
-    if (!hasValidCampaniaId) return
-    let cancelled = false
-    fetchDashboard()
-      .then((result) => {
-        if (cancelled || !result) return
-        setCampania(result.campania)
-        setSubcampanias(result.subs)
-        setMetrics(result.metrics)
-        setActivityFeed(result.activity)
-        setError(null)
-      })
-      .catch((loadError) => {
-        if (cancelled) return
-        setSubcampanias([])
-        setMetrics(null)
-        setActivityFeed([])
-        setError(
-          loadError instanceof Error ? loadError.message : 'No se pudo cargar la campaña.',
-        )
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [fetchDashboard, hasValidCampaniaId])
+    void refetchDashboard()
+  }, [refetchDashboard])
 
   const goBack = () => navigate('/app/planting')
 
@@ -1562,10 +1567,11 @@ function CampaniaAdminDashboardScreen() {
     }).length
   }, [subcampanias])
 
-  const canDeactivateCampania = useMemo(() => {
-    if (subcampanias.length === 0) return true
-    return subcampanias.every((s) => s.estado === 'CANCELADA')
-  }, [subcampanias])
+  // Pre-check UX: el listado del backend excluye CANCELADA (ver plantacion.api),
+  // así que si vemos cualquier subcampaña, hay un bloqueo. El 422 del DELETE cubre
+  // el resto de reglas (COMPLETADA/PAUSADA/FINALIZADA_PARCIAL) si el cliente se
+  // desincroniza.
+  const canDeactivateCampania = subcampanias.length === 0
 
   const activeSubCount = countByEstado(subcampanias, 'ACTIVA')
   const draftBackendCount = countByEstado(subcampanias, 'BORRADOR')
@@ -1605,7 +1611,7 @@ function CampaniaAdminDashboardScreen() {
               {hasValidCampaniaId && (
                 <button
                   type="button"
-                  onClick={loadDashboard}
+                  onClick={() => void refetchDashboard()}
                   className="mt-3 rounded-xl bg-red-100 px-4 py-2 text-xs font-bold text-red-700 transition hover:bg-red-200"
                 >
                   Reintentar
@@ -1659,16 +1665,13 @@ function CampaniaAdminDashboardScreen() {
       <ConfirmDialog
         open={deleteDialogOpen}
         title="Desactivar campaña"
-        description={
-          deleteError
-            ? deleteError
-            : 'Esta acción se puede revertir contactando al administrador. La campaña dejará de estar visible en el listado.'
-        }
-        confirmLabel="Desactivar campaña"
+        description="Esta acción se puede revertir contactando al administrador. La campaña dejará de estar visible en el listado."
+        confirmLabel={deleteError ? 'Reintentar' : 'Desactivar campaña'}
         cancelLabel="Cancelar"
         variant="danger"
         iconName="trash"
         loading={deletingCampania}
+        errorMessage={deleteError}
         onConfirm={() => void confirmDesactivarCampania()}
         onCancel={() => {
           if (deletingCampania) return
