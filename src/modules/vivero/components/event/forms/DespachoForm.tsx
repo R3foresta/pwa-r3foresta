@@ -12,6 +12,8 @@ import FechaCard from '../FechaCard'
 import FotosUploader from '../FotosUploader'
 import type { Photo } from '../FotosUploader'
 import ObservacionesCard from '../ObservacionesCard'
+import SelectorCampania from '../../../../plantacion/components/SelectorCampania'
+import type { Campania } from '../../../../plantacion/types/contracts'
 
 type Props = {
   lote: LoteViveroItem
@@ -46,7 +48,7 @@ function DespachoForm({ lote, onCompleted }: Props) {
 
   const [cantidad, setCantidad] = useState('')
   const [destino, setDestino] = useState<DestinoTipoVivero | ''>('')
-  const [referencia, setReferencia] = useState('')
+  const [selectedCampania, setSelectedCampania] = useState<Campania | null>(null)
   const [comunidad, setComunidad] = useState<ComunidadCard | null>(null)
   const [fecha, setFecha] = useState(today)
   const [photos, setPhotos] = useState<Photo[]>([])
@@ -77,7 +79,7 @@ function DespachoForm({ lote, onCompleted }: Props) {
   const finalizaLote = cantidadValid && saldoDespues === 0
 
   const destinoValid = destino !== ''
-  const referenciaValid = referencia.trim().length >= 3
+  const campaniaValid = selectedCampania !== null
   const requiereComunidad = destino === 'DONACION_COMUNIDAD'
   const comunidadValid = !requiereComunidad || comunidad !== null
   const fechaValid = fecha >= fechaMin && fecha <= fechaMax
@@ -86,7 +88,7 @@ function DespachoForm({ lote, onCompleted }: Props) {
   const canSubmit =
     cantidadValid &&
     destinoValid &&
-    referenciaValid &&
+    campaniaValid &&
     comunidadValid &&
     fechaValid &&
     fotosValid &&
@@ -127,13 +129,17 @@ function DespachoForm({ lote, onCompleted }: Props) {
     setSubmitting(true)
     setSubmitError(null)
     try {
+      const referenciaStr = selectedCampania
+        ? `${selectedCampania.nombre} (${selectedCampania.codigo_trazabilidad})`
+        : ''
+
       const upload = await LotesViveroService.uploadEvidenciasEvento(
         lote.id,
         'DESPACHO',
         {
           fotos: photos.map((photo) => photo.file),
           titulo: 'Despacho de lote vivero',
-          descripcion: observaciones.trim() || referencia.trim(),
+          descripcion: observaciones.trim() || referenciaStr,
           metadata: { fuente: 'pwa-r3foresta', modulo: 'vivero', etapa: 'DESPACHO_MANUAL' },
           tomado_en: new Date().toISOString(),
         },
@@ -146,7 +152,7 @@ function DespachoForm({ lote, onCompleted }: Props) {
           fecha_evento: fecha,
           cantidad_afectada: cantidadNum,
           destino_tipo: destino as DestinoTipoVivero,
-          destino_referencia: referencia.trim(),
+          destino_referencia: referenciaStr,
           evidencia_ids: upload.data.evidencia_ids,
           comunidad_destino_id: requiereComunidad ? comunidad?.id : undefined,
           observaciones: observaciones.trim() || undefined,
@@ -280,27 +286,17 @@ function DespachoForm({ lote, onCompleted }: Props) {
         )}
 
         <section className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
-          <div className="mb-2 flex items-center justify-between">
-            <p className="text-sm font-extrabold text-brand-700">Referencia del destino</p>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-red-500">
-              Obligatorio
-            </span>
-          </div>
-          <input
-            type="text"
-            value={referencia}
-            onChange={(event) => setReferencia(event.target.value.slice(0, 200))}
-            placeholder="Nombre de destino, beneficiario o comprador..."
+          <SelectorCampania
+            valueId={selectedCampania?.id}
+            onChange={setSelectedCampania}
+            label="Campaña destino"
+            placeholder="Buscar campaña..."
+            error={showErrors && !campaniaValid}
             disabled={submitting}
-            className={`w-full rounded-2xl border px-3 py-2.5 text-sm font-semibold text-brand-700 outline-none transition ${
-              showErrors && !referenciaValid
-                ? 'border-red-300 bg-red-50'
-                : 'border-brand-100 bg-white focus:border-brand-300'
-            }`}
           />
-          {showErrors && !referenciaValid && (
+          {showErrors && !campaniaValid && (
             <p className="mt-2 text-xs font-semibold text-red-500">
-              Minimo 3 caracteres.
+              Selecciona una campaña.
             </p>
           )}
         </section>
