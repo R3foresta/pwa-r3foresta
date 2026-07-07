@@ -92,8 +92,11 @@ export interface LoteViveroItem {
   unidad_medida_inicial: UnidadMedidaVivero
   plantas_vivas_iniciales: number | null
   saldo_vivo_actual: number | null
-  saldo_asignado_total?: number
-  saldo_vivo_disponible_asignacion?: number
+  /**
+   * Total ya entregado físicamente a subcampañas (informativo). Antes se
+   * llamaba `saldo_asignado_total` en el modelo de "reserva lógica".
+   */
+  saldo_asignado_subcampanias?: number
   cantidad_asignaciones_activas?: number
   /**
    * @deprecated Alias backend de `saldo_vivo_actual`. Backend lo mantiene por
@@ -379,10 +382,64 @@ export interface RegistrarDescartePreEmbolsadoRequest {
 
 export type PropositoAsignacionVivero = 'PLANTACION_INICIAL' | 'REPOSICION'
 
+// Modelo de asignación física (M2↔M3): asignar = ENTREGAR plantas. El backend
+// nuevo rechaza el shape viejo (falta `evidencia_ids` → 422), por eso `proposito`,
+// `fecha_asignacion` y `evidencia_ids` son obligatorios.
 export interface CrearAsignacionViveroRequest {
   subcampania_id: number
   cantidad_asignada: number
-  proposito?: PropositoAsignacionVivero
+  proposito: PropositoAsignacionVivero
+  /** Fecha de la entrega física (ISO `yyyy-mm-dd`). */
+  fecha_asignacion: string
+  /** IDs de evidencia previamente subida vía evidencias-pendientes (mínimo 1). */
+  evidencia_ids: number[]
+}
+
+// CONFIRMADO(backend 2026-07-07): en la respuesta de asignación, Nest normaliza
+// `lote_finalizado` siempre a boolean y además incluye `motivo_cierre`
+// (vivero-asignaciones.service.ts:202). En devolución, `lote_reabierto` también
+// viene siempre como boolean (vivero-asignaciones.service.ts:412). Igual se
+// parsea defensivo por si cambia. `saldo_vivo_actual` se lee cuando esté.
+export interface CrearAsignacionViveroResponseData {
+  id: number
+  subcampania_id: number
+  cantidad_asignada: number
+  proposito: PropositoAsignacionVivero
+  fecha_asignacion: string
+  saldo_asignado_disponible?: number | null
+  /** Saldo vivo del lote DESPUÉS de la entrega (baja en el momento). */
+  saldo_vivo_actual?: number | null
+  /** true si la entrega total dejó el lote en 0 y backend lo FINALIZÓ. */
+  lote_finalizado: boolean
+  /** Motivo de cierre cuando `lote_finalizado` es true (útil para VIV-04). */
+  motivo_cierre?: MotivoCierreVivero | null
+}
+
+export interface CrearAsignacionViveroResponse {
+  success: true
+  data: CrearAsignacionViveroResponseData
+}
+
+export interface DevolucionAsignacionRequest {
+  cantidad_devuelta: number
+  motivo_devolucion: string
+  /** Fecha de la devolución física (ISO `yyyy-mm-dd`). */
+  fecha_devolucion: string
+}
+
+export interface DevolverAsignacionViveroResponseData {
+  id: number
+  cantidad_devuelta: number
+  saldo_asignado_disponible?: number | null
+  /** Saldo vivo del lote DESPUÉS de la devolución (sube en el momento). */
+  saldo_vivo_actual?: number | null
+  /** true si la devolución reabrió un lote que estaba FINALIZADO. */
+  lote_reabierto: boolean
+}
+
+export interface DevolverAsignacionViveroResponse {
+  success: true
+  data: DevolverAsignacionViveroResponseData
 }
 
 // TODO(despacho-bloqueado): la pantalla de despacho está deshabilitada en el

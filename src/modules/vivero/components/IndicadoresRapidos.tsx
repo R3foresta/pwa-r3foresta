@@ -16,8 +16,7 @@ export default function IndicadoresRapidos({ detail, stats }: Props) {
     { label: 'Plantas vivas iniciales', value: detail.plantasVivasIniciales ?? 0, unit: 'UNIDAD', hint: 'En EMBOLSADO' },
     { label: 'Mermas acumuladas', value: mermas, unit: 'UNIDAD', tone: 'red' },
     { label: 'Despachadas', value: despachadas, unit: 'UNIDAD', tone: 'blue' },
-    { label: 'Saldo reservado', value: detail.saldoAsignadoTotal ?? 0, unit: 'UNIDAD' },
-    { label: 'Saldo libre', value: detail.saldoVivoDisponibleAsignacion ?? 0, unit: 'UNIDAD' },
+    { label: 'Entregado a subcampañas', value: detail.saldoAsignadoSubcampanias ?? 0, unit: 'UNIDAD' },
   ]
 
   return (

@@ -64,8 +64,9 @@ function ViveroEventScreen() {
     const hasDescarte = lote.ultimo_evento_por_tipo.DESCARTE_PRE_EMBOLSADO !== null
     const hasInicio = lote.ultimo_evento_por_tipo.INICIO !== null
     const isActive = lote.estado_lote === 'ACTIVO'
+    // Modelo físico: el disponible del lote ES el saldo vivo actual (ya no hay
+    // `saldo_vivo_disponible_asignacion`); despacho manual sale del saldo vivo.
     const saldo = lote.saldo_vivo_actual ?? 0
-    const saldoLibre = lote.saldo_vivo_disponible_asignacion ?? saldo
     const hasSaldo = saldo > 0
     const canDescartarPreEmbolsado =
       isActive &&
@@ -121,13 +122,13 @@ function ViveroEventScreen() {
       {
         key: 'despacho',
         label: 'Despacho',
-        available: hasEmbolsado && isActive && saldoLibre > 0,
+        available: hasEmbolsado && isActive && hasSaldo,
         reason: !hasEmbolsado
           ? 'Requiere embolsado primero'
           : !isActive
             ? 'Lote finalizado'
-            : saldoLibre <= 0
-              ? 'Sin saldo libre'
+            : !hasSaldo
+              ? 'Sin saldo vivo'
               : undefined,
       },
     ]

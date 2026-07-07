@@ -73,7 +73,7 @@ function CancelarSubcampaniaModal({
             <p className="text-[12px] font-bold leading-snug text-red-900">
               La subcampaña quedará <strong>CANCELADA</strong>. Se conserva el registro pero
               deja de ser visible y no se puede reabrir. Las asignaciones de vivero activas
-              se liberan automáticamente.
+              devuelven su stock al vivero automáticamente.
             </p>
           </div>
 

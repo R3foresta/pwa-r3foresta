@@ -177,11 +177,11 @@ export type SetEquipoData = {
   miembros: EquipoMember[]
 }
 
-export type ComposicionReservadaItem = {
+export type ComposicionAsignadaItem = {
   planta_id: number
   especie?: string | null
   nombre_cientifico?: string | null
-  saldo_reservado: number
+  saldo_asignado_disponible: number
 }
 
 export type PlanEspecieMetaInput = {
@@ -235,7 +235,7 @@ export type ActivarSubcampaniaData = {
   nombre_zona_snapshot?: string | null
   nombre_coordinador_snapshot?: string | null
   nombres_organizaciones_snapshot?: string[]
-  composicion_reservada?: ComposicionReservadaItem[]
+  composicion_asignada?: ComposicionAsignadaItem[]
   updated_at?: string | null
 }
 

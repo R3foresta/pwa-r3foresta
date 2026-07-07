@@ -28,7 +28,7 @@ export default function ViveroDetailScreen() {
   const isInvalidId = !Number.isFinite(lotId) || lotId <= 0
 
   // 1. Lógica delegada al Custom Hook (Fix QA4)
-  const { detail, events, loading, error } = useViveroDetail(lotId, isInvalidId)
+  const { detail, events, loading, error, refetch } = useViveroDetail(lotId, isInvalidId)
 
   // ✨ NUEVO: Calculamos las estadísticas UNA SOLA VEZ aquí
   const stats = useViveroStats(detail, events)
@@ -174,7 +174,7 @@ export default function ViveroDetailScreen() {
             )}
             {activeTab === 'asignaciones' && (
               <div className="transition-opacity duration-300">
-                <ViveroLotAsignacionesTab lote={detail} />
+                <ViveroLotAsignacionesTab lote={detail} onLoteChanged={refetch} />
               </div>
             )}
           </div>

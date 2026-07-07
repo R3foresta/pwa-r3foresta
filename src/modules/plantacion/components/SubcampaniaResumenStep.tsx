@@ -428,7 +428,7 @@ function SubcampaniaResumenStep({
                   {especiesLabel}
                 </p>
                 <p className="mt-1.5 text-[10.5px] font-semibold italic text-slate-400">
-                  Metas planificadas. Las reservas de stock se asignan tras activar.
+                  Metas planificadas. El stock se asigna (entrega) tras activar.
                 </p>
               </section>
             )}

@@ -40,8 +40,9 @@ function DespachoForm({ lote, onCompleted }: Props) {
   const fechaMin = lote.fecha_inicio
   const fechaMax = today
   const saldoVivo = lote.saldo_vivo_actual ?? 0
-  const saldoLibre = lote.saldo_vivo_disponible_asignacion ?? saldoVivo
-  const saldoReservado = lote.saldo_asignado_total ?? Math.max(0, saldoVivo - saldoLibre)
+  // Modelo físico: el disponible para despacho manual es el saldo vivo actual.
+  // "Entregado a subcampañas" es informativo (ya salió del vivero al asignar).
+  const entregadoSubcampanias = lote.saldo_asignado_subcampanias ?? 0
 
   const [cantidad, setCantidad] = useState('')
   const [destino, setDestino] = useState<DestinoTipoVivero | ''>('')
@@ -70,10 +71,9 @@ function DespachoForm({ lote, onCompleted }: Props) {
     Number.isFinite(cantidadNum) &&
     cantidadNum > 0 &&
     Number.isInteger(cantidadNum) &&
-    cantidadNum <= saldoLibre
+    cantidadNum <= saldoVivo
 
   const saldoDespues = cantidadValid ? saldoVivo - cantidadNum : saldoVivo
-  const saldoLibreDespues = cantidadValid ? saldoLibre - cantidadNum : saldoLibre
   const finalizaLote = cantidadValid && saldoDespues === 0
 
   const destinoValid = destino !== ''
@@ -99,8 +99,8 @@ function DespachoForm({ lote, onCompleted }: Props) {
       ? 'La cantidad debe ser mayor a 0.'
       : !Number.isInteger(cantidadNum)
         ? 'Solo se aceptan enteros.'
-        : cantidadNum > saldoLibre
-          ? `Max ${saldoLibre} plantas libres. El stock reservado no se puede usar en despacho manual.`
+        : cantidadNum > saldoVivo
+          ? `Max ${saldoVivo} plantas en vivero.`
           : null
 
   const addPhotos = (files: File[]) => {
@@ -162,8 +162,8 @@ function DespachoForm({ lote, onCompleted }: Props) {
   }
 
   const pendingMsg = !canSubmit && !submitting
-    ? saldoLibre <= 0
-      ? 'No hay saldo libre. El stock disponible esta reservado.'
+    ? saldoVivo <= 0
+      ? 'No hay saldo vivo en el lote para despachar.'
       : 'Completa los campos obligatorios'
     : undefined
 
@@ -173,75 +173,52 @@ function DespachoForm({ lote, onCompleted }: Props) {
         <div className="flex items-start gap-2 rounded-2xl bg-amber-50 px-3 py-2.5 text-xs font-semibold text-amber-800 ring-1 ring-amber-200">
           <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
           <span>
-            Este es un despacho manual. Solo usa saldo libre; las plantas reservadas para
-            subcampanias se consumen desde Plantacion con despacho automatico.
+            Este es un despacho manual y sale del saldo vivo del lote. Lo ya entregado a
+            subcampanias se consume desde Plantacion, no desde aqui.
           </span>
         </div>
 
-        <div className="grid grid-cols-3 gap-2">
-          <div className="rounded-2xl bg-white px-3 py-3 shadow-soft ring-1 ring-black/5">
-            <p className="text-[9px] font-extrabold uppercase tracking-wider text-brand-500">
-              Vivo
+        <div className="grid grid-cols-2 gap-2">
+          <div className="rounded-2xl bg-emerald-50 px-3 py-3 shadow-soft ring-1 ring-emerald-200">
+            <p className="text-[9px] font-extrabold uppercase tracking-wider text-emerald-700">
+              En vivero
             </p>
-            <p className="mt-1 text-xl font-extrabold leading-none text-brand-700">
+            <p className="mt-1 text-xl font-extrabold leading-none text-emerald-700">
               {saldoVivo}
             </p>
           </div>
           <div className="rounded-2xl bg-white px-3 py-3 shadow-soft ring-1 ring-black/5">
-            <p className="text-[9px] font-extrabold uppercase tracking-wider text-amber-600">
-              Reservado
+            <p className="text-[9px] font-extrabold uppercase tracking-wider text-brand-500">
+              Entregado a subcampanias
             </p>
-            <p className="mt-1 text-xl font-extrabold leading-none text-amber-700">
-              {saldoReservado}
-            </p>
-          </div>
-          <div className="rounded-2xl bg-emerald-50 px-3 py-3 shadow-soft ring-1 ring-emerald-200">
-            <p className="text-[9px] font-extrabold uppercase tracking-wider text-emerald-700">
-              Libre
-            </p>
-            <p className="mt-1 text-xl font-extrabold leading-none text-emerald-700">
-              {saldoLibre}
+            <p className="mt-1 text-xl font-extrabold leading-none text-brand-700">
+              {entregadoSubcampanias}
             </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          <div className="rounded-2xl bg-white px-3 py-3 shadow-soft ring-1 ring-black/5">
-            <p className="text-[10px] font-extrabold uppercase tracking-wider text-brand-500">
-              Saldo vivo despues
-            </p>
-            <p className="mt-1 text-2xl font-extrabold leading-none text-brand-700">
-              {cantidadValid ? saldoDespues : '-'}
-            </p>
-          </div>
-          <div
-            className={`rounded-2xl px-3 py-3 shadow-soft ring-1 ${
-              cantidadValid ? 'bg-emerald-50 ring-emerald-200' : 'bg-white ring-black/5'
-            }`}
-          >
-            <p className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700">
-              Libre despues
-            </p>
-            <p className="mt-1 text-2xl font-extrabold leading-none text-emerald-700">
-              {cantidadValid ? saldoLibreDespues : '-'}
-            </p>
-          </div>
+        <div className="rounded-2xl bg-white px-3 py-3 shadow-soft ring-1 ring-black/5">
+          <p className="text-[10px] font-extrabold uppercase tracking-wider text-brand-500">
+            Saldo vivo despues
+          </p>
+          <p className="mt-1 text-2xl font-extrabold leading-none text-brand-700">
+            {cantidadValid ? saldoDespues : '-'}
+          </p>
         </div>
 
         <section className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
           <CantidadStepper
             value={cantidad}
             onChange={setCantidad}
-            max={saldoLibre}
+            max={saldoVivo}
             min={0}
             label="Plantas a despachar"
             unit="plantas"
             quickPercentages={[25, 50, 80, 100]}
-            bigStepSize={saldoLibre >= 50 ? 10 : undefined}
+            bigStepSize={saldoVivo >= 50 ? 10 : undefined}
             showError={showErrors && !cantidadValid}
             errorMessage={cantidadError ?? undefined}
-            hint={saldoReservado > 0 ? `${saldoReservado} plantas estan reservadas y no entran en este despacho.` : undefined}
-            disabled={submitting || saldoLibre <= 0}
+            disabled={submitting || saldoVivo <= 0}
           />
         </section>
 

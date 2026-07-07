@@ -898,21 +898,22 @@ function DetalleSubcampanaScreen() {
   }
 
   const handleActivated = (data: ActivarSubcampaniaData) => {
-    const cobertura = data.composicion_reservada ?? []
-    const reservadoTotal = cobertura.reduce(
-      (acc, item) => acc + (Number.isFinite(item.saldo_reservado) ? item.saldo_reservado : 0),
+    const cobertura = data.composicion_asignada ?? []
+    const asignadoTotal = cobertura.reduce(
+      (acc, item) =>
+        acc + (Number.isFinite(item.saldo_asignado_disponible) ? item.saldo_asignado_disponible : 0),
       0,
     )
     const metaTotal = sub?.meta_total_arboles ?? 0
     let notice: string
-    if (cobertura.length === 0 || reservadoTotal === 0) {
+    if (cobertura.length === 0 || asignadoTotal === 0) {
       notice =
-        'Subcampaña activada. Aún no hay stock reservado — podés asignar lotes de vivero cuando estén disponibles.'
-    } else if (metaTotal > 0 && reservadoTotal < metaTotal) {
-      const cobPct = Math.floor((reservadoTotal / metaTotal) * 100)
-      notice = `Subcampaña activada. Cobertura actual del stock reservado: ${cobPct}% (${reservadoTotal.toLocaleString('es-BO')} / ${metaTotal.toLocaleString('es-BO')}). Podés seguir asignando lotes.`
+        'Subcampaña activada. Aún no hay stock asignado — podés asignar (entregar) lotes de vivero cuando estén disponibles.'
+    } else if (metaTotal > 0 && asignadoTotal < metaTotal) {
+      const cobPct = Math.floor((asignadoTotal / metaTotal) * 100)
+      notice = `Subcampaña activada. Cobertura actual del stock asignado: ${cobPct}% (${asignadoTotal.toLocaleString('es-BO')} / ${metaTotal.toLocaleString('es-BO')}). Podés seguir asignando lotes.`
     } else {
-      notice = 'Subcampaña activada con stock completo reservado.'
+      notice = 'Subcampaña activada con stock completo asignado.'
     }
     setActivationNotice(notice)
     const requestId = ++requestRef.current

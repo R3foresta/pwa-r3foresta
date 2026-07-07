@@ -92,7 +92,10 @@ function CatalogoEspeciesPicker({ open, excludedPlantaIds, onClose, onConfirm }:
           especie: planta.especie,
           nombre_cientifico: planta.nombre_cientifico,
           nombre_comun_principal: planta.nombre_comun_principal,
-          saldo_disponible: stock?.saldo_disponible_total ?? 0,
+          // Modelo físico: el stock asignable/plantable es el saldo vivo actual
+          // agregado (antes `saldo_disponible_total`, ya eliminado). El copy y el
+          // resto de PLA-06 se migran en su ticket; esto es solo la fuente del dato.
+          saldo_disponible: stock?.saldo_vivo_actual_total ?? 0,
         }
       })
       .filter((item) => {

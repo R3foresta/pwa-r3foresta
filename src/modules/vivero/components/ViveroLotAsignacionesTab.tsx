@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
-import ConfirmDialog from '../../../components/ConfirmDialog'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Icon from '../../../components/Icon'
 import { useAuth } from '../../../contexts/AuthContext'
 import {
@@ -7,9 +6,15 @@ import {
   type AsignacionViveroResumen,
   type SubcampaniaResumen,
 } from '../../../services/lotes-vivero.service'
-import type { PropositoAsignacionVivero } from '../types/contracts'
+import type {
+  DevolverAsignacionViveroResponseData,
+  PropositoAsignacionVivero,
+} from '../types/contracts'
 import type { ViveroLotDetailView } from '../types/view-models'
+import { todayLocalISO } from '../../../utils/validations/date'
 import CantidadStepper from './event/CantidadStepper'
+import FechaCard from './event/FechaCard'
+import FotosUploader, { type Photo } from './event/FotosUploader'
 import {
   DISPATCH_FLOW_DESCRIPTION,
   DISPATCH_FLOW_LABEL,
@@ -18,13 +23,36 @@ import {
 
 type Props = {
   lote: ViveroLotDetailView
+  /**
+   * Se llama tras una entrega exitosa para que el padre refresque el detalle
+   * del lote (saldo vivo baja, y puede quedar FINALIZADO por entrega total).
+   */
+  onLoteChanged?: () => void
 }
 
 type AsignacionSuccess = {
   destino: string
   cantidad: number
   proposito: string
+  loteFinalizado: boolean
 }
+
+type DevolucionSuccess = {
+  destino: string
+  cantidad: number
+  loteReabierto: boolean
+}
+
+// Motivos frecuentes de devolucion (chips de acceso rapido). El texto sigue
+// siendo editable para casos particulares.
+const MOTIVOS_DEVOLUCION = [
+  'Excedente no plantado',
+  'Subcampania cancelada',
+  'Error en la cantidad entregada',
+  'Plantas devueltas por la subcampania',
+]
+
+const DEVOLUCION_FORM_ID = 'vivero-devolucion-form'
 
 const PROPOSITOS: Array<{
   key: PropositoAsignacionVivero
@@ -35,13 +63,13 @@ const PROPOSITOS: Array<{
   {
     key: 'PLANTACION_INICIAL',
     label: 'Inicial',
-    hint: 'Reserva para plantar y avanzar la meta.',
+    hint: 'Entrega para plantar y avanzar la meta.',
     tone: 'emerald',
   },
   {
     key: 'REPOSICION',
     label: 'Reposicion',
-    hint: 'Reserva para reemplazar arboles perdidos.',
+    hint: 'Entrega para reemplazar arboles perdidos.',
     tone: 'amber',
   },
 ]
@@ -101,14 +129,19 @@ function AssignmentSuccessDialog({
           </div>
           <div>
             <h2 id="assignment-success-title" className="text-2xl font-extrabold text-brand-900">
-              Asignacion creada
+              Entrega registrada
             </h2>
             <p className="mt-2 text-sm font-semibold leading-snug text-slate-600">
-              El stock quedo reservado para {success.destino}.
+              Se entregaron las plantas a {success.destino} y bajaron del saldo vivo del lote.
             </p>
             <p className="mt-3 text-lg font-extrabold text-brand-800">
               {success.cantidad} plantas - {success.proposito}
             </p>
+            {success.loteFinalizado && (
+              <p className="mt-3 rounded-2xl bg-brand-50 px-3 py-2 text-xs font-bold text-brand-700 ring-1 ring-brand-100">
+                Se entrego todo el stock: el lote quedo FINALIZADO.
+              </p>
+            )}
           </div>
           <button
             type="button"
@@ -123,7 +156,279 @@ function AssignmentSuccessDialog({
   )
 }
 
-function ViveroLotAsignacionesTab({ lote }: Props) {
+function DevolucionSuccessDialog({
+  success,
+  onClose,
+}: {
+  success: DevolucionSuccess | null
+  onClose: () => void
+}) {
+  if (!success) return null
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="devolucion-success-title"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+    >
+      <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl ring-1 ring-black/5">
+        <div className="flex flex-col items-center space-y-5 text-center">
+          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-sky-100 text-sky-600">
+            <Icon name="package" className="h-12 w-12" />
+          </div>
+          <div>
+            <h2 id="devolucion-success-title" className="text-2xl font-extrabold text-brand-900">
+              Devolucion registrada
+            </h2>
+            <p className="mt-2 text-sm font-semibold leading-snug text-slate-600">
+              Se devolvieron las plantas de {success.destino} y volvieron al saldo vivo del lote.
+            </p>
+            <p className="mt-3 text-lg font-extrabold text-brand-800">
+              +{success.cantidad} plantas al vivero
+            </p>
+            {success.loteReabierto && (
+              <p className="mt-3 rounded-2xl bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 ring-1 ring-emerald-100">
+                La devolucion reabrio el lote: vuelve a estado ACTIVO.
+              </p>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full rounded-2xl bg-brand-700 py-4 text-center text-base font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99]"
+          >
+            Entendido
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function DevolucionDialog({
+  asignacion,
+  lote,
+  authId,
+  onClose,
+  onDone,
+}: {
+  asignacion: AsignacionViveroResumen
+  lote: ViveroLotDetailView
+  authId: string
+  onClose: () => void
+  onDone: (
+    result: DevolverAsignacionViveroResponseData,
+    cantidad: number,
+    destino: string,
+  ) => void
+}) {
+  const maxDevolver = numberOrZero(asignacion.saldo_asignado_disponible)
+  const destino = asignacion.subcampania_nombre || 'la subcampania'
+  const today = todayLocalISO()
+  const fechaMin =
+    (asignacion.fecha_asignacion ? asignacion.fecha_asignacion.split('T')[0] : '') || '2020-01-01'
+  const fechaMax = today
+
+  const [cantidad, setCantidad] = useState('')
+  const [motivo, setMotivo] = useState('')
+  const [fecha, setFecha] = useState(today)
+  const [showErrors, setShowErrors] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+
+  const cantidadNum = Number(cantidad)
+  const cantidadValid =
+    Number.isFinite(cantidadNum) &&
+    Number.isInteger(cantidadNum) &&
+    cantidadNum > 0 &&
+    cantidadNum <= maxDevolver
+  const motivoValid = motivo.trim().length >= 3
+  const fechaValid = !!fecha && fecha >= fechaMin && fecha <= fechaMax
+  const canSubmit =
+    !!authId && !submitting && maxDevolver > 0 && cantidadValid && motivoValid && fechaValid
+
+  const cantidadError = !cantidad
+    ? 'Ingresa la cantidad a devolver.'
+    : !Number.isFinite(cantidadNum) || cantidadNum <= 0
+      ? 'La cantidad debe ser mayor a 0.'
+      : !Number.isInteger(cantidadNum)
+        ? 'Solo se aceptan enteros.'
+        : cantidadNum > maxDevolver
+          ? `Max ${maxDevolver} plantas devolvibles.`
+          : null
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!canSubmit) {
+      setShowErrors(true)
+      return
+    }
+    setSubmitting(true)
+    setSubmitError(null)
+    try {
+      const result = await LotesViveroService.devolverAsignacion(
+        lote.id,
+        asignacion.id,
+        {
+          cantidad_devuelta: cantidadNum,
+          motivo_devolucion: motivo.trim(),
+          fecha_devolucion: fecha,
+        },
+        authId,
+      )
+      onDone(result, cantidadNum, destino)
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Error al registrar la devolucion.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="devolucion-title"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/55 sm:items-center sm:px-4"
+    >
+      <div className="flex max-h-[92vh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl ring-1 ring-black/5 sm:rounded-3xl">
+        <header className="flex items-start justify-between gap-3 border-b border-slate-100 px-5 pb-3 pt-5">
+          <div className="min-w-0">
+            <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-sky-600">
+              Devolver al vivero
+            </p>
+            <h2 id="devolucion-title" className="mt-1 truncate text-lg font-extrabold text-brand-800">
+              {destino}
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={submitting}
+            aria-label="Cerrar"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Icon name="x" className="h-4 w-4" />
+          </button>
+        </header>
+
+        <form
+          id={DEVOLUCION_FORM_ID}
+          onSubmit={handleSubmit}
+          className="flex-1 space-y-3 overflow-y-auto px-5 py-4"
+        >
+          <div className="flex items-start gap-2 rounded-2xl bg-sky-50 px-3 py-2.5 text-xs font-semibold text-sky-800 ring-1 ring-sky-100">
+            <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-sky-600" />
+            <span>
+              La devolucion sube el saldo vivo del lote. Si el lote estaba FINALIZADO, puede reabrirse.
+            </span>
+          </div>
+
+          <div className="rounded-2xl bg-slate-50 px-3 py-2.5 ring-1 ring-slate-100">
+            <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">
+              Disponible para devolver
+            </p>
+            <p className="mt-0.5 text-xl font-extrabold text-brand-800">{maxDevolver}</p>
+          </div>
+
+          <CantidadStepper
+            value={cantidad}
+            onChange={setCantidad}
+            max={maxDevolver}
+            min={0}
+            label="Plantas a devolver"
+            unit="plantas"
+            quickPercentages={[25, 50, 100]}
+            bigStepSize={maxDevolver >= 50 ? 10 : undefined}
+            showError={showErrors && !cantidadValid}
+            errorMessage={cantidadError ?? undefined}
+            disabled={submitting || maxDevolver <= 0}
+          />
+
+          <div>
+            <p className="mb-2 text-[10px] font-black uppercase tracking-wider text-brand-500">
+              Motivo de la devolucion
+            </p>
+            <div className="mb-2 flex flex-wrap gap-1.5">
+              {MOTIVOS_DEVOLUCION.map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => setMotivo(preset)}
+                  disabled={submitting}
+                  className={`rounded-full px-2.5 py-1 text-[10px] font-bold ring-1 transition ${
+                    motivo === preset
+                      ? 'bg-brand-600 text-white ring-brand-600'
+                      : 'bg-white text-brand-700 ring-brand-100 hover:bg-brand-50'
+                  }`}
+                >
+                  {preset}
+                </button>
+              ))}
+            </div>
+            <textarea
+              value={motivo}
+              onChange={(event) => setMotivo(event.target.value.slice(0, 500))}
+              placeholder="Detalla por que se devuelven las plantas..."
+              rows={3}
+              disabled={submitting}
+              className={`w-full resize-none rounded-2xl border px-3 py-2.5 text-sm font-semibold text-brand-700 outline-none transition ${
+                showErrors && !motivoValid
+                  ? 'border-red-300 bg-red-50'
+                  : 'border-brand-100 bg-white focus:border-brand-300'
+              }`}
+            />
+            {showErrors && !motivoValid && (
+              <p className="mt-1 text-xs font-semibold text-red-500">Minimo 3 caracteres.</p>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-brand-100 bg-brand-50/40 p-3">
+            <FechaCard
+              value={fecha}
+              onChange={setFecha}
+              min={fechaMin}
+              max={fechaMax}
+              label="Fecha de la devolucion"
+              showError={showErrors && !fechaValid}
+              errorMessage="Fecha fuera de rango."
+              disabled={submitting}
+            />
+          </div>
+
+          {submitError && (
+            <p className="whitespace-pre-line rounded-2xl bg-red-50 px-3 py-2 text-center text-xs font-semibold text-red-600 ring-1 ring-red-200">
+              {submitError}
+            </p>
+          )}
+        </form>
+
+        <footer className="grid grid-cols-2 gap-2 border-t border-slate-100 px-5 pb-5 pt-3">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={submitting}
+            className="flex items-center justify-center gap-2 rounded-2xl bg-white px-3 py-3 text-sm font-extrabold text-brand-700 shadow-soft ring-1 ring-brand-100 transition hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            form={DEVOLUCION_FORM_ID}
+            disabled={!canSubmit}
+            className="flex items-center justify-center gap-2 rounded-2xl bg-sky-600 px-3 py-3 text-sm font-extrabold text-white shadow-soft transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+          >
+            <Icon name="package" className="h-4 w-4" />
+            {submitting ? 'Devolviendo...' : 'Devolver al vivero'}
+          </button>
+        </footer>
+      </div>
+    </div>
+  )
+}
+
+function ViveroLotAsignacionesTab({ lote, onLoteChanged }: Props) {
   const { user } = useAuth()
   const authId = user?.auth_id?.trim() || ''
 
@@ -133,29 +438,34 @@ function ViveroLotAsignacionesTab({ lote }: Props) {
   const [subcampaniaId, setSubcampaniaId] = useState('')
   const [proposito, setProposito] = useState<PropositoAsignacionVivero>('PLANTACION_INICIAL')
   const [cantidad, setCantidad] = useState('')
+  const [fecha, setFecha] = useState(todayLocalISO())
+  const [photos, setPhotos] = useState<Photo[]>([])
   const [showErrors, setShowErrors] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [assignmentSuccess, setAssignmentSuccess] = useState<AsignacionSuccess | null>(null)
-  const [cancelTarget, setCancelTarget] = useState<AsignacionViveroResumen | null>(null)
+  const [devolucionTarget, setDevolucionTarget] = useState<AsignacionViveroResumen | null>(null)
+  const [devolucionSuccess, setDevolucionSuccess] = useState<DevolucionSuccess | null>(null)
 
+  // Modelo fisico: asignar = entregar. El maximo entregable es el saldo vivo
+  // actual del lote (ya no existe el calculo "vivo - reservado").
   const saldoVivo = lote.saldoVivoActual ?? 0
-  const saldoReservadoBackend = lote.saldoAsignadoTotal ?? 0
-  const saldoLibreBackend = lote.saldoVivoDisponibleAsignacion ?? saldoVivo
   const estadoLote = lote.estadoLote ?? 'ACTIVO'
   const loteActivo = estadoLote === 'ACTIVO'
   const flowStatus = getDispatchFlowStatus(lote)
+  const maxAsignable = saldoVivo
 
-  const saldoReservadoLocal = useMemo(
-    () => asignaciones.reduce((total, asig) => total + numberOrZero(asig.saldo_asignado_disponible), 0),
+  // Entregado a subcampanias (informativo). Preferimos el agregado del backend;
+  // si no viene, sumamos lo asignado de las asignaciones activas como respaldo.
+  const entregadoLocal = useMemo(
+    () => asignaciones.reduce((total, asig) => total + numberOrZero(asig.cantidad_asignada), 0),
     [asignaciones],
   )
-  const saldoLibreVisible = Math.max(
-    0,
-    saldoVivo - Math.max(saldoReservadoBackend, saldoReservadoLocal),
-  )
-  const maxAsignable = Math.min(saldoLibreBackend, saldoLibreVisible)
+  const entregadoSubcampanias = lote.saldoAsignadoSubcampanias ?? entregadoLocal
+
+  const today = todayLocalISO()
+  const fechaMin = (lote.fechaInicio ? lote.fechaInicio.split('T')[0] : '') || '2020-01-01'
+  const fechaMax = today
 
   const cantidadNum = Number(cantidad)
   const cantidadValid =
@@ -164,13 +474,49 @@ function ViveroLotAsignacionesTab({ lote }: Props) {
     cantidadNum > 0 &&
     cantidadNum <= maxAsignable
   const subcampaniaValid = Number(subcampaniaId) > 0
+  const fotosValid = photos.length >= 1 && photos.length <= 5
+  const fechaValid = !!fecha && fecha >= fechaMin && fecha <= fechaMax
   const canCreate =
     !!authId &&
     !submitting &&
     loteActivo &&
     maxAsignable > 0 &&
     subcampaniaValid &&
-    cantidadValid
+    cantidadValid &&
+    fotosValid &&
+    fechaValid
+
+  const photosRef = useRef(photos)
+  useEffect(() => {
+    photosRef.current = photos
+  }, [photos])
+  useEffect(
+    () => () => {
+      photosRef.current.forEach((p) => URL.revokeObjectURL(p.previewUrl))
+    },
+    [],
+  )
+
+  const addPhotos = (files: File[]) => {
+    const next = files.map((file) => ({ file, previewUrl: URL.createObjectURL(file) }))
+    setPhotos((prev) => [...prev, ...next].slice(0, 5))
+  }
+
+  const removePhoto = (index: number) => {
+    setPhotos((prev) => {
+      const next = [...prev]
+      const [removed] = next.splice(index, 1)
+      if (removed) URL.revokeObjectURL(removed.previewUrl)
+      return next
+    })
+  }
+
+  const clearPhotos = () => {
+    setPhotos((prev) => {
+      prev.forEach((p) => URL.revokeObjectURL(p.previewUrl))
+      return []
+    })
+  }
 
   const loadAsignaciones = () => {
     setLoading(true)
@@ -182,6 +528,7 @@ function ViveroLotAsignacionesTab({ lote }: Props) {
 
   useEffect(() => {
     loadAsignaciones()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lote.id])
 
   useEffect(() => {
@@ -191,16 +538,17 @@ function ViveroLotAsignacionesTab({ lote }: Props) {
         if (!subcampaniaId && data.length > 0) setSubcampaniaId(String(data[0].id))
       })
       .catch((err) => setSubmitError(err instanceof Error ? err.message : 'Error al cargar subcampanias.'))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const cantidadError = !cantidad
-    ? 'Ingresa la cantidad a reservar.'
+    ? 'Ingresa la cantidad a entregar.'
     : !Number.isFinite(cantidadNum) || cantidadNum <= 0
       ? 'La cantidad debe ser mayor a 0.'
       : !Number.isInteger(cantidadNum)
         ? 'Solo se aceptan enteros.'
         : cantidadNum > maxAsignable
-          ? `Max ${maxAsignable} plantas libres.`
+          ? `Max ${maxAsignable} plantas en vivero.`
           : null
 
   const handleCreate = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -212,56 +560,74 @@ function ViveroLotAsignacionesTab({ lote }: Props) {
 
     setSubmitting(true)
     setSubmitError(null)
-    setSuccessMessage(null)
     setAssignmentSuccess(null)
     try {
       const selectedSubcampania = subcampanias.find((sub) => sub.id === Number(subcampaniaId))
       const selectedProposito = PROPOSITOS.find((item) => item.key === proposito)
 
-      await LotesViveroService.crearAsignacion(
+      // Paso 1 — subir la evidencia de la entrega y obtener los evidencia_ids.
+      const upload = await LotesViveroService.uploadEvidenciasPendientes(
+        {
+          fotos: photos.map((p) => p.file),
+          titulo: 'Entrega a subcampania',
+          descripcion: `Entrega de ${cantidadNum} plantas a ${
+            selectedSubcampania?.nombre || 'subcampania'
+          }`,
+          metadata: { fuente: 'pwa-r3foresta', modulo: 'vivero', etapa: 'ASIGNACION' },
+          tomado_en: new Date().toISOString(),
+        },
+        authId,
+      )
+
+      // Paso 2 — registrar la entrega con la fecha y la evidencia.
+      const result = await LotesViveroService.crearAsignacion(
         lote.id,
         {
           subcampania_id: Number(subcampaniaId),
           cantidad_asignada: cantidadNum,
           proposito,
+          fecha_asignacion: fecha,
+          evidencia_ids: upload.evidencia_ids,
         },
         authId,
       )
+
       setCantidad('')
+      clearPhotos()
+      setFecha(todayLocalISO())
       setShowErrors(false)
       setAssignmentSuccess({
         destino: selectedSubcampania?.nombre || 'la subcampania seleccionada',
         cantidad: cantidadNum,
         proposito: selectedProposito?.label || 'Inicial',
+        loteFinalizado: result.lote_finalizado,
       })
       await LotesViveroService.listAsignaciones(lote.id).then((data) =>
         setAsignaciones(sortAsignacionesNewestFirst(data)),
       )
+      // Refrescamos el detalle del lote: el saldo vivo bajo y puede haber
+      // quedado FINALIZADO por entrega total.
+      onLoteChanged?.()
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : 'Error al crear la reserva.')
+      setSubmitError(err instanceof Error ? err.message : 'Error al registrar la entrega.')
     } finally {
       setSubmitting(false)
     }
   }
 
-  const handleCancel = async () => {
-    if (!cancelTarget) return
-    setSubmitting(true)
-    setSubmitError(null)
-    setSuccessMessage(null)
-    setAssignmentSuccess(null)
-    try {
-      await LotesViveroService.cancelarAsignacion(lote.id, cancelTarget.id, authId)
-      setSuccessMessage('Reserva cancelada. El saldo vuelve a estar libre.')
-      setCancelTarget(null)
-      await LotesViveroService.listAsignaciones(lote.id).then((data) =>
-        setAsignaciones(sortAsignacionesNewestFirst(data)),
-      )
-    } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : 'Error al cancelar la reserva.')
-    } finally {
-      setSubmitting(false)
-    }
+  // Devolucion fisica exitosa: el stock volvio al vivero (saldo vivo sube) y el
+  // lote pudo reabrirse. Recargamos el desglose y refrescamos el detalle.
+  const handleDevolucionDone = (
+    result: DevolverAsignacionViveroResponseData,
+    cantidad: number,
+    destino: string,
+  ) => {
+    setDevolucionTarget(null)
+    setDevolucionSuccess({ destino, cantidad, loteReabierto: result.lote_reabierto })
+    void LotesViveroService.listAsignaciones(lote.id).then((data) =>
+      setAsignaciones(sortAsignacionesNewestFirst(data)),
+    )
+    onLoteChanged?.()
   }
 
   return (
@@ -281,20 +647,16 @@ function ViveroLotAsignacionesTab({ lote }: Props) {
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-3 gap-2">
-          <div className="rounded-2xl bg-slate-50 px-3 py-3 ring-1 ring-slate-100">
-            <p className="text-[9px] font-black uppercase tracking-wider text-slate-500">Vivo</p>
-            <p className="mt-1 text-xl font-extrabold text-brand-800">{saldoVivo}</p>
-          </div>
-          <div className="rounded-2xl bg-amber-50 px-3 py-3 ring-1 ring-amber-100">
-            <p className="text-[9px] font-black uppercase tracking-wider text-amber-700">Reservado</p>
-            <p className="mt-1 text-xl font-extrabold text-amber-800">
-              {Math.max(saldoReservadoBackend, saldoReservadoLocal)}
-            </p>
-          </div>
+        <div className="mt-4 grid grid-cols-2 gap-2">
           <div className="rounded-2xl bg-emerald-50 px-3 py-3 ring-1 ring-emerald-100">
-            <p className="text-[9px] font-black uppercase tracking-wider text-emerald-700">Libre</p>
-            <p className="mt-1 text-xl font-extrabold text-emerald-800">{maxAsignable}</p>
+            <p className="text-[9px] font-black uppercase tracking-wider text-emerald-700">En vivero</p>
+            <p className="mt-1 text-xl font-extrabold text-emerald-800">{saldoVivo}</p>
+          </div>
+          <div className="rounded-2xl bg-slate-50 px-3 py-3 ring-1 ring-slate-100">
+            <p className="text-[9px] font-black uppercase tracking-wider text-slate-500">
+              Entregado a subcampanias
+            </p>
+            <p className="mt-1 text-xl font-extrabold text-brand-800">{entregadoSubcampanias}</p>
           </div>
         </div>
       </section>
@@ -302,25 +664,25 @@ function ViveroLotAsignacionesTab({ lote }: Props) {
       <form onSubmit={handleCreate} className="space-y-3 rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-extrabold text-brand-800">Crear reserva</p>
+            <p className="text-sm font-extrabold text-brand-800">Entregar plantas</p>
             <p className="text-[11px] font-semibold text-slate-500">
-              Asignacion decide el destino del stock listo para despacho.
+              Entregar baja el saldo vivo del lote y requiere evidencia.
             </p>
           </div>
-          <span className="rounded-full bg-brand-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-brand-700 ring-1 ring-brand-100">
-            Sin foto
+          <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-emerald-700 ring-1 ring-emerald-100">
+            Con foto
           </span>
         </div>
 
         {!loteActivo && (
           <div className="rounded-2xl bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600 ring-1 ring-slate-200">
-            El lote esta en estado {estadoLote} y no acepta nuevas reservas.
+            El lote esta en estado {estadoLote} y no acepta nuevas entregas.
           </div>
         )}
 
         {maxAsignable <= 0 && loteActivo && (
           <div className="rounded-2xl bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800 ring-1 ring-amber-200">
-            No hay saldo libre para reservar.
+            No hay saldo vivo en el lote para entregar.
           </div>
         )}
 
@@ -391,7 +753,7 @@ function ViveroLotAsignacionesTab({ lote }: Props) {
           onChange={setCantidad}
           max={maxAsignable}
           min={0}
-          label="Plantas a reservar"
+          label="Plantas a entregar"
           unit="plantas"
           quickPercentages={[25, 50, 80, 100]}
           bigStepSize={maxAsignable >= 50 ? 10 : undefined}
@@ -400,20 +762,40 @@ function ViveroLotAsignacionesTab({ lote }: Props) {
           disabled={submitting || maxAsignable <= 0 || !loteActivo}
         />
 
+        <div className="rounded-2xl border border-brand-100 bg-brand-50/40 p-3">
+          <FechaCard
+            value={fecha}
+            onChange={setFecha}
+            min={fechaMin}
+            max={fechaMax}
+            label="Fecha de la entrega"
+            showError={showErrors && !fechaValid}
+            errorMessage="Fecha fuera de rango."
+            disabled={submitting}
+          />
+        </div>
+
+        <div className="rounded-2xl border border-brand-100 bg-brand-50/40 p-3">
+          <FotosUploader
+            photos={photos}
+            onAdd={addPhotos}
+            onRemove={removePhoto}
+            required
+            showError={showErrors && !fotosValid}
+            errorMessage="Adjunta al menos una foto de la entrega."
+            disabled={submitting || !loteActivo}
+          />
+        </div>
+
         <button
           type="submit"
           disabled={!canCreate}
           className="flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-700 px-4 py-3.5 text-sm font-extrabold text-white shadow-soft transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:bg-slate-300"
         >
           <Icon name="check" className="h-4 w-4" />
-          {submitting ? 'Guardando...' : 'Crear reserva'}
+          {submitting ? 'Entregando...' : 'Entregar plantas'}
         </button>
 
-        {successMessage && (
-          <p className="rounded-2xl bg-emerald-50 px-3 py-2 text-center text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100">
-            {successMessage}
-          </p>
-        )}
         {submitError && (
           <p className="whitespace-pre-line rounded-2xl bg-red-50 px-3 py-2 text-center text-xs font-semibold text-red-600 ring-1 ring-red-200">
             {submitError}
@@ -436,7 +818,6 @@ function ViveroLotAsignacionesTab({ lote }: Props) {
             const isExhausted = saldoDisponible === 0
             const hasMerma = numberOrZero(asig.cantidad_mermada) > 0
             const isReposicion = asig.proposito === 'REPOSICION'
-            const canCancel = numberOrZero(asig.cantidad_consumida) === 0
 
             return (
               <article
@@ -471,7 +852,7 @@ function ViveroLotAsignacionesTab({ lote }: Props) {
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">Libre</p>
+                    <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">Disponible</p>
                     <p className="text-2xl font-extrabold text-emerald-700">{saldoDisponible}</p>
                   </div>
                 </div>
@@ -482,25 +863,32 @@ function ViveroLotAsignacionesTab({ lote }: Props) {
                 </p>
 
                 <div className="mt-4 grid grid-cols-4 gap-2">
-                  <AssignmentMetric label="Asignado" value={numberOrZero(asig.cantidad_asignada)} />
+                  <AssignmentMetric label="Entregado" value={numberOrZero(asig.cantidad_asignada)} />
                   <AssignmentMetric label="Consumido" value={numberOrZero(asig.cantidad_consumida)} />
                   <AssignmentMetric label="Devuelto" value={numberOrZero(asig.cantidad_devuelta)} />
                   <AssignmentMetric label="Mermado" value={numberOrZero(asig.cantidad_mermada)} danger={hasMerma} />
                 </div>
 
+                {/* Devolucion fisica: sube el saldo vivo del lote y puede reabrir
+                    un lote FINALIZADO. Admite devolucion parcial mientras
+                    saldo_asignado_disponible > 0 (ya no depende de lo consumido). */}
                 <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2.5 ring-1 ring-slate-100">
-                  <p className="text-[11px] font-bold leading-tight text-slate-600">
-                    {canCancel
-                      ? 'Reserva sin consumo. Se puede cancelar y liberar saldo.'
-                      : 'Ya tiene consumo en plantacion; no se puede cancelar desde aqui.'}
+                  <p className="text-[11px] font-bold leading-tight text-slate-500">
+                    {isExhausted
+                      ? 'Sin saldo disponible para devolver.'
+                      : `Podes devolver hasta ${saldoDisponible} plantas al vivero.`}
                   </p>
                   <button
                     type="button"
-                    onClick={() => setCancelTarget(asig)}
-                    disabled={!canCancel || submitting}
-                    className="shrink-0 rounded-xl bg-white px-3 py-2 text-[11px] font-extrabold text-red-600 ring-1 ring-red-100 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:text-slate-400 disabled:ring-slate-200"
+                    disabled={isExhausted}
+                    onClick={() => setDevolucionTarget(asig)}
+                    className={`shrink-0 rounded-xl px-3 py-2 text-[11px] font-extrabold ring-1 transition ${
+                      isExhausted
+                        ? 'cursor-not-allowed bg-white text-slate-400 ring-slate-200'
+                        : 'bg-white text-sky-700 ring-sky-200 hover:bg-sky-50'
+                    }`}
                   >
-                    Cancelar
+                    Devolver al vivero
                   </button>
                 </div>
               </article>
@@ -509,22 +897,24 @@ function ViveroLotAsignacionesTab({ lote }: Props) {
         </div>
       )}
 
-      <ConfirmDialog
-        open={!!cancelTarget}
-        variant="danger"
-        iconName="info"
-        title="Cancelar reserva"
-        description="La asignacion pasara a devuelta y el saldo quedara libre para otras operaciones."
-        confirmLabel="Si, cancelar"
-        cancelLabel="Volver"
-        loading={submitting}
-        onConfirm={handleCancel}
-        onCancel={() => setCancelTarget(null)}
-      />
-
       <AssignmentSuccessDialog
         success={assignmentSuccess}
         onClose={() => setAssignmentSuccess(null)}
+      />
+
+      {devolucionTarget && (
+        <DevolucionDialog
+          asignacion={devolucionTarget}
+          lote={lote}
+          authId={authId}
+          onClose={() => setDevolucionTarget(null)}
+          onDone={handleDevolucionDone}
+        />
+      )}
+
+      <DevolucionSuccessDialog
+        success={devolucionSuccess}
+        onClose={() => setDevolucionSuccess(null)}
       />
     </div>
   )

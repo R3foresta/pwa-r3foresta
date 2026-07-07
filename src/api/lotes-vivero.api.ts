@@ -11,6 +11,7 @@ import type {
   EvidenciaEventoVivero,
   UploadEvidenciasEventoInput,
   CrearAsignacionViveroRequest,
+  DevolucionAsignacionRequest,
 } from '../modules/vivero/types/contracts'
 
 const RAW_API_URL = import.meta.env.VITE_API_URL as string | undefined
@@ -271,15 +272,23 @@ export async function crearAsignacionApi(
   })
 }
 
-export async function cancelarAsignacionApi(
+// Devolución física de stock asignado (reemplaza al DELETE de "cancelar
+// reserva", ya eliminado del backend). El lote recupera saldo vivo y puede
+// reabrirse si estaba FINALIZADO.
+export async function devolverAsignacionApi(
   loteId: number,
   asignacionId: number,
+  input: DevolucionAsignacionRequest,
   authId?: string,
 ): Promise<Response> {
-  return fetch(`${API_BASE_URL}/lotes-vivero/${loteId}/asignaciones/${asignacionId}`, {
-    method: 'DELETE',
-    headers: getAuthHeaders({ authId, includeContentType: false }),
-  })
+  return fetch(
+    `${API_BASE_URL}/lotes-vivero/${loteId}/asignaciones/${asignacionId}/devolucion`,
+    {
+      method: 'POST',
+      headers: getAuthHeaders({ authId, includeContentType: true }),
+      body: JSON.stringify(input),
+    },
+  )
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
