@@ -7,6 +7,7 @@ interface TimelineProps {
 }
 
 export default function Timeline({ events, onOpenGallery }: TimelineProps) {
+  const orderedEvents = [...events].reverse()
   return (
     <section>
       <div className="flex items-baseline justify-between mb-4">
@@ -15,12 +16,12 @@ export default function Timeline({ events, onOpenGallery }: TimelineProps) {
         </p>
       </div>
       <ol className="relative ml-3 space-y-6">
-        {events.map((event, index) => (
-          <EventCard 
-            key={event.id ?? index} 
-            event={event} 
-            isLast={index === events.length - 1} 
-            onOpenGallery={onOpenGallery} 
+        {orderedEvents.map((event, index) => (
+          <EventCard
+            key={event.id ?? index}
+            event={event}
+            isLast={index === orderedEvents.length - 1}
+            onOpenGallery={onOpenGallery}
           />
         ))}
       </ol>
