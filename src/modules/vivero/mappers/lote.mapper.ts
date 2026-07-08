@@ -158,7 +158,7 @@ export function mapTimelineEventToView(e: TimelineEventDto): ViveroLotEventView 
     id: e.id,
     kind: (e.tipo_evento as TipoEventoVivero) || 'INICIO',
     label: e.label || `${e.tipo_evento?.replace(/_/g, ' ') || 'Evento'} registrado`,
-    fecha: e.fecha_evento ? new Date(e.fecha_evento).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Sin fecha',
+    fecha: e.fecha_evento ? new Date(e.fecha_evento).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) : 'Sin fecha',
     fechaIso: e.fecha_evento || new Date().toISOString(),
     // Se oculta temporalmente la hora. El backend está enviando
     // timestamps sin tiempo real (00:00:00 UTC), lo que en GMT-4 resulta en "20:00" falso.

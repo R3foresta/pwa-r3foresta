@@ -129,9 +129,7 @@ function DespachoForm({ lote, onCompleted }: Props) {
     setSubmitting(true)
     setSubmitError(null)
     try {
-      const referenciaStr = selectedCampania
-        ? `${selectedCampania.nombre} (${selectedCampania.codigo_trazabilidad})`
-        : ''
+      const referenciaStr = selectedCampania ? selectedCampania.nombre : ''
 
       const upload = await LotesViveroService.uploadEvidenciasEvento(
         lote.id,
