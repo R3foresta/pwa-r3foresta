@@ -8,7 +8,7 @@ import { obtenerComunidad } from '../../../api/comunidades.api'
 import { PlantacionService } from '../../../services/plantacion.service'
 import { UsersService } from '../../../services/users.service'
 import type { ComunidadCard } from '../../../tipos/comunidades'
-import type { UsuarioResumen } from '../../../types/users'
+import type { UsuarioResumen, UsuarioRol } from '../../../types/users'
 import SubcampaniaEquipoStep from '../components/SubcampaniaEquipoStep'
 import { UserAvatar } from '../components/UserAvatar'
 import SubcampaniaEspeciesStep from '../components/SubcampaniaEspeciesStep'
@@ -39,9 +39,10 @@ type BaseStepErrors = {
 }
 
 const DEFAULT_PAIS_ID = 1
-// Regla actual de negocio: los coordinadores disponibles se filtran desde
-// usuarios con rol GENERAL.
-const COORDINADOR_ROL = 'GENERAL'
+// Regla actual de negocio: coordinadores disponibles desde ADMIN y GENERAL,
+// mostrando ADMIN primero.
+const COORDINADOR_ROLES: UsuarioRol[] = ['ADMIN', 'GENERAL']
+const COORDINADOR_FALLBACK_ROL: UsuarioRol = 'GENERAL'
 const SEARCH_DEBOUNCE_MS = 300
 
 type WizardStep = 1 | 2 | 3 | 4 | 5
@@ -151,11 +152,27 @@ function resolveCampaniaCoordinator(campania: Campania): UsuarioResumen | null {
     return {
       id: campania.coordinador_id,
       nombre: campania.coordinador_nombre.trim(),
-      rol: COORDINADOR_ROL,
+      rol: COORDINADOR_FALLBACK_ROL,
     }
   }
 
   return null
+}
+
+function dedupeUsuariosById(usuarios: UsuarioResumen[]): UsuarioResumen[] {
+  const seen = new Set<number>()
+  return usuarios.filter((usuario) => {
+    if (seen.has(usuario.id)) return false
+    seen.add(usuario.id)
+    return true
+  })
+}
+
+async function listCoordinadores(query: string): Promise<UsuarioResumen[]> {
+  const results = await Promise.all(
+    COORDINADOR_ROLES.map((rol) => UsersService.listUsersByRole(rol, query)),
+  )
+  return dedupeUsuariosById(results.flat())
 }
 
 function equipoMemberToUsuarioResumen(member: EquipoMember): UsuarioResumen {
@@ -220,7 +237,7 @@ function CoordinadorSelector({
       try {
         setLoading(true)
         setFetchError(null)
-        const usuarios = await UsersService.listUsersByRole(COORDINADOR_ROL, debouncedQuery)
+        const usuarios = await listCoordinadores(debouncedQuery)
 
         if (requestId !== requestCounterRef.current) {
           return
