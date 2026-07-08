@@ -1,13 +1,16 @@
 import type {
   CancelarSubcampaniaInput,
   CreateCampaniaInput,
+  CreateRegistroPlantacionInput,
   CreateSubcampaniaInput,
   EquipoMemberInput,
+  EstadoSubcampania,
   PutPlanInput,
   SetCampaniaOrganizacionesInput,
   SetSubcampaniaPoligonoInput,
   UpdateCampaniaInput,
   UpdateSubcampaniaInput,
+  UploadEvidenciasPlantacionInput,
 } from '../modules/plantacion/types/contracts'
 
 const RAW_API_URL = import.meta.env.VITE_API_URL as string | undefined
@@ -262,6 +265,89 @@ export async function cancelarSubcampaniaApi(
   authId?: string,
 ): Promise<Response> {
   return fetch(`${API_BASE_URL}/subcampanias/${subcampaniaId}/cancelar`, {
+    method: 'POST',
+    headers: getAuthHeaders({ authId, includeContentType: true }),
+    body: JSON.stringify(input),
+  })
+}
+
+// ---------------------------------------------------------------------------
+// Registro de plantación inicial (PLT-EPIC-01)
+// ---------------------------------------------------------------------------
+
+export async function listSubcampaniasApi(
+  estado?: EstadoSubcampania,
+  authId?: string,
+): Promise<Response> {
+  const query = estado ? `?estado=${estado}` : ''
+  return fetch(`${API_BASE_URL}/subcampanias${query}`, {
+    method: 'GET',
+    headers: getAuthHeaders({ authId, includeContentType: false }),
+  })
+}
+
+export async function getPlantacionContextApi(
+  subcampaniaId: number,
+  authId?: string,
+): Promise<Response> {
+  return fetch(`${API_BASE_URL}/subcampanias/${subcampaniaId}/plantacion/context`, {
+    method: 'GET',
+    headers: getAuthHeaders({ authId, includeContentType: false }),
+  })
+}
+
+function buildPlantacionEvidenceFormData(
+  input: UploadEvidenciasPlantacionInput,
+): FormData {
+  const formData = new FormData()
+  input.fotos.forEach((file) => formData.append('fotos', file))
+
+  if (input.titulo?.trim()) {
+    formData.append('titulo', input.titulo.trim())
+  }
+  if (input.descripcion?.trim()) {
+    formData.append('descripcion', input.descripcion.trim())
+  }
+  if (input.metadata) {
+    formData.append('metadata', JSON.stringify(input.metadata))
+  }
+  if (input.tomado_en) {
+    formData.append('tomado_en', input.tomado_en)
+  }
+  // Mismo idiom que Vivero: las evidencias se crean pendientes (entidad_id=0),
+  // enviar es_principal explícito evita chocar con el índice único parcial.
+  formData.append('es_principal', String(input.es_principal ?? false))
+
+  return formData
+}
+
+export async function uploadEvidenciasPendientesPlantacionApi(
+  input: UploadEvidenciasPlantacionInput,
+  authId?: string,
+): Promise<Response> {
+  return fetch(`${API_BASE_URL}/registros-plantacion/evidencias-pendientes`, {
+    method: 'POST',
+    headers: getAuthHeaders({ authId, includeContentType: false }),
+    body: buildPlantacionEvidenceFormData(input),
+  })
+}
+
+export async function deleteEvidenciasPendientesPlantacionApi(
+  evidenciaIds: number[],
+  authId?: string,
+): Promise<Response> {
+  return fetch(`${API_BASE_URL}/registros-plantacion/evidencias-pendientes`, {
+    method: 'DELETE',
+    headers: getAuthHeaders({ authId, includeContentType: true }),
+    body: JSON.stringify({ evidencia_ids: evidenciaIds }),
+  })
+}
+
+export async function createRegistroPlantacionApi(
+  input: CreateRegistroPlantacionInput,
+  authId?: string,
+): Promise<Response> {
+  return fetch(`${API_BASE_URL}/registros-plantacion`, {
     method: 'POST',
     headers: getAuthHeaders({ authId, includeContentType: true }),
     body: JSON.stringify(input),

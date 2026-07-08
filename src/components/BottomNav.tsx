@@ -4,6 +4,7 @@ import Icon, { type IconName } from './Icon'
 import { NAV_ITEMS } from '../data/navigation'
 import { useAuth } from '../contexts/AuthContext'
 import { ProfileService } from '../modules/user_profile'
+import SubcampaniasOperativasSheet from '../modules/plantacion/components/SubcampaniasOperativasSheet'
 
 type QuickAction = {
   label: string
@@ -11,35 +12,57 @@ type QuickAction = {
   to: string
 }
 
+// Vista interna del bottom sheet: acciones rápidas o selector de subcampañas
+// operativas para registrar plantación (PLT-FE-001).
+type SheetView = 'actions' | 'plantacion'
+
 function BottomNav() {
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const { user } = useAuth()
   const [open, setOpen] = useState(false)
+  const [sheetView, setSheetView] = useState<SheetView>('actions')
   const [showProfileWarning, setShowProfileWarning] = useState(false)
 
   const quickActions: QuickAction[] = [
     { label: 'Registrar recolección', icon: 'package', to: '/app/collections/new' },
     { label: 'Nuevo germinación', icon: 'vivero', to: '/app/vivero/new' },
-    { label: 'Registrar plantación', icon: 'leaf', to: '/app/planting' },
+    { label: 'Registrar plantación', icon: 'leaf', to: 'plantacion-selector' },
     { label: 'Actualizar CO₂', icon: 'balance', to: '/app/co2' },
   ]
 
+  const closeSheet = () => {
+    setOpen(false)
+    setSheetView('actions')
+  }
+
   const handleQuickNav = (to: string) => {
     // Validar si el usuario tiene el perfil completo antes de permitir ciertas acciones
-    const requiresCompleteProfile = ['/app/collections/new', '/app/vivero/new', '/app/planting', '/app/co2']
-    
+    const requiresCompleteProfile = [
+      '/app/collections/new',
+      '/app/vivero/new',
+      'plantacion-selector',
+      '/app/co2',
+    ]
+
     if (requiresCompleteProfile.includes(to)) {
       const isComplete = ProfileService.isProfileComplete(user)
-      
+
       if (!isComplete) {
-        setOpen(false)
+        closeSheet()
         setShowProfileWarning(true)
         return
       }
     }
-    
-    setOpen(false)
+
+    // «Registrar plantación» no navega directo: abre el selector de
+    // subcampañas operativas dentro del mismo sheet (PLT-FE-001).
+    if (to === 'plantacion-selector') {
+      setSheetView('plantacion')
+      return
+    }
+
+    closeSheet()
     navigate(to)
   }
 
@@ -51,14 +74,16 @@ function BottomNav() {
   // Verificar si estamos en alguna ruta de acciones rápidas
   const isInQuickActionRoute = quickActions.some(action => pathname === action.to)
   const isSubcampaniaWizardRoute = pathname.includes('/subcampanias/new')
-  const showQuickActionButton = !isInQuickActionRoute && !isSubcampaniaWizardRoute
+  const isRegistroPlantacionRoute = pathname.includes('/plantaciones/new')
+  const showQuickActionButton =
+    !isInQuickActionRoute && !isSubcampaniaWizardRoute && !isRegistroPlantacionRoute
 
   return (
     <>
       {open && (
         <div
           className="fixed inset-0 z-30 bg-black/40 backdrop-blur-[2px]"
-          onClick={() => setOpen(false)}
+          onClick={closeSheet}
         />
       )}
 
@@ -89,7 +114,13 @@ function BottomNav() {
           {showQuickActionButton && (
             <button
               type="button"
-              onClick={() => setOpen((v) => !v)}
+              onClick={() => {
+                if (open) {
+                  closeSheet()
+                } else {
+                  setOpen(true)
+                }
+              }}
               className="fixed bottom-32 right-1/2 flex h-14 w-14 translate-x-[calc(min(50vw,24rem)-2.5rem)] items-center justify-center rounded-full bg-brand-500 text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.98] ring-4 ring-white"
               aria-label="Abrir acciones rápidas"
             >
@@ -105,30 +136,50 @@ function BottomNav() {
         <div className="fixed inset-x-0 bottom-20 z-40 flex justify-center px-4">
           <div className="w-full max-w-md rounded-3xl bg-white text-brand-800 shadow-2xl shadow-brand-900/20 ring-1 ring-black/5 backdrop-blur">
             <div className="flex items-center justify-between px-4 pt-4">
-              <h3 className="text-sm font-semibold text-brand-800">Acciones rápidas</h3>
+              <h3 className="text-sm font-semibold text-brand-800">
+                {sheetView === 'plantacion'
+                  ? 'Registrar plantación · Elige subcampaña'
+                  : 'Acciones rápidas'}
+              </h3>
               <button
                 type="button"
-                onClick={() => setOpen(false)}
+                onClick={closeSheet}
                 className="rounded-full p-2 text-brand-500 hover:bg-slate-100"
               >
                 <Icon name="x" className="h-5 w-5" />
               </button>
             </div>
-            <div className="divide-y divide-slate-100 px-2 pb-2 pt-2">
-              {quickActions.map((action) => (
-                <button
-                  key={action.label}
-                  type="button"
-                  onClick={() => handleQuickNav(action.to)}
-                  className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-slate-50 active:bg-slate-100"
-                >
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
-                    <Icon name={action.icon} className="h-5 w-5" />
-                  </div>
-                  <span className="text-sm font-semibold text-brand-800">{action.label}</span>
-                </button>
-              ))}
-            </div>
+            {sheetView === 'plantacion' ? (
+              <SubcampaniasOperativasSheet
+                onBack={() => setSheetView('actions')}
+                onVer={(subcampaniaId) => {
+                  closeSheet()
+                  navigate(`/app/planting/subcampanias/${subcampaniaId}`)
+                }}
+                onRegistrar={(subcampaniaId) => {
+                  closeSheet()
+                  navigate(
+                    `/app/planting/subcampanias/${subcampaniaId}/plantaciones/new`,
+                  )
+                }}
+              />
+            ) : (
+              <div className="divide-y divide-slate-100 px-2 pb-2 pt-2">
+                {quickActions.map((action) => (
+                  <button
+                    key={action.label}
+                    type="button"
+                    onClick={() => handleQuickNav(action.to)}
+                    className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-slate-50 active:bg-slate-100"
+                  >
+                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
+                      <Icon name={action.icon} className="h-5 w-5" />
+                    </div>
+                    <span className="text-sm font-semibold text-brand-800">{action.label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

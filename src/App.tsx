@@ -34,6 +34,7 @@ import {
   DetalleSubcampanaScreen,
   EditarCampanaScreen,
   PlantacionDashboardScreen,
+  RegistrarPlantacionScreen,
 } from './modules/plantacion'
 import MapScreen from './modules/map/MapScreen'
 import { CompleteProfileScreen, PerfilScreen } from './modules/user_profile'
@@ -142,6 +143,10 @@ function App() {
               <Route
                 path="subcampanias/:subcampaniaId"
                 element={<DetalleSubcampanaScreen />}
+              />
+              <Route
+                path="subcampanias/:subcampaniaId/plantaciones/new"
+                element={<RegistrarPlantacionScreen />}
               />
             </Route>
             <Route path="co2" element={<PlaceholderScreen title="CO₂" />} />
