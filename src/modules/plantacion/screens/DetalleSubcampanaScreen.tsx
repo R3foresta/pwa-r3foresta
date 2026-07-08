@@ -19,6 +19,12 @@ import { formatDate, toLatLngTuple } from '../utils/subcampaniaFormatters'
 import { loadSubcampaniaBaseDrafts } from '../utils/subcampaniaDraft'
 import { UserAvatar } from '../components/UserAvatar'
 import CancelarSubcampaniaModal from '../components/CancelarSubcampaniaModal'
+import { SubcampaniaEquipoManager } from '../components/SubcampaniaEquipoManager'
+
+// Estados en los que un ADMIN puede gestionar el equipo (agregar/quitar
+// operarios) desde el detalle. La gestión de equipo va por su propio servicio y
+// no la bloquea `EdicionPorEstadoPolicy`, por eso incluye ACTIVA.
+const EQUIPO_EDITABLE_ESTADOS: EstadoSubcampania[] = ['BORRADOR', 'ACTIVA', 'PAUSADA']
 
 function buildWizardUrl(
   campaniaId: number,
@@ -63,21 +69,6 @@ function StateBadgeLight({ estado }: { estado: EstadoSubcampania }) {
     >
       <span className="h-1.5 w-1.5 rounded-full bg-current" />
       {estado.replace(/_/g, ' ')}
-    </span>
-  )
-}
-
-function RolBadge({ rol }: { rol: EquipoMember['rol'] }) {
-  if (rol === 'COORDINADOR') {
-    return (
-      <span className="inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.14em] text-amber-700 ring-1 ring-amber-100">
-        Coordinador
-      </span>
-    )
-  }
-  return (
-    <span className="inline-flex rounded-full bg-brand-50 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.14em] text-brand-600 ring-1 ring-brand-100">
-      Operario
     </span>
   )
 }
@@ -588,76 +579,29 @@ function ResumenTab({
 function EquipoTab({
   sub,
   equipo,
+  isAdmin,
+  authId,
+  onEquipoChange,
 }: {
   sub: Subcampania
   equipo: EquipoMember[]
+  isAdmin: boolean
+  authId?: string
+  onEquipoChange: (members: EquipoMember[]) => void
 }) {
-  const navigate = useNavigate()
-  const isBorrador = sub.estado === 'BORRADOR'
-
-  const goToEditEquipo = () => {
-    navigate(buildWizardUrl(sub.campania_id, sub.id, 4))
-  }
+  // El equipo va por su propio servicio y no lo bloquea EdicionPorEstadoPolicy,
+  // así que un ADMIN puede agregar/quitar operarios incluso con la subcampaña
+  // ACTIVA. El coordinador se muestra pero no se puede cambiar desde acá.
+  const canManage = isAdmin && EQUIPO_EDITABLE_ESTADOS.includes(sub.estado)
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-baseline justify-between">
-        <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
-          {equipo.length} {equipo.length === 1 ? 'miembro' : 'miembros'}
-        </p>
-      </div>
-
-      {equipo.length === 0 ? (
-        <section className="rounded-3xl bg-white p-6 text-center shadow-soft ring-1 ring-black/5">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-50 text-slate-400">
-            <Icon name="user" className="h-6 w-6" />
-          </div>
-          <p className="mt-3 text-sm font-extrabold text-brand-800">Sin miembros asignados</p>
-          <p className="mt-1 text-[11.5px] font-semibold leading-relaxed text-slate-500">
-            Asigna al menos un coordinador para poder activar la subcampaña.
-          </p>
-        </section>
-      ) : (
-        <ul className="space-y-2">
-          {equipo.map((member) => (
-            <li
-              key={member.id}
-              className="flex items-center gap-3 rounded-2xl bg-white p-3 shadow-soft ring-1 ring-black/5"
-            >
-              <UserAvatar
-                nombre={member.nombre_usuario ?? 'U'}
-                fotoUrl={member.foto_perfil_url}
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-50 text-sm font-extrabold text-brand-700"
-              />
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <p className="truncate text-sm font-extrabold leading-tight text-brand-800">
-                    {member.nombre_usuario ?? `Usuario #${member.usuario_id}`}
-                  </p>
-                  <RolBadge rol={member.rol} />
-                </div>
-                {member.agregado_at && (
-                  <p className="mt-0.5 text-[10.5px] font-bold text-slate-500">
-                    Desde {formatDate(member.agregado_at.slice(0, 10))}
-                  </p>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {isBorrador && (
-        <button
-          type="button"
-          onClick={goToEditEquipo}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-extrabold text-brand-700 shadow-soft ring-1 ring-brand-100 transition hover:bg-brand-50 active:scale-[0.99]"
-        >
-          <Icon name="user" className="h-4 w-4" />
-          Editar equipo
-        </button>
-      )}
-    </div>
+    <SubcampaniaEquipoManager
+      subcampania={sub}
+      equipo={equipo}
+      canManage={canManage}
+      authId={authId}
+      onEquipoChange={onEquipoChange}
+    />
   )
 }
 
@@ -802,6 +746,7 @@ function DetalleSubcampanaScreen() {
   const [cancelError, setCancelError] = useState<string | null>(null)
 
   const authId = user?.auth_id
+  const isAdmin = (user?.rol ?? '').toUpperCase() === 'ADMIN'
   const requestRef = useRef(0)
 
   // Fallback: si el backend no incluye `poligono` en GET /subcampanias/:id,
@@ -1003,7 +948,13 @@ function DetalleSubcampanaScreen() {
               )}
 
               {activeTab === 'equipo' && (
-                <EquipoTab sub={sub} equipo={equipo} />
+                <EquipoTab
+                  sub={sub}
+                  equipo={equipo}
+                  isAdmin={isAdmin}
+                  authId={authId}
+                  onEquipoChange={setEquipo}
+                />
               )}
 
               {activeTab === 'mapa' && (
