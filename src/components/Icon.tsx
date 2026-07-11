@@ -46,6 +46,7 @@ export type IconName =
   | 'plus-circle'
   | 'pause'
   | 'layers'
+  | 'ellipsis'
 
 type Props = {
   name: IconName
@@ -400,6 +401,14 @@ function Icon({ name, className }: Props) {
       return (
         <svg className={`${common} ${className ?? ''}`} viewBox="0 0 24 24" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 3l9 5-9 5-9-5zM3 13l9 5 9-5M3 18l9 5 9-5" />
+        </svg>
+      )
+    case 'ellipsis':
+      return (
+        <svg className={`${common} ${className ?? ''}`} viewBox="0 0 24 24" fill="currentColor">
+          <circle cx="5" cy="12" r="1.8" />
+          <circle cx="12" cy="12" r="1.8" />
+          <circle cx="19" cy="12" r="1.8" />
         </svg>
       )
     default:

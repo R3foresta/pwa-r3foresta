@@ -13,6 +13,7 @@ import {
   type EquipoMember,
   type EstadoSubcampania,
   type GeoJsonPolygon,
+  type GetPlanData,
   type Subcampania,
 } from '../types/contracts'
 import { formatDate, toLatLngTuple } from '../utils/subcampaniaFormatters'
@@ -48,6 +49,39 @@ function getPolygonPositions(poligono: GeoJsonPolygon | null | undefined): LatLn
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Métricas derivadas del contrato (solo datos reales del backend)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function getPlantados(sub: Subcampania): number {
+  return sub.plantados ?? sub.total_plantado_inicial ?? 0
+}
+
+function getAvancePct(sub: Subcampania): number {
+  if (sub.avance_pct != null && Number.isFinite(sub.avance_pct)) {
+    return Math.round(sub.avance_pct)
+  }
+  if (!sub.meta_total_arboles) return 0
+  return Math.round((getPlantados(sub) / sub.meta_total_arboles) * 100)
+}
+
+// Supervivencia = saldo vivo / (plantado inicial + repuesto). Solo se muestra
+// cuando el backend entrega los campos; no se inventa dato.
+function getSupervivenciaPct(sub: Subcampania): number | null {
+  const base = (sub.total_plantado_inicial ?? 0) + (sub.total_repuesto ?? 0)
+  if (base <= 0 || sub.saldo_vivo_actual == null) return null
+  return Math.max(0, Math.min(100, Math.round((sub.saldo_vivo_actual / base) * 100)))
+}
+
+function formatHectareas(value?: number | null): string | null {
+  if (value == null || !Number.isFinite(value)) return null
+  return new Intl.NumberFormat('es-BO', { maximumFractionDigits: 1 }).format(value)
+}
+
+function clampPct(pct: number): number {
+  return Math.max(0, Math.min(100, pct))
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Small visual pieces
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -73,6 +107,17 @@ function StateBadgeLight({ estado }: { estado: EstadoSubcampania }) {
   )
 }
 
+function FaseBadgeLight({ fase }: { fase: Subcampania['fase_mantenimiento'] }) {
+  if (!fase || fase === 'NO_APLICA') return null
+  const label = fase === 'MANTENIMIENTO_ACTIVO' ? 'Mantenimiento' : 'Monitoreo'
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-blue-400/20 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.14em] text-blue-100 ring-1 ring-blue-300/40">
+      <Icon name="shield" className="h-3 w-3" />
+      {label}
+    </span>
+  )
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Header
 // ─────────────────────────────────────────────────────────────────────────────
@@ -80,11 +125,15 @@ function StateBadgeLight({ estado }: { estado: EstadoSubcampania }) {
 function SubcampanaHeader({
   sub,
   onBack,
+  onMore,
 }: {
   sub: Subcampania
   onBack: () => void
+  onMore: () => void
 }) {
   const tipoLabel = sub.tipo ? TIPO_CAMPANIA_LABEL[sub.tipo] : null
+  const plantados = getPlantados(sub)
+  const pct = getAvancePct(sub)
 
   return (
     <header className="relative overflow-hidden rounded-b-3xl bg-brand-700 text-white shadow-soft">
@@ -94,7 +143,7 @@ function SubcampanaHeader({
         className="absolute inset-0 h-full w-full object-cover opacity-40"
       />
       <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/30 to-brand-700/95" />
-      <div className="relative px-5 pb-6 pt-5">
+      <div className="relative px-5 pb-5 pt-5">
         <div className="flex items-center justify-between gap-2">
           <button
             type="button"
@@ -104,7 +153,18 @@ function SubcampanaHeader({
           >
             <Icon name="arrow-left" className="h-5 w-5" />
           </button>
-          <StateBadgeLight estado={sub.estado} />
+          <div className="flex flex-wrap items-center justify-end gap-1.5">
+            <StateBadgeLight estado={sub.estado} />
+            <FaseBadgeLight fase={sub.fase_mantenimiento} />
+            <button
+              type="button"
+              onClick={onMore}
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 transition hover:bg-white/25"
+              aria-label="Más opciones"
+            >
+              <Icon name="ellipsis" className="h-5 w-5" />
+            </button>
+          </div>
         </div>
 
         {sub.codigo_trazabilidad && (
@@ -127,17 +187,56 @@ function SubcampanaHeader({
             <Icon name="date" className="h-3.5 w-3.5" />
             {formatDate(sub.fecha_estimada_inicio)} &rarr; {formatDate(sub.fecha_estimada_fin)}
           </span>
+          {sub.zona_nombre && (
+            <span className="inline-flex items-center gap-1.5">
+              <Icon name="pin" className="h-3.5 w-3.5" />
+              {sub.zona_nombre}
+            </span>
+          )}
         </p>
 
-        <div className="mt-4">
-          <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-white/80">
-            Meta total
-          </p>
-          <p className="mt-0.5 text-[40px] font-extrabold leading-none tracking-tight tabular-nums">
-            {sub.meta_total_arboles.toLocaleString('es-BO')}
-            <span className="ml-1.5 text-base font-extrabold text-white/65">árboles</span>
-          </p>
+        <div className="mt-4 flex items-end justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-white/80">
+              Plantados / meta
+            </p>
+            <p className="mt-0.5 text-[40px] font-extrabold leading-none tracking-tight tabular-nums">
+              {plantados.toLocaleString('es-BO')}
+              <span className="ml-1 text-base font-extrabold text-white/65">
+                / {sub.meta_total_arboles.toLocaleString('es-BO')}
+              </span>
+            </p>
+          </div>
+          <div className="flex-shrink-0 text-right">
+            <p className="text-[10px] font-bold text-white/70">Avance</p>
+            <p className="text-2xl font-extrabold tabular-nums">{pct}%</p>
+          </div>
         </div>
+        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/15">
+          <div
+            className="h-full rounded-full bg-emerald-300"
+            style={{ width: `${clampPct(pct)}%` }}
+          />
+        </div>
+
+        {sub.estado === 'FINALIZADA_PARCIAL' && (
+          <div className="mt-3 flex items-start gap-2 rounded-2xl bg-amber-400/15 px-3 py-2.5 ring-1 ring-amber-300/40">
+            <Icon name="flag" className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-200" />
+            <p className="text-[11.5px] font-bold leading-snug text-amber-100">
+              <b className="text-white">Cerrada parcialmente:</b> finalizada antes de alcanzar la
+              meta. El saldo asignado queda solo para reposición.
+            </p>
+          </div>
+        )}
+        {sub.estado === 'COMPLETADA' && sub.fase_mantenimiento === 'MANTENIMIENTO_ACTIVO' && (
+          <div className="mt-3 flex items-start gap-2 rounded-2xl bg-blue-400/15 px-3 py-2.5 ring-1 ring-blue-300/40">
+            <Icon name="shield" className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-200" />
+            <p className="text-[11.5px] font-bold leading-snug text-blue-100">
+              <b className="text-white">Meta alcanzada.</b> La subcampaña está en mantenimiento
+              activo.
+            </p>
+          </div>
+        )}
       </div>
     </header>
   )
@@ -215,10 +314,87 @@ function DetailTabs({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Mapa helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+function MapFitBounds({ positions }: { positions: LatLngTuple[] }) {
+  const map = useMap()
+  const fitted = useRef(false)
+
+  useEffect(() => {
+    if (positions.length > 0 && !fitted.current) {
+      fitted.current = true
+      map.fitBounds(L.latLngBounds(positions), { maxZoom: 17, padding: [24, 24] })
+    }
+  }, [map, positions])
+
+  return null
+}
+
+// Vista previa del polígono en el Resumen. `isolate z-0` encierra los z-index
+// internos de Leaflet (400+) en un stacking context propio para que el mapa no
+// se dibuje encima del BottomNav (z-40).
+function MiniMapPreview({
+  positions,
+  label,
+  onClick,
+}: {
+  positions: LatLngTuple[]
+  label: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="Ver mapa completo"
+      className="relative isolate z-0 block h-[150px] w-full overflow-hidden rounded-3xl bg-slate-100 text-left shadow-soft ring-1 ring-black/5 transition hover:ring-brand-300"
+    >
+      <div className="pointer-events-none absolute inset-0">
+        <MapContainer
+          center={positions[0] ?? [-16.5, -68.15]}
+          zoom={14}
+          dragging={false}
+          scrollWheelZoom={false}
+          doubleClickZoom={false}
+          touchZoom={false}
+          keyboard={false}
+          zoomControl={false}
+          attributionControl={false}
+          className="h-full w-full"
+        >
+          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" maxZoom={19} />
+          <MapFitBounds positions={positions} />
+          <Polygon
+            positions={positions}
+            pathOptions={{
+              color: '#166534',
+              fillColor: '#22c55e',
+              fillOpacity: 0.25,
+              weight: 3,
+            }}
+          />
+        </MapContainer>
+      </div>
+      <span className="absolute bottom-2.5 left-2.5 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-[10.5px] font-extrabold text-brand-800 shadow-soft backdrop-blur">
+        <Icon name="pin" className="h-3.5 w-3.5 text-emerald-600" />
+        {label}
+      </span>
+      <span className="absolute right-2.5 top-2.5 inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-brand-700 shadow-soft backdrop-blur">
+        Ver mapa
+        <Icon name="chevron-right" className="h-3 w-3" />
+      </span>
+    </button>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Tab Resumen
 // ─────────────────────────────────────────────────────────────────────────────
 
-function BorradorActivationBanner({
+// Tarjeta "Próximo paso" para BORRADOR: hace visible la transición a ACTIVA con
+// sus precondiciones sin entrar al menú de más opciones.
+function ActivacionCard({
   sub,
   equipo,
   campania_id,
@@ -244,8 +420,9 @@ function BorradorActivationBanner({
   const precondiciones = [
     { label: 'Polígono definido', ok: hasPoligono },
     { label: 'Coordinador asignado', ok: hasCoordinador },
-    { label: `Meta de árboles ≥ 1 (${sub.meta_total_arboles.toLocaleString('es-BO')})`, ok: hasMeta },
+    { label: 'Meta de árboles ≥ 1', ok: hasMeta },
   ]
+  const faltantes = precondiciones.filter((p) => !p.ok)
 
   const goToContinueWizard = () => {
     navigate(buildWizardUrl(campania_id, sub.id, 5))
@@ -279,267 +456,103 @@ function BorradorActivationBanner({
   }
 
   return (
-    <section className="space-y-3">
-      <div className="rounded-3xl bg-amber-50 p-4 shadow-soft ring-1 ring-amber-100">
-        <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-800">
-            <Icon name="info" className="h-5 w-5" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-amber-700">
-              Estado
-            </p>
-            <p className="mt-0.5 text-[15px] font-extrabold leading-tight text-amber-950">
-              Esta subcampaña está en BORRADOR
-            </p>
-            <p className="mt-1 text-[11px] font-semibold leading-snug text-amber-900">
-              Completa los requisitos antes de activarla. El stock de vivero se puede asignar
-              después.
-            </p>
-          </div>
+    <div className="rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
+      <div className="flex items-start gap-3">
+        <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700">
+          <Icon name="leaf" className="h-5 w-5" />
         </div>
-
-        <ul className="mt-3 space-y-1.5">
-          {precondiciones.map((p) => (
-            <li key={p.label} className="flex items-center gap-2">
-              {p.ok ? (
-                <Icon name="check" className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
-              ) : (
-                <Icon name="x" className="h-3.5 w-3.5 shrink-0 text-red-500" />
-              )}
-              <span
-                className={`text-[11.5px] font-bold leading-snug ${
-                  p.ok ? 'text-emerald-800' : 'text-red-800'
-                }`}
-              >
-                {p.label}
-              </span>
-            </li>
-          ))}
-        </ul>
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-brand-500">
+            Próximo paso
+          </p>
+          <p className="mt-0.5 text-[15px] font-extrabold leading-tight text-brand-800">
+            Activar la subcampaña
+          </p>
+          <p className="mt-0.5 text-[11px] font-semibold leading-snug text-slate-500">
+            Pasa de borrador a activa para que el equipo pueda registrar plantaciones.
+          </p>
+        </div>
       </div>
 
+      {faltantes.length > 0 && (
+        <div className="mt-3 rounded-2xl bg-amber-50 px-3 py-2 ring-1 ring-amber-100">
+          <p className="flex items-center gap-1.5 text-[10.5px] font-extrabold uppercase tracking-wide text-amber-800">
+            <Icon name="info" className="h-3.5 w-3.5" />
+            Falta para activar
+          </p>
+          <p className="mt-0.5 text-[11.5px] font-bold leading-snug text-amber-900">
+            {faltantes.map((p) => p.label).join(' · ')}
+          </p>
+        </div>
+      )}
+
       {activationError && (
-        <p className="whitespace-pre-line rounded-2xl bg-red-50 px-4 py-2 text-center text-xs font-extrabold text-red-700 ring-1 ring-red-100">
+        <p className="mt-3 whitespace-pre-line rounded-2xl bg-red-50 px-4 py-2 text-center text-xs font-extrabold text-red-700 ring-1 ring-red-100">
           {activationError}
         </p>
       )}
 
-      <div className="grid grid-cols-2 gap-2">
-        <button
-          type="button"
-          onClick={goToContinueWizard}
-          disabled={activating}
-          className="flex items-center justify-center gap-2 rounded-2xl bg-white px-3 py-3.5 text-sm font-extrabold text-brand-700 shadow-soft ring-1 ring-brand-100 transition hover:bg-brand-50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          <Icon name="chevron-right" className="h-4 w-4" />
-          Continuar configurando
-        </button>
+      <div className="mt-3 grid grid-cols-1 gap-2">
         <button
           type="button"
           onClick={handleActivate}
           disabled={!canActivate || activating}
-          className={`flex items-center justify-center gap-2 rounded-2xl px-4 py-3.5 text-sm font-extrabold text-white shadow-soft transition active:scale-[0.99] ${
+          className={`flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-extrabold text-white shadow-soft transition active:scale-[0.99] ${
             !canActivate || activating
-              ? 'cursor-not-allowed bg-slate-400/70'
+              ? 'cursor-not-allowed bg-slate-300'
               : 'bg-emerald-600 hover:bg-emerald-700'
           }`}
         >
-          {activating ? 'Activando…' : 'Activar'}
+          <Icon name="check" className="h-4 w-4" />
+          {activating ? 'Activando…' : 'Activar subcampaña'}
+        </button>
+        <button
+          type="button"
+          onClick={goToContinueWizard}
+          disabled={activating}
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-4 py-2.5 text-sm font-extrabold text-brand-700 ring-1 ring-brand-100 transition hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <Icon name="users" className="h-4 w-4" />
+          Completar configuración
         </button>
       </div>
-    </section>
+    </div>
   )
 }
 
 function ResumenTab({
   sub,
   equipo,
+  plan,
   localPoligonoFallback,
   onTabMapa,
   onActivated,
-  onRequestCancel,
+  onRegistrarPlantacion,
 }: {
   sub: Subcampania
   equipo: EquipoMember[]
+  plan: GetPlanData | null
   localPoligonoFallback: GeoJsonPolygon | null
   onTabMapa: () => void
   onActivated: (data: ActivarSubcampaniaData) => void
-  onRequestCancel: () => void
+  onRegistrarPlantacion: () => void
 }) {
   const coordinador = equipo.find((m) => m.rol === 'COORDINADOR')
   const isBorrador = sub.estado === 'BORRADOR'
   const displayPoligono = sub.poligono ?? localPoligonoFallback
-  // BORRADOR: siempre cancelable. ACTIVA: solo si no hay plantaciones registradas.
-  // Si `total_plantado_inicial` no viene del backend, la ACTIVA no expone el botón
-  // (comportamiento conservador; el backend igual protege con 409).
-  const canCancel =
-    isBorrador ||
-    (sub.estado === 'ACTIVA' && sub.total_plantado_inicial === 0)
+  const polygonPositions = useMemo(
+    () => getPolygonPositions(displayPoligono),
+    [displayPoligono],
+  )
+
+  const supervivencia = getSupervivenciaPct(sub)
+  const hectareas = formatHectareas(sub.area_hectareas)
+  const metasPlan = plan?.metas ?? []
 
   return (
     <div className="space-y-3">
-      {/* Stats grid */}
-      <div className="grid grid-cols-3 gap-2">
-        <div className="col-span-1 rounded-3xl bg-white p-3.5 shadow-soft ring-1 ring-black/5">
-          <p className="text-[9.5px] font-extrabold uppercase tracking-[0.14em] text-brand-500">
-            Meta total
-          </p>
-          <p className="mt-1 text-xl font-extrabold tabular-nums text-brand-800">
-            {sub.meta_total_arboles.toLocaleString('es-BO')}
-          </p>
-          <p className="mt-0.5 text-[10px] font-bold text-slate-500">árboles</p>
-        </div>
-
-        <div className="col-span-1 rounded-3xl bg-white p-3.5 shadow-soft ring-1 ring-black/5">
-          <p className="text-[9.5px] font-extrabold uppercase tracking-[0.14em] text-brand-500">
-            Saldo vivo
-          </p>
-          <p className="mt-1 text-xl font-extrabold tabular-nums text-brand-800">
-            {sub.saldo_vivo_actual != null
-              ? sub.saldo_vivo_actual.toLocaleString('es-BO')
-              : '—'}
-          </p>
-          <p className="mt-0.5 text-[10px] font-bold text-slate-500">plantas</p>
-        </div>
-
-        <div className="col-span-1 rounded-3xl bg-white p-3.5 shadow-soft ring-1 ring-black/5">
-          <p className="text-[9.5px] font-extrabold uppercase tracking-[0.14em] text-brand-500">
-            Equipo
-          </p>
-          <p className="mt-1 text-xl font-extrabold tabular-nums text-brand-800">
-            {equipo.length}
-          </p>
-          <p className="mt-0.5 text-[10px] font-bold text-slate-500">
-            {equipo.length === 1 ? 'miembro' : 'miembros'}
-          </p>
-        </div>
-      </div>
-
-      {/* Card información */}
-      <section className="rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
-        <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
-          Información
-        </p>
-        <div className="mt-2 space-y-2">
-          <div>
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-slate-400">
-              Nombre
-            </p>
-            <p className="mt-0.5 text-sm font-extrabold text-brand-800">{sub.nombre}</p>
-          </div>
-
-          {sub.codigo_trazabilidad && (
-            <div>
-              <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-slate-400">
-                Código de trazabilidad
-              </p>
-              <p className="mt-0.5 font-mono text-sm font-bold text-brand-700">
-                {sub.codigo_trazabilidad}
-              </p>
-            </div>
-          )}
-
-          {sub.tipo && (
-            <div>
-              <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-slate-400">
-                Tipo
-              </p>
-              <p className="mt-0.5 text-sm font-bold text-brand-700">
-                {TIPO_CAMPANIA_LABEL[sub.tipo]}
-              </p>
-            </div>
-          )}
-
-          {sub.descripcion && (
-            <div>
-              <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-slate-400">
-                Descripción
-              </p>
-              <p className="mt-0.5 text-[12.5px] font-semibold leading-relaxed text-slate-700">
-                {sub.descripcion}
-              </p>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Card calendario */}
-      <section className="rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
-        <div className="flex items-center gap-2">
-          <Icon name="date" className="h-4 w-4 text-brand-500" />
-          <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
-            Calendario
-          </p>
-        </div>
-        <p className="mt-2 text-sm font-bold text-brand-800">
-          {formatDate(sub.fecha_estimada_inicio)}
-          <span className="mx-2 text-slate-400">&rarr;</span>
-          {formatDate(sub.fecha_estimada_fin)}
-        </p>
-      </section>
-
-      {/* Card coordinador */}
-      <section className="rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
-        <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
-          Coordinador
-        </p>
-        {coordinador ? (
-          <div className="mt-2 flex items-center gap-3">
-            <UserAvatar
-              nombre={coordinador.nombre_usuario ?? 'C'}
-              fotoUrl={coordinador.foto_perfil_url}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-100 text-sm font-extrabold text-brand-700"
-            />
-            <div className="min-w-0">
-              <p className="truncate text-sm font-extrabold text-brand-800">
-                {coordinador.nombre_usuario ?? `Usuario #${coordinador.usuario_id}`}
-              </p>
-              <p className="text-[10.5px] font-bold text-slate-500">
-                {coordinador.agregado_at
-                  ? `Desde ${formatDate(coordinador.agregado_at.slice(0, 10))}`
-                  : 'Coordinador'}
-              </p>
-            </div>
-          </div>
-        ) : (
-          isBorrador && (
-            <div className="mt-2 flex items-center gap-2 rounded-2xl bg-amber-50 px-3 py-2.5 ring-1 ring-amber-100">
-              <Icon name="info" className="h-4 w-4 shrink-0 text-amber-700" />
-              <p className="text-[11.5px] font-bold leading-snug text-amber-900">
-                Sin coordinador asignado
-              </p>
-            </div>
-          )
-        )}
-        {!coordinador && !isBorrador && (
-          <p className="mt-2 text-[12.5px] font-semibold text-slate-500">
-            Sin coordinador registrado.
-          </p>
-        )}
-      </section>
-
-      {/* Mapa mini: botón que lleva al tab mapa */}
-      {displayPoligono && (
-        <button
-          type="button"
-          onClick={onTabMapa}
-          className="block w-full rounded-3xl bg-white p-4 text-left shadow-soft ring-1 ring-black/5 transition hover:ring-brand-300"
-        >
-          <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
-            Zona delimitada
-          </p>
-          <div className="mt-2 flex items-center gap-2 text-[12px] font-bold text-brand-700">
-            <Icon name="map" className="h-4 w-4 text-emerald-600" />
-            Polígono definido · ver en mapa
-            <Icon name="chevron-right" className="ml-auto h-4 w-4 text-slate-400" />
-          </div>
-        </button>
-      )}
-
-      {/* Banner BORRADOR con precondiciones de activación */}
       {isBorrador && (
-        <BorradorActivationBanner
+        <ActivacionCard
           sub={sub}
           equipo={equipo}
           campania_id={sub.campania_id}
@@ -548,24 +561,205 @@ function ResumenTab({
         />
       )}
 
-      {canCancel && (
-        <section className="rounded-3xl bg-white p-4 shadow-soft ring-1 ring-red-100">
-          <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-red-500">
-            Zona peligrosa
+      {/* Acción principal con la subcampaña ACTIVA. La pantalla de registro
+          valida `puede_registrar` y muestra el motivo de bloqueo si aplica. */}
+      {sub.estado === 'ACTIVA' && (
+        <button
+          type="button"
+          onClick={onRegistrarPlantacion}
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-600 px-4 py-3.5 text-sm font-extrabold text-white shadow-soft transition hover:bg-brand-700 active:scale-[0.99]"
+        >
+          <Icon name="leaf" className="h-4 w-4" />
+          Registrar plantación
+        </button>
+      )}
+
+      {/* Stats grid 2x2 */}
+      <div className="grid grid-cols-2 gap-2">
+        <div className="rounded-3xl bg-white p-3.5 shadow-soft ring-1 ring-black/5">
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-brand-500">
+            Supervivencia
           </p>
-          <p className="mt-1 text-[12px] font-bold leading-snug text-slate-600">
-            {isBorrador
-              ? 'Podés cancelar la subcampaña mientras esté en borrador. El registro se conserva pero deja de aparecer en los listados.'
-              : 'Podés cancelar la subcampaña porque aún no hay plantaciones registradas. Si ya se plantó algo, usá el cierre FINALIZADA_PARCIAL.'}
+          <p className="mt-1 text-2xl font-extrabold tabular-nums text-brand-800">
+            {supervivencia != null ? `${supervivencia}%` : '—'}
           </p>
-          <button
-            type="button"
-            onClick={onRequestCancel}
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-red-50 px-4 py-3 text-sm font-extrabold text-red-700 ring-1 ring-red-100 transition hover:bg-red-100 active:scale-[0.99]"
-          >
-            <Icon name="trash" className="h-4 w-4" />
-            Cancelar subcampaña
-          </button>
+          {supervivencia != null ? (
+            <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+              <div
+                className="h-full rounded-full bg-emerald-500"
+                style={{ width: `${supervivencia}%` }}
+              />
+            </div>
+          ) : (
+            <p className="mt-1 text-[10px] font-bold text-slate-500">sin datos aún</p>
+          )}
+        </div>
+
+        <div className="rounded-3xl bg-white p-3.5 shadow-soft ring-1 ring-black/5">
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-brand-500">
+            Saldo vivo
+          </p>
+          <p className="mt-1 text-2xl font-extrabold tabular-nums text-brand-800">
+            {sub.saldo_vivo_actual != null
+              ? sub.saldo_vivo_actual.toLocaleString('es-BO')
+              : '—'}
+          </p>
+          <p className="mt-1 text-[10px] font-bold text-slate-500">plantas</p>
+        </div>
+
+        <div className="rounded-3xl bg-white p-3.5 shadow-soft ring-1 ring-black/5">
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-brand-500">
+            Área
+          </p>
+          <p className="mt-1 text-2xl font-extrabold tabular-nums text-brand-800">
+            {hectareas ?? '—'}{' '}
+            {hectareas && <span className="text-sm font-extrabold text-slate-400">ha</span>}
+          </p>
+          <p className="mt-1 text-[10px] font-bold text-slate-500">
+            {displayPoligono ? 'zona delimitada' : 'pendiente de definir'}
+          </p>
+        </div>
+
+        <div className="rounded-3xl bg-white p-3.5 shadow-soft ring-1 ring-black/5">
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-brand-500">
+            Eventos
+          </p>
+          <p className="mt-1 text-2xl font-extrabold tabular-nums text-brand-800">
+            {sub.eventos_count != null ? sub.eventos_count.toLocaleString('es-BO') : '—'}
+          </p>
+          <p className="mt-1 text-[10px] font-bold text-slate-500">registros de actividad</p>
+        </div>
+      </div>
+
+      {/* Coordinador */}
+      <div className="flex items-center gap-3 rounded-3xl bg-white p-3.5 shadow-soft ring-1 ring-black/5">
+        {coordinador ? (
+          <UserAvatar
+            nombre={coordinador.nombre_usuario ?? 'C'}
+            fotoUrl={coordinador.foto_perfil_url}
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-100 text-sm font-extrabold text-brand-700"
+          />
+        ) : (
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-extrabold text-slate-400">
+            —
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-brand-500">
+            Coordinador
+          </p>
+          <p className="truncate text-sm font-extrabold text-brand-800">
+            {coordinador
+              ? coordinador.nombre_usuario ?? `Usuario #${coordinador.usuario_id}`
+              : 'Pendiente'}
+          </p>
+          <p className="mt-0.5 truncate text-[10.5px] font-semibold text-slate-500">
+            {coordinador?.agregado_at
+              ? `Desde ${formatDate(coordinador.agregado_at.slice(0, 10))}`
+              : sub.zona_nombre ?? ''}
+          </p>
+        </div>
+      </div>
+
+      {/* Mini mapa → tab mapa */}
+      {polygonPositions.length > 0 && (
+        <MiniMapPreview
+          positions={polygonPositions}
+          label={hectareas ? `${hectareas} ha` : sub.zona_nombre ?? 'Zona delimitada'}
+          onClick={onTabMapa}
+        />
+      )}
+
+      {/* Equipo + lotes */}
+      <div className="grid grid-cols-2 gap-2">
+        <div className="rounded-3xl bg-white p-3.5 shadow-soft ring-1 ring-black/5">
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-brand-500">
+            Equipo
+          </p>
+          <p className="mt-1 text-2xl font-extrabold tabular-nums text-brand-800">
+            {equipo.length}
+          </p>
+          {equipo.length > 0 ? (
+            <div className="mt-1.5 flex -space-x-2">
+              {equipo.slice(0, 5).map((m) => (
+                <UserAvatar
+                  key={m.id}
+                  nombre={m.nombre_usuario ?? 'U'}
+                  fotoUrl={m.foto_perfil_url}
+                  title={m.nombre_usuario ?? undefined}
+                  className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-brand-100 text-[10px] font-extrabold text-brand-700 ring-2 ring-white"
+                />
+              ))}
+              {equipo.length > 5 && (
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-[10px] font-extrabold text-slate-600 ring-2 ring-white">
+                  +{equipo.length - 5}
+                </span>
+              )}
+            </div>
+          ) : (
+            <p className="mt-1 text-[10px] font-bold text-slate-500">sin miembros</p>
+          )}
+        </div>
+
+        <div className="rounded-3xl bg-white p-3.5 shadow-soft ring-1 ring-black/5">
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-brand-500">
+            Lotes
+          </p>
+          <p className="mt-1 text-2xl font-extrabold tabular-nums text-brand-800">
+            {sub.lotes_count != null ? sub.lotes_count : '—'}
+          </p>
+          <p className="mt-1 text-[10px] font-bold text-slate-500">asignados del vivero</p>
+        </div>
+      </div>
+
+      {/* Mix de especies (plan de metas) */}
+      {metasPlan.length > 0 && (
+        <section className="rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
+          <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
+            Mix de especies planificado
+          </p>
+          <div className="mt-2 space-y-2.5">
+            {metasPlan.map((meta) => {
+              const nombre = meta.planta?.especie ?? `Planta #${meta.planta_id}`
+              const pctObjetivo = clampPct(Math.round(meta.porcentaje_objetivo))
+              return (
+                <div key={meta.planta_id}>
+                  <div className="flex items-baseline justify-between gap-2">
+                    <p className="text-sm font-extrabold text-brand-800">{nombre}</p>
+                    <p className="text-[11px] font-extrabold tabular-nums text-slate-500">
+                      <span className="text-brand-800">
+                        {meta.cantidad_objetivo.toLocaleString('es-BO')}
+                      </span>{' '}
+                      · {pctObjetivo}%
+                    </p>
+                  </div>
+                  {meta.planta?.nombre_cientifico && (
+                    <p className="mb-1 text-[10.5px] italic text-slate-500">
+                      {meta.planta.nombre_cientifico}
+                    </p>
+                  )}
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                    <div
+                      className="h-full rounded-full bg-brand-600"
+                      style={{ width: `${pctObjetivo}%` }}
+                    />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* Descripción (solo si existe) */}
+      {sub.descripcion && (
+        <section className="rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
+          <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
+            Descripción
+          </p>
+          <p className="mt-1.5 text-[12.5px] font-semibold leading-relaxed text-slate-700">
+            {sub.descripcion}
+          </p>
         </section>
       )}
     </div>
@@ -609,20 +803,6 @@ function EquipoTab({
 // Tab Mapa
 // ─────────────────────────────────────────────────────────────────────────────
 
-function MapFitBounds({ positions }: { positions: LatLngTuple[] }) {
-  const map = useMap()
-  const fitted = useRef(false)
-
-  useEffect(() => {
-    if (positions.length > 0 && !fitted.current) {
-      fitted.current = true
-      map.fitBounds(L.latLngBounds(positions), { maxZoom: 17, padding: [24, 24] })
-    }
-  }, [map, positions])
-
-  return null
-}
-
 function MapaTab({
   sub,
   campania_id,
@@ -641,6 +821,12 @@ function MapaTab({
   )
 
   const isBorrador = sub.estado === 'BORRADOR'
+  const hectareas = formatHectareas(sub.area_hectareas)
+  const plantados = getPlantados(sub)
+  const densidad =
+    sub.area_hectareas && sub.area_hectareas > 0
+      ? Math.round(plantados / sub.area_hectareas)
+      : null
 
   if (!displayPoligono || polygonPositions.length === 0) {
     return (
@@ -668,9 +854,11 @@ function MapaTab({
 
   return (
     <div className="space-y-3">
+      {/* `isolate z-0` crea un stacking context propio: los panes internos de
+          Leaflet (z-index 400+) dejan de competir con el BottomNav (z-40). */}
       <div
-        className="overflow-hidden rounded-3xl bg-slate-100 shadow-soft ring-1 ring-black/5"
-        style={{ height: '60vh', minHeight: 320 }}
+        className="relative isolate z-0 overflow-hidden rounded-3xl bg-slate-100 shadow-soft ring-1 ring-black/5"
+        style={{ height: '55vh', minHeight: 300 }}
       >
         <MapContainer
           center={polygonPositions[0] ?? [-16.5, -68.15]}
@@ -699,23 +887,131 @@ function MapaTab({
         </MapContainer>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-3 gap-2">
         <div className="rounded-2xl bg-white p-3 text-center shadow-soft ring-1 ring-black/5">
           <p className="text-[9.5px] font-extrabold uppercase tracking-[0.14em] text-brand-500">
-            Vértices
+            Cobertura
           </p>
-          <p className="mt-1 text-sm font-extrabold text-brand-800 tabular-nums">
-            {displayPoligono.coordinates[0].length - 1}
+          <p className="mt-1 text-sm font-extrabold tabular-nums text-brand-800">
+            {hectareas ? `${hectareas} ha` : '—'}
           </p>
         </div>
         <div className="rounded-2xl bg-white p-3 text-center shadow-soft ring-1 ring-black/5">
           <p className="text-[9.5px] font-extrabold uppercase tracking-[0.14em] text-brand-500">
             Meta
           </p>
-          <p className="mt-1 text-sm font-extrabold text-brand-800 tabular-nums">
+          <p className="mt-1 text-sm font-extrabold tabular-nums text-brand-800">
             {sub.meta_total_arboles.toLocaleString('es-BO')}
           </p>
         </div>
+        <div className="rounded-2xl bg-white p-3 text-center shadow-soft ring-1 ring-black/5">
+          <p className="text-[9.5px] font-extrabold uppercase tracking-[0.14em] text-brand-500">
+            Densidad
+          </p>
+          <p className="mt-1 text-sm font-extrabold tabular-nums text-brand-800">
+            {densidad != null ? `${densidad.toLocaleString('es-BO')}/ha` : '—'}
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sheet "más opciones" (⋯ del header)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function MoreSheet({
+  open,
+  sub,
+  canCancel,
+  onClose,
+  onGestionarEquipo,
+  onContinuarWizard,
+  onCancelar,
+}: {
+  open: boolean
+  sub: Subcampania
+  canCancel: boolean
+  onClose: () => void
+  onGestionarEquipo: () => void
+  onContinuarWizard: () => void
+  onCancelar: () => void
+}) {
+  if (!open) return null
+  const isBorrador = sub.estado === 'BORRADOR'
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/50 backdrop-blur-sm">
+      <button type="button" className="flex-1" onClick={onClose} aria-label="Cerrar" />
+      <div className="mx-auto w-full max-w-md rounded-t-3xl bg-white px-5 pb-7 pt-4 shadow-2xl">
+        <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-slate-200" />
+        <h3 className="text-lg font-extrabold text-brand-800">Acciones de subcampaña</h3>
+
+        <ul className="mt-3 divide-y divide-slate-100">
+          <li>
+            <button
+              type="button"
+              onClick={onGestionarEquipo}
+              className="flex w-full items-center gap-3 rounded-xl px-1 py-3 text-left hover:bg-slate-50"
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
+                <Icon name="users" className="h-4 w-4" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-extrabold text-brand-800">Gestionar equipo</p>
+                <p className="text-[11px] font-medium text-slate-500">
+                  Agregar o quitar operarios de esta subcampaña
+                </p>
+              </div>
+              <Icon name="chevron-right" className="h-4 w-4 text-slate-400" />
+            </button>
+          </li>
+
+          {isBorrador && (
+            <li>
+              <button
+                type="button"
+                onClick={onContinuarWizard}
+                className="flex w-full items-center gap-3 rounded-xl px-1 py-3 text-left hover:bg-slate-50"
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
+                  <Icon name="layers" className="h-4 w-4" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-extrabold text-brand-800">Continuar configuración</p>
+                  <p className="text-[11px] font-medium text-slate-500">
+                    Retomar el asistente de creación
+                  </p>
+                </div>
+                <Icon name="chevron-right" className="h-4 w-4 text-slate-400" />
+              </button>
+            </li>
+          )}
+
+          {canCancel && (
+            <li>
+              <button
+                type="button"
+                onClick={onCancelar}
+                className="flex w-full items-center gap-3 rounded-xl px-1 py-3 text-left hover:bg-red-50"
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-red-50 text-red-600">
+                  <Icon name="trash" className="h-4 w-4" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-extrabold text-red-700">Cancelar subcampaña</p>
+                  <p className="text-[11px] font-medium text-slate-500">
+                    {isBorrador
+                      ? 'El registro se conserva pero deja de aparecer en los listados'
+                      : 'Disponible porque aún no hay plantaciones registradas'}
+                  </p>
+                </div>
+                <Icon name="chevron-right" className="h-4 w-4 text-slate-400" />
+              </button>
+            </li>
+          )}
+        </ul>
       </div>
     </div>
   )
@@ -735,11 +1031,13 @@ function DetalleSubcampanaScreen() {
 
   const [sub, setSub] = useState<Subcampania | null>(null)
   const [equipo, setEquipo] = useState<EquipoMember[]>([])
+  const [plan, setPlan] = useState<GetPlanData | null>(null)
   const [loading, setLoading] = useState(hasValidId)
   const [error, setError] = useState<string | null>(
     hasValidId ? null : 'ID de subcampaña inválido.',
   )
   const [activeTab, setActiveTab] = useState<DetailTab>('resumen')
+  const [moreOpen, setMoreOpen] = useState(false)
   const [activationNotice, setActivationNotice] = useState<string | null>(null)
   const [cancelModalOpen, setCancelModalOpen] = useState(false)
   const [cancelSubmitting, setCancelSubmitting] = useState(false)
@@ -762,15 +1060,19 @@ function DetalleSubcampanaScreen() {
 
   const fetchSubcampaniaData = useCallback(async (requestId: number) => {
     try {
-      const [subData, equipoData] = await Promise.all([
+      const [subData, equipoData, planData] = await Promise.all([
         PlantacionService.getSubcampania(numericId, authId),
         PlantacionService.getSubcampaniaEquipo(numericId, authId),
+        // El plan es opcional: si el endpoint falla (sin plan configurado,
+        // permisos, etc.) el Resumen simplemente omite la sección de mix.
+        PlantacionService.getSubcampaniaPlan(numericId, authId).catch(() => null),
       ])
 
       if (requestId !== requestRef.current) return
 
       setSub(subData)
       setEquipo(equipoData)
+      setPlan(planData)
       setError(null)
     } catch (fetchError) {
       if (requestId !== requestRef.current) return
@@ -812,7 +1114,16 @@ function DetalleSubcampanaScreen() {
     void fetchSubcampaniaData(requestId)
   }
 
+  // BORRADOR: siempre cancelable. ACTIVA: solo si no hay plantaciones registradas.
+  // Si `total_plantado_inicial` no viene del backend, la ACTIVA no expone la acción
+  // (comportamiento conservador; el backend igual protege con 409).
+  const canCancel =
+    !!sub &&
+    (sub.estado === 'BORRADOR' ||
+      (sub.estado === 'ACTIVA' && sub.total_plantado_inicial === 0))
+
   const handleRequestCancel = () => {
+    setMoreOpen(false)
     setCancelError(null)
     setCancelModalOpen(true)
   }
@@ -869,7 +1180,7 @@ function DetalleSubcampanaScreen() {
     <div className="relative min-h-screen bg-[#eef2ed] text-brand-700">
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-28">
         {sub && !loading ? (
-          <SubcampanaHeader sub={sub} onBack={goBack} />
+          <SubcampanaHeader sub={sub} onBack={goBack} onMore={() => setMoreOpen(true)} />
         ) : (
           <LoadingHeader onBack={goBack} />
         )}
@@ -940,10 +1251,13 @@ function DetalleSubcampanaScreen() {
                 <ResumenTab
                   sub={sub}
                   equipo={equipo}
+                  plan={plan}
                   localPoligonoFallback={localPoligonoFallback}
                   onTabMapa={() => setActiveTab('mapa')}
                   onActivated={handleActivated}
-                  onRequestCancel={handleRequestCancel}
+                  onRegistrarPlantacion={() =>
+                    navigate(`/app/planting/subcampanias/${sub.id}/plantaciones/new`)
+                  }
                 />
               )}
 
@@ -968,6 +1282,24 @@ function DetalleSubcampanaScreen() {
           )}
         </main>
       </div>
+
+      {sub && (
+        <MoreSheet
+          open={moreOpen}
+          sub={sub}
+          canCancel={canCancel}
+          onClose={() => setMoreOpen(false)}
+          onGestionarEquipo={() => {
+            setMoreOpen(false)
+            setActiveTab('equipo')
+          }}
+          onContinuarWizard={() => {
+            setMoreOpen(false)
+            navigate(buildWizardUrl(sub.campania_id, sub.id, 5))
+          }}
+          onCancelar={handleRequestCancel}
+        />
+      )}
 
       <CancelarSubcampaniaModal
         open={cancelModalOpen}
