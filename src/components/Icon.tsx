@@ -39,6 +39,13 @@ export type IconName =
   | 'arrow-down'
   | 'file'
   | 'filter'
+  | 'trees'
+  | 'drop'
+  | 'area'
+  | 'users'
+  | 'plus-circle'
+  | 'pause'
+  | 'layers'
 
 type Props = {
   name: IconName
@@ -347,6 +354,52 @@ function Icon({ name, className }: Props) {
           <circle cx="12" cy="4" r="2" />
           <circle cx="8" cy="12" r="2" />
           <circle cx="14" cy="20" r="2" />
+        </svg>
+      )
+    case 'trees':
+      return (
+        <svg className={`${common} ${className ?? ''}`} viewBox="0 0 24 24" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M7 21v-7M7 14c-3-1-3-5-3-7 4 0 5 3 5 6M7 14c2 0 4-2 4-5-3 0-4 2-4 5M17 21v-9M17 12c-2 0-4-2-4-5 3 0 4 2 4 5M17 12c2-1 2-4 2-6-3 0-4 3-4 6" />
+        </svg>
+      )
+    case 'drop':
+      return (
+        <svg className={`${common} ${className ?? ''}`} viewBox="0 0 24 24" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 3c4 5 7 8 7 12a7 7 0 1 1-14 0c0-4 3-7 7-12z" />
+        </svg>
+      )
+    case 'area':
+      return (
+        <svg className={`${common} ${className ?? ''}`} viewBox="0 0 24 24" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 6l4 3 5-4 4 5 5-3v14H3z" />
+        </svg>
+      )
+    case 'users':
+      return (
+        <svg className={`${common} ${className ?? ''}`} viewBox="0 0 24 24" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="9" cy="8" r="3.5" />
+          <path d="M3 20a6 6 0 0 1 12 0" />
+          <circle cx="17" cy="9" r="2.5" />
+          <path d="M15 20a4 4 0 0 1 7-2.5" />
+        </svg>
+      )
+    case 'plus-circle':
+      return (
+        <svg className={`${common} ${className ?? ''}`} viewBox="0 0 24 24" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 8v8M8 12h8" strokeWidth="2.2" />
+        </svg>
+      )
+    case 'pause':
+      return (
+        <svg className={`${common} ${className ?? ''}`} viewBox="0 0 24 24" fill="none" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M9 5v14M15 5v14" />
+        </svg>
+      )
+    case 'layers':
+      return (
+        <svg className={`${common} ${className ?? ''}`} viewBox="0 0 24 24" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 3l9 5-9 5-9-5zM3 13l9 5 9-5M3 18l9 5 9-5" />
         </svg>
       )
     default:
