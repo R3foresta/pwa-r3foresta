@@ -7,12 +7,15 @@ import heroCanopy from '../../../assets/home/hero-canopy.jpg'
 import {
   TIPO_CAMPANIA_LABEL,
   type Campania,
+  type CampaniaResumen,
   type TipoCampania,
 } from '../types/contracts'
 import { formatDate as formatFullDate } from '../utils/subcampaniaFormatters'
 import {
   aggregateDashboard,
+  applyResumenGlobal,
   avancePctDe,
+  enrichCampaniasConSubcampanias,
   estadoCampaniaMeta,
   filterByPeriodo,
   formatEntero,
@@ -293,9 +296,11 @@ function PeriodoTabs({
 }
 
 // ── Hero CO₂ en vivo + árboles ────────────────────────────────────────────
-// El contador parte del CO₂ proyectado real (suma de campañas) y avanza con
-// una tasa visual constante para transmitir "captura en curso". La tasa es
-// ilustrativa; el valor base sí es dato real del backend.
+// MOCK MVP (módulo de CO₂ aún no existe): la base se deriva de los árboles
+// vivos reales con la fórmula placeholder del backend (`saldo_vivo × 0.022`,
+// ver CO2_TON_POR_ARBOL_VIVO_MOCK) y el contador avanza con una tasa visual
+// constante para simular "captura en curso". Los árboles plantados y la meta
+// sí son datos reales. Reemplazar base y tasa cuando exista el módulo de CO₂.
 
 function CO2LiveHero({
   baseToneladas,
@@ -812,6 +817,7 @@ function PlantacionDashboardScreen() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const [campanias, setCampanias] = useState<Campania[]>([])
+  const [resumen, setResumen] = useState<CampaniaResumen | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [periodo, setPeriodo] = useState<PeriodoKey>('historico')
@@ -825,10 +831,18 @@ function PlantacionDashboardScreen() {
     try {
       setLoading(true)
       setError(null)
-      const data = await PlantacionService.listCampanias()
-      setCampanias(data)
+      // Resumen global y subcampañas degradan con gracia: si fallan, la
+      // agregación client-side sigue alimentando el dashboard.
+      const [data, resumenData, subcampaniasData] = await Promise.all([
+        PlantacionService.listCampanias(),
+        PlantacionService.getCampaniasResumen().catch(() => null),
+        PlantacionService.listSubcampanias().catch(() => []),
+      ])
+      setCampanias(enrichCampaniasConSubcampanias(data, subcampaniasData))
+      setResumen(resumenData)
     } catch (loadError) {
       setCampanias([])
+      setResumen(null)
       setError(
         loadError instanceof Error ? loadError.message : 'No se pudieron cargar campañas.',
       )
@@ -847,6 +861,14 @@ function PlantacionDashboardScreen() {
   )
 
   const totals = useMemo(() => aggregateDashboard(campaniasPeriodo), [campaniasPeriodo])
+
+  // Métricas del programa: en Histórico manda `GET /campanias/resumen`
+  // (fuente autoritativa); en periodos filtrados se usa la agregación
+  // client-side sobre los datos reales de subcampañas.
+  const programTotals = useMemo(
+    () => (periodo === 'historico' ? applyResumenGlobal(totals, resumen) : totals),
+    [periodo, totals, resumen],
+  )
 
   const filtros = useMemo<Array<{ key: FiltroEstado; label: string }>>(() => {
     const presentes = ESTADOS_ORDEN.filter((key) => (totals.estados[key] ?? 0) > 0)
@@ -942,24 +964,26 @@ function PlantacionDashboardScreen() {
               <PeriodoTabs value={periodo} onChange={setPeriodo} />
 
               <CO2LiveHero
-                baseToneladas={totals.co2Toneladas}
-                arbolesPlantados={totals.arbolesPlantados}
-                metaArboles={totals.metaArboles}
-                avancePct={totals.avancePct}
+                baseToneladas={programTotals.co2Toneladas}
+                arbolesPlantados={programTotals.arbolesPlantados}
+                metaArboles={programTotals.metaArboles}
+                avancePct={programTotals.avancePct}
               />
 
               <div className="grid grid-cols-2 gap-2.5">
                 <MetricCard
                   label="Supervivencia"
                   value={
-                    totals.supervivenciaPct !== null ? String(totals.supervivenciaPct) : '—'
+                    programTotals.supervivenciaPct !== null
+                      ? String(programTotals.supervivenciaPct)
+                      : '—'
                   }
                   unit="%"
-                  pct={totals.supervivenciaPct ?? undefined}
+                  pct={programTotals.supervivenciaPct ?? undefined}
                   icon="shield"
                   tone="brand"
                   footer={
-                    totals.supervivenciaPct !== null
+                    programTotals.supervivenciaPct !== null
                       ? 'Ponderada por árboles plantados'
                       : 'Sin registros de supervivencia'
                   }
@@ -967,8 +991,8 @@ function PlantacionDashboardScreen() {
                 <MetricCard
                   label="Hectáreas"
                   value={
-                    totals.hectareas !== null
-                      ? String(totals.hectareas).replace('.', ',')
+                    programTotals.hectareas !== null
+                      ? String(programTotals.hectareas).replace('.', ',')
                       : '—'
                   }
                   unit="ha"
@@ -978,29 +1002,31 @@ function PlantacionDashboardScreen() {
                 />
                 <MetricCard
                   label="Sub-campañas"
-                  value={formatEntero(totals.subcampanias)}
+                  value={formatEntero(programTotals.subcampanias)}
                   icon="layers"
                   tone="emerald"
                   footer={
-                    totals.subcampaniasActivas > 0
-                      ? `${formatEntero(totals.subcampaniasActivas)} en ejecución`
+                    programTotals.subcampaniasActivas > 0
+                      ? `${formatEntero(programTotals.subcampaniasActivas)} en ejecución`
                       : 'Ninguna en ejecución aún'
                   }
                 />
                 <MetricCard
                   label="Campañas activas"
-                  value={formatEntero(totals.activas)}
+                  value={formatEntero(programTotals.activas)}
                   icon="planting"
                   tone="brand"
                   footer={
                     [
-                      totals.enMantenimiento > 0
-                        ? `${totals.enMantenimiento} en mantenimiento`
+                      programTotals.enMantenimiento > 0
+                        ? `${programTotals.enMantenimiento} en mantenimiento`
                         : null,
-                      totals.historicas > 0 ? `${totals.historicas} históricas` : null,
+                      programTotals.historicas > 0
+                        ? `${programTotals.historicas} históricas`
+                        : null,
                     ]
                       .filter(Boolean)
-                      .join(' · ') || `De ${formatEntero(totals.campanias)} en total`
+                      .join(' · ') || `De ${formatEntero(programTotals.campanias)} en total`
                   }
                 />
               </div>

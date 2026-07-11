@@ -11,6 +11,7 @@ import {
   getCampaniaActivityApi,
   getCampaniaApi,
   getCampaniaMetricsApi,
+  getCampaniasResumenApi,
   getPlantacionContextApi,
   getSubcampaniaApi,
   getSubcampaniaEquipoApi,
@@ -39,6 +40,7 @@ import type {
   UploadEvidenciasPlantacionInput,
   CampaniaActivityItem,
   CampaniaMetrics,
+  CampaniaResumen,
   CancelarSubcampaniaData,
   Campania,
   CreateCampaniaInput,
@@ -175,6 +177,33 @@ export class PlantacionService {
     const payload = await parseJsonResponse<ApiEnvelope<Campania[]>>(
       response,
       'Error al cargar campañas.',
+    )
+    return Array.isArray(payload.data) ? payload.data : []
+  }
+
+  /**
+   * Resumen global del programa (`GET /campanias/resumen`): árboles plantados,
+   * avance de meta, supervivencia, hectáreas y conteos de campañas/subcampañas.
+   */
+  static async getCampaniasResumen(): Promise<CampaniaResumen | null> {
+    const response = await getCampaniasResumenApi()
+    const payload = await parseJsonResponse<ApiEnvelope<CampaniaResumen>>(
+      response,
+      'Error al cargar el resumen del programa.',
+    )
+    return payload.data ?? null
+  }
+
+  /**
+   * Todas las subcampañas del programa (`GET /subcampanias`, payload
+   * enriquecido). Se usa para derivar datos reales por campaña en el dashboard
+   * (activas/borradores, plantados, hectáreas, zonas).
+   */
+  static async listSubcampanias(): Promise<Subcampania[]> {
+    const response = await listSubcampaniasApi()
+    const payload = await parseJsonResponse<ApiEnvelope<Subcampania[]>>(
+      response,
+      'Error al cargar subcampañas.',
     )
     return Array.isArray(payload.data) ? payload.data : []
   }

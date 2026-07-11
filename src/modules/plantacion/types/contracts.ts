@@ -411,6 +411,21 @@ export type CampaniaMetrics = {
   ultima_actividad: CampaniaMetricsUltimaActividad | null
 }
 
+/**
+ * Resumen global del programa para las tarjetas del dashboard.
+ * Contrato de `GET /campanias/resumen` (documentacion/frontend/modulos/campanias.md).
+ */
+export type CampaniaResumen = {
+  arboles_plantados_total: number
+  avance_meta_pct: number
+  supervivencia_pct: number
+  hectareas_total: number
+  campanias_activas: number
+  campanias_totales: number
+  subcampanias_activas: number
+  subcampanias_totales: number
+}
+
 export type CampaniaActivityTipo =
   | 'plantacion'
   | 'nueva_subcampana'

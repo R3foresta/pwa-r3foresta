@@ -53,6 +53,13 @@ export async function listCampaniasApi(): Promise<Response> {
   })
 }
 
+export async function getCampaniasResumenApi(): Promise<Response> {
+  return fetch(`${API_BASE_URL}/campanias/resumen`, {
+    method: 'GET',
+    headers: getAuthHeaders({ includeContentType: false }),
+  })
+}
+
 export async function getCampaniaApi(campaniaId: number): Promise<Response> {
   return fetch(`${API_BASE_URL}/campanias/${campaniaId}`, {
     method: 'GET',

@@ -1,4 +1,4 @@
-import type { Campania } from '../types/contracts'
+import type { Campania, CampaniaResumen, Subcampania } from '../types/contracts'
 
 // ── Estado derivado de campaña (normalizado para UI) ─────────────────────
 // El backend expone `estado_derivado` como string libre; aquí se normaliza
@@ -122,10 +122,128 @@ export function resolveEstadoCampania(campania: Campania): EstadoCampaniaKey {
   return 'CREADA'
 }
 
+// ── Enriquecimiento por campaña desde subcampañas ─────────────────────────
+// `GET /campanias` no expone agregados de árboles/hectáreas/zonas por
+// campaña. Se derivan del payload enriquecido de `GET /subcampanias`
+// (mismos campos que `GET /campanias/:id/subcampanias`) agrupando por
+// `campania_id`. Si el backend llegara a enviar el campo, éste tiene
+// prioridad (merge por `??`).
+
+/**
+ * MOCK MVP — CO₂ proyectado. Misma fórmula placeholder que usa el backend en
+ * `GET /campanias/:id/metrics`: `saldo_vivo × 0.022` (~22 kg CO₂/árbol/año).
+ * La fórmula final depende del módulo de CO₂ (pendiente de producto):
+ * no depender del valor exacto.
+ */
+export const CO2_TON_POR_ARBOL_VIVO_MOCK = 0.022
+
+type SubcampaniaAgg = {
+  activas: number
+  borradores: number
+  plantados: number
+  saldoVivo: number
+  vivosDenominador: number
+  hectareas: number | null
+  zonas: Set<string>
+}
+
+export function enrichCampaniasConSubcampanias(
+  campanias: Campania[],
+  subcampanias: Subcampania[],
+): Campania[] {
+  if (subcampanias.length === 0) return campanias
+
+  const porCampania = new Map<number, SubcampaniaAgg>()
+  for (const sub of subcampanias) {
+    // CANCELADA queda fuera de los agregados (RN-PLA-36); el backend suele
+    // excluirlas por soft-delete, esto es defensa extra.
+    if (sub.estado === 'CANCELADA') continue
+    let agg = porCampania.get(sub.campania_id)
+    if (!agg) {
+      agg = {
+        activas: 0,
+        borradores: 0,
+        plantados: 0,
+        saldoVivo: 0,
+        vivosDenominador: 0,
+        hectareas: null,
+        zonas: new Set<string>(),
+      }
+      porCampania.set(sub.campania_id, agg)
+    }
+    if (sub.estado === 'ACTIVA') agg.activas += 1
+    if (sub.estado === 'BORRADOR') agg.borradores += 1
+    agg.plantados += toCount(sub.plantados ?? sub.total_plantado_inicial)
+    agg.saldoVivo += toCount(sub.saldo_vivo_actual)
+    agg.vivosDenominador +=
+      toCount(sub.total_plantado_inicial) + toCount(sub.total_repuesto)
+    const ha = toFinite(sub.area_hectareas)
+    if (ha !== null) agg.hectareas = (agg.hectareas ?? 0) + ha
+    if (sub.zona_nombre) agg.zonas.add(sub.zona_nombre)
+  }
+
+  return campanias.map((campania) => {
+    const agg = porCampania.get(campania.id)
+    if (!agg) return campania
+    const supervivencia =
+      agg.vivosDenominador > 0
+        ? Math.max(0, Math.min(100, (agg.saldoVivo / agg.vivosDenominador) * 100))
+        : null
+    return {
+      ...campania,
+      activas_count: campania.activas_count ?? agg.activas,
+      borradores_count: campania.borradores_count ?? agg.borradores,
+      arboles_plantados: campania.arboles_plantados ?? agg.plantados,
+      hectareas:
+        campania.hectareas ??
+        (agg.hectareas !== null ? Math.round(agg.hectareas * 100) / 100 : null),
+      zonas: campania.zonas ?? (agg.zonas.size > 0 ? [...agg.zonas] : undefined),
+      supervivencia_pct: campania.supervivencia_pct ?? supervivencia,
+      // MOCK: proyección placeholder hasta que exista el módulo de CO₂.
+      co2_proyectado_ton:
+        campania.co2_proyectado_ton ??
+        (agg.saldoVivo > 0 ? agg.saldoVivo * CO2_TON_POR_ARBOL_VIVO_MOCK : null),
+    }
+  })
+}
+
+// ── Resumen global del backend (`GET /campanias/resumen`) ────────────────
+// Fuente autoritativa de las métricas del programa. Sobrescribe la
+// agregación client-side cuando está disponible; los campos que no cubre
+// (meta total, CO₂, estados) se mantienen de la agregación local.
+
+export function applyResumenGlobal(
+  totals: DashboardTotals,
+  resumen: CampaniaResumen | null,
+): DashboardTotals {
+  if (!resumen) return totals
+  const arbolesPlantados = toCount(resumen.arboles_plantados_total)
+  const avance = toFinite(resumen.avance_meta_pct)
+  const supervivencia = toFinite(resumen.supervivencia_pct)
+  const hectareas = toFinite(resumen.hectareas_total)
+  return {
+    ...totals,
+    arbolesPlantados,
+    avancePct:
+      totals.metaArboles > 0 && avance !== null
+        ? Math.max(0, Math.min(100, Math.round(avance)))
+        : totals.avancePct,
+    supervivenciaPct:
+      supervivencia !== null
+        ? Math.max(0, Math.min(100, Math.round(supervivencia)))
+        : totals.supervivenciaPct,
+    hectareas: hectareas !== null ? Math.round(hectareas * 100) / 100 : totals.hectareas,
+    campanias: toCount(resumen.campanias_totales) || totals.campanias,
+    activas: toCount(resumen.campanias_activas),
+    subcampanias: toCount(resumen.subcampanias_totales),
+    subcampaniasActivas: toCount(resumen.subcampanias_activas),
+  }
+}
+
 // ── Totales globales del programa (agregación client-side) ───────────────
-// No existe endpoint global de métricas: se suman los agregados que ya
-// devuelve `GET /campanias`. Los campos que el backend no envía quedan en
-// `null` y la UI los muestra como "—".
+// Fallback y soporte del filtro por periodo: suma los agregados de
+// `GET /campanias` (enriquecidos vía `enrichCampaniasConSubcampanias`).
+// Los campos sin dato quedan en `null` y la UI los muestra como "—".
 
 export type DashboardTotals = {
   campanias: number
