@@ -4,8 +4,9 @@ import { useAuth } from '../../../contexts/AuthContext'
 import {
   LotesViveroService,
   type AsignacionViveroResumen,
-  type SubcampaniaResumen,
 } from '../../../services/lotes-vivero.service'
+import { PlantacionService } from '../../../services/plantacion.service'
+import type { Campania, Subcampania } from '../../plantacion/types/contracts'
 import type {
   DevolverAsignacionViveroResponseData,
   PropositoAsignacionVivero,
@@ -433,7 +434,10 @@ function ViveroLotAsignacionesTab({ lote, onLoteChanged }: Props) {
   const authId = user?.auth_id?.trim() || ''
 
   const [asignaciones, setAsignaciones] = useState<AsignacionViveroResumen[]>([])
-  const [subcampanias, setSubcampanias] = useState<SubcampaniaResumen[]>([])
+  const [campanias, setCampanias] = useState<Campania[]>([])
+  const [campaniaId, setCampaniaId] = useState('')
+  const [subcampanias, setSubcampanias] = useState<Subcampania[]>([])
+  const [subcampaniasLoading, setSubcampaniasLoading] = useState(false)
   const [loading, setLoading] = useState(true)
   const [subcampaniaId, setSubcampaniaId] = useState('')
   const [proposito, setProposito] = useState<PropositoAsignacionVivero>('PLANTACION_INICIAL')
@@ -473,6 +477,7 @@ function ViveroLotAsignacionesTab({ lote, onLoteChanged }: Props) {
     Number.isInteger(cantidadNum) &&
     cantidadNum > 0 &&
     cantidadNum <= maxAsignable
+  const campaniaValid = Number(campaniaId) > 0
   const subcampaniaValid = Number(subcampaniaId) > 0
   const fotosValid = photos.length >= 1 && photos.length <= 5
   const fechaValid = !!fecha && fecha >= fechaMin && fecha <= fechaMax
@@ -481,6 +486,7 @@ function ViveroLotAsignacionesTab({ lote, onLoteChanged }: Props) {
     !submitting &&
     loteActivo &&
     maxAsignable > 0 &&
+    campaniaValid &&
     subcampaniaValid &&
     cantidadValid &&
     fotosValid &&
@@ -531,15 +537,41 @@ function ViveroLotAsignacionesTab({ lote, onLoteChanged }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lote.id])
 
+  // Paso 1: campañas disponibles como destino. La subcampaña real se elige
+  // despues, ya filtrada por esta campaña (ver efecto siguiente).
   useEffect(() => {
-    LotesViveroService.listSubcampanias()
-      .then((data) => {
-        setSubcampanias(data)
-        if (!subcampaniaId && data.length > 0) setSubcampaniaId(String(data[0].id))
-      })
-      .catch((err) => setSubmitError(err instanceof Error ? err.message : 'Error al cargar subcampanias.'))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    PlantacionService.listCampanias()
+      .then((data) => setCampanias(data))
+      .catch((err) => setSubmitError(err instanceof Error ? err.message : 'Error al cargar campañas.'))
   }, [])
+
+  // Paso 2: subcampañas de la campaña elegida. Solo ACTIVA puede recibir
+  // entregas fisicas (RN-PLA: las asignaciones no ocurren en BORRADOR).
+  useEffect(() => {
+    setSubcampaniaId('')
+    if (!campaniaId) {
+      setSubcampanias([])
+      return
+    }
+    let active = true
+    setSubcampaniasLoading(true)
+    PlantacionService.listSubcampaniasByCampania(Number(campaniaId))
+      .then((data) => {
+        if (!active) return
+        const activas = data.filter((sub) => sub.estado === 'ACTIVA')
+        setSubcampanias(activas)
+        if (activas.length > 0) setSubcampaniaId(String(activas[0].id))
+      })
+      .catch((err) => {
+        if (active) setSubmitError(err instanceof Error ? err.message : 'Error al cargar subcampañas.')
+      })
+      .finally(() => {
+        if (active) setSubcampaniasLoading(false)
+      })
+    return () => {
+      active = false
+    }
+  }, [campaniaId])
 
   const cantidadError = !cantidad
     ? 'Ingresa la cantidad a entregar.'
@@ -688,20 +720,53 @@ function ViveroLotAsignacionesTab({ lote, onLoteChanged }: Props) {
 
         <label className="block">
           <span className="mb-1 block text-[10px] font-black uppercase tracking-wider text-brand-500">
+            Campaña destino
+          </span>
+          <select
+            value={campaniaId}
+            onChange={(event) => setCampaniaId(event.target.value)}
+            disabled={submitting || campanias.length === 0}
+            className={`w-full rounded-2xl border px-3 py-3 text-sm font-extrabold text-brand-700 outline-none transition ${
+              showErrors && !campaniaValid
+                ? 'border-red-300 bg-red-50'
+                : 'border-brand-100 bg-white focus:border-brand-300'
+            }`}
+          >
+            <option value="">
+              {campanias.length === 0 ? 'Sin campañas disponibles' : 'Selecciona una campaña...'}
+            </option>
+            {campanias.map((camp) => (
+              <option key={camp.id} value={camp.id}>
+                {camp.nombre}
+                {camp.codigo_trazabilidad ? ` - ${camp.codigo_trazabilidad}` : ''}
+              </option>
+            ))}
+          </select>
+          {showErrors && !campaniaValid && (
+            <p className="mt-1 text-xs font-semibold text-red-500">Selecciona una campaña.</p>
+          )}
+        </label>
+
+        <label className="block">
+          <span className="mb-1 block text-[10px] font-black uppercase tracking-wider text-brand-500">
             Subcampania destino
           </span>
           <select
             value={subcampaniaId}
             onChange={(event) => setSubcampaniaId(event.target.value)}
-            disabled={submitting || subcampanias.length === 0}
+            disabled={submitting || !campaniaValid || subcampaniasLoading || subcampanias.length === 0}
             className={`w-full rounded-2xl border px-3 py-3 text-sm font-extrabold text-brand-700 outline-none transition ${
               showErrors && !subcampaniaValid
                 ? 'border-red-300 bg-red-50'
                 : 'border-brand-100 bg-white focus:border-brand-300'
             }`}
           >
-            {subcampanias.length === 0 ? (
-              <option value="">Sin subcampanias disponibles</option>
+            {!campaniaValid ? (
+              <option value="">Elige primero una campaña</option>
+            ) : subcampaniasLoading ? (
+              <option value="">Cargando subcampañas...</option>
+            ) : subcampanias.length === 0 ? (
+              <option value="">Sin subcampañas activas en esta campaña</option>
             ) : (
               subcampanias.map((sub) => (
                 <option key={sub.id} value={sub.id}>
@@ -711,7 +776,7 @@ function ViveroLotAsignacionesTab({ lote, onLoteChanged }: Props) {
               ))
             )}
           </select>
-          {showErrors && !subcampaniaValid && (
+          {showErrors && campaniaValid && !subcampaniaValid && (
             <p className="mt-1 text-xs font-semibold text-red-500">Selecciona una subcampania.</p>
           )}
         </label>
