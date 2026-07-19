@@ -1,5 +1,6 @@
 import type { ViveroLotCardData } from '../types/view-models'
 import SurvivalBar from './SurvivalBar'
+import { DISPATCH_FLOW_LABEL, getDispatchFlowStatus } from '../utils/dispatchFlow'
 
 const ETAPA_LABEL: Record<string, string> = {
   INICIO: 'Inicio',
@@ -55,8 +56,15 @@ function ViveroLotCard({ lot, onClick, cta, compact }: Props) {
     )
   }
 
-  const reservado = lot.saldoAsignadoTotal ?? 0
-  const stockLibre = lot.saldoVivoDisponibleAsignacion ?? (lot.cantidadActual ?? 0)
+  const entregado = lot.saldoAsignadoSubcampanias ?? 0
+  const enVivero = lot.cantidadActual ?? 0
+  const flowStatus = getDispatchFlowStatus(lot)
+  const flowTone =
+    flowStatus === 'ASIGNADO_A_DESTINO'
+      ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
+      : flowStatus === 'LISTO_PARA_DESPACHO'
+        ? 'bg-blue-50 text-blue-700 ring-blue-200'
+        : 'bg-slate-50 text-slate-600 ring-slate-200'
 
   return (
     <div className="w-full rounded-3xl bg-white shadow-soft ring-1 ring-black/5">
@@ -71,16 +79,19 @@ function ViveroLotCard({ lot, onClick, cta, compact }: Props) {
               <h2 className="truncate text-xl font-extrabold leading-tight text-brand-700">
                 {lot.especie}
               </h2>
-              {reservado > 0 && (
+              {entregado > 0 && (
                 <span className="shrink-0 rounded bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 ring-1 ring-emerald-200">
-                  RESERVADO
+                  ENTREGADO
                 </span>
               )}
-              {stockLibre === 0 && reservado > 0 && (
+              {enVivero === 0 && entregado > 0 && (
                 <span className="shrink-0 rounded bg-red-50 px-1.5 py-0.5 text-[9px] font-bold text-red-700 ring-1 ring-red-200">
-                  SIN STOCK LIBRE
+                  SIN STOCK EN VIVERO
                 </span>
               )}
+              <span className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase ring-1 ${flowTone}`}>
+                {DISPATCH_FLOW_LABEL[flowStatus]}
+              </span>
             </div>
             <p className="text-sm font-semibold text-brand-500">{lot.codigo}</p>
           </div>
@@ -135,22 +146,18 @@ function ViveroLotCard({ lot, onClick, cta, compact }: Props) {
           )}
         </div>
 
-        {/* Columnas derivadas de saldos */}
-        {lot.saldoAsignadoTotal !== undefined && (
-          <div className="grid grid-cols-3 gap-2 border-t border-slate-100 pt-3 mt-4 text-center">
+        {/* Columnas derivadas de saldos (modelo fisico) */}
+        {lot.saldoAsignadoSubcampanias !== undefined && (
+          <div className="grid grid-cols-2 gap-2 border-t border-slate-100 pt-3 mt-4 text-center">
             <div>
-              <p className="text-[9px] font-bold uppercase tracking-wider text-brand-600">Saldo Vivo</p>
-              <p className="text-xs font-extrabold text-slate-700 mt-1">{lot.cantidadActual ?? 0}</p>
-            </div>
-            <div>
-              <p className="text-[9px] font-bold uppercase tracking-wider text-brand-600">Reservado</p>
-              <p className="text-xs font-extrabold text-amber-600 mt-1">{lot.saldoAsignadoTotal}</p>
-            </div>
-            <div>
-              <p className="text-[9px] font-bold uppercase tracking-wider text-brand-600">Saldo Libre</p>
-              <p className={`text-xs font-extrabold mt-1 ${stockLibre === 0 ? 'text-red-500' : 'text-emerald-700'}`}>
-                {stockLibre}
+              <p className="text-[9px] font-bold uppercase tracking-wider text-brand-600">En vivero</p>
+              <p className={`text-xs font-extrabold mt-1 ${enVivero === 0 ? 'text-red-500' : 'text-emerald-700'}`}>
+                {enVivero}
               </p>
+            </div>
+            <div>
+              <p className="text-[9px] font-bold uppercase tracking-wider text-brand-600">Entregado</p>
+              <p className="text-xs font-extrabold text-amber-600 mt-1">{entregado}</p>
             </div>
           </div>
         )}

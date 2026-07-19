@@ -6,12 +6,12 @@ import CollapsibleSection from '../components/CollapsibleSection'
 import ViveroLotCard from '../components/ViveroLotCard'
 import { useViveroLots } from '../hooks/useViveroLots'
 import type { ViveroLotCardData } from '../types/view-models'
-import { LotesViveroService } from '../../../services/lotes-vivero.service'
+import { LotesViveroService, type SubcampaniaResumen } from '../../../services/lotes-vivero.service'
 
 function getNextAction(lot: ViveroLotCardData): { label: string; path: string } | null {
   if (lot.estadoLote === 'FINALIZADO') return null
   if (lot.plantasVivasIniciales === null && lot.subetapaActual === null) {
-    return { label: 'Registrar Embolsado', path: `/app/vivero/${lot.id}/event/new` }
+    return { label: 'Registrar Embolsado', path: `/app/vivero/${lot.id}/event/embolsado` }
   }
   if (lot.subetapaActual === null) {
     return { label: 'Registrar Adaptabilidad', path: `/app/vivero/${lot.id}` }
@@ -23,10 +23,10 @@ function ViveroScreen() {
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [showFilters, setShowFilters] = useState(false)
-  const [onlyStockLibre, setOnlyStockLibre] = useState(false)
+  const [onlyConStockEnVivero, setOnlyConStockEnVivero] = useState(false)
   const [onlyActiveAssignments, setOnlyActiveAssignments] = useState(false)
   const [selectedSubcampaniaId, setSelectedSubcampaniaId] = useState<string>('TODAS')
-  const [subcampanias, setSubcampanias] = useState<any[]>([])
+  const [subcampanias, setSubcampanias] = useState<SubcampaniaResumen[]>([])
 
   useEffect(() => {
     LotesViveroService.listSubcampanias()
@@ -43,9 +43,9 @@ function ViveroScreen() {
   })
 
   const filteredLots = lots.filter((lot) => {
-    if (onlyStockLibre) {
-      const stockLibre = lot.saldoVivoDisponibleAsignacion ?? (lot.cantidadActual ?? 0)
-      if (stockLibre <= 0) return false
+    if (onlyConStockEnVivero) {
+      const enVivero = lot.cantidadActual ?? 0
+      if (enVivero <= 0) return false
     }
     if (onlyActiveAssignments) {
       if ((lot.cantidadAsignacionesActivas ?? 0) <= 0) return false
@@ -110,16 +110,16 @@ function ViveroScreen() {
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
-                    onClick={() => setOnlyStockLibre(!onlyStockLibre)}
+                    onClick={() => setOnlyConStockEnVivero(!onlyConStockEnVivero)}
                     className="flex items-center gap-2 rounded-full border border-slate-100 bg-slate-50/50 px-4 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-100/75"
                   >
                     <input
                       type="checkbox"
-                      checked={onlyStockLibre}
+                      checked={onlyConStockEnVivero}
                       onChange={() => {}} // Controlled by button click
                       className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
                     />
-                    <span>Solo con stock libre</span>
+                    <span>Solo con stock en vivero</span>
                   </button>
 
                   <button
@@ -208,8 +208,8 @@ function ViveroScreen() {
                   {actionLots.map((lot) => {
                     const action = getNextAction(lot)
                     const isDespacho = action?.label === 'Registrar Despacho'
-                    const stockLibre = lot.saldoVivoDisponibleAsignacion ?? (lot.cantidadActual ?? 0)
-                    const isDisabled = isDespacho && stockLibre === 0
+                    const enVivero = lot.cantidadActual ?? 0
+                    const isDisabled = isDespacho && enVivero === 0
 
                     return (
                       <ViveroLotCard

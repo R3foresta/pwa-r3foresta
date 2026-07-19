@@ -5,6 +5,7 @@ import { LotesViveroService } from '../../../services/lotes-vivero.service'
 import StageTabs from '../components/event/StageTabs'
 import type { StageKey, StageTab } from '../components/event/StageTabs'
 import EmbolsadoForm from '../components/event/forms/EmbolsadoForm'
+import DescartePreEmbolsadoForm from '../components/event/forms/DescartePreEmbolsadoForm'
 import AdaptabilidadForm from '../components/event/forms/AdaptabilidadForm'
 import MermaForm from '../components/event/forms/MermaForm'
 import DespachoForm from '../components/event/forms/DespachoForm'
@@ -18,8 +19,9 @@ const SUBETAPA_LABEL: Record<string, string> = {
 
 function getLotEspecie(lot: LoteViveroDetalle): string {
   return (
-    lot.planta?.especie ||
     lot.nombre_comercial_snapshot ||
+    lot.planta?.nombre_comun_principal ||
+    lot.planta?.especie ||
     lot.nombre_cientifico_snapshot ||
     'Sin especie'
   )
@@ -40,9 +42,7 @@ function ViveroEventScreen() {
     let mounted = true
     LotesViveroService.getById(loteId)
       .then((data) => {
-        // Forzamos el tipado temporalmente para compensar la discrepancia
-        // del merge conflict. Esto mantiene la UI funcionando y pasa el build.
-        if (mounted) setLote(data as unknown as LoteViveroDetalle)
+        if (mounted) setLote(data)
       })
       .catch((err) => {
         if (mounted)
@@ -58,18 +58,44 @@ function ViveroEventScreen() {
 
   const tabs: StageTab[] = useMemo(() => {
     if (!lote) return []
-    const hasEmbolsado = lote.plantas_vivas_iniciales !== null
+    const hasEmbolsado =
+      lote.plantas_vivas_iniciales !== null ||
+      lote.ultimo_evento_por_tipo.EMBOLSADO !== null
+    const hasDescarte = lote.ultimo_evento_por_tipo.DESCARTE_PRE_EMBOLSADO !== null
+    const hasInicio = lote.ultimo_evento_por_tipo.INICIO !== null
     const isActive = lote.estado_lote === 'ACTIVO'
+    // Modelo físico: el disponible del lote ES el saldo vivo actual (ya no hay
+    // `saldo_vivo_disponible_asignacion`); despacho manual sale del saldo vivo.
     const saldo = lote.saldo_vivo_actual ?? 0
     const hasSaldo = saldo > 0
+    const canDescartarPreEmbolsado =
+      isActive &&
+      hasInicio &&
+      !hasEmbolsado &&
+      !hasDescarte
 
     return [
       {
         key: 'embolsado',
         label: 'Embolsado',
-        hidden: hasEmbolsado,
-        available: !hasEmbolsado && isActive,
+        hidden: hasEmbolsado || hasDescarte,
+        available: !hasEmbolsado && !hasDescarte && isActive,
         reason: !isActive ? 'Lote finalizado' : undefined,
+      },
+      {
+        key: 'descarte-pre-embolsado',
+        label: 'Descarte',
+        hidden: hasEmbolsado || hasDescarte,
+        available: canDescartarPreEmbolsado,
+        reason: !isActive
+          ? 'Lote finalizado'
+          : !hasInicio
+            ? 'Requiere inicio primero'
+            : hasEmbolsado
+              ? 'Ya fue embolsado'
+              : hasDescarte
+                ? 'Ya fue descartado'
+                : undefined,
       },
       {
         key: 'adaptabilidad',
@@ -206,6 +232,9 @@ function ViveroEventScreen() {
       <div className="mx-auto w-full max-w-md px-5 pt-2">
         {currentKey === 'embolsado' && (
           <EmbolsadoForm lote={lote} onCompleted={handleCompleted} />
+        )}
+        {currentKey === 'descarte-pre-embolsado' && (
+          <DescartePreEmbolsadoForm lote={lote} onCompleted={handleCompleted} />
         )}
         {currentKey === 'adaptabilidad' && (
           <AdaptabilidadForm

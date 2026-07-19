@@ -1,5 +1,6 @@
 import Icon from '../../../components/Icon'
 import type { IconName } from '../../../components/Icon'
+import { formatUnidadCanonicaDisplay } from '../../../utils/recoleccionUnidad'
 import type { ViveroLotEventView, ViveroEventPhoto } from '../types/view-models'
 
 interface EventCardProps {
@@ -12,6 +13,7 @@ export default function EventCard({ event, isLast, onOpenGallery }: EventCardPro
   const configMap: Record<string, { icon: IconName; bg: string; text: string; ring: string }> = {
     INICIO: { icon: 'leaf', bg: 'bg-emerald-50', text: 'text-emerald-700', ring: 'ring-emerald-200' },
     EMBOLSADO: { icon: 'box', bg: 'bg-[#f4f7f2]', text: 'text-[#002b15]', ring: 'ring-[#002b15]/10' },
+    DESCARTE_PRE_EMBOLSADO: { icon: 'trash', bg: 'bg-red-50/80', text: 'text-red-700', ring: 'ring-red-200' },
     MERMA: { icon: 'loss', bg: 'bg-red-50/80', text: 'text-red-700', ring: 'ring-red-200' },
     ADAPTABILIDAD: { icon: 'sun', bg: 'bg-amber-50', text: 'text-amber-700', ring: 'ring-amber-200' },
     DESPACHO: { icon: 'truck', bg: 'bg-blue-50', text: 'text-blue-700', ring: 'ring-blue-200' },
@@ -19,8 +21,10 @@ export default function EventCard({ event, isLast, onOpenGallery }: EventCardPro
   }
 
   const theme = configMap[event.kind] || configMap.INICIO
+  const causaLabel = event.causa?.toLowerCase().replaceAll('_', ' ') || 'No especificada'
+  const unidadLabel = formatUnidadCanonicaDisplay(event.unidadMedidaEvento, event.cantidad ?? undefined)
 
-  const imagenes = event.fotos && event.fotos.length > 0 
+  const imagenes = event.fotos && event.fotos.length > 0
   ? event.fotos.map((f: ViveroEventPhoto) => ({ 
       id: f.id, 
       url: f.url, 
@@ -99,6 +103,29 @@ export default function EventCard({ event, isLast, onOpenGallery }: EventCardPro
             </div>
           )}
 
+          {event.kind === 'DESCARTE_PRE_EMBOLSADO' && (
+            <div className="mt-4 space-y-3">
+              <div className="flex gap-2">
+                <div className={`flex-1 rounded-2xl p-3 ${theme.bg} ring-1 ring-inset ${theme.ring}`}>
+                  <p className={`text-[9px] font-black uppercase tracking-widest ${theme.text}`}>Material descartado</p>
+                  <p className={`mt-0.5 text-3xl font-black tracking-tight ${theme.text}`}>{event.cantidad || 0}</p>
+                  <p className={`mt-0.5 text-[9px] font-bold uppercase tracking-widest ${theme.text}/80`}>{unidadLabel}</p>
+                </div>
+                <div className="flex-1 rounded-2xl bg-white p-3 ring-1 ring-inset ring-slate-200">
+                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">Causa</p>
+                  <p className="mt-0.5 text-base font-black capitalize leading-tight text-[#002b15]">{causaLabel}</p>
+                  <p className="mt-0.5 text-[9px] font-bold uppercase tracking-widest text-slate-400">{event.causa || 'N/A'}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2 rounded-xl bg-amber-50 px-3 py-2.5 ring-1 ring-amber-100">
+                <Icon name="info" className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600" />
+                <p className="text-[11px] font-bold leading-tight text-amber-800">
+                  Cierre antes de EMBOLSADO. No hubo nacimiento de saldo vivo.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* 2. Diseño Específico para ADAPTABILIDAD */}
           {event.kind === 'ADAPTABILIDAD' && (
             <div className={`mt-4 flex items-center justify-between gap-2 rounded-2xl ${theme.bg} p-3 ring-1 ring-inset ${theme.ring}`}>
@@ -128,7 +155,7 @@ export default function EventCard({ event, isLast, onOpenGallery }: EventCardPro
                 </div>
                 <div className="flex-1 rounded-2xl p-3 bg-white ring-1 ring-inset ring-slate-200">
                   <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">Causa</p>
-                  <p className="mt-0.5 text-base font-black text-[#002b15] capitalize">{event.causa?.toLowerCase().replace('_', ' ') || 'No especificada'}</p>
+                  <p className="mt-0.5 text-base font-black text-[#002b15] capitalize">{causaLabel}</p>
                   <p className="mt-0.5 text-[9px] font-bold uppercase tracking-widest text-slate-400">{event.causa || 'N/A'}</p>
                 </div>
               </div>

@@ -1,6 +1,11 @@
 import Icon from '../../../../components/Icon'
 
-export type StageKey = 'embolsado' | 'adaptabilidad' | 'merma' | 'despacho'
+export type StageKey =
+  | 'embolsado'
+  | 'descarte-pre-embolsado'
+  | 'adaptabilidad'
+  | 'merma'
+  | 'despacho'
 
 export type StageTab = {
   key: StageKey

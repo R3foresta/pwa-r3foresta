@@ -20,6 +20,7 @@ import type { PhotoItem, ViveroLotEventView } from '../types/view-models'
 import { useViveroStats } from '../hooks/useViveroStats'
 import ViveroLotAsignacionesCollapsible from '../components/ViveroLotAsignacionesCollapsible'
 import ViveroLotAsignacionesTab from '../components/ViveroLotAsignacionesTab'
+import DispatchFlowCard from '../components/DispatchFlowCard'
 
 export default function ViveroDetailScreen() {
   const { id } = useParams()
@@ -27,7 +28,7 @@ export default function ViveroDetailScreen() {
   const isInvalidId = !Number.isFinite(lotId) || lotId <= 0
 
   // 1. Lógica delegada al Custom Hook (Fix QA4)
-  const { detail, events, loading, error } = useViveroDetail(lotId, isInvalidId)
+  const { detail, events, loading, error, refetch } = useViveroDetail(lotId, isInvalidId)
 
   // ✨ NUEVO: Calculamos las estadísticas UNA SOLA VEZ aquí
   const stats = useViveroStats(detail, events)
@@ -141,6 +142,7 @@ export default function ViveroDetailScreen() {
                 ) : (
                   <SaludCard detail={detail} events={events} stats={stats} />
                 )}
+                <DispatchFlowCard detail={detail} />
                 <QuickActions detail={detail} onJumpEvidencia={() => setActiveTab('evidencia')} />
                 <IndicadoresRapidos detail={detail} events={events} stats={stats} />
                 <SubetapasBar detail={detail} events={events} />
@@ -172,7 +174,7 @@ export default function ViveroDetailScreen() {
             )}
             {activeTab === 'asignaciones' && (
               <div className="transition-opacity duration-300">
-                <ViveroLotAsignacionesTab loteId={detail.id} />
+                <ViveroLotAsignacionesTab lote={detail} onLoteChanged={refetch} />
               </div>
             )}
           </div>

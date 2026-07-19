@@ -94,8 +94,10 @@ function getCantidadSugerida(saldo: number, unidad: UnidadMedidaVivero, pct: num
 }
 
 const getRecoleccionLabel = (item: Recoleccion) =>
-  item.planta?.especie ||
   item.nombre_comercial ||
+  item.nombre_comun_principal ||
+  item.planta?.nombre_comun_principal ||
+  item.planta?.especie ||
   item.nombre_cientifico ||
   `Recolección #${item.id}`
 

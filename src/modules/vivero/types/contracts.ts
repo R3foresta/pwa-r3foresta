@@ -1,6 +1,7 @@
 export type TipoEventoVivero =
   | 'INICIO'
   | 'EMBOLSADO'
+  | 'DESCARTE_PRE_EMBOLSADO'
   | 'ADAPTABILIDAD'
   | 'MERMA'
   | 'DESPACHO'
@@ -14,7 +15,11 @@ export type TipoMaterialVivero = 'SEMILLA' | 'ESQUEJE'
 
 export type UnidadMedidaVivero = 'UNIDAD' | 'G'
 
-export type MotivoCierreVivero = 'DESPACHO_TOTAL' | 'PERDIDA_TOTAL' | 'MIXTO'
+export type MotivoCierreVivero =
+  | 'DESPACHO_TOTAL'
+  | 'PERDIDA_TOTAL'
+  | 'MIXTO'
+  | 'DESCARTE_PRE_EMBOLSADO'
 
 export type EstadoRegistroRecoleccion =
   | 'BORRADOR'
@@ -87,8 +92,11 @@ export interface LoteViveroItem {
   unidad_medida_inicial: UnidadMedidaVivero
   plantas_vivas_iniciales: number | null
   saldo_vivo_actual: number | null
-  saldo_asignado_total?: number
-  saldo_vivo_disponible_asignacion?: number
+  /**
+   * Total ya entregado físicamente a subcampañas (informativo). Antes se
+   * llamaba `saldo_asignado_total` en el modelo de "reserva lógica".
+   */
+  saldo_asignado_subcampanias?: number
   cantidad_asignaciones_activas?: number
   /**
    * @deprecated Alias backend de `saldo_vivo_actual`. Backend lo mantiene por
@@ -172,7 +180,12 @@ export interface UploadEvidenciasPendientesResponse {
   evidencia_ids: number[]
 }
 
-export type EvidenciaEventoVivero = 'EMBOLSADO' | 'ADAPTABILIDAD' | 'MERMA'
+export type EvidenciaEventoVivero =
+  | 'EMBOLSADO'
+  | 'DESCARTE_PRE_EMBOLSADO'
+  | 'ADAPTABILIDAD'
+  | 'MERMA'
+  | 'DESPACHO'
 
 export interface UploadEvidenciasEventoInput {
   fotos: File[]
@@ -328,6 +341,15 @@ export type CausaMermaVivero =
   | 'MUERTE_NATURAL'
   | 'OTRO'
 
+export type CausaDescartePreEmbolsado =
+  | 'NO_GERMINACION'
+  | 'NO_ENRAIZAMIENTO'
+  | 'CONTAMINACION'
+  | 'PERDIDA_TOTAL_MATERIAL'
+  | 'MATERIAL_NO_VIABLE'
+  | 'DANO_PRE_EMBOLSADO'
+  | 'OTRO'
+
 export type DestinoTipoVivero =
   | 'PLANTACION_PROPIA'
   | 'DONACION_COMUNIDAD'
@@ -349,6 +371,77 @@ export interface RegistrarMermaRequest {
   observaciones?: string
 }
 
+export interface RegistrarDescartePreEmbolsadoRequest {
+  fecha_evento: string
+  cantidad_material_afectado: number
+  unidad_medida_evento: UnidadMedidaVivero
+  causa_descarte_pre_embolsado: CausaDescartePreEmbolsado
+  evidencia_ids: number[]
+  observaciones?: string
+}
+
+export type PropositoAsignacionVivero = 'PLANTACION_INICIAL' | 'REPOSICION'
+
+// Modelo de asignación física (M2↔M3): asignar = ENTREGAR plantas. El backend
+// nuevo rechaza el shape viejo (falta `evidencia_ids` → 422), por eso `proposito`,
+// `fecha_asignacion` y `evidencia_ids` son obligatorios.
+export interface CrearAsignacionViveroRequest {
+  subcampania_id: number
+  cantidad_asignada: number
+  proposito: PropositoAsignacionVivero
+  /** Fecha de la entrega física (ISO `yyyy-mm-dd`). */
+  fecha_asignacion: string
+  /** IDs de evidencia previamente subida vía evidencias-pendientes (mínimo 1). */
+  evidencia_ids: number[]
+}
+
+// CONFIRMADO(backend 2026-07-07): en la respuesta de asignación, Nest normaliza
+// `lote_finalizado` siempre a boolean y además incluye `motivo_cierre`
+// (vivero-asignaciones.service.ts:202). En devolución, `lote_reabierto` también
+// viene siempre como boolean (vivero-asignaciones.service.ts:412). Igual se
+// parsea defensivo por si cambia. `saldo_vivo_actual` se lee cuando esté.
+export interface CrearAsignacionViveroResponseData {
+  id: number
+  subcampania_id: number
+  cantidad_asignada: number
+  proposito: PropositoAsignacionVivero
+  fecha_asignacion: string
+  saldo_asignado_disponible?: number | null
+  /** Saldo vivo del lote DESPUÉS de la entrega (baja en el momento). */
+  saldo_vivo_actual?: number | null
+  /** true si la entrega total dejó el lote en 0 y backend lo FINALIZÓ. */
+  lote_finalizado: boolean
+  /** Motivo de cierre cuando `lote_finalizado` es true (útil para VIV-04). */
+  motivo_cierre?: MotivoCierreVivero | null
+}
+
+export interface CrearAsignacionViveroResponse {
+  success: true
+  data: CrearAsignacionViveroResponseData
+}
+
+export interface DevolucionAsignacionRequest {
+  cantidad_devuelta: number
+  motivo_devolucion: string
+  /** Fecha de la devolución física (ISO `yyyy-mm-dd`). */
+  fecha_devolucion: string
+}
+
+export interface DevolverAsignacionViveroResponseData {
+  id: number
+  cantidad_devuelta: number
+  saldo_asignado_disponible?: number | null
+  /** Saldo vivo del lote DESPUÉS de la devolución (sube en el momento). */
+  saldo_vivo_actual?: number | null
+  /** true si la devolución reabrió un lote que estaba FINALIZADO. */
+  lote_reabierto: boolean
+}
+
+export interface DevolverAsignacionViveroResponse {
+  success: true
+  data: DevolverAsignacionViveroResponseData
+}
+
 // TODO(despacho-bloqueado): la pantalla de despacho está deshabilitada en el
 // front (DespachoForm.tsx → DESPACHO_EVIDENCE_ENDPOINT_READY = false) por dos
 // motivos cruzados:
@@ -365,6 +458,7 @@ export interface RegistrarDespachoRequest {
   cantidad_afectada: number
   destino_tipo: DestinoTipoVivero
   destino_referencia: string
+  evidencia_ids: number[]
   comunidad_destino_id?: number
   observaciones?: string
 }
@@ -396,6 +490,23 @@ export interface RegistrarMermaResponse {
     evidencia_ids_vinculadas: number[]
     lote_finalizado: boolean
     motivo_cierre: MotivoCierreVivero | null
+  }
+}
+
+export interface RegistrarDescartePreEmbolsadoResponse {
+  success: true
+  data: {
+    message: string
+    evento_descarte_pre_embolsado_id: number
+    evento_cierre_id: number
+    lote_vivero_id: number
+    codigo_trazabilidad: string
+    cantidad_material_afectado: number
+    unidad_medida_evento: UnidadMedidaVivero
+    causa_descarte_pre_embolsado: CausaDescartePreEmbolsado
+    evidencia_ids_vinculadas: number[]
+    lote_finalizado: true
+    motivo_cierre: 'DESCARTE_PRE_EMBOLSADO'
   }
 }
 
@@ -451,6 +562,7 @@ export interface EventoSnapshot {
   saldo_vivo_despues: number | null
   subetapa_destino: SubetapaAdaptabilidad | null
   causa_merma: CausaMermaVivero | null
+  causa_descarte_pre_embolsado: CausaDescartePreEmbolsado | null
   destino_tipo: DestinoTipoVivero | null
   destino_referencia: string | null
   motivo_cierre_calculado: MotivoCierreVivero | null
@@ -558,4 +670,3 @@ export interface LoteTimelineAdaptabilidadResponse {
 // Hoy el `ViveroDetailScreen` arma la timeline desde el detalle del lote, así
 // que esto no bloquea ninguna pantalla actual. Migrar cuando el front necesite
 // historial granular o paginado de eventos.
-

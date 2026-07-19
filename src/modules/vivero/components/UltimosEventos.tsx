@@ -7,6 +7,7 @@ export default function UltimosEventos({ events, onJumpHistorial }: { events: Vi
     const icons = {
       INICIO: 'leaf',
       EMBOLSADO: 'box',
+      DESCARTE_PRE_EMBOLSADO: 'trash',
       ADAPTABILIDAD: 'sun',
       MERMA: 'loss',
       DESPACHO: 'truck',

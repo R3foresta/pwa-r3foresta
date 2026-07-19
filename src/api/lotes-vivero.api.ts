@@ -3,12 +3,15 @@ import type {
   ListLotesViveroQuery,
   LoteTimelineQuery,
   RegistrarAdaptabilidadRequest,
+  RegistrarDescartePreEmbolsadoRequest,
   RegistrarDespachoRequest,
   RegistrarEmbolsadoRequest,
   RegistrarMermaRequest,
   UploadEvidenciasPendientesInput,
   EvidenciaEventoVivero,
   UploadEvidenciasEventoInput,
+  CrearAsignacionViveroRequest,
+  DevolucionAsignacionRequest,
 } from '../modules/vivero/types/contracts'
 
 const RAW_API_URL = import.meta.env.VITE_API_URL as string | undefined
@@ -58,8 +61,10 @@ function getAuthHeaders(options?: {
 
 const EVENT_EVIDENCE_PATH: Record<EvidenciaEventoVivero, string> = {
   EMBOLSADO: 'embolsado',
+  DESCARTE_PRE_EMBOLSADO: 'descarte-pre-embolsado',
   ADAPTABILIDAD: 'adaptabilidad',
   MERMA: 'merma',
+  DESPACHO: 'despacho',
 }
 
 function buildEvidenceFormData(input: UploadEvidenciasEventoInput): FormData {
@@ -203,6 +208,18 @@ export async function registrarMermaApi(
   })
 }
 
+export async function registrarDescartePreEmbolsadoApi(
+  loteId: number,
+  input: RegistrarDescartePreEmbolsadoRequest,
+  authId?: string,
+): Promise<Response> {
+  return fetch(`${API_BASE_URL}/lotes-vivero/${loteId}/descarte-pre-embolsado`, {
+    method: 'POST',
+    headers: getAuthHeaders({ authId, includeContentType: true }),
+    body: JSON.stringify(input),
+  })
+}
+
 export async function registrarDespachoApi(
   loteId: number,
   input: RegistrarDespachoRequest,
@@ -222,6 +239,13 @@ export async function getTimelineApi(loteId: number): Promise<Response> {
   })
 }
 
+export async function listStockEspeciesApi(): Promise<Response> {
+  return fetch(`${API_BASE_URL}/lotes-vivero/stock/especies`, {
+    method: 'GET',
+    headers: getAuthHeaders({ includeContentType: false }),
+  })
+}
+
 export async function listSubcampaniasApi(): Promise<Response> {
   return fetch(`${API_BASE_URL}/subcampanias`, {
     method: 'GET',
@@ -234,6 +258,37 @@ export async function listAsignacionesApi(loteId: number): Promise<Response> {
     method: 'GET',
     headers: getAuthHeaders({ includeContentType: false }),
   })
+}
+
+export async function crearAsignacionApi(
+  loteId: number,
+  input: CrearAsignacionViveroRequest,
+  authId?: string,
+): Promise<Response> {
+  return fetch(`${API_BASE_URL}/lotes-vivero/${loteId}/asignaciones`, {
+    method: 'POST',
+    headers: getAuthHeaders({ authId, includeContentType: true }),
+    body: JSON.stringify(input),
+  })
+}
+
+// Devolución física de stock asignado (reemplaza al DELETE de "cancelar
+// reserva", ya eliminado del backend). El lote recupera saldo vivo y puede
+// reabrirse si estaba FINALIZADO.
+export async function devolverAsignacionApi(
+  loteId: number,
+  asignacionId: number,
+  input: DevolucionAsignacionRequest,
+  authId?: string,
+): Promise<Response> {
+  return fetch(
+    `${API_BASE_URL}/lotes-vivero/${loteId}/asignaciones/${asignacionId}/devolucion`,
+    {
+      method: 'POST',
+      headers: getAuthHeaders({ authId, includeContentType: true }),
+      body: JSON.stringify(input),
+    },
+  )
 }
 
 // ──────────────────────────────────────────────────────────────────────────────

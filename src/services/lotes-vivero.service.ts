@@ -2,9 +2,11 @@ import {
   createLoteViveroApi,
   getEmbolsadoApi,
   getEmbolsadoContextApi,
+  getLoteViveroDetalleApi,
   getLoteTimelineApi,
   listLotesViveroApi,
   registrarAdaptabilidadApi,
+  registrarDescartePreEmbolsadoApi,
   registrarDespachoApi,
   registrarEmbolsadoApi,
   registrarMermaApi,
@@ -13,6 +15,9 @@ import {
   getTimelineApi,
   listSubcampaniasApi,
   listAsignacionesApi,
+  crearAsignacionApi,
+  devolverAsignacionApi,
+  listStockEspeciesApi,
 } from '../api/lotes-vivero.api'
 
 import { mapLoteToCardData, mapLoteToDetailView } from '../modules/vivero/mappers/lote.mapper'
@@ -20,16 +25,24 @@ import type {
   ApiPagination,
   CreateLoteViveroInput,
   CreateLoteViveroResponse,
+  CrearAsignacionViveroRequest,
+  CrearAsignacionViveroResponseData,
+  DevolucionAsignacionRequest,
+  DevolverAsignacionViveroResponseData,
   EmbolsadoContextData,
   EmbolsadoContextResponse,
   EvidenciaEventoVivero,
   ListLotesViveroQuery,
   ListLotesViveroResponse,
   LoteTimelineAdaptabilidadResponse,
+  LoteViveroDetalle,
+  LoteViveroDetalleResponse,
   LoteViveroItem,
   ObtenerEmbolsadoResponse,
   RegistrarAdaptabilidadRequest,
   RegistrarAdaptabilidadResponse,
+  RegistrarDescartePreEmbolsadoRequest,
+  RegistrarDescartePreEmbolsadoResponse,
   RegistrarDespachoRequest,
   RegistrarEmbolsadoRequest,
   RegistrarEmbolsadoResponse,
@@ -77,6 +90,22 @@ export type ListViveroLotsForUiResult = {
 export type SubcampaniaResumen = {
   id: number
   nombre: string
+  estado?: string | null
+}
+
+export type EspecieStockVivero = {
+  planta_id: number
+  especie: string
+  nombre_cientifico: string
+  nombre_comun_principal: string | null
+  /** Stock físico vivo agregado por especie: lo asignable (entregable). */
+  saldo_vivo_actual_total: number
+  /**
+   * Ya entregado a subcampañas (informativo). Antes `saldo_reservado_total`.
+   * El campo `saldo_disponible_total` del modelo viejo desaparece: el
+   * disponible es directamente `saldo_vivo_actual_total`.
+   */
+  saldo_asignado_subcampanias_total: number
 }
 
 export type AsignacionViveroResumen = {
@@ -225,21 +254,20 @@ export class LotesViveroService {
     }
   }
 
-  static async getById(loteId: number): Promise<LoteViveroItem> {
+  static async getById(loteId: number): Promise<LoteViveroDetalle> {
     if (!Number.isFinite(loteId) || loteId <= 0) {
       throw new Error('ID de lote de vivero inválido.')
     }
 
-    // TODO(backend-pendiente): Ineficiencia conocida.
-    // Actualmente NO existe un endpoint GET /lotes-vivero/:id específico.
-    // Simulamos la obtención de detalle forzando una búsqueda en el listado
-    // con límite 1. Esto debe cambiarse cuando backend libere el endpoint de detalle.
-    const response = await this.list({ lote_vivero_id: loteId, page: 1, limit: 1 })
-    const lot = response.data[0]
-    if (!lot) {
+    const response = await getLoteViveroDetalleApi(loteId)
+    const payload = await this.parseJsonResponse<LoteViveroDetalleResponse>(
+      response,
+      'Error al cargar el detalle del lote de vivero.',
+    )
+    if (!payload.data) {
       throw new Error('Lote de vivero no encontrado.')
     }
-    return lot
+    return payload.data
   }
 
   static async getDetail(loteId: number): Promise<ViveroLotDetailView> {
@@ -393,6 +421,18 @@ export class LotesViveroService {
     )
   }
 
+  static async registrarDescartePreEmbolsado(
+    loteId: number,
+    input: RegistrarDescartePreEmbolsadoRequest,
+    authId?: string,
+  ): Promise<RegistrarDescartePreEmbolsadoResponse> {
+    const response = await registrarDescartePreEmbolsadoApi(loteId, input, authId)
+    return this.parseJsonResponse<RegistrarDescartePreEmbolsadoResponse>(
+      response,
+      'Error al registrar el descarte pre-embolsado.',
+    )
+  }
+
   static async registrarDespacho(
     loteId: number,
     input: RegistrarDespachoRequest,
@@ -403,6 +443,40 @@ export class LotesViveroService {
       response,
       'Error al registrar el despacho.',
     )
+  }
+
+  static async listStockEspecies(): Promise<EspecieStockVivero[]> {
+    const response = await listStockEspeciesApi()
+    const payload = await this.parseJsonResponse<ApiEnvelope<unknown>>(
+      response,
+      'Error al cargar el stock por especie.',
+    )
+    const rawList = Array.isArray(payload.data) ? payload.data : []
+    return rawList.flatMap((raw) => {
+      if (!raw || typeof raw !== 'object') return []
+      const item = raw as Record<string, unknown>
+      const plantaId = Number(item.planta_id)
+      if (!Number.isFinite(plantaId) || plantaId <= 0) return []
+      const toNumber = (value: unknown) => {
+        const parsed = Number(value)
+        return Number.isFinite(parsed) ? parsed : 0
+      }
+      const especie = typeof item.especie === 'string' ? item.especie : ''
+      const nombreCientifico =
+        typeof item.nombre_cientifico === 'string' ? item.nombre_cientifico : ''
+      const nombreComun =
+        typeof item.nombre_comun_principal === 'string' ? item.nombre_comun_principal : null
+      return [
+        {
+          planta_id: plantaId,
+          especie,
+          nombre_cientifico: nombreCientifico,
+          nombre_comun_principal: nombreComun,
+          saldo_vivo_actual_total: toNumber(item.saldo_vivo_actual_total),
+          saldo_asignado_subcampanias_total: toNumber(item.saldo_asignado_subcampanias_total),
+        },
+      ]
+    })
   }
 
   static async listSubcampanias(): Promise<SubcampaniaResumen[]> {
@@ -421,6 +495,101 @@ export class LotesViveroService {
       'Error al cargar asignaciones.',
     )
     return Array.isArray(payload.data) ? payload.data : []
+  }
+
+  // Mensaje reutilizable: el backend responde 403/422 cuando quien opera no es
+  // ADMIN ni coordinador de la subcampania destino (asignar/devolver).
+  private static readonly PERMISO_ASIGNACION_MSG =
+    'Necesitas ser ADMIN o coordinador de la subcampana para realizar esta operacion.'
+
+  // Mapea el error de los endpoints de asignacion/devolucion. Si es un 403/422
+  // con mensaje generico, lo traducimos al copy de permisos; si el backend ya
+  // manda un texto especifico (p. ej. "cantidad supera el saldo"), lo respetamos.
+  private static mapAsignacionError(status: number, parsed: unknown, fallback: string): string {
+    const backendMsg = this.normalizeErrorMessage(parsed, '')
+    if (status === 403 || status === 422) {
+      const generic =
+        !backendMsg || /^(bad request|forbidden|unprocessable entity)$/i.test(backendMsg)
+      return generic ? this.PERMISO_ASIGNACION_MSG : backendMsg
+    }
+    return backendMsg || fallback
+  }
+
+  // Asignar = entregar fisicamente. Exigimos evidencia y fecha en cliente para
+  // no depender del 422 del backend, y devolvemos la response nueva (incluye
+  // `lote_finalizado` cuando la entrega total cierra el lote).
+  static async crearAsignacion(
+    loteId: number,
+    input: CrearAsignacionViveroRequest,
+    authId?: string,
+  ): Promise<CrearAsignacionViveroResponseData> {
+    if (!Number.isFinite(loteId) || loteId <= 0) {
+      throw new Error('ID de lote de vivero invalido.')
+    }
+    if (!Number.isFinite(input.subcampania_id) || input.subcampania_id <= 0) {
+      throw new Error('Selecciona una subcampana destino.')
+    }
+    if (!Number.isFinite(input.cantidad_asignada) || input.cantidad_asignada <= 0) {
+      throw new Error('La cantidad a entregar debe ser mayor a 0.')
+    }
+    if (!Array.isArray(input.evidencia_ids) || input.evidencia_ids.length < 1) {
+      throw new Error('Adjunta al menos una foto como evidencia de la entrega.')
+    }
+    if (!input.fecha_asignacion) {
+      throw new Error('Indica la fecha de la entrega.')
+    }
+
+    const response = await crearAsignacionApi(loteId, input, authId)
+    const raw = await response.text()
+    const parsed = raw ? this.tryParseJson(raw) : null
+    if (!response.ok) {
+      throw new Error(this.mapAsignacionError(response.status, parsed, 'Error al crear la asignacion.'))
+    }
+    const data = (parsed as ApiEnvelope<CrearAsignacionViveroResponseData> | null)?.data
+    if (!data) {
+      throw new Error('No se recibio la asignacion creada.')
+    }
+    return { ...data, lote_finalizado: Boolean(data.lote_finalizado) }
+  }
+
+  // Devolucion fisica de stock asignado (reemplaza al viejo "cancelar reserva"
+  // por DELETE). El saldo del lote sube y puede reabrir un lote FINALIZADO.
+  // Admite devolucion parcial (cantidad_devuelta <= saldo_asignado_disponible).
+  static async devolverAsignacion(
+    loteId: number,
+    asignacionId: number,
+    input: DevolucionAsignacionRequest,
+    authId?: string,
+  ): Promise<DevolverAsignacionViveroResponseData> {
+    if (!Number.isFinite(loteId) || loteId <= 0) {
+      throw new Error('ID de lote de vivero invalido.')
+    }
+    if (!Number.isFinite(asignacionId) || asignacionId <= 0) {
+      throw new Error('ID de asignacion invalido.')
+    }
+    if (!Number.isFinite(input.cantidad_devuelta) || input.cantidad_devuelta <= 0) {
+      throw new Error('La cantidad a devolver debe ser mayor a 0.')
+    }
+    if (!input.motivo_devolucion?.trim()) {
+      throw new Error('Indica el motivo de la devolucion.')
+    }
+    if (!input.fecha_devolucion) {
+      throw new Error('Indica la fecha de la devolucion.')
+    }
+
+    const response = await devolverAsignacionApi(loteId, asignacionId, input, authId)
+    const raw = await response.text()
+    const parsed = raw ? this.tryParseJson(raw) : null
+    if (!response.ok) {
+      throw new Error(
+        this.mapAsignacionError(response.status, parsed, 'Error al registrar la devolucion.'),
+      )
+    }
+    const data = (parsed as ApiEnvelope<DevolverAsignacionViveroResponseData> | null)?.data
+    if (!data) {
+      throw new Error('No se recibio el resultado de la devolucion.')
+    }
+    return { ...data, lote_reabierto: Boolean(data.lote_reabierto) }
   }
 }
 

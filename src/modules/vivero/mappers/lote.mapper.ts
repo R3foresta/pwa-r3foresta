@@ -1,4 +1,4 @@
-import type { EvidenciaDto, LoteViveroItem } from '../types/contracts'
+import type { EvidenciaDto, LoteViveroDetalle, LoteViveroItem } from '../types/contracts'
 import type { ViveroLotCardData, ViveroLotDetailView } from '../types/view-models'
 import type { TimelineEventDto, TipoEventoVivero } from '../types/contracts'
 import type { ViveroLotEventView } from '../types/view-models'
@@ -6,6 +6,7 @@ import type { ViveroLotEventView } from '../types/view-models'
 const VALID_KINDS = new Set<TipoEventoVivero>([
   'INICIO',
   'EMBOLSADO',
+  'DESCARTE_PRE_EMBOLSADO',
   'ADAPTABILIDAD',
   'MERMA',
   'DESPACHO',
@@ -45,16 +46,36 @@ function getCurrentBalance(lot: LoteViveroItem): number | null {
 
 function getLotSpecies(lot: LoteViveroItem): string {
   // `nombre_comercial_snapshot` y `nombre_cientifico_snapshot` están garantizados
-  // (el backend los hereda al crear el lote). `lot.planta?.especie` se prefiere
-  // si el catálogo está disponible.
+  // (el backend los hereda al crear el lote). El nombre comercial se usa como
+  // etiqueta principal porque es el nombre operativo visible para el usuario.
   // Fallback final 'Sin especie' como red de seguridad: si los tres vienen
   // como string vacío (caso improbable según contrato pero posible si llega
   // data legacy o un endpoint distinto), evita devolver "" y romper labels UI.
   return (
-    lot.planta?.especie ||
     lot.nombre_comercial_snapshot ||
+    lot.planta?.nombre_comun_principal ||
+    lot.planta?.especie ||
     lot.nombre_cientifico_snapshot ||
     'Sin especie'
+  )
+}
+
+function getUltimoEventoPorTipo(
+  lot: LoteViveroItem,
+): LoteViveroDetalle['ultimo_evento_por_tipo'] | undefined {
+  return 'ultimo_evento_por_tipo' in lot
+    ? (lot as LoteViveroDetalle).ultimo_evento_por_tipo
+    : undefined
+}
+
+function canDescartarPreEmbolsado(lot: LoteViveroItem): boolean {
+  const ultimoEvento = getUltimoEventoPorTipo(lot)
+  return (
+    lot.estado_lote === 'ACTIVO' &&
+    ultimoEvento?.INICIO !== null &&
+    ultimoEvento?.INICIO !== undefined &&
+    ultimoEvento?.EMBOLSADO === null &&
+    ultimoEvento?.DESCARTE_PRE_EMBOLSADO === null
   )
 }
 
@@ -72,13 +93,14 @@ export function mapLoteToCardData(lot: LoteViveroItem): ViveroLotCardData {
     cantidadActual: getCurrentBalance(lot),
     unidadMedida: lot.unidad_medida_inicial,
     vivero: lot.vivero?.nombre || `Vivero #${lot.vivero_id}`,
-    saldoAsignadoTotal: lot.saldo_asignado_total,
-    saldoVivoDisponibleAsignacion: lot.saldo_vivo_disponible_asignacion,
+    saldoAsignadoSubcampanias: lot.saldo_asignado_subcampanias,
     cantidadAsignacionesActivas: lot.cantidad_asignaciones_activas,
+    puedeDescartarPreEmbolsado: canDescartarPreEmbolsado(lot),
   }
 }
 
 export function mapLoteToDetailView(lot: LoteViveroItem): ViveroLotDetailView {
+  const especie = getLotSpecies(lot)
   const responsableNombre =
     lot.responsable?.nombre ||
     lot.nombre_responsable_snapshot ||
@@ -98,9 +120,10 @@ export function mapLoteToDetailView(lot: LoteViveroItem): ViveroLotDetailView {
     plantasVivasIniciales: lot.plantas_vivas_iniciales,
     saldoVivoActual: lot.saldo_vivo_actual,
     stockVivoActual: lot.stock_vivo_actual,
-    especie: getLotSpecies(lot),
-    nombreCientifico: lot.planta?.nombre_cientifico || lot.nombre_cientifico_snapshot,
-    nombreComercial: lot.planta?.nombre_comun_principal || lot.nombre_comercial_snapshot,
+    especie,
+    nombreCientifico:
+      lot.nombre_cientifico_snapshot || lot.planta?.nombre_cientifico || 'Sin nombre científico',
+    nombreComercial: lot.nombre_comercial_snapshot || lot.planta?.nombre_comun_principal || especie,
     variedad: lot.planta?.variedad || lot.variedad_snapshot || null,
     plantaImagenUrl: lot.planta?.imagen_url || null,
     viveroNombre: lot.vivero?.nombre || `Vivero #${lot.vivero_id}`,
@@ -114,9 +137,9 @@ export function mapLoteToDetailView(lot: LoteViveroItem): ViveroLotDetailView {
     nombreComunidadOrigen: lot.nombre_comunidad_origen_snapshot,
     createdAt: lot.created_at,
     updatedAt: lot.updated_at,
-    saldoAsignadoTotal: lot.saldo_asignado_total,
-    saldoVivoDisponibleAsignacion: lot.saldo_vivo_disponible_asignacion,
+    saldoAsignadoSubcampanias: lot.saldo_asignado_subcampanias,
     cantidadAsignacionesActivas: lot.cantidad_asignaciones_activas,
+    puedeDescartarPreEmbolsado: canDescartarPreEmbolsado(lot),
   }
 }
 
@@ -127,23 +150,32 @@ export function mapTimelineEventToView(e: TimelineEventDto): ViveroLotEventView 
 
   const cantidadRaw = typeof p?.cantidad_afectada === 'number'
     ? p.cantidad_afectada
-    : (typeof p?.plantas_vivas_iniciales === 'number' ? p.plantas_vivas_iniciales : null);
+    : (typeof p?.plantas_vivas_iniciales === 'number'
+        ? p.plantas_vivas_iniciales
+        : (typeof p?.cantidad_material_afectado === 'number' ? p.cantidad_material_afectado : null));
 
   return {
     id: e.id,
     kind: (e.tipo_evento as TipoEventoVivero) || 'INICIO',
     label: e.label || `${e.tipo_evento?.replace(/_/g, ' ') || 'Evento'} registrado`,
-    fecha: e.fecha_evento ? new Date(e.fecha_evento).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Sin fecha',
+    fecha: e.fecha_evento ? new Date(e.fecha_evento).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) : 'Sin fecha',
     fechaIso: e.fecha_evento || new Date().toISOString(),
     // Se oculta temporalmente la hora. El backend está enviando
     // timestamps sin tiempo real (00:00:00 UTC), lo que en GMT-4 resulta en "20:00" falso.
     hora: null,
     responsableNombre: e.responsable_nombre || 'Operador de campo',
     cantidad: cantidadRaw,
+    unidadMedidaEvento: p?.unidad_medida_evento === 'UNIDAD' || p?.unidad_medida_evento === 'G'
+      ? p.unidad_medida_evento
+      : null,
     saldoAntes: typeof p?.saldo_vivo_antes === 'number' ? p.saldo_vivo_antes : null,
     saldoDespues: typeof p?.saldo_vivo_despues === 'number' ? p.saldo_vivo_despues : null,
     observacion: e.observaciones || null,
-    causa: (p?.causa_merma as string | undefined) || null,
+    causa:
+      (p?.causa_merma as string | undefined) ||
+      (p?.causa_descarte_pre_embolsado as string | undefined) ||
+      (p?.motivo_cierre_calculado as string | undefined) ||
+      null,
     subetapa: (p?.subetapa_destino as string | undefined) || null,
     destino: (p?.destino_tipo as string | undefined) || null,
     referencia: (p?.destino_referencia as string | undefined) || null,

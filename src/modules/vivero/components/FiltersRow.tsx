@@ -5,7 +5,16 @@ interface FiltersRowProps {
 }
 
 export default function FiltersRow({ active, onChange, counts }: FiltersRowProps) {
-  const filters = ['TODOS', 'INICIO', 'EMBOLSADO', 'MERMA', 'ADAPTABILIDAD', 'DESPACHO', 'CIERRE_AUTOMATICO'];
+  const filters = [
+    'TODOS',
+    'INICIO',
+    'EMBOLSADO',
+    'DESCARTE_PRE_EMBOLSADO',
+    'MERMA',
+    'ADAPTABILIDAD',
+    'DESPACHO',
+    'CIERRE_AUTOMATICO',
+  ];
 
   return (
     <section>

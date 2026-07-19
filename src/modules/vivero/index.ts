@@ -16,8 +16,10 @@ export type {
   TipoMaterialVivero,
   UnidadMedidaVivero,
   MotivoCierreVivero,
+  CausaDescartePreEmbolsado,
   ApiPagination,
   LoteViveroItem,
+  LoteViveroDetalle,
   ListLotesViveroQuery,
   ListLotesViveroResponse,
   UploadEvidenciasPendientesInput,
@@ -27,4 +29,6 @@ export type {
   UploadEvidenciasEventoResponse,
   CreateLoteViveroInput,
   CreateLoteViveroResponse,
+  RegistrarDescartePreEmbolsadoRequest,
+  RegistrarDescartePreEmbolsadoResponse,
 } from './types/contracts'
