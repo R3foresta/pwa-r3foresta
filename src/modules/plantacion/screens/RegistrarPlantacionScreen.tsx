@@ -11,6 +11,12 @@ import {
   type CantidadPorEspecie,
 } from '../utils/resolverDetallesAsignacion'
 import type { RegistroPlantacionData } from '../types/contracts'
+import WizardHeader from '../components/registro/WizardHeader'
+import StepFooter from '../components/registro/StepFooter'
+import GpsStatusCard from '../components/registro/GpsStatusCard'
+import SpeciesCounterRow from '../components/registro/SpeciesCounterRow'
+import SummaryRow from '../components/registro/SummaryRow'
+import SuccessOverlay from '../components/registro/SuccessOverlay'
 
 // PLT-FE-002/003/004/006/007: pantalla de registro de plantación inicial.
 // Un solo route con pasos internos:
@@ -20,10 +26,10 @@ import type { RegistroPlantacionData } from '../types/contracts'
 
 type Step = 1 | 2 | 3
 
-const STEP_LABEL: Record<Step, string> = {
-  1: 'Evidencia y GPS',
-  2: 'Cantidades y equipo',
-  3: 'Resumen',
+const STEP_TITLE: Record<Step, string> = {
+  1: 'Evidencia y ubicación',
+  2: '¿Cuánto plantaste?',
+  3: 'Confirma y registra',
 }
 
 function toLocalISODate(date: Date): string {
@@ -200,6 +206,12 @@ function RegistrarPlantacionScreen() {
     }
   }, [context, motivoBloqueo, latitud, longitud, getLocation])
 
+  // Al cambiar de paso, volver al inicio: el header es alto y cada paso
+  // arranca con su contexto visible.
+  useEffect(() => {
+    window.scrollTo({ top: 0 })
+  }, [step])
+
   // --------------------------------------------------------------------
   // Paso 1: fotos
   // --------------------------------------------------------------------
@@ -289,6 +301,8 @@ function RegistrarPlantacionScreen() {
   }, [context, cantidades, stockPorPlanta, permiteExcederMeta])
 
   const totalDeclarado = especieRows.reduce((sum, row) => sum + row.cantidad, 0)
+  const stockTotalDisponible = especieRows.reduce((sum, row) => sum + row.stock, 0)
+  const especiesConCantidad = especieRows.filter((row) => row.cantidad > 0)
   const hasCantidadErrors = especieRows.some((row) => row.inputError)
   const fechaValida = fecha >= fechaMinima && fecha <= hoyISO
   const observacionesValidas = observaciones.trim().length <= 2000
@@ -431,50 +445,23 @@ function RegistrarPlantacionScreen() {
   // --------------------------------------------------------------------
   // Render
   // --------------------------------------------------------------------
-  const renderHeader = () => (
-    <header className="sticky top-0 z-40 flex items-center justify-center border-b border-slate-200/50 bg-white/10 pb-4 pt-6 shadow-sm backdrop-blur-md">
-      <button
-        type="button"
-        aria-label="Volver"
-        onClick={handleBack}
-        className="absolute left-5 top-6 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-brand-700 shadow-soft transition hover:bg-white"
-      >
-        <Icon name="arrow-left" className="h-5 w-5" />
-      </button>
-      <div className="px-14 text-center">
-        <h1 className="text-xl font-extrabold tracking-tight text-brand-700">
-          Registrar plantación
-        </h1>
-        <p className="text-sm font-semibold text-brand-500">
-          Paso {step} de 3 · <span className="text-slate-500">{STEP_LABEL[step]}</span>
-        </p>
-      </div>
-    </header>
-  )
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-[#f6f7f3] to-[#eef1eb] text-brand-700">
-        <div className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center gap-3 px-8 text-center">
-          <svg className="h-8 w-8 animate-spin text-brand-500" viewBox="0 0 24 24">
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-              fill="none"
-            />
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-            />
-          </svg>
-          <p className="text-sm font-semibold text-brand-600">
-            Cargando contexto de plantación...
-          </p>
+        <div className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center gap-4 px-8 text-center">
+          <div className="relative flex h-16 w-16 items-center justify-center">
+            <div className="absolute inset-0 rounded-full border-4 border-brand-100" />
+            <div className="absolute inset-0 animate-spin rounded-full border-4 border-brand-500 border-t-transparent" />
+            <Icon name="planting" className="h-6 w-6 text-brand-500" />
+          </div>
+          <div>
+            <p className="text-sm font-extrabold text-brand-700">
+              Preparando el registro
+            </p>
+            <p className="mt-1 text-xs font-semibold text-brand-500">
+              Cargando plan de especies, stock y equipo...
+            </p>
+          </div>
         </div>
       </div>
     )
@@ -483,28 +470,33 @@ function RegistrarPlantacionScreen() {
   if (error || !context) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-[#f6f7f3] to-[#eef1eb] text-brand-700">
-        <div className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center gap-4 px-8 text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-100 text-red-500">
-            <Icon name="info" className="h-7 w-7" />
-          </div>
-          <p className="text-sm font-semibold text-red-600">
-            {error || 'No se pudo cargar el contexto de plantación.'}
-          </p>
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={() => navigate(detailPath)}
-              className="rounded-2xl border border-brand-200 bg-white px-5 py-3 text-sm font-extrabold text-brand-600 shadow-soft transition hover:bg-brand-50"
-            >
-              Volver
-            </button>
-            <button
-              type="button"
-              onClick={() => void refetch()}
-              className="rounded-2xl bg-brand-500 px-5 py-3 text-sm font-extrabold text-white shadow-soft transition hover:bg-brand-600"
-            >
-              Reintentar
-            </button>
+        <div className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center px-6 text-center">
+          <div className="w-full rounded-3xl bg-white p-6 shadow-soft ring-1 ring-black/5">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-100 text-red-500">
+              <Icon name="alert" className="h-7 w-7" />
+            </div>
+            <h2 className="mt-4 text-lg font-extrabold text-brand-700">
+              No se pudo cargar
+            </h2>
+            <p className="mt-1 text-sm font-semibold text-slate-500">
+              {error || 'No se pudo cargar el contexto de plantación.'}
+            </p>
+            <div className="mt-5 flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => void refetch()}
+                className="w-full rounded-2xl bg-brand-500 px-5 py-3.5 text-sm font-extrabold text-white shadow-soft transition hover:bg-brand-600"
+              >
+                Reintentar
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate(detailPath)}
+                className="w-full rounded-2xl border border-brand-200 bg-white px-5 py-3.5 text-sm font-extrabold text-brand-600 transition hover:bg-brand-50"
+              >
+                Volver
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -514,27 +506,29 @@ function RegistrarPlantacionScreen() {
   if (motivoBloqueo) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-[#f6f7f3] to-[#eef1eb] text-brand-700">
-        <div className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center gap-4 px-8 text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-amber-100 text-amber-600">
-            <Icon name="shield" className="h-7 w-7" />
+        <div className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center px-6 text-center">
+          <div className="w-full rounded-3xl bg-white p-6 shadow-soft ring-1 ring-black/5">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+              <Icon name="shield" className="h-7 w-7" />
+            </div>
+            <h2 className="mt-4 text-lg font-extrabold text-brand-700">
+              No puedes registrar aquí
+            </h2>
+            <p className="mt-1 text-sm font-semibold text-brand-600">{motivoBloqueo}</p>
+            <p className="mt-3 text-xs font-semibold text-slate-400">
+              {context.subcampania.nombre}
+              {context.subcampania.codigo_trazabilidad
+                ? ` · ${context.subcampania.codigo_trazabilidad}`
+                : ''}
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate(detailPath)}
+              className="mt-5 w-full rounded-2xl bg-brand-500 px-6 py-3.5 text-sm font-extrabold text-white shadow-soft transition hover:bg-brand-600"
+            >
+              Volver a la subcampaña
+            </button>
           </div>
-          <h2 className="text-lg font-extrabold text-brand-700">
-            No puedes registrar aquí
-          </h2>
-          <p className="text-sm font-semibold text-brand-600">{motivoBloqueo}</p>
-          <p className="text-xs font-semibold text-slate-500">
-            {context.subcampania.nombre}
-            {context.subcampania.codigo_trazabilidad
-              ? ` · ${context.subcampania.codigo_trazabilidad}`
-              : ''}
-          </p>
-          <button
-            type="button"
-            onClick={() => navigate(detailPath)}
-            className="rounded-2xl bg-brand-500 px-6 py-3 text-sm font-extrabold text-white shadow-soft transition hover:bg-brand-600"
-          >
-            Volver a la subcampaña
-          </button>
         </div>
       </div>
     )
@@ -542,30 +536,27 @@ function RegistrarPlantacionScreen() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#f6f7f3] to-[#eef1eb] text-brand-700">
-      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-24">
-        {renderHeader()}
+      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-28">
+        <WizardHeader
+          paso={step}
+          totalPasos={3}
+          title={STEP_TITLE[step]}
+          onBack={handleBack}
+          subcampaniaNombre={context.subcampania.nombre}
+          subcampaniaDetalle={[
+            context.subcampania.codigo_trazabilidad,
+            context.subcampania.campania_nombre,
+            context.subcampania.zona_nombre,
+          ]
+            .filter(Boolean)
+            .join(' · ')}
+        />
 
-        <div className="flex-1 space-y-5 px-5 pb-7 pt-4">
-          {/* Contexto de la subcampaña */}
-          <div className="rounded-2xl border border-brand-100 bg-white/80 px-4 py-3 shadow-soft">
-            <p className="text-sm font-extrabold text-brand-800">
-              {context.subcampania.nombre}
-            </p>
-            <p className="text-[11px] font-semibold text-brand-500">
-              {[
-                context.subcampania.codigo_trazabilidad,
-                context.subcampania.campania_nombre,
-                context.subcampania.zona_nombre,
-              ]
-                .filter(Boolean)
-                .join(' · ')}
-            </p>
-          </div>
-
+        <div className="flex-1 space-y-4 px-5 pt-4">
           {/* ------------------------- PASO 1 ------------------------- */}
           {step === 1 && (
             <>
-              <div className="rounded-2xl bg-white p-4 shadow-soft">
+              <section className="rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
                 <FotosUploader
                   photos={photos}
                   onAdd={handleAddPhotos}
@@ -577,431 +568,369 @@ function RegistrarPlantacionScreen() {
                     minFotos === 1 ? '' : 's'
                   } de la plantación.`}
                 />
-              </div>
+              </section>
 
-              <div className="space-y-3 rounded-2xl bg-white p-4 shadow-soft">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-extrabold text-brand-700">
-                    Ubicación GPS
-                    <span className="ml-2 text-[10px] font-bold uppercase tracking-wider text-red-500">
-                      Obligatorio
-                    </span>
-                  </p>
-                  <button
-                    type="button"
-                    onClick={getLocation}
-                    disabled={gpsLoading}
-                    className="flex items-center gap-1.5 rounded-xl border border-brand-300 bg-brand-50 px-3 py-2 text-xs font-extrabold text-brand-600 transition hover:bg-brand-100 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <Icon name="pin" className="h-4 w-4" />
-                    {gpsLoading ? 'Capturando...' : latitud ? 'Reintentar' : 'Capturar'}
-                  </button>
-                </div>
+              <GpsStatusCard
+                latitud={latitud}
+                longitud={longitud}
+                precisionM={precisionM}
+                loading={gpsLoading}
+                error={gpsError}
+                precisionAdvertenciaM={precisionAdvertenciaM}
+                hasCoords={hasCoords}
+                coordsInRange={coordsInRange}
+                dentroDePoligono={dentroDePoligono}
+                showValidation={step1Touched}
+                onCapture={getLocation}
+                onChangeLatitud={(value) => {
+                  setLatitud(value)
+                  setPrecisionM(null)
+                }}
+                onChangeLongitud={(value) => {
+                  setLongitud(value)
+                  setPrecisionM(null)
+                }}
+              />
 
-                <div className="flex gap-3">
-                  <div className="flex-1 space-y-1">
-                    <p className="text-xs font-semibold text-brand-600">Latitud</p>
-                    <input
-                      type="text"
-                      inputMode="decimal"
-                      value={latitud}
-                      onChange={(event) => {
-                        setLatitud(event.target.value)
-                        setPrecisionM(null)
-                      }}
-                      placeholder="-16.500000"
-                      className={`w-full rounded-2xl border px-3 py-2.5 text-sm font-semibold text-slate-700 shadow-soft outline-none transition focus:ring-2 ${
-                        step1Touched && !coordsInRange
-                          ? 'border-red-400 bg-red-50 focus:border-red-400 focus:ring-red-200'
-                          : 'border-slate-200 bg-white focus:border-brand-400 focus:ring-brand-200'
-                      }`}
-                    />
-                  </div>
-                  <div className="flex-1 space-y-1">
-                    <p className="text-xs font-semibold text-brand-600">Longitud</p>
-                    <input
-                      type="text"
-                      inputMode="decimal"
-                      value={longitud}
-                      onChange={(event) => {
-                        setLongitud(event.target.value)
-                        setPrecisionM(null)
-                      }}
-                      placeholder="-68.150000"
-                      className={`w-full rounded-2xl border px-3 py-2.5 text-sm font-semibold text-slate-700 shadow-soft outline-none transition focus:ring-2 ${
-                        step1Touched && !coordsInRange
-                          ? 'border-red-400 bg-red-50 focus:border-red-400 focus:ring-red-200'
-                          : 'border-slate-200 bg-white focus:border-brand-400 focus:ring-brand-200'
-                      }`}
-                    />
-                  </div>
-                </div>
-
-                <p className="text-xs font-semibold text-slate-500">
-                  {precisionM !== null
-                    ? `Precisión aproximada: ${precisionM} m`
-                    : hasCoords
-                      ? 'Precisión no disponible (coordenadas manuales).'
-                      : 'Captura tu posición para registrar el punto de plantación.'}
-                </p>
-
-                {gpsError && (
-                  <p className="text-xs font-semibold text-red-500">{gpsError}</p>
-                )}
-                {step1Touched && !hasCoords && (
-                  <p className="text-xs font-semibold text-red-500">
-                    * La ubicación GPS es obligatoria para continuar.
-                  </p>
-                )}
-                {step1Touched && hasCoords && !coordsInRange && (
-                  <p className="text-xs font-semibold text-red-500">
-                    * Coordenadas fuera de rango: latitud entre -90 y 90, longitud
-                    entre -180 y 180.
-                  </p>
-                )}
-
-                {precisionBaja && (
-                  <div className="flex items-start gap-2 rounded-2xl border border-amber-300 bg-amber-50 p-3">
-                    <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
-                    <p className="text-xs font-bold text-amber-700">
-                      Precisión baja ({precisionM} m, más de {precisionAdvertenciaM} m).
-                      Muévete a cielo abierto y reintenta para mejorar la señal. Puedes
-                      continuar de todas formas.
-                    </p>
-                  </div>
-                )}
-
-                {dentroDePoligono === false && (
-                  <div className="flex items-start gap-2 rounded-2xl border border-amber-300 bg-amber-50 p-3">
-                    <Icon name="map" className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
-                    <p className="text-xs font-bold text-amber-700">
-                      El punto parece estar fuera del polígono de la subcampaña. El
-                      registro no se bloquea: se guardará con una advertencia que
-                      evalúa el servidor.
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              <button
-                type="button"
+              <StepFooter
+                label="Continuar"
                 onClick={handleContinueStep1}
-                className="w-full rounded-2xl bg-brand-500 py-4 text-center text-lg font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99]"
-              >
-                Continuar
-              </button>
+                hint={`Mínimo ${minFotos} foto${minFotos === 1 ? '' : 's'} · GPS obligatorio`}
+              />
             </>
           )}
 
           {/* ------------------------- PASO 2 ------------------------- */}
           {step === 2 && (
             <>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-base font-extrabold text-brand-700">
-                    Cantidades por especie
-                  </h2>
-                  <span className="rounded-full bg-brand-100 px-3 py-1 text-xs font-extrabold text-brand-700">
-                    Total: {totalDeclarado}
-                  </span>
-                </div>
-
-                {especieRows.map((row) => (
-                  <div key={row.planta_id} className="rounded-2xl bg-white p-4 shadow-soft">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="text-sm font-extrabold text-brand-800">{row.nombre}</p>
-                        {row.nombre_cientifico && (
-                          <p className="truncate text-[11px] font-semibold italic text-slate-400">
-                            {row.nombre_cientifico}
-                          </p>
-                        )}
-                      </div>
-                      <input
-                        type="number"
-                        inputMode="numeric"
-                        min={0}
-                        max={row.maxRegistrable}
-                        step={1}
-                        value={cantidades[row.planta_id] ?? ''}
-                        onChange={(event) =>
-                          setCantidades((prev) => ({
-                            ...prev,
-                            [row.planta_id]: event.target.value,
-                          }))
-                        }
-                        disabled={row.maxRegistrable === 0}
-                        placeholder="0"
-                        className={`w-24 shrink-0 rounded-2xl border px-3 py-2.5 text-center text-base font-extrabold text-brand-800 shadow-soft outline-none transition focus:ring-2 disabled:bg-slate-50 disabled:text-slate-300 ${
-                          row.inputError
-                            ? 'border-red-400 bg-red-50 focus:border-red-400 focus:ring-red-200'
-                            : 'border-slate-200 bg-white focus:border-brand-400 focus:ring-brand-200'
-                        }`}
-                      />
-                    </div>
-
-                    <div className="mt-2 flex flex-wrap gap-1.5 text-[10px] font-bold uppercase tracking-wide">
-                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-500">
-                        Objetivo {row.objetivo}
-                      </span>
-                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-500">
-                        Plantado {row.plantado}
-                      </span>
-                      <span className="rounded-full bg-brand-50 px-2 py-0.5 text-brand-600">
-                        Pendiente {row.pendiente}
-                      </span>
-                      <span
-                        className={`rounded-full px-2 py-0.5 ${
-                          row.stock > 0
-                            ? 'bg-emerald-50 text-emerald-600'
-                            : 'bg-red-50 text-red-500'
-                        }`}
-                      >
-                        Stock {row.stock}
-                      </span>
-                    </div>
-
-                    {row.inputError && (
-                      <p className="mt-2 text-xs font-semibold text-red-500">
-                        {row.inputError}
-                      </p>
-                    )}
-                    {row.maxRegistrable === 0 && !row.inputError && (
-                      <p className="mt-2 text-xs font-semibold text-slate-400">
-                        {row.stock === 0
-                          ? 'Sin stock asignado disponible para esta especie.'
-                          : 'La meta de esta especie ya está cubierta.'}
-                      </p>
-                    )}
+              <div className="rounded-3xl bg-gradient-to-br from-brand-600 to-brand-700 px-4 py-4 text-white shadow-soft">
+                <div className="flex items-end justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-white/80">
+                      Total esta plantación
+                    </p>
+                    <p className="mt-1 text-5xl font-extrabold leading-none tracking-tight tabular-nums">
+                      {totalDeclarado}
+                    </p>
+                    <p className="mt-1 text-[11px] font-bold text-white/80">
+                      {especiesConCantidad.length === 0
+                        ? 'plantas en este registro'
+                        : `plantas en ${especiesConCantidad.length} ${
+                            especiesConCantidad.length === 1 ? 'especie' : 'especies'
+                          }`}
+                    </p>
                   </div>
-                ))}
-
-                {step2Touched && totalDeclarado === 0 && !hasCantidadErrors && (
-                  <p className="text-xs font-semibold text-red-500">
-                    * Declara al menos una planta para continuar.
-                  </p>
-                )}
+                  <div className="text-right">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-white/70">
+                      Stock disponible
+                    </p>
+                    <p className="text-lg font-extrabold tabular-nums">
+                      {stockTotalDisponible}
+                    </p>
+                  </div>
+                </div>
               </div>
 
-              <div className="space-y-2 rounded-2xl bg-white p-4 shadow-soft">
-                <p className="text-sm font-extrabold text-brand-700">
-                  Fecha de plantación
+              {especieRows.map((row) => (
+                <SpeciesCounterRow
+                  key={row.planta_id}
+                  nombre={row.nombre}
+                  nombreCientifico={row.nombre_cientifico}
+                  objetivo={row.objetivo}
+                  plantado={row.plantado}
+                  pendiente={row.pendiente}
+                  stock={row.stock}
+                  maxRegistrable={row.maxRegistrable}
+                  value={cantidades[row.planta_id] ?? ''}
+                  cantidad={row.cantidad}
+                  inputError={row.inputError}
+                  onChange={(value) =>
+                    setCantidades((prev) => ({ ...prev, [row.planta_id]: value }))
+                  }
+                />
+              ))}
+
+              {step2Touched && totalDeclarado === 0 && !hasCantidadErrors && (
+                <p className="text-xs font-semibold text-red-500">
+                  * Declara al menos una planta para continuar.
                 </p>
+              )}
+
+              <section className="rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
+                <div className="flex items-center gap-2">
+                  <Icon name="date" className="h-4 w-4 text-brand-500" />
+                  <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
+                    Fecha de plantación
+                  </p>
+                </div>
                 <input
                   type="date"
                   value={fecha}
                   min={fechaMinima}
                   max={hoyISO}
                   onChange={(event) => setFecha(event.target.value)}
-                  className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-slate-700 shadow-soft outline-none transition focus:ring-2 ${
+                  className={`mt-2 w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-slate-700 shadow-soft outline-none transition focus:ring-2 ${
                     step2Touched && !fechaValida
                       ? 'border-red-400 bg-red-50 focus:border-red-400 focus:ring-red-200'
                       : 'border-slate-200 bg-white focus:border-brand-400 focus:ring-brand-200'
                   }`}
                 />
-                <p className="text-xs font-semibold text-slate-500">
+                <p className="mt-1.5 text-xs font-semibold text-slate-400">
                   Se admite hasta {maxDiasRetroactivos} días hacia atrás.
                 </p>
                 {step2Touched && !fechaValida && (
-                  <p className="text-xs font-semibold text-red-500">
+                  <p className="mt-1 text-xs font-semibold text-red-500">
                     * La fecha debe estar entre {fechaMinima} y {hoyISO}.
                   </p>
                 )}
-              </div>
+              </section>
 
-              <div className="space-y-2 rounded-2xl bg-white p-4 shadow-soft">
-                <p className="text-sm font-extrabold text-brand-700">
-                  Coresponsables
-                  <span className="ml-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              <section className="rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Icon name="users" className="h-4 w-4 text-brand-500" />
+                    <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
+                      ¿Plantaste con alguien?
+                    </p>
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                     Opcional
                   </span>
-                </p>
+                </div>
+
                 {equipoSeleccionable.length === 0 ? (
-                  <p className="text-xs font-semibold text-slate-400">
+                  <p className="mt-2 text-xs font-semibold text-slate-400">
                     No hay otros miembros en el equipo de esta subcampaña.
                   </p>
                 ) : (
-                  <div className="space-y-1">
+                  <ul className="mt-3 space-y-2">
                     {equipoSeleccionable.map((member) => {
                       const checked = coresponsableIds.includes(member.usuario_id)
+                      const nombre =
+                        member.nombre_usuario || `Usuario ${member.usuario_id}`
+                      const iniciales = nombre
+                        .split(/\s+/)
+                        .slice(0, 2)
+                        .map((part) => part.charAt(0).toUpperCase())
+                        .join('')
                       return (
-                        <label
-                          key={member.usuario_id}
-                          className={`flex cursor-pointer items-center justify-between rounded-2xl border px-3 py-2.5 transition ${
-                            checked
-                              ? 'border-brand-300 bg-brand-50'
-                              : 'border-slate-100 bg-white hover:bg-slate-50'
-                          }`}
-                        >
-                          <span className="flex min-w-0 items-center gap-2">
+                        <li key={member.usuario_id}>
+                          <button
+                            type="button"
+                            onClick={() => toggleCoresponsable(member.usuario_id)}
+                            className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left shadow-soft ring-1 transition ${
+                              checked
+                                ? 'bg-brand-600 text-white ring-brand-700'
+                                : 'bg-white text-brand-800 ring-black/5 hover:ring-brand-300'
+                            }`}
+                          >
                             <span
-                              className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${
+                              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-extrabold tracking-wide ${
                                 checked
-                                  ? 'border-brand-500 bg-brand-500 text-white'
-                                  : 'border-slate-300 bg-white'
+                                  ? 'bg-white/20 text-white'
+                                  : 'bg-brand-50 text-brand-700'
                               }`}
                             >
-                              {checked && <Icon name="check" className="h-3.5 w-3.5" />}
+                              {iniciales}
                             </span>
-                            <span className="truncate text-sm font-bold text-brand-800">
-                              {member.nombre_usuario || `Usuario ${member.usuario_id}`}
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-sm font-extrabold leading-tight">
+                                {nombre}
+                              </span>
+                              <span
+                                className={`block text-[10px] font-bold uppercase tracking-[0.14em] ${
+                                  checked ? 'text-white/75' : 'text-brand-500'
+                                }`}
+                              >
+                                {member.rol === 'COORDINADOR'
+                                  ? 'Coordinador'
+                                  : 'Operario'}
+                              </span>
                             </span>
-                          </span>
-                          <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider text-brand-500">
-                            {member.rol === 'COORDINADOR' ? 'Coordinador' : 'Operario'}
-                          </span>
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() => toggleCoresponsable(member.usuario_id)}
-                            className="hidden"
-                          />
-                        </label>
+                            <span
+                              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${
+                                checked
+                                  ? 'bg-white text-brand-700'
+                                  : 'bg-slate-100 text-slate-400'
+                              }`}
+                            >
+                              <Icon
+                                name={checked ? 'check' : 'plus'}
+                                className="h-4 w-4"
+                              />
+                            </span>
+                          </button>
+                        </li>
                       )
                     })}
-                  </div>
+                  </ul>
                 )}
-              </div>
+              </section>
 
-              <div className="space-y-2 rounded-2xl bg-white p-4 shadow-soft">
-                <p className="text-sm font-extrabold text-brand-700">
-                  Observaciones
-                  <span className="ml-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              <section className="rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Icon name="note" className="h-4 w-4 text-brand-500" />
+                    <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
+                      Notas de campo
+                    </p>
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                     Opcional
                   </span>
-                </p>
+                </div>
                 <textarea
                   value={observaciones}
                   onChange={(event) => setObservaciones(event.target.value)}
                   rows={3}
                   maxLength={2000}
-                  placeholder="Plantación inicial sector A..."
-                  className="w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
+                  placeholder="Cómo encontraste el terreno, condiciones del suelo, clima..."
+                  className="mt-2 w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-soft outline-none transition placeholder:text-slate-400 focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
                 />
                 <p className="text-right text-[11px] font-semibold text-slate-400">
                   {observaciones.trim().length}/2000
                 </p>
-              </div>
+              </section>
 
-              <button
-                type="button"
-                onClick={handleContinueStep2}
-                className="w-full rounded-2xl bg-brand-500 py-4 text-center text-lg font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99]"
-              >
-                Revisar resumen
-              </button>
+              <StepFooter label="Revisar resumen" onClick={handleContinueStep2} />
             </>
           )}
 
           {/* ------------------------- PASO 3 ------------------------- */}
           {step === 3 && (
             <>
-              <div className="space-y-3 rounded-2xl bg-white p-4 shadow-soft">
-                <h2 className="text-base font-extrabold text-brand-700">
-                  Resumen del registro
-                </h2>
-
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between gap-3">
-                    <span className="font-semibold text-slate-500">Subcampaña</span>
-                    <span className="text-right font-extrabold text-brand-800">
-                      {context.subcampania.nombre}
-                    </span>
+              <div className="rounded-3xl bg-gradient-to-br from-brand-700 to-brand-800 px-4 py-4 text-white shadow-soft">
+                <p className="text-[10.5px] font-extrabold uppercase tracking-[0.22em] text-white/80">
+                  Vas a registrar
+                </p>
+                <div className="mt-1 flex items-end justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[44px] font-extrabold leading-none tracking-tight tabular-nums">
+                      {totalDeclarado}
+                    </p>
+                    <p className="mt-1 text-[11px] font-bold text-white/85">
+                      {totalDeclarado === 1 ? 'planta' : 'plantas'} en{' '}
+                      {especiesConCantidad.length}{' '}
+                      {especiesConCantidad.length === 1 ? 'especie' : 'especies'}
+                    </p>
                   </div>
-                  <div className="flex justify-between gap-3">
-                    <span className="font-semibold text-slate-500">Fecha</span>
-                    <span className="font-extrabold text-brand-800">{fecha}</span>
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/25">
+                    <Icon name="planting" className="h-6 w-6" />
                   </div>
-                  <div className="flex justify-between gap-3">
-                    <span className="font-semibold text-slate-500">GPS</span>
-                    <span className="text-right font-extrabold text-brand-800">
-                      {parsedLat.toFixed(6)}, {parsedLng.toFixed(6)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between gap-3">
-                    <span className="font-semibold text-slate-500">Precisión</span>
-                    <span
-                      className={`font-extrabold ${
-                        precisionBaja ? 'text-amber-600' : 'text-brand-800'
-                      }`}
-                    >
-                      {precisionM !== null ? `${precisionM} m` : 'No disponible'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between gap-3">
-                    <span className="font-semibold text-slate-500">Fotos</span>
-                    <span className="font-extrabold text-brand-800">{photos.length}</span>
-                  </div>
-                  <div className="flex justify-between gap-3">
-                    <span className="font-semibold text-slate-500">Coresponsables</span>
-                    <span className="text-right font-extrabold text-brand-800">
-                      {coresponsablesSeleccionados.length > 0
-                        ? coresponsablesSeleccionados
-                            .map((m) => m.nombre_usuario || `Usuario ${m.usuario_id}`)
-                            .join(', ')
-                        : '—'}
-                    </span>
-                  </div>
-                  {observaciones.trim() && (
-                    <div>
-                      <p className="font-semibold text-slate-500">Observaciones</p>
-                      <p className="mt-1 whitespace-pre-line rounded-xl bg-slate-50 p-3 text-xs font-semibold text-slate-600">
-                        {observaciones.trim()}
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="-mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-1">
-                  {photos.map((photo) => (
-                    <img
-                      key={photo.previewUrl}
-                      src={photo.previewUrl}
-                      alt={photo.file.name}
-                      className="h-16 w-16 shrink-0 snap-start rounded-xl object-cover ring-1 ring-black/5"
-                    />
-                  ))}
                 </div>
               </div>
 
-              <div className="space-y-2 rounded-2xl bg-white p-4 shadow-soft">
-                <p className="text-sm font-extrabold text-brand-700">Especies a registrar</p>
-                {especieRows
-                  .filter((row) => row.cantidad > 0)
-                  .map((row) => (
+              <div className="divide-y divide-slate-100 rounded-3xl bg-white shadow-soft ring-1 ring-black/5">
+                <SummaryRow icon="date" label="Fecha de plantación" value={fecha} />
+                <SummaryRow
+                  icon="pin"
+                  label="Ubicación GPS"
+                  accent={precisionBaja ? 'amber' : 'brand'}
+                  value={
+                    <span className="tabular-nums">
+                      {parsedLat.toFixed(6)}, {parsedLng.toFixed(6)}
+                      <span
+                        className={`ml-1.5 text-[11px] font-bold ${
+                          precisionBaja ? 'text-amber-600' : 'text-slate-400'
+                        }`}
+                      >
+                        {precisionM !== null ? `±${precisionM} m` : 'manual'}
+                      </span>
+                    </span>
+                  }
+                />
+                <SummaryRow
+                  icon="users"
+                  label="Co-responsables"
+                  value={
+                    coresponsablesSeleccionados.length > 0
+                      ? coresponsablesSeleccionados
+                          .map((m) => m.nombre_usuario || `Usuario ${m.usuario_id}`)
+                          .join(', ')
+                      : 'Solo tú'
+                  }
+                />
+                {observaciones.trim() && (
+                  <SummaryRow
+                    icon="note"
+                    label="Notas de campo"
+                    value={
+                      <span className="whitespace-pre-line text-xs font-semibold text-slate-600">
+                        {observaciones.trim()}
+                      </span>
+                    }
+                  />
+                )}
+                <div className="px-4 py-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-brand-500">
+                      Evidencia fotográfica
+                    </p>
+                    <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
+                      {photos.length} {photos.length === 1 ? 'foto' : 'fotos'}
+                    </span>
+                  </div>
+                  <div className="-mx-1 mt-2 flex snap-x gap-2 overflow-x-auto px-1 pb-1">
+                    {photos.map((photo) => (
+                      <img
+                        key={photo.previewUrl}
+                        src={photo.previewUrl}
+                        alt={photo.file.name}
+                        className="h-16 w-16 shrink-0 snap-start rounded-xl object-cover ring-1 ring-black/5"
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
+                <div className="flex items-center gap-2">
+                  <Icon name="leaf" className="h-4 w-4 text-brand-500" />
+                  <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
+                    Especies a registrar
+                  </p>
+                </div>
+                <div className="mt-2 space-y-1.5">
+                  {especiesConCantidad.map((row) => (
                     <div
                       key={row.planta_id}
                       className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2"
                     >
-                      <span className="text-sm font-bold text-brand-800">{row.nombre}</span>
-                      <span className="text-sm font-extrabold text-brand-600">
+                      <span className="text-sm font-bold text-brand-800">
+                        {row.nombre}
+                      </span>
+                      <span className="text-sm font-extrabold tabular-nums text-brand-600">
                         {row.cantidad}
                       </span>
                     </div>
                   ))}
-                <div className="flex items-center justify-between border-t border-slate-100 px-3 pt-2">
+                </div>
+                <div className="mt-2 flex items-center justify-between border-t border-slate-100 px-3 pt-2">
                   <span className="text-sm font-extrabold text-brand-700">Total</span>
-                  <span className="text-base font-extrabold text-brand-700">
+                  <span className="text-base font-extrabold tabular-nums text-brand-700">
                     {totalDeclarado}
                   </span>
                 </div>
-                <p className="text-[11px] font-semibold text-slate-400">
-                  El stock se consumirá automáticamente de las asignaciones más antiguas
-                  de cada especie.
+                <p className="mt-2 text-[11px] font-semibold text-slate-400">
+                  El stock se consumirá automáticamente de las asignaciones más
+                  antiguas de cada especie.
                 </p>
               </div>
 
               {(precisionBaja || dentroDePoligono === false) && (
                 <div className="flex items-start gap-2 rounded-2xl border border-amber-300 bg-amber-50 p-3">
-                  <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                  <Icon
+                    name="alert"
+                    className="mt-0.5 h-4 w-4 shrink-0 text-amber-600"
+                  />
                   <div className="space-y-1 text-xs font-bold text-amber-700">
                     {precisionBaja && (
-                      <p>La precisión del GPS es baja ({precisionM} m).</p>
+                      <p>La precisión del GPS es baja (±{precisionM} m).</p>
                     )}
                     {dentroDePoligono === false && (
                       <p>
-                        El punto parece fuera del polígono; se guardará con advertencia
-                        del servidor, sin bloquear.
+                        El punto parece fuera del polígono; se guardará con
+                        advertencia del servidor, sin bloquear.
                       </p>
                     )}
                   </div>
@@ -1017,123 +946,35 @@ function RegistrarPlantacionScreen() {
                     El registro no se guardó. Revisa los datos e intenta de nuevo.
                   </p>
                   {cleanupWarning && (
-                    <p className="text-xs font-semibold text-amber-600">{cleanupWarning}</p>
+                    <p className="text-xs font-semibold text-amber-600">
+                      {cleanupWarning}
+                    </p>
                   )}
                 </div>
               )}
 
-              <button
-                type="button"
+              <StepFooter
+                label={saving ? 'Guardando registro...' : 'Confirmar y guardar'}
                 onClick={() => void handleGuardar()}
                 disabled={saving}
-                className="w-full rounded-2xl bg-brand-500 py-4 text-center text-lg font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
-              >
-                {saving ? 'Guardando registro...' : 'Confirmar y guardar'}
-              </button>
-              <p className="text-center text-[11px] font-semibold text-slate-400">
-                Al confirmar se suben las fotos y se consume el stock asignado.
-              </p>
+                tone="success"
+                hint="Al confirmar se suben las fotos y se consume el stock asignado."
+              />
             </>
           )}
         </div>
       </div>
 
-      {/* ---------------------- COMPROBANTE ---------------------- */}
-      {comprobante && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-5 backdrop-blur-sm">
-          <div className="max-h-[85vh] w-full max-w-sm overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl">
-            <div className="mb-3 flex justify-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
-                <Icon name="check" className="h-8 w-8 text-emerald-600" />
-              </div>
-            </div>
-            <h3 className="text-center text-lg font-extrabold text-brand-700">
-              Plantación registrada
-            </h3>
-            <p className="mt-1 text-center text-sm font-extrabold tracking-wide text-brand-500">
-              {comprobante.codigo_trazabilidad}
-            </p>
-
-            <div className="mt-4 space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="font-semibold text-slate-500">Registro</span>
-                <span className="font-extrabold text-brand-800">
-                  #{comprobante.registro_plantacion_id}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-semibold text-slate-500">Total plantado</span>
-                <span className="font-extrabold text-brand-800">
-                  {comprobante.cantidad_total_plantada} árboles
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-semibold text-slate-500">GPS</span>
-                <span
-                  className={`text-right font-extrabold ${
-                    comprobante.gps_dentro_poligono === false
-                      ? 'text-amber-600'
-                      : 'text-emerald-600'
-                  }`}
-                >
-                  {comprobante.gps_dentro_poligono === false
-                    ? `Fuera del polígono${
-                        typeof comprobante.gps_distancia_a_poligono_m === 'number'
-                          ? ` (~${Math.round(comprobante.gps_distancia_a_poligono_m)} m)`
-                          : ''
-                      }`
-                    : 'Dentro del polígono'}
-                </span>
-              </div>
-              {(comprobante.evidencia_ids_vinculadas?.length ?? 0) > 0 && (
-                <div className="flex justify-between">
-                  <span className="font-semibold text-slate-500">Evidencias</span>
-                  <span className="font-extrabold text-brand-800">
-                    {comprobante.evidencia_ids_vinculadas?.length}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {(comprobante.consumos?.length ?? 0) > 0 && (
-              <div className="mt-4 space-y-1.5">
-                <p className="text-xs font-extrabold uppercase tracking-wider text-slate-400">
-                  Consumos por asignación
-                </p>
-                {comprobante.consumos?.map((consumo) => (
-                  <div
-                    key={consumo.asignacion_id}
-                    className="rounded-xl bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600"
-                  >
-                    <div className="flex justify-between">
-                      <span>
-                        {codigoLotePorId.get(consumo.lote_vivero_id) ||
-                          `Lote #${consumo.lote_vivero_id}`}
-                        {' · '}Asig. #{consumo.asignacion_id}
-                      </span>
-                      <span className="font-extrabold text-brand-700">
-                        −{consumo.cantidad_consumida}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-400">
-                      Saldo: {consumo.saldo_asignado_antes} →{' '}
-                      {consumo.saldo_asignado_despues}
-                      {consumo.estado_final === 'AGOTADA' ? ' · Agotada' : ''}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <button
-              type="button"
-              onClick={() => navigate(detailPath, { replace: true })}
-              className="mt-5 w-full rounded-2xl bg-brand-600 px-4 py-3.5 text-sm font-extrabold text-white transition hover:bg-brand-700"
-            >
-              Volver a la subcampaña
-            </button>
-          </div>
-        </div>
+      {/* ------------------- GUARDADO + COMPROBANTE ------------------- */}
+      {(saving || comprobante) && (
+        <SuccessOverlay
+          phase={comprobante ? 'exito' : 'guardando'}
+          nombreUsuario={user?.nombre?.split(' ')[0] || user?.username}
+          subcampaniaNombre={context.subcampania.nombre}
+          comprobante={comprobante}
+          codigoLotePorId={codigoLotePorId}
+          onFinish={() => navigate(detailPath, { replace: true })}
+        />
       )}
     </div>
   )

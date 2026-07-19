@@ -47,6 +47,12 @@ export type IconName =
   | 'pause'
   | 'layers'
   | 'ellipsis'
+  | 'camera'
+  | 'crosshair'
+  | 'refresh'
+  | 'alert'
+  | 'check-circle'
+  | 'note'
 
 type Props = {
   name: IconName
@@ -409,6 +415,50 @@ function Icon({ name, className }: Props) {
           <circle cx="5" cy="12" r="1.8" />
           <circle cx="12" cy="12" r="1.8" />
           <circle cx="19" cy="12" r="1.8" />
+        </svg>
+      )
+    case 'camera':
+      return (
+        <svg className={`${common} ${className ?? ''}`} viewBox="0 0 24 24" fill="none" strokeWidth="1.8">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2.1l1.15-1.73A1 1 0 0 1 9.58 4.8h4.84a1 1 0 0 1 .83.45L16.4 7h2.1A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5v-9Z" />
+          <circle cx="12" cy="13" r="3.2" />
+        </svg>
+      )
+    case 'crosshair':
+      return (
+        <svg className={`${common} ${className ?? ''}`} viewBox="0 0 24 24" fill="none" strokeWidth="1.8">
+          <circle cx="12" cy="12" r="7" />
+          <path strokeLinecap="round" d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3" />
+          <circle cx="12" cy="12" r="1.1" fill="currentColor" />
+        </svg>
+      )
+    case 'refresh':
+      return (
+        <svg className={`${common} ${className ?? ''}`} viewBox="0 0 24 24" fill="none" strokeWidth="1.8">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M20.5 12a8.5 8.5 0 1 1-2.5-6" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M20.5 3.5v5h-5" />
+        </svg>
+      )
+    case 'alert':
+      return (
+        <svg className={`${common} ${className ?? ''}`} viewBox="0 0 24 24" fill="none" strokeWidth="1.8">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M10.3 4.6 2.9 17.4a2 2 0 0 0 1.73 3h14.74a2 2 0 0 0 1.73-3L13.7 4.6a2 2 0 0 0-3.4 0Z" />
+          <path strokeLinecap="round" d="M12 9.5v4.5" />
+          <circle cx="12" cy="17" r="0.9" fill="currentColor" />
+        </svg>
+      )
+    case 'check-circle':
+      return (
+        <svg className={`${common} ${className ?? ''}`} viewBox="0 0 24 24" fill="none" strokeWidth="1.8">
+          <circle cx="12" cy="12" r="9" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="m8.5 12.5 2.5 2.5 4.5-5.5" />
+        </svg>
+      )
+    case 'note':
+      return (
+        <svg className={`${common} ${className ?? ''}`} viewBox="0 0 24 24" fill="none" strokeWidth="1.8">
+          <path strokeLinecap="round" strokeLinejoin="round" d="m16.5 4.5 3 3L9 18l-4 1 1-4L16.5 4.5Z" />
+          <path strokeLinecap="round" d="m14.5 6.5 3 3" />
         </svg>
       )
     default:
