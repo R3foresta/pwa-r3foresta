@@ -9,7 +9,7 @@ import {
   type TipoCampania,
 } from '../types/contracts'
 import type { CrearCampaniaFormValues } from '../utils/crearCampaniaForm'
-import { getInitials } from './UserAvatar'
+import { getInitials } from '../utils/userAvatar'
 
 // Orden visual del selector — Arborización primero por producto.
 // El array de validación vive en `plantacion.service.ts` (`TIPOS_CAMPANIA`) con

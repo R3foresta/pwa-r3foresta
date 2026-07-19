@@ -30,7 +30,27 @@ export interface ProfileFormResponse {
   message?: string
 }
 
-export interface ProfileUpdateRequest extends ProfileFormData {}
+export type ProfileUpdateRequest = ProfileFormData
+
+export type UserProfileResponse = {
+  id?: string | number
+  username: string
+  correo?: string
+  auth_id: string
+  nombre?: string | null
+  apellido?: string | null
+  doc_identidad?: string | null
+  wallet_address?: string | null
+  organizacion?: string | null
+  contacto?: string | null
+  rol?: string | null
+  created_at?: string | null
+  foto_perfil_url?: string | null
+}
+
+export type ProfilePhotoResponse = {
+  foto_perfil_url: string
+}
 
 export interface ProfileValidationErrors {
   nombre?: string

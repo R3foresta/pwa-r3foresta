@@ -1,6 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Icon from '../../../components/Icon'
-import { LotesViveroService } from '../../../services/lotes-vivero.service'
+import {
+  LotesViveroService,
+  type AsignacionViveroResumen,
+} from '../../../services/lotes-vivero.service'
 
 type Props = {
   loteId: number
@@ -14,26 +17,35 @@ export default function ViveroLotAsignacionesCollapsible({
   className,
 }: Props) {
   const [showAsignaciones, setShowAsignaciones] = useState(false)
-  const [asignaciones, setAsignaciones] = useState<any[]>([])
+  const [asignaciones, setAsignaciones] = useState<AsignacionViveroResumen[]>([])
   const [loadingAsig, setLoadingAsig] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (showAsignaciones && cantidadAsignacionesActivas > 0 && asignaciones.length === 0 && loteId) {
+  const handleToggle = () => {
+    const nextOpen = !showAsignaciones
+    setShowAsignaciones(nextOpen)
+
+    if (nextOpen && cantidadAsignacionesActivas > 0 && asignaciones.length === 0 && loteId) {
       setLoadingAsig(true)
+      setLoadError(null)
       LotesViveroService.listAsignaciones(loteId)
         .then((data) => setAsignaciones(data))
-        .catch((err) => console.error('Error loading assignments:', err))
+        .catch((error: unknown) => {
+          setLoadError(
+            error instanceof Error ? error.message : 'No se pudieron cargar las asignaciones.',
+          )
+        })
         .finally(() => setLoadingAsig(false))
     }
-  }, [showAsignaciones, cantidadAsignacionesActivas, loteId])
+  }
 
   return (
     <div className={className}>
       <button
         type="button"
-        onClick={(e) => {
-          e.stopPropagation()
-          setShowAsignaciones(!showAsignaciones)
+        onClick={(event) => {
+          event.stopPropagation()
+          handleToggle()
         }}
         className="flex w-full items-center justify-between text-xs font-bold text-slate-500 hover:text-slate-700"
       >
@@ -53,6 +65,10 @@ export default function ViveroLotAsignacionesCollapsible({
             <p className="text-[11px] font-semibold text-slate-400 text-center py-2">No hay asignaciones activas para este lote.</p>
           ) : loadingAsig ? (
             <p className="text-[11px] font-semibold text-slate-400 text-center py-2">Cargando...</p>
+          ) : loadError ? (
+            <p className="py-2 text-center text-[11px] font-semibold text-red-500">
+              {loadError}
+            </p>
           ) : (
             <ul className="space-y-2">
               {asignaciones.map((asig) => (

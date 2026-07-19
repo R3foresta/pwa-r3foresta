@@ -38,8 +38,11 @@ function CatalogoEspeciesPicker({ open, excludedPlantaIds, onClose, onConfirm }:
     if (!open) return
 
     let cancelled = false
-    setLoading(true)
-    setError(null)
+    queueMicrotask(() => {
+      if (cancelled) return
+      setLoading(true)
+      setError(null)
+    })
 
     Promise.allSettled([
       PlantasService.listPlantas({ limit: CATALOG_LIMIT, incluir_inactivas: false }),

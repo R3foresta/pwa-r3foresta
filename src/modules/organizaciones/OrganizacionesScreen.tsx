@@ -5,7 +5,7 @@ import FlashMessage from '../../components/crud/FlashMessage'
 import { selectWrapperClasses } from '../../components/crud/form-classes'
 import SearchBar from '../../components/crud/SearchBar'
 import Icon from '../../components/Icon'
-import { getInitials } from '../plantacion/components/UserAvatar'
+import { getInitials } from '../plantacion/utils/userAvatar'
 import { OrganizacionesService } from '../../services/organizaciones.service'
 import type {
   Organizacion,

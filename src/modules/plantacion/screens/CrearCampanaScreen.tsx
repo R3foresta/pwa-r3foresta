@@ -150,7 +150,7 @@ function CrearCampanaScreen() {
             </p>
             <h1 className="mt-1 text-[28px] font-extrabold leading-tight">Datos generales</h1>
             <p className="mt-2 text-sm font-medium leading-relaxed text-white/80">
-              Cada campaña tiene subcampañas. 
+              Cada campaña tiene subcampañas.
             </p>
           </div>
         </header>

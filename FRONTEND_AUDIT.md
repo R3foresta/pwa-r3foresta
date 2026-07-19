@@ -126,7 +126,7 @@ Actualizar esta sección cuando se haga una revisión importante.
 | Formularios | `SIN_REVISAR` | Pendiente auditar validaciones y manejo de errores. |
 | UI/UX dominio | `SIN_REVISAR` | Pendiente revisar estados, saldos, snapshots y evidencias. |
 | TypeScript | `SIN_REVISAR` | Pendiente revisar uso de `any`, DTOs y view models. |
-| Testing/build | `SIN_REVISAR` | Pendiente confirmar comandos y cobertura mínima. |
+| Testing/build | `MEJORABLE` | `build` y `lint` pasan; no existen scripts de typecheck separado ni tests automatizados. |
 
 Estados sugeridos para esta tabla:
 
@@ -136,9 +136,9 @@ Estados sugeridos para esta tabla:
 - `RIESGO`
 - `CRITICO`
 
-### AUD-001 — Lint global falla por deuda existente y worktrees locales
+### Histórico — Lint global afectado por worktrees locales
 
-- Estado: `PENDIENTE`
+- Estado: `RESUELTO`
 - Severidad: `MEDIA`
 - Módulo: `shared`
 - Ubicación: `eslint.config.js`, `.claude/worktrees`, varios módulos legacy
@@ -164,7 +164,7 @@ Excluir worktrees locales del lint o limpiar esos errores existentes por módulo
 
 #### Notas
 
-Detectado al implementar `DESCARTE_PRE_EMBOLSADO` en Vivero; el lint acotado a los archivos modificados pasó.
+Resuelto el 2026-07-19: ESLint excluye `.claude/**` y los errores del workspace activo fueron corregidos. Quedan dos advertencias no bloqueantes de dependencias de hooks en Comunidades.
 
 ---
 
@@ -446,8 +446,8 @@ Mantener esta tabla actualizada.
 | ID | Severidad | Estado | Módulo | Tipo | Resumen | Ubicación |
 |---|---|---|---|---|---|---|
 | AUD-001 | `MEDIA` | `PENDIENTE` | `general` | `deuda` | Primera auditoría pendiente contra repo real. | `frontend/` |
-| AUD-002 | `ALTA` | `PENDIENTE` | `general` | `testing` | `build` no pasa por errores de TypeScript en módulos ajenos a Recolección. | `src/modules/recolecciones/components/CantidadInput.tsx`, `src/modules/vivero/screens/ViveroNewScreen.tsx` |
-| AUD-003 | `ALTA` | `PENDIENTE` | `general` | `testing` | `npm run lint` falla por deuda previa y por incluir worktrees internos. | `src/`, `.claude/worktrees/` |
+| AUD-002 | `ALTA` | `RESUELTO` | `general` | `testing` | `build` vuelve a completar correctamente. | `src/` |
+| AUD-003 | `ALTA` | `RESUELTO` | `general` | `testing` | `npm run lint` pasa y excluye worktrees internos. | `eslint.config.js`, `src/` |
 | AUD-004 | `BAJA` | `PENDIENTE` | `general` | `deuda` | `formatDate` y `formatRelativeTime` viven duplicados/en línea por módulo; conviene extraerlos a un util compartido. | `src/modules/plantacion/utils/subcampaniaFormatters.ts`, `src/modules/plantacion/screens/CampaniaAdminDashboardScreen.tsx` |
 | AUD-005 | `BAJA` | `PENDIENTE` | `plantacion` | `deuda` | `CAMPANIA_TYPES` está definido dos veces con distinto orden (validación en service, orden visual en form). | `src/services/plantacion.service.ts`, `src/modules/plantacion/components/CrearCampaniaForm.tsx` |
 
@@ -494,7 +494,7 @@ Actualizar este hallazgo después de la primera revisión real.
 
 ### AUD-002 — Build roto por errores de TypeScript fuera del flujo corregido
 
-- Estado: `PENDIENTE`
+- Estado: `RESUELTO`
 - Severidad: `ALTA`
 - Módulo: `general`
 - Ubicación: `src/modules/recolecciones/components/CantidadInput.tsx`, `src/modules/vivero/screens/ViveroNewScreen.tsx`
@@ -520,11 +520,11 @@ Corregir primero los errores de `CantidadInput.tsx` relacionados con `onErrorCle
 
 #### Notas
 
-Durante esta tarea se verificó que los archivos modificados del flujo de Recolección pasan `eslint` focalizado; el bloqueo actual viene de deuda previa del repo.
+Resuelto el 2026-07-19. Verificación: `npm run build` completó TypeScript y el bundle de producción sin errores.
 
 ### AUD-003 — Lint global falla por deuda previa y worktrees internos
 
-- Estado: `PENDIENTE`
+- Estado: `RESUELTO`
 - Severidad: `ALTA`
 - Módulo: `general`
 - Ubicación: `src/`, `.claude/worktrees/`
@@ -550,7 +550,7 @@ Corregir los errores existentes en `src/` y ajustar la configuración de ESLint 
 
 #### Notas
 
-Durante la implementación del CRUD de Organizaciones, los archivos modificados pasaron ESLint focalizado y `npm run build` pasó correctamente.
+Resuelto el 2026-07-19. `eslint.config.js` excluye `.claude/**`; se corrigieron los errores del workspace activo. `npm run lint` finaliza con código 0 y dos advertencias no bloqueantes en Comunidades.
 
 ### AUD-004 — Formatters de fecha/tiempo relativo dispersos por módulo
 

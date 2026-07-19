@@ -54,7 +54,11 @@ export function useViveroDetail(lotId: number, isInvalidId: boolean) {
   )
 
   useEffect(() => {
-    void load()
+    const timeoutId = window.setTimeout(() => {
+      void load()
+    }, 0)
+
+    return () => window.clearTimeout(timeoutId)
   }, [load])
 
   const refetch = useCallback(() => {
