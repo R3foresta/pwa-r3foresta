@@ -12,8 +12,6 @@ import FechaCard from '../FechaCard'
 import FotosUploader from '../FotosUploader'
 import type { Photo } from '../FotosUploader'
 import ObservacionesCard from '../ObservacionesCard'
-import SelectorCampania from '../../../../plantacion/components/SelectorCampania'
-import type { Campania } from '../../../../plantacion/types/contracts'
 
 type Props = {
   lote: LoteViveroItem
@@ -48,7 +46,7 @@ function DespachoForm({ lote, onCompleted }: Props) {
 
   const [cantidad, setCantidad] = useState('')
   const [destino, setDestino] = useState<DestinoTipoVivero | ''>('')
-  const [selectedCampania, setSelectedCampania] = useState<Campania | null>(null)
+  const [destinoReferencia, setDestinoReferencia] = useState('')
   const [comunidad, setComunidad] = useState<ComunidadCard | null>(null)
   const [fecha, setFecha] = useState(today)
   const [photos, setPhotos] = useState<Photo[]>([])
@@ -79,17 +77,20 @@ function DespachoForm({ lote, onCompleted }: Props) {
   const finalizaLote = cantidadValid && saldoDespues === 0
 
   const destinoValid = destino !== ''
-  const campaniaValid = selectedCampania !== null
   const requiereComunidad = destino === 'DONACION_COMUNIDAD'
   const comunidadValid = !requiereComunidad || comunidad !== null
+  // Despacho manual nunca liga a campaña/subcampaña (ver ADR-VIV-16); el dato
+  // estructurado por destino es la comunidad (si aplica) o una referencia libre.
+  const requiereReferencia = destino !== '' && !requiereComunidad
+  const referenciaValid = !requiereReferencia || destinoReferencia.trim().length > 0
   const fechaValid = fecha >= fechaMin && fecha <= fechaMax
   const fotosValid = photos.length >= 1 && photos.length <= 5
 
   const canSubmit =
     cantidadValid &&
     destinoValid &&
-    campaniaValid &&
     comunidadValid &&
+    referenciaValid &&
     fechaValid &&
     fotosValid &&
     !!authId &&
@@ -129,7 +130,7 @@ function DespachoForm({ lote, onCompleted }: Props) {
     setSubmitting(true)
     setSubmitError(null)
     try {
-      const referenciaStr = selectedCampania ? selectedCampania.nombre : ''
+      const referenciaStr = destinoReferencia.trim()
 
       const upload = await LotesViveroService.uploadEvidenciasEvento(
         lote.id,
@@ -284,17 +285,33 @@ function DespachoForm({ lote, onCompleted }: Props) {
         )}
 
         <section className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
-          <SelectorCampania
-            valueId={selectedCampania?.id}
-            onChange={setSelectedCampania}
-            label="Campaña destino"
-            placeholder="Buscar campaña..."
-            error={showErrors && !campaniaValid}
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-sm font-extrabold text-brand-700">Referencia del destino</p>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-brand-400">
+              {requiereReferencia ? 'Obligatorio' : 'Opcional'}
+            </span>
+          </div>
+          <textarea
+            value={destinoReferencia}
+            onChange={(event) => setDestinoReferencia(event.target.value.slice(0, 300))}
+            placeholder={
+              destino === 'PLANTACION_PROPIA'
+                ? 'Ej. Predio propio en Cotacota'
+                : destino === 'VENTA'
+                  ? 'Ej. Nombre del comprador'
+                  : destino === 'DONACION_COMUNIDAD'
+                    ? 'Detalle adicional de la donacion (opcional)'
+                    : 'Detalla el destino'
+            }
+            rows={2}
             disabled={submitting}
+            className={`w-full resize-none rounded-2xl border bg-white px-3 py-2 text-sm font-semibold text-brand-700 outline-none transition focus:border-brand-300 disabled:opacity-50 ${
+              showErrors && !referenciaValid ? 'border-red-300' : 'border-brand-100'
+            }`}
           />
-          {showErrors && !campaniaValid && (
+          {showErrors && !referenciaValid && (
             <p className="mt-2 text-xs font-semibold text-red-500">
-              Selecciona una campaña.
+              Describe el destino del despacho.
             </p>
           )}
         </section>
