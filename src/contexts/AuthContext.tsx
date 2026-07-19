@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- Contexto y hook se exportan juntos por contrato público. */
 import React, { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
 import type { User } from '../types/auth.types'
 import { ProfileService } from '../modules/user_profile'
@@ -87,14 +88,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.log('✅ Usuario verificado con backend:', updatedUser)
           setUser(updatedUser)
           localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedUser))
-        } catch (error) {
+        } catch {
           console.log('⚠️ No se pudieron obtener datos frescos, usando cache local')
         }
       }
     }
 
     verifyUserData()
-  }, []) // Solo ejecutar una vez al cargar
+    // La verificación usa deliberadamente la sesión hidratada al montar.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const login = async (email: string) => {
     // TODO: Aquí debería ir la lógica real de WebAuthn

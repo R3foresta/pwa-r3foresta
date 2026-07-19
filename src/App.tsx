@@ -27,6 +27,15 @@ import {
   ViveroNewScreen,
   ViveroScreen,
 } from './modules/vivero'
+import {
+  CampaniaAdminDashboardScreen,
+  CrearCampanaScreen,
+  CrearSubcampanaScreen,
+  DetalleSubcampanaScreen,
+  EditarCampanaScreen,
+  PlantacionDashboardScreen,
+  RegistrarPlantacionScreen,
+} from './modules/plantacion'
 import MapScreen from './modules/map/MapScreen'
 import { CompleteProfileScreen, PerfilScreen } from './modules/user_profile'
 import ComunidadesScreen from './modules/comunidades/ComunidadesScreen'
@@ -35,6 +44,11 @@ import NuevaPlantaScreen from './modules/plantas/NuevaPlantaScreen'
 import EditarPlantaScreen from './modules/plantas/EditarPlantaScreen'
 import NuevaComunidadScreen from './modules/comunidades/NuevaComunidadScreen'
 import EditarComunidadScreen from './modules/comunidades/EditarComunidadScreen'
+import {
+  EditarOrganizacionScreen,
+  NuevaOrganizacionScreen,
+  OrganizacionesScreen,
+} from './modules/organizaciones'
 
 function RootRedirect() {
   const { isAuthenticated, hydrated } = useAuth()
@@ -114,12 +128,35 @@ function App() {
               />
             </Route>
             <Route path="nursery" element={<Navigate to="/app/vivero" replace />} />
-            <Route path="planting" element={<PlaceholderScreen title="Plantación" />} />
+            <Route path="planting">
+              <Route index element={<PlantacionDashboardScreen />} />
+              <Route path="campanias/new" element={<CrearCampanaScreen />} />
+              <Route path="campanias/:campaniaId" element={<CampaniaAdminDashboardScreen />} />
+              <Route
+                path="campanias/:campaniaId/edit"
+                element={<EditarCampanaScreen />}
+              />
+              <Route
+                path="campanias/:campaniaId/subcampanias/new"
+                element={<CrearSubcampanaScreen />}
+              />
+              <Route
+                path="subcampanias/:subcampaniaId"
+                element={<DetalleSubcampanaScreen />}
+              />
+              <Route
+                path="subcampanias/:subcampaniaId/plantaciones/new"
+                element={<RegistrarPlantacionScreen />}
+              />
+            </Route>
             <Route path="co2" element={<PlaceholderScreen title="CO₂" />} />
             <Route path="map" element={<MapScreen />} />
             <Route path="comunidades" element={<ComunidadesScreen />} />
             <Route path="comunidades/nueva" element={<NuevaComunidadScreen />} />
             <Route path="comunidades/:id/editar" element={<EditarComunidadScreen />} />
+            <Route path="organizaciones" element={<OrganizacionesScreen />} />
+            <Route path="organizaciones/nueva" element={<NuevaOrganizacionScreen />} />
+            <Route path="organizaciones/:id/editar" element={<EditarOrganizacionScreen />} />
             <Route path="plantas" element={<PlantasScreen />} />
             <Route path="plantas/nueva" element={<NuevaPlantaScreen />} />
             <Route path="plantas/:id/editar" element={<EditarPlantaScreen />} />

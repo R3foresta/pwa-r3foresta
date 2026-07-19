@@ -126,7 +126,7 @@ Actualizar esta sección cuando se haga una revisión importante.
 | Formularios | `SIN_REVISAR` | Pendiente auditar validaciones y manejo de errores. |
 | UI/UX dominio | `SIN_REVISAR` | Pendiente revisar estados, saldos, snapshots y evidencias. |
 | TypeScript | `SIN_REVISAR` | Pendiente revisar uso de `any`, DTOs y view models. |
-| Testing/build | `SIN_REVISAR` | Pendiente confirmar comandos y cobertura mínima. |
+| Testing/build | `MEJORABLE` | `build` y `lint` pasan; no existen scripts de typecheck separado ni tests automatizados. |
 
 Estados sugeridos para esta tabla:
 
@@ -135,6 +135,36 @@ Estados sugeridos para esta tabla:
 - `MEJORABLE`
 - `RIESGO`
 - `CRITICO`
+
+### Histórico — Lint global afectado por worktrees locales
+
+- Estado: `RESUELTO`
+- Severidad: `MEDIA`
+- Módulo: `shared`
+- Ubicación: `eslint.config.js`, `.claude/worktrees`, varios módulos legacy
+- Tipo: `testing`
+- Detectado por: `Codex`
+- Fecha: `2026-07-02`
+
+#### Problema
+
+`npm run lint` ejecuta `eslint .` y hoy falla por errores existentes fuera del cambio de Vivero, incluyendo archivos duplicados dentro de `.claude/worktrees` y reglas en módulos legacy.
+
+#### Riesgo
+
+La verificación global no permite distinguir rápidamente si una tarea nueva introdujo errores o si está chocando con deuda previa.
+
+#### Acción sugerida
+
+Excluir worktrees locales del lint o limpiar esos errores existentes por módulo; mientras tanto, usar lint acotado a archivos modificados como verificación complementaria.
+
+#### Verificación esperada
+
+`npm run lint` debe pasar desde la raíz del repo.
+
+#### Notas
+
+Resuelto el 2026-07-19: ESLint excluye `.claude/**` y los errores del workspace activo fueron corregidos. Quedan dos advertencias no bloqueantes de dependencias de hooks en Comunidades.
 
 ---
 
@@ -416,7 +446,10 @@ Mantener esta tabla actualizada.
 | ID | Severidad | Estado | Módulo | Tipo | Resumen | Ubicación |
 |---|---|---|---|---|---|---|
 | AUD-001 | `MEDIA` | `PENDIENTE` | `general` | `deuda` | Primera auditoría pendiente contra repo real. | `frontend/` |
-| AUD-002 | `ALTA` | `PENDIENTE` | `general` | `testing` | `build` no pasa por errores de TypeScript en módulos ajenos a Recolección. | `src/modules/recolecciones/components/CantidadInput.tsx`, `src/modules/vivero/screens/ViveroNewScreen.tsx` |
+| AUD-002 | `ALTA` | `RESUELTO` | `general` | `testing` | `build` vuelve a completar correctamente. | `src/` |
+| AUD-003 | `ALTA` | `RESUELTO` | `general` | `testing` | `npm run lint` pasa y excluye worktrees internos. | `eslint.config.js`, `src/` |
+| AUD-004 | `BAJA` | `PENDIENTE` | `general` | `deuda` | `formatDate` y `formatRelativeTime` viven duplicados/en línea por módulo; conviene extraerlos a un util compartido. | `src/modules/plantacion/utils/subcampaniaFormatters.ts`, `src/modules/plantacion/screens/CampaniaAdminDashboardScreen.tsx` |
+| AUD-005 | `BAJA` | `PENDIENTE` | `plantacion` | `deuda` | `CAMPANIA_TYPES` está definido dos veces con distinto orden (validación en service, orden visual en form). | `src/services/plantacion.service.ts`, `src/modules/plantacion/components/CrearCampaniaForm.tsx` |
 
 ---
 
@@ -461,7 +494,7 @@ Actualizar este hallazgo después de la primera revisión real.
 
 ### AUD-002 — Build roto por errores de TypeScript fuera del flujo corregido
 
-- Estado: `PENDIENTE`
+- Estado: `RESUELTO`
 - Severidad: `ALTA`
 - Módulo: `general`
 - Ubicación: `src/modules/recolecciones/components/CantidadInput.tsx`, `src/modules/vivero/screens/ViveroNewScreen.tsx`
@@ -487,7 +520,89 @@ Corregir primero los errores de `CantidadInput.tsx` relacionados con `onErrorCle
 
 #### Notas
 
-Durante esta tarea se verificó que los archivos modificados del flujo de Recolección pasan `eslint` focalizado; el bloqueo actual viene de deuda previa del repo.
+Resuelto el 2026-07-19. Verificación: `npm run build` completó TypeScript y el bundle de producción sin errores.
+
+### AUD-003 — Lint global falla por deuda previa y worktrees internos
+
+- Estado: `RESUELTO`
+- Severidad: `ALTA`
+- Módulo: `general`
+- Ubicación: `src/`, `.claude/worktrees/`
+- Tipo: `testing`
+- Detectado por: `IA`
+- Fecha: `2026-06-22`
+
+#### Problema
+
+`npm run lint` falla en archivos ajenos al CRUD de Organizaciones y también analiza `.claude/worktrees`, duplicando errores de worktrees internos.
+
+#### Riesgo
+
+La verificación global de lint no sirve como señal limpia para cerrar tareas y puede ocultar regresiones reales entre errores preexistentes.
+
+#### Acción sugerida
+
+Corregir los errores existentes en `src/` y ajustar la configuración de ESLint para excluir worktrees internos que no forman parte del frontend activo.
+
+#### Verificación esperada
+
+`npm run lint` debe completar sin errores sobre el workspace activo.
+
+#### Notas
+
+Resuelto el 2026-07-19. `eslint.config.js` excluye `.claude/**`; se corrigieron los errores del workspace activo. `npm run lint` finaliza con código 0 y dos advertencias no bloqueantes en Comunidades.
+
+### AUD-004 — Formatters de fecha/tiempo relativo dispersos por módulo
+
+- Estado: `PENDIENTE`
+- Severidad: `BAJA`
+- Módulo: `general`
+- Ubicación: `src/modules/plantacion/utils/subcampaniaFormatters.ts`, `src/modules/plantacion/screens/CampaniaAdminDashboardScreen.tsx`
+- Tipo: `deuda`
+- Detectado por: `equipo`
+- Fecha: `2026-07-05`
+
+#### Problema
+
+`formatDate` está definido en `plantacion/utils/subcampaniaFormatters.ts` y re-envuelto en cada pantalla que necesita un fallback distinto (por ejemplo `CampaniaAdminDashboardScreen` con `"Sin fecha"`). `formatRelativeTime` vive inline en el dashboard de campañas y es útil para cualquier feed con timestamps.
+
+#### Riesgo
+
+Duplicación cuando otros módulos (vivero, recolección) sumen timelines/actividades. Divergencia de estilos ("hace 2 h" vs "hace 2 horas"). Difícil unificar el locale/formato desde un solo lugar.
+
+#### Acción sugerida
+
+Extraer a `src/utils/datetime.ts` (o similar) helpers compartidos: `formatDate(value, opts)`, `formatRelativeTime(iso)`. Actualizar consumidores.
+
+#### Verificación esperada
+
+Una sola implementación por helper, consumidores importan desde el util compartido.
+
+### AUD-005 — Duplicidad de `CAMPANIA_TYPES` con distinto orden
+
+- Estado: `PENDIENTE`
+- Severidad: `BAJA`
+- Módulo: `plantacion`
+- Ubicación: `src/services/plantacion.service.ts`, `src/modules/plantacion/components/CrearCampaniaForm.tsx`
+- Tipo: `deuda`
+- Detectado por: `equipo`
+- Fecha: `2026-07-05`
+
+#### Problema
+
+El service declara `TIPOS_CAMPANIA: TipoCampania[] = ['REFORESTACION', 'ARBORIZACION', 'FORESTACION']` para validación de entrada. El form declara `CAMPANIA_TYPES: TipoCampania[] = ['ARBORIZACION', 'REFORESTACION', 'FORESTACION']` con el orden invertido para el layout visual.
+
+#### Riesgo
+
+Un futuro cambio de enum puede quedar desincronizado. También confunde al lector: sugiere que el orden "correcto" es alguno de los dos.
+
+#### Acción sugerida
+
+Documentar por qué los órdenes difieren (validación vs display) o extraer a `contracts.ts` un `CAMPANIA_TYPE_ORDER` compartido si algún día se decide unificar.
+
+#### Verificación esperada
+
+Los dos arrays incluyen exactamente los mismos elementos (comparados por `sort()`), con un comentario explicando la diferencia de orden.
 
 ---
 

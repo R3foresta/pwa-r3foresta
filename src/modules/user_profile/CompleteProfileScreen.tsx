@@ -5,6 +5,14 @@ import type { ProfileFormData, ProfileValidationErrors } from './types'
 import { AvatarUpload } from './components/AvatarUpload'
 import { useNavigate, useLocation } from 'react-router-dom'
 
+const COUNTRIES = [
+  { code: '+591', name: 'Bolivia', flag: '🇧🇴' },
+  { code: '+51', name: 'Perú', flag: '🇵🇪' },
+  { code: '+52', name: 'México', flag: '🇲🇽' },
+] as const
+
+type Country = (typeof COUNTRIES)[number]
+
 export function CompleteProfileScreen() {
   const { user, updateUserFromBackend } = useAuth()
   const navigate = useNavigate()
@@ -14,13 +22,7 @@ export function CompleteProfileScreen() {
   const isEditing = location.pathname === '/app/edit-profile'
 
   // Países disponibles con sus códigos y banderas
-  const countries = [
-    { code: '+591', name: 'Bolivia', flag: '🇧🇴' },
-    { code: '+51', name: 'Perú', flag: '🇵🇪' },
-    { code: '+52', name: 'México', flag: '🇲🇽' }
-  ]
-
-  const [selectedCountry, setSelectedCountry] = useState(countries[0]) // Bolivia por defecto
+  const [selectedCountry, setSelectedCountry] = useState<Country>(COUNTRIES[0])
   const [phoneNumber, setPhoneNumber] = useState('')
 
   const [formData, setFormData] = useState<ProfileFormData>({
@@ -42,7 +44,7 @@ export function CompleteProfileScreen() {
     if (user?.contacto) {
       // Buscar si el contacto existente coincide con algún código de país
       const existingContact = user.contacto
-      const foundCountry = countries.find(country => existingContact.startsWith(country.code))
+      const foundCountry = COUNTRIES.find(country => existingContact.startsWith(country.code))
 
       if (foundCountry) {
         setSelectedCountry(foundCountry)
@@ -189,7 +191,7 @@ export function CompleteProfileScreen() {
     }))
   }
 
-  const handleCountryChange = (country: typeof countries[0]) => {
+  const handleCountryChange = (country: Country) => {
     setSelectedCountry(country)
     // Actualizar el contacto completo en formData
     const fullContact = phoneNumber.trim() ? `${country.code}${phoneNumber}` : ''
@@ -251,10 +253,13 @@ export function CompleteProfileScreen() {
         })
       }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Error al completar perfil:', error)
 
-      const status = error?.status
+      const apiError = error instanceof Error
+        ? (error as Error & { status?: number })
+        : null
+      const status = apiError?.status
       if (status === 409) {
         setErrors({
           general: 'El documento de identidad o la wallet ya están registrados en otra cuenta'
@@ -265,7 +270,7 @@ export function CompleteProfileScreen() {
         })
       } else {
         setErrors({
-          general: error?.message || 'Error al completar el perfil'
+          general: apiError?.message || 'Error al completar el perfil'
         })
       }
     } finally {
@@ -444,13 +449,13 @@ export function CompleteProfileScreen() {
                   <select
                     value={selectedCountry.code}
                     onChange={(e) => {
-                      const country = countries.find(c => c.code === e.target.value)
+                      const country = COUNTRIES.find(c => c.code === e.target.value)
                       if (country) handleCountryChange(country)
                     }}
                     className="appearance-none rounded-2xl border border-slate-200 bg-white/80 px-3 py-3 text-base font-semibold text-slate-800 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200 pr-10 min-w-[120px]"
                     disabled={isSubmitting}
                   >
-                    {countries.map((country) => (
+                    {COUNTRIES.map((country) => (
                       <option key={country.code} value={country.code}>
                         {country.flag} {country.code}
                       </option>

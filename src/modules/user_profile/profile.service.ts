@@ -1,4 +1,9 @@
-import type { ProfileFormData, ProfileFormResponse } from './types'
+import type {
+  ProfileFormData,
+  ProfileFormResponse,
+  ProfilePhotoResponse,
+  UserProfileResponse,
+} from './types'
 
 const API_URL = import.meta.env.VITE_API_URL
 
@@ -6,7 +11,7 @@ export class ProfileService {
   /**
    * Obtiene el perfil completo del usuario desde el backend
    */
-  static async getUserProfile(): Promise<any> {
+  static async getUserProfile(): Promise<UserProfileResponse> {
     try {
       const authId = localStorage.getItem('auth_id')
       if (!authId) {
@@ -26,7 +31,7 @@ export class ProfileService {
         throw new Error(`Error al obtener perfil: ${response.status}`)
       }
 
-      const userData = await response.json()
+      const userData = (await response.json()) as UserProfileResponse
       console.log('📥 Datos del perfil obtenidos:', userData)
       
       return userData
@@ -58,13 +63,15 @@ export class ProfileService {
         body: JSON.stringify(data),
       })
 
-      const result = await response.json()
+      const result = (await response.json()) as ProfileFormResponse
       console.log('📥 Response data:', result)
 
       if (!response.ok) {
         console.error('❌ Error del backend:', response.status, result.message)
-        const error = new Error(result.message || 'Error al completar el perfil')
-        ;(error as any).status = response.status
+        const error = new Error(result.message || 'Error al completar el perfil') as Error & {
+          status?: number
+        }
+        error.status = response.status
         throw error
       }
 
@@ -79,7 +86,17 @@ export class ProfileService {
   /**
    * Verifica si el usuario tiene el perfil completo
    */
-  static isProfileComplete(user: any): boolean {
+  static isProfileComplete(
+    user:
+      | {
+          id?: string | number | null
+          doc_identidad?: string | null
+          apellido?: string | null
+          nombre?: string | null
+        }
+      | null
+      | undefined,
+  ): boolean {
     if (!user) return false
     
     // Verificar campos obligatorios
@@ -96,7 +113,7 @@ export class ProfileService {
       isComplete: hasRequiredFields
     })
 
-    return hasRequiredFields
+    return Boolean(hasRequiredFields)
   }
 
   /**
@@ -153,7 +170,7 @@ export class ProfileService {
   /**
    * Sube la foto de perfil al servidor
    */
-  static async updateProfilePhoto(file: File): Promise<any> {
+  static async updateProfilePhoto(file: File): Promise<ProfilePhotoResponse> {
     try {
       const authId = localStorage.getItem('auth_id')
       if (!authId) throw new Error('No se encontró auth_id')
@@ -176,7 +193,7 @@ export class ProfileService {
         throw new Error(errorData.message || 'Error al subir la imagen')
       }
 
-      return await response.json()
+      return (await response.json()) as ProfilePhotoResponse
     } catch (error) {
       console.error('❌ Error en updateProfilePhoto:', error)
       throw error
