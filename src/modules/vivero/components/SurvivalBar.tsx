@@ -6,7 +6,7 @@ type Props = {
 }
 
 function getTone(pct: number) {
-  if (pct >= 80) return { bar: 'bg-emerald-500', text: 'text-emerald-600' }
+  if (pct >= 80) return { bar: 'bg-success-500', text: 'text-success-600' }
   if (pct >= 50) return { bar: 'bg-amber-400', text: 'text-amber-600' }
   return { bar: 'bg-red-500', text: 'text-red-600' }
 }
@@ -16,7 +16,7 @@ function SurvivalBar({ alive, initial, showLabel = false, className }: Props) {
     alive !== null && initial !== null && initial > 0 && Number.isFinite(alive) && Number.isFinite(initial)
   const ratio = hasData ? Math.max(0, Math.min(1, alive / initial)) : 0
   const pct = Math.round(ratio * 100)
-  const tone = hasData ? getTone(pct) : { bar: 'bg-slate-300', text: 'text-slate-500' }
+  const tone = hasData ? getTone(pct) : { bar: 'bg-neutral-300', text: 'text-neutral-500' }
 
   return (
     <div className={`w-full ${className ?? ''}`}>

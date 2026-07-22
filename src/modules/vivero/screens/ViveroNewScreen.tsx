@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Icon from '../../../components/Icon'
+import { Button } from '../../../components/ui'
 import { MAX_DIAS_VIVERO } from '../../../config/vivero'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useViveros } from '../../../hooks/useViveros'
@@ -455,13 +456,9 @@ function ViveroNewScreen() {
                   </span>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => handleSelectVivero(null)}
-                className="rounded-full bg-white px-3 py-1 text-xs font-bold text-brand-700 ring-1 ring-brand-200 transition hover:bg-brand-50"
-              >
+              <Button variant="secondary" size="sm" onClick={() => handleSelectVivero(null)}>
                 Cambiar
-              </button>
+              </Button>
             </div>
           ) : (
             <div className="space-y-2">
@@ -508,7 +505,7 @@ function ViveroNewScreen() {
           hint="Origen validado con saldo disponible."
           badge={
             selectedRecoleccion && !pickingRecoleccion ? (
-              <span className="rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-bold text-emerald-700">
+              <span className="rounded-full bg-success-100 px-3 py-1 text-[11px] font-bold text-success-700">
                 Lista
               </span>
             ) : undefined
@@ -527,13 +524,13 @@ function ViveroNewScreen() {
               {recoleccionError}
             </p>
           ) : selectedRecoleccion && !pickingRecoleccion && unidadMedida ? (
-            <div className="space-y-3 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4">
+            <div className="space-y-3 rounded-2xl border border-success-200 bg-success-50/70 p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 space-y-1">
-                  <p className="truncate text-sm font-extrabold text-emerald-900">
+                  <p className="truncate text-sm font-extrabold text-success-900">
                     {getRecoleccionLabel(selectedRecoleccion)}
                   </p>
-                  <p className="text-xs font-semibold text-emerald-700">
+                  <p className="text-xs font-semibold text-success-700">
                     #{selectedRecoleccion.codigo_trazabilidad} · {formatDate(selectedRecoleccion.fecha)}
                   </p>
                 </div>
@@ -546,7 +543,7 @@ function ViveroNewScreen() {
                 </button>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <div className="rounded-2xl bg-white px-3 py-2.5 ring-1 ring-emerald-100">
+                <div className="rounded-2xl bg-white px-3 py-2.5 ring-1 ring-success-100">
                   <p className="text-[10px] font-extrabold uppercase tracking-wider text-brand-500">
                     Saldo
                   </p>
@@ -556,7 +553,7 @@ function ViveroNewScreen() {
                       : '—'}
                   </p>
                 </div>
-                <div className="rounded-2xl bg-white px-3 py-2.5 ring-1 ring-emerald-100">
+                <div className="rounded-2xl bg-white px-3 py-2.5 ring-1 ring-success-100">
                   <p className="text-[10px] font-extrabold uppercase tracking-wider text-brand-500">
                     Tipo
                   </p>
@@ -587,7 +584,7 @@ function ViveroNewScreen() {
                     key={item.id}
                     className={`flex cursor-pointer items-start gap-3 rounded-2xl border px-3 py-3 text-sm font-semibold transition ${
                       isSelected
-                        ? 'border-emerald-300 bg-emerald-50 text-emerald-900 shadow-soft'
+                        ? 'border-success-300 bg-success-50 text-success-900 shadow-soft'
                         : 'border-brand-100 bg-white text-brand-700 hover:border-brand-300'
                     }`}
                   >
@@ -596,7 +593,7 @@ function ViveroNewScreen() {
                       name="recoleccion_id"
                       checked={isSelected}
                       onChange={() => handleSelectRecoleccion(item.id)}
-                      className="mt-1 h-4 w-4 border-brand-200 text-emerald-600 focus:ring-emerald-200"
+                      className="mt-1 h-4 w-4 border-brand-200 text-success-600 focus:ring-success-200"
                     />
                     <div className="min-w-0 flex-1 space-y-1">
                       <div className="flex items-center justify-between gap-2">
@@ -700,7 +697,7 @@ function ViveroNewScreen() {
               <span
                 className={`rounded-full px-3 py-1 text-[11px] font-bold ${
                   photos.length >= 1 && photos.length <= 5
-                    ? 'bg-emerald-100 text-emerald-700'
+                    ? 'bg-success-100 text-success-700'
                     : 'bg-red-100 text-red-700'
                 }`}
               >
@@ -720,7 +717,7 @@ function ViveroNewScreen() {
           />
 
           {uploadedEvidenceIds && uploadedEvidenceIds.length > 0 && (
-            <div className="mt-2 flex items-center gap-2 rounded-2xl bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 ring-1 ring-emerald-100">
+            <div className="mt-2 flex items-center gap-2 rounded-2xl bg-success-50 px-3 py-2 text-xs font-bold text-success-700 ring-1 ring-success-100">
               <Icon name="check" className="h-3.5 w-3.5" />
               <span>Evidencias subidas. Listas para guardar.</span>
             </div>
@@ -754,11 +751,13 @@ function ViveroNewScreen() {
       <div className="pointer-events-none fixed inset-x-0 bottom-[112px] z-40 px-5">
         <div className="pointer-events-auto mx-auto w-full max-w-md space-y-2 rounded-3xl bg-white/95 px-4 py-3 shadow-soft ring-1 ring-black/5 backdrop-blur">
           {canSubmit || isSubmitting ? (
+            /* CTA de envío a medida (barra fija; variante success no provista por
+               <Button>): se mantiene nativa con type="submit" explícito. (gotcha §6.5) */
             <button
               type="submit"
               form="vivero-new-form"
               disabled={isSubmitting}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-3.5 text-base font-extrabold text-white shadow-soft transition hover:bg-emerald-700 disabled:cursor-progress disabled:opacity-90"
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-success-600 px-4 py-3.5 text-base font-extrabold text-white shadow-soft transition hover:bg-success-700 disabled:cursor-progress disabled:opacity-90"
             >
               {isSubmitting ? (
                 <>

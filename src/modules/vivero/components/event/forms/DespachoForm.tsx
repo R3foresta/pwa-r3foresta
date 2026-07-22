@@ -184,11 +184,11 @@ function DespachoForm({ lote, onCompleted }: Props) {
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          <div className="rounded-2xl bg-emerald-50 px-3 py-3 shadow-soft ring-1 ring-emerald-200">
-            <p className="text-[9px] font-extrabold uppercase tracking-wider text-emerald-700">
+          <div className="rounded-2xl bg-success-50 px-3 py-3 shadow-soft ring-1 ring-success-200">
+            <p className="text-[9px] font-extrabold uppercase tracking-wider text-success-700">
               En vivero
             </p>
-            <p className="mt-1 text-xl font-extrabold leading-none text-emerald-700">
+            <p className="mt-1 text-xl font-extrabold leading-none text-success-700">
               {saldoVivo}
             </p>
           </div>
@@ -245,7 +245,7 @@ function DespachoForm({ lote, onCompleted }: Props) {
                   disabled={submitting}
                   className={`flex items-start justify-between gap-3 rounded-2xl border px-4 py-2.5 text-left transition ${
                     isSelected
-                      ? 'border-emerald-300 bg-emerald-50 text-emerald-800 shadow-soft'
+                      ? 'border-success-300 bg-success-50 text-success-800 shadow-soft'
                       : 'border-brand-100 bg-white text-brand-700 hover:border-brand-200'
                   }`}
                 >
@@ -253,7 +253,7 @@ function DespachoForm({ lote, onCompleted }: Props) {
                     <p className="text-sm font-extrabold">{d.label}</p>
                     <p className="text-[11px] font-semibold text-brand-500">{d.hint}</p>
                   </div>
-                  {isSelected && <Icon name="check" className="h-5 w-5 text-emerald-600" />}
+                  {isSelected && <Icon name="check" className="h-5 w-5 text-success-600" />}
                 </button>
               )
             })}

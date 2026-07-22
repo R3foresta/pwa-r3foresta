@@ -14,7 +14,7 @@ type Props = {
 }
 
 const VARIANT_CLASS: Record<Variant, string> = {
-  emerald: 'bg-emerald-600 hover:bg-emerald-700',
+  emerald: 'bg-success-600 hover:bg-success-700',
   red: 'bg-red-600 hover:bg-red-700',
   brand: 'bg-brand-700 hover:bg-brand-600',
 }

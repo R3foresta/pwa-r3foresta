@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Icon from '../../../components/Icon'
+import { Button, SearchBar } from '../../../components/ui'
 import { DEFAULT_VIVERO_LIST_LIMIT, DEFAULT_VIVERO_LIST_PAGE } from '../../../config/vivero'
 import CollapsibleSection from '../components/CollapsibleSection'
 import ViveroLotCard from '../components/ViveroLotCard'
@@ -60,6 +61,7 @@ function ViveroScreen() {
     <div className="relative min-h-screen bg-[#eef2ed] text-brand-700">
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-28">
         <div className="flex items-start gap-3 px-5 pt-10">
+          {/* Botón sólo-ícono (volver): excepción documentada, se mantiene nativo. */}
           <button
             type="button"
             aria-label="Volver"
@@ -80,21 +82,18 @@ function ViveroScreen() {
 
         <div className="mt-5 space-y-4 px-5">
           <div className="flex gap-2">
-            <label className="flex flex-1 items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-soft ring-1 ring-black/5">
-              <Icon name="search" className="h-5 w-5 shrink-0 text-slate-400" />
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Buscar por código, especie, vivero..."
-                className="w-full border-none bg-transparent text-sm font-semibold text-slate-700 outline-none placeholder:font-medium placeholder:text-slate-400"
-                type="search"
-              />
-            </label>
+            <SearchBar
+              value={query}
+              onChange={setQuery}
+              placeholder="Buscar por código, especie, vivero..."
+              className="flex-1"
+            />
+            {/* Toggle sólo-ícono de filtros: excepción documentada, se mantiene nativo. */}
             <button
               type="button"
               onClick={() => setShowFilters(!showFilters)}
               className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-soft ring-1 ring-black/5 transition ${
-                showFilters ? 'bg-brand-700 text-white' : 'bg-white text-slate-500 hover:bg-slate-50'
+                showFilters ? 'bg-brand-700 text-white' : 'bg-white text-neutral-500 hover:bg-neutral-50'
               }`}
             >
               <Icon name="filter" className="h-5 w-5" />
@@ -104,20 +103,22 @@ function ViveroScreen() {
           {showFilters && (
             <div className="rounded-3xl bg-white p-5 shadow-soft ring-1 ring-black/5 space-y-4">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-3">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-3">
                   FILTROS OPERATIVOS
                 </p>
+                {/* Chips de filtro con checkbox embebido: control a medida (no calza
+                    en <Chip>/<Button>); tokens migrados. (gotcha §6.5) */}
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
                     onClick={() => setOnlyConStockEnVivero(!onlyConStockEnVivero)}
-                    className="flex items-center gap-2 rounded-full border border-slate-100 bg-slate-50/50 px-4 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-100/75"
+                    className="flex items-center gap-2 rounded-full border border-neutral-100 bg-neutral-50/50 px-4 py-2 text-xs font-bold text-neutral-700 transition hover:bg-neutral-100/75"
                   >
                     <input
                       type="checkbox"
                       checked={onlyConStockEnVivero}
                       onChange={() => {}} // Controlled by button click
-                      className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                      className="h-4 w-4 rounded border-neutral-300 text-success-600 focus:ring-success-500"
                     />
                     <span>Solo con stock en vivero</span>
                   </button>
@@ -125,25 +126,25 @@ function ViveroScreen() {
                   <button
                     type="button"
                     onClick={() => setOnlyActiveAssignments(!onlyActiveAssignments)}
-                    className="flex items-center gap-2 rounded-full border border-slate-100 bg-slate-50/50 px-4 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-100/75"
+                    className="flex items-center gap-2 rounded-full border border-neutral-100 bg-neutral-50/50 px-4 py-2 text-xs font-bold text-neutral-700 transition hover:bg-neutral-100/75"
                   >
                     <input
                       type="checkbox"
                       checked={onlyActiveAssignments}
                       onChange={() => {}} // Controlled by button click
-                      className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                      className="h-4 w-4 rounded border-neutral-300 text-success-600 focus:ring-success-500"
                     />
                     <span>Solo con asignaciones activas</span>
                   </button>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-500 pt-2 border-t border-slate-100">
+              <div className="flex items-center gap-2 text-xs font-bold text-neutral-500 pt-2 border-t border-neutral-100">
                 <span>Por Subcampaña:</span>
                 <select
                   value={selectedSubcampaniaId}
                   onChange={(e) => setSelectedSubcampaniaId(e.target.value)}
-                  className="rounded-full border border-slate-200 bg-slate-50/50 px-3 py-1.5 font-bold text-slate-700 outline-none transition focus:border-emerald-500 focus:bg-white"
+                  className="rounded-full border border-neutral-200 bg-neutral-50/50 px-3 py-1.5 font-bold text-neutral-700 outline-none transition focus:border-success-500 focus:bg-white"
                 >
                   <option value="TODAS">Todas</option>
                   {subcampanias.map((sub) => (
@@ -156,24 +157,26 @@ function ViveroScreen() {
             </div>
           )}
 
+          {/* CTA de alta a medida (borde punteado + ícono + 2 líneas): no calza en
+              <Button>; se mantiene a medida con tokens migrados. (gotcha §6.5) */}
           <button
             type="button"
             onClick={() => navigate('/app/vivero/new')}
-            className="flex w-full items-center gap-3 rounded-2xl border-2 border-dashed border-emerald-200 bg-emerald-50 px-4 py-3 text-left text-emerald-800 shadow-soft transition hover:border-emerald-300 hover:bg-emerald-100"
+            className="flex w-full items-center gap-3 rounded-2xl border-2 border-dashed border-success-200 bg-success-50 px-4 py-3 text-left text-success-800 shadow-soft transition hover:border-success-300 hover:bg-success-100"
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-emerald-700 ring-1 ring-emerald-200">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-success-700 ring-1 ring-success-200">
               <Icon name="plus" className="h-5 w-5" />
             </div>
             <div>
               <p className="text-base font-extrabold">Nuevo lote de vivero</p>
-              <p className="text-xs font-semibold text-emerald-700/80">
+              <p className="text-xs font-semibold text-success-700/80">
                 Registrar inicio desde recolección validada
               </p>
             </div>
           </button>
 
           {loading && (
-            <div className="rounded-3xl bg-white px-4 py-6 text-center text-sm font-semibold text-slate-600 shadow-soft ring-1 ring-black/5">
+            <div className="rounded-3xl bg-white px-4 py-6 text-center text-sm font-semibold text-neutral-600 shadow-soft ring-1 ring-black/5">
               Cargando lotes de vivero...
             </div>
           )}
@@ -184,13 +187,9 @@ function ViveroScreen() {
                 {error}
               </div>
               <div className="flex justify-center">
-                <button
-                  type="button"
-                  onClick={() => void refetch()}
-                  className="rounded-full bg-white px-4 py-2 text-xs font-extrabold text-brand-700 ring-1 ring-brand-200 transition hover:ring-brand-300"
-                >
+                <Button variant="secondary" size="sm" onClick={() => void refetch()}>
                   Reintentar carga
-                </button>
+                </Button>
               </div>
             </>
           )}
@@ -250,7 +249,7 @@ function ViveroScreen() {
               )}
 
               {lots.length === 0 && (
-                <div className="rounded-3xl bg-white px-4 py-6 text-center text-sm font-semibold text-slate-600 shadow-soft ring-1 ring-black/5">
+                <div className="rounded-3xl bg-white px-4 py-6 text-center text-sm font-semibold text-neutral-600 shadow-soft ring-1 ring-black/5">
                   {query ? 'No se encontraron lotes con ese criterio.' : 'No hay lotes registrados.'}
                 </div>
               )}

@@ -49,13 +49,13 @@ export default function SubetapasBar({ detail, events }: SubetapasBarProps) {
   const safeTotal = totalDias > 0 ? totalDias : 1;
 
   return (
-    <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
+    <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-neutral-100">
       <header className="flex items-end justify-between mb-3">
         <div>
           <p className="text-[9px] font-black uppercase tracking-widest text-brand-700">Tiempo en subetapas</p>
-          <h3 className="mt-0.5 text-[15px] font-extrabold text-[#002b15]">Recorrido de adaptabilidad</h3>
+          <h3 className="mt-0.5 text-[15px] font-extrabold text-brand-950">Recorrido de adaptabilidad</h3>
         </div>
-        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 pb-1">
+        <p className="text-[10px] font-black uppercase tracking-widest text-neutral-500 pb-1">
           Total {totalDias}d
         </p>
       </header>
@@ -79,11 +79,11 @@ export default function SubetapasBar({ detail, events }: SubetapasBarProps) {
                 <Icon name={s.icon as IconName} className="h-5 w-5" />
               </div>
               
-              <div className="flex-1 flex items-center justify-between border-b border-slate-50 pb-2 pt-2">
-                <p className="text-[13px] font-black text-[#002b15]">{s.label}</p>
+              <div className="flex-1 flex items-center justify-between border-b border-neutral-50 pb-2 pt-2">
+                <p className="text-[13px] font-black text-brand-950">{s.label}</p>
                 <div className="text-right">
-                  <p className="text-[15px] font-black text-[#002b15] leading-none">
-                    {s.dias}<span className="text-xs font-bold text-slate-500">d</span>
+                  <p className="text-[15px] font-black text-brand-950 leading-none">
+                    {s.dias}<span className="text-xs font-bold text-neutral-500">d</span>
                   </p>
                   {isCurrent && (
                     <p className="text-[9px] font-black uppercase tracking-widest text-amber-600 mt-1 absolute right-0 bottom-[-4px]">

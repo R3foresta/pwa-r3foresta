@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Icon from '../../../components/Icon'
+import { Button } from '../../../components/ui'
 import { useAuth } from '../../../contexts/AuthContext'
 import {
   LotesViveroService,
@@ -98,8 +99,8 @@ function sortAsignacionesNewestFirst(items: AsignacionViveroResumen[]) {
 
 function AssignmentMetric({ label, value, danger = false }: { label: string; value: number; danger?: boolean }) {
   return (
-    <div className="rounded-2xl bg-slate-50 px-2.5 py-2 text-center ring-1 ring-slate-100">
-      <p className="text-[8px] font-black uppercase tracking-wider text-slate-400">{label}</p>
+    <div className="rounded-2xl bg-neutral-50 px-2.5 py-2 text-center ring-1 ring-neutral-100">
+      <p className="text-[8px] font-black uppercase tracking-wider text-neutral-400">{label}</p>
       <p className={`mt-0.5 text-sm font-extrabold ${danger ? 'text-red-600' : 'text-brand-700'}`}>
         {value}
       </p>
@@ -125,14 +126,14 @@ function AssignmentSuccessDialog({
     >
       <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl ring-1 ring-black/5">
         <div className="flex flex-col items-center space-y-5 text-center">
-          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-success-100 text-success-600">
             <Icon name="check" className="h-12 w-12" />
           </div>
           <div>
             <h2 id="assignment-success-title" className="text-2xl font-extrabold text-brand-900">
               Entrega registrada
             </h2>
-            <p className="mt-2 text-sm font-semibold leading-snug text-slate-600">
+            <p className="mt-2 text-sm font-semibold leading-snug text-neutral-600">
               Se entregaron las plantas a {success.destino} y bajaron del saldo vivo del lote.
             </p>
             <p className="mt-3 text-lg font-extrabold text-brand-800">
@@ -144,13 +145,9 @@ function AssignmentSuccessDialog({
               </p>
             )}
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-full rounded-2xl bg-brand-700 py-4 text-center text-base font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99]"
-          >
+          <Button variant="primary" size="lg" fullWidth onClick={onClose}>
             Entendido
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -182,25 +179,21 @@ function DevolucionSuccessDialog({
             <h2 id="devolucion-success-title" className="text-2xl font-extrabold text-brand-900">
               Devolucion registrada
             </h2>
-            <p className="mt-2 text-sm font-semibold leading-snug text-slate-600">
+            <p className="mt-2 text-sm font-semibold leading-snug text-neutral-600">
               Se devolvieron las plantas de {success.destino} y volvieron al saldo vivo del lote.
             </p>
             <p className="mt-3 text-lg font-extrabold text-brand-800">
               +{success.cantidad} plantas al vivero
             </p>
             {success.loteReabierto && (
-              <p className="mt-3 rounded-2xl bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 ring-1 ring-emerald-100">
+              <p className="mt-3 rounded-2xl bg-success-50 px-3 py-2 text-xs font-bold text-success-700 ring-1 ring-success-100">
                 La devolucion reabrio el lote: vuelve a estado ACTIVO.
               </p>
             )}
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-full rounded-2xl bg-brand-700 py-4 text-center text-base font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99]"
-          >
+          <Button variant="primary" size="lg" fullWidth onClick={onClose}>
             Entendido
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -294,7 +287,7 @@ function DevolucionDialog({
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/55 sm:items-center sm:px-4"
     >
       <div className="flex max-h-[92vh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl ring-1 ring-black/5 sm:rounded-3xl">
-        <header className="flex items-start justify-between gap-3 border-b border-slate-100 px-5 pb-3 pt-5">
+        <header className="flex items-start justify-between gap-3 border-b border-neutral-100 px-5 pb-3 pt-5">
           <div className="min-w-0">
             <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-sky-600">
               Devolver al vivero
@@ -308,7 +301,7 @@ function DevolucionDialog({
             onClick={onClose}
             disabled={submitting}
             aria-label="Cerrar"
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 text-neutral-600 transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Icon name="x" className="h-4 w-4" />
           </button>
@@ -326,8 +319,8 @@ function DevolucionDialog({
             </span>
           </div>
 
-          <div className="rounded-2xl bg-slate-50 px-3 py-2.5 ring-1 ring-slate-100">
-            <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">
+          <div className="rounded-2xl bg-neutral-50 px-3 py-2.5 ring-1 ring-neutral-100">
+            <p className="text-[9px] font-black uppercase tracking-wider text-neutral-400">
               Disponible para devolver
             </p>
             <p className="mt-0.5 text-xl font-extrabold text-brand-800">{maxDevolver}</p>
@@ -405,20 +398,15 @@ function DevolucionDialog({
           )}
         </form>
 
-        <footer className="grid grid-cols-2 gap-2 border-t border-slate-100 px-5 pb-5 pt-3">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={submitting}
-            className="flex items-center justify-center gap-2 rounded-2xl bg-white px-3 py-3 text-sm font-extrabold text-brand-700 shadow-soft ring-1 ring-brand-100 transition hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-60"
-          >
+        <footer className="grid grid-cols-2 gap-2 border-t border-neutral-100 px-5 pb-5 pt-3">
+          <Button variant="secondary" fullWidth onClick={onClose} disabled={submitting}>
             Cancelar
-          </button>
+          </Button>
           <button
             type="submit"
             form={DEVOLUCION_FORM_ID}
             disabled={!canSubmit}
-            className="flex items-center justify-center gap-2 rounded-2xl bg-sky-600 px-3 py-3 text-sm font-extrabold text-white shadow-soft transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+            className="flex items-center justify-center gap-2 rounded-2xl bg-sky-600 px-3 py-3 text-sm font-extrabold text-white shadow-soft transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-neutral-300"
           >
             <Icon name="package" className="h-4 w-4" />
             {submitting ? 'Devolviendo...' : 'Devolver al vivero'}
@@ -666,26 +654,26 @@ function ViveroLotAsignacionesTab({ lote, onLoteChanged }: Props) {
     <div className="space-y-4">
       <section className="rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
         <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-success-50 text-success-700">
             <Icon name="package" className="h-5 w-5" />
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-extrabold text-brand-800">
               {DISPATCH_FLOW_LABEL[flowStatus]}
             </p>
-            <p className="mt-1 text-[11px] font-semibold leading-snug text-slate-500">
+            <p className="mt-1 text-[11px] font-semibold leading-snug text-neutral-500">
               {DISPATCH_FLOW_DESCRIPTION[flowStatus]}
             </p>
           </div>
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-2">
-          <div className="rounded-2xl bg-emerald-50 px-3 py-3 ring-1 ring-emerald-100">
-            <p className="text-[9px] font-black uppercase tracking-wider text-emerald-700">En vivero</p>
-            <p className="mt-1 text-xl font-extrabold text-emerald-800">{saldoVivo}</p>
+          <div className="rounded-2xl bg-success-50 px-3 py-3 ring-1 ring-success-100">
+            <p className="text-[9px] font-black uppercase tracking-wider text-success-700">En vivero</p>
+            <p className="mt-1 text-xl font-extrabold text-success-800">{saldoVivo}</p>
           </div>
-          <div className="rounded-2xl bg-slate-50 px-3 py-3 ring-1 ring-slate-100">
-            <p className="text-[9px] font-black uppercase tracking-wider text-slate-500">
+          <div className="rounded-2xl bg-neutral-50 px-3 py-3 ring-1 ring-neutral-100">
+            <p className="text-[9px] font-black uppercase tracking-wider text-neutral-500">
               Entregado a subcampanias
             </p>
             <p className="mt-1 text-xl font-extrabold text-brand-800">{entregadoSubcampanias}</p>
@@ -697,17 +685,17 @@ function ViveroLotAsignacionesTab({ lote, onLoteChanged }: Props) {
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-sm font-extrabold text-brand-800">Entregar plantas</p>
-            <p className="text-[11px] font-semibold text-slate-500">
+            <p className="text-[11px] font-semibold text-neutral-500">
               Entregar baja el saldo vivo del lote y requiere evidencia.
             </p>
           </div>
-          <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-emerald-700 ring-1 ring-emerald-100">
+          <span className="rounded-full bg-success-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-success-700 ring-1 ring-success-100">
             Con foto
           </span>
         </div>
 
         {!loteActivo && (
-          <div className="rounded-2xl bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600 ring-1 ring-slate-200">
+          <div className="rounded-2xl bg-neutral-50 px-3 py-2 text-xs font-bold text-neutral-600 ring-1 ring-neutral-200">
             El lote esta en estado {estadoLote} y no acepta nuevas entregas.
           </div>
         )}
@@ -799,7 +787,7 @@ function ViveroLotAsignacionesTab({ lote, onLoteChanged }: Props) {
                     selected
                       ? isReposicion
                         ? 'bg-amber-50 text-amber-800 ring-amber-200'
-                        : 'bg-emerald-50 text-emerald-800 ring-emerald-200'
+                        : 'bg-success-50 text-success-800 ring-success-200'
                       : 'bg-white text-brand-700 ring-brand-100 hover:bg-brand-50'
                   }`}
                 >
@@ -852,14 +840,16 @@ function ViveroLotAsignacionesTab({ lote, onLoteChanged }: Props) {
           />
         </div>
 
-        <button
+        <Button
           type="submit"
+          variant="primary"
+          fullWidth
+          loading={submitting}
+          leftIcon="check"
           disabled={!canCreate}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-700 px-4 py-3.5 text-sm font-extrabold text-white shadow-soft transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:bg-slate-300"
         >
-          <Icon name="check" className="h-4 w-4" />
           {submitting ? 'Entregando...' : 'Entregar plantas'}
-        </button>
+        </Button>
 
         {submitError && (
           <p className="whitespace-pre-line rounded-2xl bg-red-50 px-3 py-2 text-center text-xs font-semibold text-red-600 ring-1 ring-red-200">
@@ -869,11 +859,11 @@ function ViveroLotAsignacionesTab({ lote, onLoteChanged }: Props) {
       </form>
 
       {loading ? (
-        <div className="rounded-3xl bg-white px-4 py-8 text-center text-sm font-semibold text-slate-500 shadow-soft ring-1 ring-black/5">
+        <div className="rounded-3xl bg-white px-4 py-8 text-center text-sm font-semibold text-neutral-500 shadow-soft ring-1 ring-black/5">
           Cargando desglose de asignaciones...
         </div>
       ) : asignaciones.length === 0 ? (
-        <div className="rounded-3xl bg-white px-4 py-8 text-center text-sm font-semibold text-slate-500 shadow-soft ring-1 ring-black/5">
+        <div className="rounded-3xl bg-white px-4 py-8 text-center text-sm font-semibold text-neutral-500 shadow-soft ring-1 ring-black/5">
           No hay asignaciones activas registradas para este lote.
         </div>
       ) : (
@@ -887,7 +877,7 @@ function ViveroLotAsignacionesTab({ lote, onLoteChanged }: Props) {
             return (
               <article
                 key={asig.id}
-                className={`rounded-3xl bg-white p-5 shadow-soft ring-1 ring-slate-100 ${
+                className={`rounded-3xl bg-white p-5 shadow-soft ring-1 ring-neutral-100 ${
                   isExhausted ? 'opacity-75' : ''
                 }`}
               >
@@ -898,7 +888,7 @@ function ViveroLotAsignacionesTab({ lote, onLoteChanged }: Props) {
                         className={`inline-flex items-center rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-widest ring-1 ${
                           isReposicion
                             ? 'bg-amber-50 text-amber-700 ring-amber-100'
-                            : 'bg-emerald-50 text-emerald-700 ring-emerald-100'
+                            : 'bg-success-50 text-success-700 ring-success-100'
                         }`}
                       >
                         {isReposicion ? 'REPOSICION' : 'INICIAL'}
@@ -912,18 +902,18 @@ function ViveroLotAsignacionesTab({ lote, onLoteChanged }: Props) {
                     <h3 className="text-lg font-extrabold leading-tight text-brand-900">
                       {asig.subcampania_nombre || 'Subcampania sin nombre'}
                     </h3>
-                    <p className="mt-1 text-[11px] font-bold leading-snug text-slate-500">
+                    <p className="mt-1 text-[11px] font-bold leading-snug text-neutral-500">
                       {asig.campania_nombre || 'Sin campania'} - {formatDate(asig.fecha_asignacion)}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">Disponible</p>
-                    <p className="text-2xl font-extrabold text-emerald-700">{saldoDisponible}</p>
+                    <p className="text-[9px] font-black uppercase tracking-wider text-neutral-400">Disponible</p>
+                    <p className="text-2xl font-extrabold text-success-700">{saldoDisponible}</p>
                   </div>
                 </div>
 
-                <p className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-slate-500">
-                  <Icon name="user" className="h-4 w-4 text-slate-400" />
+                <p className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-neutral-500">
+                  <Icon name="user" className="h-4 w-4 text-neutral-400" />
                   <span>Coordinador: {asig.coordinador_nombre || 'Sin coordinador'}</span>
                 </p>
 
@@ -937,8 +927,8 @@ function ViveroLotAsignacionesTab({ lote, onLoteChanged }: Props) {
                 {/* Devolucion fisica: sube el saldo vivo del lote y puede reabrir
                     un lote FINALIZADO. Admite devolucion parcial mientras
                     saldo_asignado_disponible > 0 (ya no depende de lo consumido). */}
-                <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2.5 ring-1 ring-slate-100">
-                  <p className="text-[11px] font-bold leading-tight text-slate-500">
+                <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-neutral-50 px-3 py-2.5 ring-1 ring-neutral-100">
+                  <p className="text-[11px] font-bold leading-tight text-neutral-500">
                     {isExhausted
                       ? 'Sin saldo disponible para devolver.'
                       : `Podes devolver hasta ${saldoDisponible} plantas al vivero.`}
@@ -949,7 +939,7 @@ function ViveroLotAsignacionesTab({ lote, onLoteChanged }: Props) {
                     onClick={() => setDevolucionTarget(asig)}
                     className={`shrink-0 rounded-xl px-3 py-2 text-[11px] font-extrabold ring-1 transition ${
                       isExhausted
-                        ? 'cursor-not-allowed bg-white text-slate-400 ring-slate-200'
+                        ? 'cursor-not-allowed bg-white text-neutral-400 ring-neutral-200'
                         : 'bg-white text-sky-700 ring-sky-200 hover:bg-sky-50'
                     }`}
                   >

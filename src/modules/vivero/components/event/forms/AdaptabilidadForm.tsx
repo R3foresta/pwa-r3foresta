@@ -182,7 +182,7 @@ function AdaptabilidadForm({ lote, fechaEmbolsado, onCompleted }: Props) {
                     <p className="text-[11px] font-semibold text-brand-500">{s.hint}</p>
                   </div>
                   {isCurrent && (
-                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                    <span className="rounded-full bg-success-100 px-2 py-0.5 text-[10px] font-bold text-success-700">
                       Actual
                     </span>
                   )}

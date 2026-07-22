@@ -21,6 +21,19 @@ export const STATUS_VARIANT: Record<string, BadgeVariant> = {
   // Vivero — estado de lote
   ACTIVO: 'success',
   FINALIZADO: 'neutral',
+  // Vivero — etapa / sub-etapa (antes ETAPA_BADGE inline en ViveroLotCard)
+  INICIO: 'info', // hoy sky
+  EMBOLSADO: 'warning', // hoy amber
+  ADAPTABILIDAD: 'info', // hoy blue → se consolida a info (sky)
+  DESPACHO: 'success',
+  // Plantación — estado derivado de campaña (antes ESTADO_CAMPANIA_META.tone)
+  // BORRADOR ya definido arriba (warning): la campaña BORRADOR se consolida a esa variante.
+  ACTIVA: 'success', // hoy emerald
+  CREADA: 'neutral', // hoy slate
+  EN_MANTENIMIENTO: 'info', // hoy cyan → info
+  MONITOREO_HISTORICO: 'neutral', // hoy slate
+  COMPLETADA: 'info', // hoy blue → info
+  FINALIZADA_PARCIAL: 'warning', // hoy amber
 }
 
 export function statusVariant(status: string | null | undefined): BadgeVariant {

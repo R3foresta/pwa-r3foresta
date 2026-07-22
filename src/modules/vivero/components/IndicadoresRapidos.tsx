@@ -45,7 +45,7 @@ export default function IndicadoresRapidos({ detail, stats }: Props) {
             <div key={s.label} className="rounded-2xl bg-white px-3 py-2.5 shadow-soft ring-1 ring-black/5">
               <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-brand-500">{s.label}</p>
               <p className={`mt-0.5 text-xl font-extrabold leading-none ${toneText}`}>{s.value.toLocaleString('es-BO')}</p>
-              <p className="mt-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <p className="mt-1 text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
                 {s.unit}{s.hint ? ` · ${s.hint}` : ''}
               </p>
             </div>

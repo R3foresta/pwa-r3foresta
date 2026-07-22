@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Icon from '../../../components/Icon'
+import { Card } from '../../../components/ui'
 
 type Props = {
   title: string
@@ -12,7 +13,8 @@ function CollapsibleSection({ title, children, defaultOpen = false, className }:
   const [open, setOpen] = useState(defaultOpen)
 
   return (
-    <div className={`rounded-3xl bg-white shadow-soft ring-1 ring-black/5 ${className ?? ''}`}>
+    <Card padding="none" className={className}>
+      {/* Cabecera de disclosure (toggle estructural): se mantiene nativa, no <Button>. */}
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
@@ -25,7 +27,7 @@ function CollapsibleSection({ title, children, defaultOpen = false, className }:
         />
       </button>
       {open && <div className="px-4 pb-4">{children}</div>}
-    </div>
+    </Card>
   )
 }
 

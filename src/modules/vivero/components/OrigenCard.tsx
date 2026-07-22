@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import Icon from '../../../components/Icon';
+import { Button } from '../../../components/ui';
 import type { ViveroLotDetailView } from '../types/view-models';
 import { formatUnidadCanonicaDisplay } from '../../../utils/recoleccionUnidad'
 
@@ -18,17 +19,18 @@ export default function OrigenCard({ detail }: OrigenCardProps) {
         <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
           Origen del lote
         </p>
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="sm"
+          rightIcon="chevron-right"
           onClick={() => navigate(`/app/collections/${detail.recoleccionId}`)}
-          className="flex items-center gap-1 rounded-full bg-slate-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-brand-700 ring-1 ring-slate-200 transition hover:bg-brand-50 hover:text-brand-600"
         >
-          Ver ficha <Icon name="chevron-right" className="h-3.5 w-3.5" />
-        </button>
+          Ver ficha
+        </Button>
       </header>
 
       <div className="mt-2 flex items-start gap-3">
-        <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100">
+        <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-success-50 text-success-700 ring-1 ring-success-100">
           <Icon name="leaf" className="h-6 w-6" />
         </div>
         <div className="min-w-0 flex-1">
@@ -38,14 +40,14 @@ export default function OrigenCard({ detail }: OrigenCardProps) {
           <p className="text-sm font-bold text-brand-700 truncate">
             {detail.nombreComunidadOrigen || 'Comunidad no registrada'}
           </p>
-          <p className="mt-0.5 flex items-center gap-2 text-[11px] font-semibold text-slate-500">
+          <p className="mt-0.5 flex items-center gap-2 text-[11px] font-semibold text-neutral-500">
             <span className="inline-flex items-center gap-1">
-              <Icon name="date" className="h-3.5 w-3.5 text-slate-400" />
+              <Icon name="date" className="h-3.5 w-3.5 text-neutral-400" />
               {formatFecha(detail.recoleccionFecha)}
             </span>
-            <span className="h-1 w-1 rounded-full bg-slate-300" />
+            <span className="h-1 w-1 rounded-full bg-neutral-300" />
             <span className="inline-flex items-center gap-1">
-              <Icon name="user" className="h-3.5 w-3.5 text-slate-400" />
+              <Icon name="user" className="h-3.5 w-3.5 text-neutral-400" />
               {detail.responsableNombre}
             </span>
           </p>
@@ -53,16 +55,16 @@ export default function OrigenCard({ detail }: OrigenCardProps) {
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-2">
-        <div className="rounded-2xl bg-emerald-50 px-3 py-2.5 ring-1 ring-emerald-100">
-          <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-emerald-700">
+        <div className="rounded-2xl bg-success-50 px-3 py-2.5 ring-1 ring-success-100">
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-success-700">
             Tipo material
           </p>
-          <p className="mt-0.5 text-sm font-extrabold text-emerald-800">
+          <p className="mt-0.5 text-sm font-extrabold text-success-800">
             {formatTipoMaterial(detail.recoleccionTipoMaterial)}
           </p>
         </div>
-        <div className="rounded-2xl bg-white px-3 py-2.5 ring-1 ring-slate-200">
-          <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-slate-500">
+        <div className="rounded-2xl bg-white px-3 py-2.5 ring-1 ring-neutral-200">
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-neutral-500">
             Cantidad consumida
           </p>
           <p className="mt-0.5 text-sm font-extrabold text-brand-800">

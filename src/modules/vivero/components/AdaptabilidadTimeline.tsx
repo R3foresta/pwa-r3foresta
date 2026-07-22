@@ -17,8 +17,13 @@ const SUBETAPA_LABEL: Record<SubetapaAdaptabilidad, string> = {
   SOL_DIRECTO: 'Sol directo',
 }
 
+// Mini-viz data-driven (gotcha §6.2): el color codifica la intensidad lumínica de
+// la sub-etapa (sombra → media sombra → sol directo), no un estado de dominio; por
+// eso se mantiene inline y no deriva de status.ts. `orange` (SOL_DIRECTO) no tiene
+// variante de <Badge> equivalente y colapsarlo a `warning` borraría el gradiente,
+// así que se conserva por paridad.
 const SUBETAPA_BADGE_TONE: Record<SubetapaAdaptabilidad, string> = {
-  SOMBRA: 'bg-slate-100 text-slate-700 ring-slate-200',
+  SOMBRA: 'bg-neutral-100 text-neutral-700 ring-neutral-200',
   MEDIA_SOMBRA: 'bg-amber-50 text-amber-700 ring-amber-200',
   SOL_DIRECTO: 'bg-orange-100 text-orange-700 ring-orange-200',
 }

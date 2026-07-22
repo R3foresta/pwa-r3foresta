@@ -17,7 +17,7 @@ function SaldoMeter({ saldo, cantidad, unidad }: Props) {
     : ratio >= 0.9
       ? 'bg-amber-400'
       : ratio > 0
-        ? 'bg-emerald-500'
+        ? 'bg-success-500'
         : 'bg-brand-200'
 
   return (

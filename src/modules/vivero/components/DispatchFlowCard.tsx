@@ -32,7 +32,7 @@ function DispatchFlowCard({ detail }: Props) {
           <h2 className="mt-1 text-base font-extrabold text-brand-800">
             {DISPATCH_FLOW_LABEL[current]}
           </h2>
-          <p className="mt-1 text-[11px] font-semibold leading-snug text-slate-500">
+          <p className="mt-1 text-[11px] font-semibold leading-snug text-neutral-500">
             {DISPATCH_FLOW_DESCRIPTION[current]}
           </p>
         </div>
@@ -52,13 +52,13 @@ function DispatchFlowCard({ detail }: Props) {
                 active
                   ? 'bg-brand-700 text-white ring-brand-800'
                   : done
-                    ? 'bg-emerald-50 text-emerald-800 ring-emerald-100'
-                    : 'bg-slate-50 text-slate-500 ring-slate-100'
+                    ? 'bg-success-50 text-success-800 ring-success-100'
+                    : 'bg-neutral-50 text-neutral-500 ring-neutral-100'
               }`}
             >
               <div
                 className={`mb-2 flex h-7 w-7 items-center justify-center rounded-full ${
-                  active ? 'bg-white/15' : done ? 'bg-emerald-100' : 'bg-white'
+                  active ? 'bg-white/15' : done ? 'bg-success-100' : 'bg-white'
                 }`}
               >
                 <Icon name={done ? 'check' : step.icon} className="h-3.5 w-3.5" />

@@ -85,7 +85,7 @@ function FotosUploader({
             )}
           </p>
           {photos.length > 0 && (
-            <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
+            <span className="rounded-full bg-success-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-success-700">
               {photos.length}/{max}
             </span>
           )}

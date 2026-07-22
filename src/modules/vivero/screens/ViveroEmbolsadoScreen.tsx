@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Icon from '../../../components/Icon'
+import { Button } from '../../../components/ui'
 import { formatUnidadCanonicaDisplay } from '../../../utils/recoleccionUnidad'
 import { todayLocalISO } from '../../../utils/validations/date'
 import CantidadInputCard from '../components/event/CantidadInputCard'
@@ -145,23 +146,19 @@ function ViveroEmbolsadoScreen() {
               {context?.motivo_bloqueo ?? 'El lote no permite esta acción en su estado actual.'}
             </p>
             {context?.evento_embolsado_existente && (
-              <div className="mt-4 rounded-2xl bg-emerald-50 px-4 py-3 ring-1 ring-emerald-200">
-                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-600">
+              <div className="mt-4 rounded-2xl bg-success-50 px-4 py-3 ring-1 ring-success-200">
+                <p className="text-xs font-semibold uppercase tracking-wide text-success-600">
                   Embolsado existente
                 </p>
-                <p className="mt-1 text-sm font-bold text-emerald-700">
+                <p className="mt-1 text-sm font-bold text-success-700">
                   {context.evento_embolsado_existente.cantidad_afectada} plantas ·{' '}
                   {context.evento_embolsado_existente.fecha_evento}
                 </p>
               </div>
             )}
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="mt-6 w-full rounded-2xl bg-brand-700 py-3 text-sm font-extrabold text-white"
-            >
+            <Button variant="primary" fullWidth onClick={() => navigate(-1)} className="mt-6">
               Volver
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -173,7 +170,7 @@ function ViveroEmbolsadoScreen() {
       <div className="relative min-h-screen bg-[#eef2ed]">
         <div className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center px-5 pb-28">
           <div className="w-full rounded-3xl bg-white p-6 text-center shadow-soft ring-1 ring-black/5">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-success-100 text-success-600">
               <Icon name="check" className="h-8 w-8" />
             </div>
             <h2 className="text-xl font-extrabold text-brand-700">Embolsado registrado</h2>
@@ -185,28 +182,28 @@ function ViveroEmbolsadoScreen() {
                   {result.plantas_vivas_iniciales}
                 </p>
               </div>
-              <div className="rounded-2xl bg-emerald-50 px-3 py-3">
-                <p className="text-[11px] uppercase tracking-wide text-emerald-600">Saldo vivo</p>
-                <p className="mt-1 text-2xl font-extrabold text-emerald-700">
+              <div className="rounded-2xl bg-success-50 px-3 py-3">
+                <p className="text-[11px] uppercase tracking-wide text-success-600">Saldo vivo</p>
+                <p className="mt-1 text-2xl font-extrabold text-success-700">
                   {result.saldo_vivo_despues}
                 </p>
               </div>
             </div>
             <div className="mt-6 space-y-3">
-              <button
-                type="button"
+              <Button
+                variant="primary"
+                fullWidth
                 onClick={() => navigate(`/app/vivero/${result.lote_vivero_id}`, { replace: true })}
-                className="w-full rounded-2xl bg-brand-700 py-3 text-sm font-extrabold text-white"
               >
                 Ver detalle del lote
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant="secondary"
+                fullWidth
                 onClick={() => navigate('/app/vivero', { replace: true })}
-                className="w-full rounded-2xl bg-white py-3 text-sm font-extrabold text-brand-700 ring-1 ring-brand-200"
               >
                 Volver a lotes
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -262,7 +259,7 @@ function ViveroEmbolsadoScreen() {
           {/* Lote info card */}
           {context && (
             <div className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-soft ring-1 ring-black/5">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-success-100 text-success-600">
                 <Icon name="leaf" className="h-5 w-5" />
               </div>
               <div className="min-w-0">
@@ -370,7 +367,7 @@ function ViveroEmbolsadoScreen() {
               rows={4}
               disabled={step === 'submitting'}
               placeholder="Acá escribes las notas mientras vas haciendo la recolección"
-              className="w-full resize-none rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-brand-700 shadow-soft ring-1 ring-black/5 outline-none placeholder:font-medium placeholder:text-slate-400 focus:ring-2 focus:ring-brand-300 disabled:opacity-50"
+              className="w-full resize-none rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-brand-700 shadow-soft ring-1 ring-black/5 outline-none placeholder:font-medium placeholder:text-neutral-400 focus:ring-2 focus:ring-brand-300 disabled:opacity-50"
             />
           </div>
 
@@ -390,7 +387,7 @@ function ViveroEmbolsadoScreen() {
               type="submit"
               form={FORM_ID}
               disabled={submitting}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-3.5 text-base font-extrabold text-white shadow-soft transition hover:bg-emerald-700 disabled:cursor-progress disabled:opacity-90"
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-success-600 px-4 py-3.5 text-base font-extrabold text-white shadow-soft transition hover:bg-success-700 disabled:cursor-progress disabled:opacity-90"
             >
               {submitting ? (
                 <>

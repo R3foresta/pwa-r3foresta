@@ -1,19 +1,16 @@
 import type { ViveroLotCardData } from '../types/view-models'
 import SurvivalBar from './SurvivalBar'
 import { DISPATCH_FLOW_LABEL, getDispatchFlowStatus } from '../utils/dispatchFlow'
+import { Badge, Button, statusVariant } from '../../../components/ui'
 
+// Etiquetas de etapa (solo texto). El color de cada etapa vive en el registro
+// único `status.ts` (INICIO→info, EMBOLSADO→warning, ADAPTABILIDAD→info,
+// FINALIZADO→neutral), no en un mapa de color local. Ver FRONTEND_UI_STANDARD.md §5.
 const ETAPA_LABEL: Record<string, string> = {
   INICIO: 'Inicio',
   EMBOLSADO: 'Embolsado',
   ADAPTABILIDAD: 'Adaptabilidad',
   FINALIZADO: 'Finalizado',
-}
-
-const ETAPA_BADGE: Record<string, string> = {
-  INICIO: 'bg-sky-50 text-sky-700 border-sky-200',
-  EMBOLSADO: 'bg-amber-50 text-amber-700 border-amber-200',
-  ADAPTABILIDAD: 'bg-blue-50 text-blue-700 border-blue-200',
-  FINALIZADO: 'bg-slate-50 text-slate-600 border-slate-200',
 }
 
 function getEtapa(lot: ViveroLotCardData): string {
@@ -32,9 +29,10 @@ type Props = {
 
 function ViveroLotCard({ lot, onClick, cta, compact }: Props) {
   const etapa = getEtapa(lot)
-  const badgeClass = ETAPA_BADGE[etapa] ?? ETAPA_BADGE.INICIO
 
   if (compact) {
+    // Wrapper es una zona tocable a pantalla completa (no un botón de acción):
+    // se mantiene nativo, no <Button>, para no heredar el estilo de acción. (gotcha §6.5)
     const Wrapper = onClick ? 'button' : 'div'
     return (
       <Wrapper
@@ -47,11 +45,9 @@ function ViveroLotCard({ lot, onClick, cta, compact }: Props) {
             {lot.codigo} · {lot.diasDesdeInicio}d · {lot.vivero}
           </p>
         </div>
-        <span
-          className={`shrink-0 rounded-full border px-2.5 py-0.5 text-[10px] font-semibold ${badgeClass}`}
-        >
+        <Badge variant={statusVariant(etapa)} size="sm" className="shrink-0">
           {ETAPA_LABEL[etapa]}
-        </span>
+        </Badge>
       </Wrapper>
     )
   }
@@ -61,13 +57,15 @@ function ViveroLotCard({ lot, onClick, cta, compact }: Props) {
   const flowStatus = getDispatchFlowStatus(lot)
   const flowTone =
     flowStatus === 'ASIGNADO_A_DESTINO'
-      ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
+      ? 'bg-success-50 text-success-700 ring-success-200'
       : flowStatus === 'LISTO_PARA_DESPACHO'
         ? 'bg-blue-50 text-blue-700 ring-blue-200'
-        : 'bg-slate-50 text-slate-600 ring-slate-200'
+        : 'bg-neutral-50 text-neutral-600 ring-neutral-200'
 
   return (
     <div className="w-full rounded-3xl bg-white shadow-soft ring-1 ring-black/5">
+      {/* Zona tocable a pantalla completa (abre el detalle): control estructural,
+          se mantiene nativo en vez de <Button> para no heredar el estilo de acción. (gotcha §6.5) */}
       <button
         type="button"
         onClick={onClick}
@@ -80,7 +78,7 @@ function ViveroLotCard({ lot, onClick, cta, compact }: Props) {
                 {lot.especie}
               </h2>
               {entregado > 0 && (
-                <span className="shrink-0 rounded bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 ring-1 ring-emerald-200">
+                <span className="shrink-0 rounded bg-success-50 px-1.5 py-0.5 text-[9px] font-bold text-success-700 ring-1 ring-success-200">
                   ENTREGADO
                 </span>
               )}
@@ -95,12 +93,10 @@ function ViveroLotCard({ lot, onClick, cta, compact }: Props) {
             </div>
             <p className="text-sm font-semibold text-brand-500">{lot.codigo}</p>
           </div>
-          <span
-            className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${badgeClass}`}
-          >
+          <Badge variant={statusVariant(etapa)} className="shrink-0">
             {ETAPA_LABEL[etapa]}
             {lot.subetapaActual ? ` · ${lot.subetapaActual.replace('_', ' ')}` : ''}
-          </span>
+          </Badge>
         </div>
 
         <div className="mt-3 space-y-2">
@@ -148,10 +144,10 @@ function ViveroLotCard({ lot, onClick, cta, compact }: Props) {
 
         {/* Columnas derivadas de saldos (modelo fisico) */}
         {lot.saldoAsignadoSubcampanias !== undefined && (
-          <div className="grid grid-cols-2 gap-2 border-t border-slate-100 pt-3 mt-4 text-center">
+          <div className="grid grid-cols-2 gap-2 border-t border-neutral-100 pt-3 mt-4 text-center">
             <div>
               <p className="text-[9px] font-bold uppercase tracking-wider text-brand-600">En vivero</p>
-              <p className={`text-xs font-extrabold mt-1 ${enVivero === 0 ? 'text-red-500' : 'text-emerald-700'}`}>
+              <p className={`text-xs font-extrabold mt-1 ${enVivero === 0 ? 'text-red-500' : 'text-success-700'}`}>
                 {enVivero}
               </p>
             </div>
@@ -167,20 +163,17 @@ function ViveroLotCard({ lot, onClick, cta, compact }: Props) {
 
       {cta && (
         <div className="px-4 pb-4">
-          <button
-            type="button"
+          <Button
+            variant="primary"
+            fullWidth
             disabled={cta.disabled}
             onClick={(e) => {
               e.stopPropagation()
               cta.onClick()
             }}
-            className={`w-full rounded-2xl py-3 text-sm font-extrabold text-white transition active:scale-[0.98] ${cta.disabled
-              ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
-              : 'bg-brand-700 hover:bg-brand-600'
-              }`}
           >
             {cta.label}
-          </button>
+          </Button>
         </div>
       )}
     </div>

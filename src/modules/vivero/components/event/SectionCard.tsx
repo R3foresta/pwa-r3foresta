@@ -16,12 +16,12 @@ type Props = {
 
 function SectionCard({ index, total, status, icon, title, hint, badge, children }: Props) {
   const ringTone = status.done
-    ? 'ring-emerald-100'
+    ? 'ring-success-100'
     : status.active
       ? 'ring-brand-200'
       : 'ring-black/5'
   const badgeTone = status.done
-    ? 'bg-emerald-500 text-white'
+    ? 'bg-success-500 text-white'
     : status.active
       ? 'bg-brand-500 text-white'
       : 'bg-brand-50 text-brand-600'

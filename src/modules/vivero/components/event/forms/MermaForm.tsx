@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import ConfirmDialog from '../../../../../components/ConfirmDialog'
 import Icon from '../../../../../components/Icon'
+import { Button } from '../../../../../components/ui'
 import { useAuth } from '../../../../../contexts/AuthContext'
 import { LotesViveroService } from '../../../../../services/lotes-vivero.service'
 import { clearDraft, loadDraft, saveDraft } from '../../../../../utils/formDraft'
@@ -563,7 +564,7 @@ function MermaForm({ lote, fechaEmbolsado, onCompleted }: Props) {
       {step === 'success' && lastResult && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-4 pb-4 pt-8 backdrop-blur-sm sm:items-center">
           <div className="w-full max-w-sm rounded-3xl bg-white p-5 shadow-soft ring-1 ring-black/5">
-            <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+            <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-success-50 text-success-600">
               <Icon name="check" className="h-5 w-5" />
             </div>
             <h2 className="text-base font-extrabold text-brand-700">Merma registrada</h2>
@@ -574,20 +575,12 @@ function MermaForm({ lote, fechaEmbolsado, onCompleted }: Props) {
               {lastResult.saldo_vivo_despues === 1 ? 'viva' : 'vivas'}.
             </p>
             <div className="mt-5 flex flex-col gap-2">
-              <button
-                type="button"
-                onClick={onCompleted}
-                className="flex h-11 items-center justify-center rounded-2xl bg-brand-700 text-sm font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:bg-brand-800"
-              >
+              <Button variant="primary" fullWidth onClick={onCompleted}>
                 Listo
-              </button>
-              <button
-                type="button"
-                onClick={handleRegistrarOtra}
-                className="flex h-11 items-center justify-center rounded-2xl bg-white text-sm font-extrabold text-brand-700 ring-1 ring-brand-100 transition hover:bg-brand-50"
-              >
+              </Button>
+              <Button variant="secondary" fullWidth onClick={handleRegistrarOtra}>
                 Registrar otra merma
-              </button>
+              </Button>
             </div>
           </div>
         </div>

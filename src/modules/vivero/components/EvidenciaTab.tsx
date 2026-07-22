@@ -36,7 +36,7 @@ export default function EvidenciaTab({ events, onSelectPhoto }: EvidenciaTabProp
           key={`${photo.url}-${index}`}
           type="button"
           onClick={() => onSelectPhoto(photo)}
-          className="group overflow-hidden rounded-2xl bg-white text-left shadow-sm ring-1 ring-slate-100 transition hover:-translate-y-0.5 hover:shadow-md relative"
+          className="group overflow-hidden rounded-2xl bg-white text-left shadow-sm ring-1 ring-neutral-100 transition hover:-translate-y-0.5 hover:shadow-md relative"
         >
           <div className="absolute left-2 top-2 z-10 rounded-md bg-black/60 px-1.5 py-0.5 backdrop-blur-sm">
             <p className="text-[8px] font-black uppercase tracking-widest text-white">
@@ -48,7 +48,7 @@ export default function EvidenciaTab({ events, onSelectPhoto }: EvidenciaTabProp
             </p>
           </div>
 
-          <div className="aspect-[4/3] w-full overflow-hidden bg-slate-50">
+          <div className="aspect-[4/3] w-full overflow-hidden bg-neutral-50">
             <img 
               src={photo.url} 
               alt={photo.titulo} 
@@ -57,9 +57,9 @@ export default function EvidenciaTab({ events, onSelectPhoto }: EvidenciaTabProp
           </div>
           
           <div className="space-y-1 p-3">
-            <p className="line-clamp-1 text-xs font-bold text-[#002b15]">{photo.titulo || 'Evidencia técnica'}</p>
-            <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">{photo.autor}</p>
-            <p className="text-[10px] font-semibold text-slate-400">{photo.fecha}</p>
+            <p className="line-clamp-1 text-xs font-bold text-brand-950">{photo.titulo || 'Evidencia técnica'}</p>
+            <p className="text-[9px] font-bold uppercase tracking-widest text-neutral-400">{photo.autor}</p>
+            <p className="text-[10px] font-semibold text-neutral-400">{photo.fecha}</p>
           </div>
         </button>
       ))}

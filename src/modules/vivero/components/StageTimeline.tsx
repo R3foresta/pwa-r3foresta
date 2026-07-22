@@ -23,45 +23,48 @@ type Props = {
   mermaAction?: { onClick: () => void } | null
 }
 
+// Theming de mini-viz del timeline (gotcha §6.2): ícono + color por etapa. Codifica
+// un dato de la visualización (avance/estado de cada hito), no una píldora de estado
+// de dominio; por eso se mantiene inline con tokens migrados y no deriva de status.ts.
 const STAGE_CONFIG: Record<
   string,
   { iconName: IconName; doneClass: string; activeClass: string; pendingClass: string }
 > = {
   INICIO: {
     iconName: 'check',
-    doneClass: 'bg-slate-200 text-slate-500',
-    activeClass: 'bg-emerald-100 text-emerald-600 ring-2 ring-emerald-400',
-    pendingClass: 'bg-slate-100 text-slate-400',
+    doneClass: 'bg-neutral-200 text-neutral-500',
+    activeClass: 'bg-success-100 text-success-600 ring-2 ring-success-400',
+    pendingClass: 'bg-neutral-100 text-neutral-400',
   },
   EMBOLSADO: {
     iconName: 'package',
-    doneClass: 'bg-slate-200 text-slate-500',
+    doneClass: 'bg-neutral-200 text-neutral-500',
     activeClass: 'bg-teal-50 text-teal-600 ring-2 ring-teal-400',
-    pendingClass: 'bg-slate-100 text-slate-400',
+    pendingClass: 'bg-neutral-100 text-neutral-400',
   },
   MERMA: {
     iconName: 'trash',
     doneClass: 'bg-red-100 text-red-600',
     activeClass: 'bg-red-50 text-red-500 ring-2 ring-red-300',
-    pendingClass: 'bg-slate-100 text-slate-400',
+    pendingClass: 'bg-neutral-100 text-neutral-400',
   },
   ADAPTABILIDAD: {
     iconName: 'leaf',
-    doneClass: 'bg-slate-200 text-slate-500',
+    doneClass: 'bg-neutral-200 text-neutral-500',
     activeClass: 'bg-amber-50 text-amber-600 ring-2 ring-amber-400',
-    pendingClass: 'bg-slate-100 text-slate-400',
+    pendingClass: 'bg-neutral-100 text-neutral-400',
   },
   DESPACHO: {
     iconName: 'planting',
-    doneClass: 'bg-slate-200 text-slate-500',
+    doneClass: 'bg-neutral-200 text-neutral-500',
     activeClass: 'bg-blue-50 text-blue-600 ring-2 ring-blue-400',
-    pendingClass: 'bg-slate-100 text-slate-400',
+    pendingClass: 'bg-neutral-100 text-neutral-400',
   },
   CIERRE: {
     iconName: 'info',
-    doneClass: 'bg-slate-200 text-slate-500',
-    activeClass: 'bg-slate-100 text-slate-500 ring-2 ring-slate-300',
-    pendingClass: 'bg-slate-100 text-slate-300',
+    doneClass: 'bg-neutral-200 text-neutral-500',
+    activeClass: 'bg-neutral-100 text-neutral-500 ring-2 ring-neutral-300',
+    pendingClass: 'bg-neutral-100 text-neutral-300',
   },
 }
 
@@ -104,7 +107,7 @@ function StageTimeline({ stages, imagenUrl, nextAction, mermaAction }: Props) {
                 </div>
                 {!isLast && (
                   <div
-                    className={`mt-1 w-0.5 flex-1 ${stage.done ? 'bg-emerald-200' : 'bg-slate-200'}`}
+                    className={`mt-1 w-0.5 flex-1 ${stage.done ? 'bg-success-200' : 'bg-neutral-200'}`}
                     style={{ minHeight: '14px' }}
                   />
                 )}
@@ -129,13 +132,13 @@ function StageTimeline({ stages, imagenUrl, nextAction, mermaAction }: Props) {
                           className={`rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${
                             sub.active
                               ? 'bg-blue-100 text-blue-700 ring-1 ring-blue-300'
-                              : 'bg-slate-100 text-slate-500'
+                              : 'bg-neutral-100 text-neutral-500'
                           }`}
                         >
                           {SUBETAPA_LABELS[sub.key] ?? sub.label}
                         </span>
                         {i < stage.subStates!.length - 1 && (
-                          <span className="text-[9px] text-slate-400">›</span>
+                          <span className="text-[9px] text-neutral-400">›</span>
                         )}
                       </div>
                     ))}
@@ -171,7 +174,7 @@ function StageTimeline({ stages, imagenUrl, nextAction, mermaAction }: Props) {
           <button
             type="button"
             onClick={nextAction.onClick}
-            className="flex flex-col items-center justify-center gap-1 rounded-2xl border-2 border-emerald-500 bg-white px-2 py-2.5 text-emerald-600 transition hover:bg-emerald-50 active:scale-95"
+            className="flex flex-col items-center justify-center gap-1 rounded-2xl border-2 border-success-500 bg-white px-2 py-2.5 text-success-600 transition hover:bg-success-50 active:scale-95"
           >
             <Icon name={nextAction.iconName} className="h-5 w-5" />
             <span className="text-center text-[11px] font-bold leading-tight">

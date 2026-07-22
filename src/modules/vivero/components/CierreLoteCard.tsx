@@ -28,8 +28,8 @@ export default function CierreLoteCard({ detail, events, stats }: CierreLoteCard
   return (
     <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-black/5">
       <div className="flex items-center justify-between mb-4">
-        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Cierre del lote</p>
-        <span className="rounded-full bg-[#1e293b] px-2.5 py-1 text-[9px] font-black tracking-widest text-white uppercase">
+        <p className="text-[10px] font-black uppercase tracking-widest text-neutral-400">Cierre del lote</p>
+        <span className="rounded-full bg-neutral-800 px-2.5 py-1 text-[9px] font-black tracking-widest text-white uppercase">
           {detail.estadoLote}
         </span>
       </div>
@@ -67,9 +67,9 @@ export default function CierreLoteCard({ detail, events, stats }: CierreLoteCard
       </div>
 
       <div className="mt-3 grid grid-cols-3 gap-2">
-         <div className="rounded-2xl bg-white p-3 ring-1 ring-slate-200 flex flex-col justify-end items-center h-full text-center">
-            <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1 leading-tight">Días<br/>Activo</p>
-            <p className="text-[22px] font-black text-[#002b15] leading-none mt-1">{detail.diasDesdeInicio || 0}</p>
+         <div className="rounded-2xl bg-white p-3 ring-1 ring-neutral-200 flex flex-col justify-end items-center h-full text-center">
+            <p className="text-[9px] font-black uppercase tracking-widest text-neutral-500 mb-1 leading-tight">Días<br/>Activo</p>
+            <p className="text-[22px] font-black text-brand-950 leading-none mt-1">{detail.diasDesdeInicio || 0}</p>
          </div>
          <div className={`rounded-2xl p-3 ring-1 flex flex-col justify-end items-center h-full text-center ${
             isDescartePreEmbolsado ? 'bg-amber-50/70 ring-amber-100' : 'bg-blue-50/60 ring-blue-100'

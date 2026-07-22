@@ -46,7 +46,7 @@ function ProgressHeader({ steps, onBack, eyebrow, title, counterLabel = 'listos'
             <div
               key={i}
               className={`h-1.5 flex-1 rounded-full transition-colors ${
-                s.done ? 'bg-emerald-500' : s.active ? 'bg-brand-500' : 'bg-brand-100'
+                s.done ? 'bg-success-500' : s.active ? 'bg-brand-500' : 'bg-brand-100'
               }`}
             />
           ))}

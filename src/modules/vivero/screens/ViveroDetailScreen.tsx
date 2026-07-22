@@ -92,7 +92,7 @@ export default function ViveroDetailScreen() {
       <div className="flex min-h-screen items-center justify-center bg-[#d8e0d3]">
         <div className="rounded-3xl bg-white p-6 text-center shadow-2xl max-w-sm">
           <p className="text-red-500 font-bold mb-2">Error</p>
-          <p className="text-sm text-slate-600">{error}</p>
+          <p className="text-sm text-neutral-600">{error}</p>
         </div>
       </div>
     )
@@ -120,12 +120,13 @@ export default function ViveroDetailScreen() {
           <HeroHeader detail={detail} customImage={ultimaFotoLote} />
 
           <div className="sticky top-0 z-20 px-5 pt-4 pb-2 bg-[#eef2ed]/95 backdrop-blur-sm">
-            <div className="flex rounded-full bg-white p-1 ring-1 ring-slate-200">
+            {/* Control segmentado de pestañas (a medida, no calza en <Button>): tokens migrados. */}
+            <div className="flex rounded-full bg-white p-1 ring-1 ring-neutral-200">
               {(['resumen', 'asignaciones', 'historial', 'evidencia'] as const).map(tab => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`flex-1 py-2 rounded-full text-xs font-black capitalize transition-colors ${activeTab === tab ? 'bg-brand-700 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                  className={`flex-1 py-2 rounded-full text-xs font-black capitalize transition-colors ${activeTab === tab ? 'bg-brand-700 text-white shadow-sm' : 'text-neutral-500 hover:text-neutral-700'
                     }`}
                 >
                   {tab}
