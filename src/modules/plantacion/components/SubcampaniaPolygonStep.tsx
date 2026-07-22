@@ -464,16 +464,16 @@ function SubcampaniaPolygonStep({
     return (
       <>
         <main className="space-y-4 px-5 pt-4">
-          <section className="rounded-3xl bg-amber-50 p-4 shadow-soft ring-1 ring-amber-100">
+          <section className="rounded-3xl bg-warning-50 p-4 shadow-soft ring-1 ring-warning-100">
             <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-800">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-warning-100 text-warning-800">
                 <Icon name="info" className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-sm font-extrabold text-amber-950">
+                <p className="text-sm font-extrabold text-warning-950">
                   Guarda primero los datos base
                 </p>
-                <p className="mt-1 text-xs font-bold leading-relaxed text-amber-900">
+                <p className="mt-1 text-xs font-bold leading-relaxed text-warning-900">
                   El polígono se guarda sobre el mismo borrador de la subcampaña.
                 </p>
               </div>
@@ -481,7 +481,7 @@ function SubcampaniaPolygonStep({
           </section>
         </main>
         <div className="px-5">
-          <div className="sticky bottom-0 -mx-5 bg-gradient-to-t from-[#eef2ed] via-[#eef2ed]/95 to-transparent px-5 pb-5 pt-3">
+          <div className="sticky bottom-0 -mx-5 bg-gradient-to-t from-brand-50 via-brand-50/95 to-transparent px-5 pb-5 pt-3">
             <Button variant="primary" size="lg" fullWidth onClick={onBackToBase}>
               Volver al paso anterior
             </Button>
@@ -602,7 +602,7 @@ function SubcampaniaPolygonStep({
               type="button"
               onClick={handleClearPolygon}
               disabled={vertices.length === 0 || submitting}
-              className="flex items-center justify-center gap-2 rounded-2xl bg-white px-3 py-3 text-xs font-extrabold text-red-700 shadow-soft ring-1 ring-red-100 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex items-center justify-center gap-2 rounded-2xl bg-white px-3 py-3 text-xs font-extrabold text-danger-700 shadow-soft ring-1 ring-danger-100 transition hover:bg-danger-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Icon name="trash" className="h-4 w-4" />
               Limpiar
@@ -626,7 +626,7 @@ function SubcampaniaPolygonStep({
           )}
 
           {polygonError && (
-            <p className="rounded-2xl bg-red-50 px-4 py-2 text-xs font-bold text-red-700 ring-1 ring-red-100">
+            <p className="rounded-2xl bg-danger-50 px-4 py-2 text-xs font-bold text-danger-700 ring-1 ring-danger-100">
               {polygonError}
             </p>
           )}
@@ -634,14 +634,14 @@ function SubcampaniaPolygonStep({
       </main>
 
       <div className="px-5">
-        <div className="sticky bottom-0 -mx-5 bg-gradient-to-t from-[#eef2ed] via-[#eef2ed]/95 to-transparent px-5 pb-5 pt-3">
+        <div className="sticky bottom-0 -mx-5 bg-gradient-to-t from-brand-50 via-brand-50/95 to-transparent px-5 pb-5 pt-3">
           {statusMessage && (
             <p className="mb-2 rounded-2xl bg-success-50 px-4 py-2 text-center text-xs font-extrabold text-success-700 ring-1 ring-success-100">
               {statusMessage}
             </p>
           )}
           {submitError && (
-            <p className="mb-2 rounded-2xl bg-red-50 px-4 py-2 text-center text-xs font-extrabold text-red-700 ring-1 ring-red-100">
+            <p className="mb-2 rounded-2xl bg-danger-50 px-4 py-2 text-center text-xs font-extrabold text-danger-700 ring-1 ring-danger-100">
               {submitError}
             </p>
           )}

@@ -241,9 +241,9 @@ function RecoleccionFormDatosScreen() {
     (formData.placePhotos?.length || 0) >= 1 && (formData.totalPhotos?.length || 0) >= 1;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#f6f7f3] to-[#eef1eb] text-brand-700">
+    <div className="min-h-screen bg-gradient-to-b from-brand-50 to-brand-50 text-brand-700">
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-32">
-        <header className="sticky top-0 z-40 bg-white/150 backdrop-blur-md flex items-center justify-center pb-4 pt-6 shadow-sm border-b border-slate-200/50">
+        <header className="sticky top-0 z-40 bg-white/150 backdrop-blur-md flex items-center justify-center pb-4 pt-6 shadow-sm border-b border-neutral-200/50">
           <button
             type="button"
             aria-label="Volver"
@@ -258,20 +258,20 @@ function RecoleccionFormDatosScreen() {
             </h1>
             <p className="text-sm font-semibold text-brand-500">
               Paso 1 de 3 ·{" "}
-              <span className="text-slate-500">Datos generales</span>
+              <span className="text-neutral-500">Datos generales</span>
             </p>
           </div>
         </header>
 
         <div className="flex-1 space-y-5 px-5">
           {loadingEditDraft && (
-            <div className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-600 shadow-soft ring-1 ring-black/5">
+            <div className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-neutral-600 shadow-soft ring-1 ring-black/5">
               Cargando borrador para edición...
             </div>
           )}
 
           <div className="space-y-2">
-            <p className="text-sm font-semibold text-brand-700">Fecha <span className="text-red-500">*</span></p>
+            <p className="text-sm font-semibold text-brand-700">Fecha <span className="text-danger-500">*</span></p>
             <input
               type="date"
               value={date}
@@ -281,17 +281,17 @@ function RecoleccionFormDatosScreen() {
                 setDate(event.target.value);
                 setErrors(prev => ({ ...prev, date: false, dateRange: false }));
               }}
-              className={`w-full rounded-2xl border px-4 py-3 text-base font-semibold text-slate-700 shadow-soft outline-none transition focus:ring-2 ${
+              className={`w-full rounded-2xl border px-4 py-3 text-base font-semibold text-neutral-700 shadow-soft outline-none transition focus:ring-2 ${
                 errors.date || errors.dateRange
-                  ? 'border-red-400 focus:border-red-400 focus:ring-red-200'
-                  : 'border-slate-200 bg-white focus:border-brand-400 focus:ring-brand-200'
+                  ? 'border-danger-400 focus:border-danger-400 focus:ring-danger-200'
+                  : 'border-neutral-200 bg-white focus:border-brand-400 focus:ring-brand-200'
               }`}
             />
             {errors.date && (
-              <p className="text-xs font-semibold text-red-500">* La fecha es obligatoria</p>
+              <p className="text-xs font-semibold text-danger-500">* La fecha es obligatoria</p>
             )}
             {errors.dateRange && (
-              <p className="text-xs font-semibold text-red-500">* La fecha debe estar entre {dateRange.min} y {dateRange.max}</p>
+              <p className="text-xs font-semibold text-danger-500">* La fecha debe estar entre {dateRange.min} y {dateRange.max}</p>
             )}
           </div>
 
@@ -317,11 +317,11 @@ function RecoleccionFormDatosScreen() {
                       {selectedPlantLabel}
                     </p>
                     {selectedPlantScientificName ? (
-                      <p className="text-sm font-semibold italic text-slate-500">
+                      <p className="text-sm font-semibold italic text-neutral-500">
                         {selectedPlantScientificName}
                       </p>
                     ) : (
-                      <p className="text-sm font-semibold text-slate-500">
+                      <p className="text-sm font-semibold text-neutral-500">
                         Especie seleccionada correctamente.
                       </p>
                     )}
@@ -336,7 +336,7 @@ function RecoleccionFormDatosScreen() {
                         nombre_comercial: undefined,
                       })
                     }
-                    className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-600 transition hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700"
+                    className="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm font-bold text-neutral-600 transition hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700"
                   >
                     Cambiar
                   </button>
@@ -350,8 +350,8 @@ function RecoleccionFormDatosScreen() {
                   disabled={loadingPlantas}
                   className={`w-full rounded-2xl border px-4 py-3 text-left text-base font-semibold shadow-soft transition hover:bg-brand-50 disabled:opacity-50 ${
                     errors.planta
-                      ? "border-red-400 bg-red-50 text-red-500"
-                      : "border-slate-200 bg-white text-slate-500 hover:border-brand-300"
+                      ? "border-danger-400 bg-danger-50 text-danger-500"
+                      : "border-neutral-200 bg-white text-neutral-500 hover:border-brand-300"
                   }`}
                 >
                   {loadingPlantas ? "Sincronizando catálogo..." : "Seleccionar del catálogo botánico"}
@@ -362,7 +362,7 @@ function RecoleccionFormDatosScreen() {
               </div>
             )}
             {errors.planta && (
-              <p className="text-xs font-semibold text-red-500">
+              <p className="text-xs font-semibold text-danger-500">
                 * Debes seleccionar una especie del catálogo para continuar
               </p>
             )}
@@ -370,7 +370,7 @@ function RecoleccionFormDatosScreen() {
 
           <div className="space-y-2">
             <p className="text-base font-extrabold text-brand-700">
-              Método de recolección <span className="text-red-500">*</span>
+              Método de recolección <span className="text-danger-500">*</span>
             </p>
             <select
               value={formData.metodo_id ? String(formData.metodo_id) : ""}
@@ -386,8 +386,8 @@ function RecoleccionFormDatosScreen() {
               disabled={loadingMetodos}
               className={`w-full rounded-2xl border px-4 py-3 text-base font-semibold shadow-soft outline-none transition focus:ring-2 ${
                 errors.method
-                  ? "border-red-400 bg-red-50 text-red-500 focus:border-red-400 focus:ring-red-200"
-                  : "border-slate-200 bg-white text-slate-700 focus:border-brand-400 focus:ring-brand-200"
+                  ? "border-danger-400 bg-danger-50 text-danger-500 focus:border-danger-400 focus:ring-danger-200"
+                  : "border-neutral-200 bg-white text-neutral-700 focus:border-brand-400 focus:ring-brand-200"
               }`}
             >
               <option value="">
@@ -400,10 +400,10 @@ function RecoleccionFormDatosScreen() {
               ))}
             </select>
             {selectedMethod?.descripcion && (
-              <p className="text-xs font-semibold text-slate-500">{selectedMethod.descripcion}</p>
+              <p className="text-xs font-semibold text-neutral-500">{selectedMethod.descripcion}</p>
             )}
             {errors.method && (
-              <p className="text-xs font-semibold text-red-500">
+              <p className="text-xs font-semibold text-danger-500">
                 * Selecciona un método de recolección
               </p>
             )}
@@ -433,7 +433,7 @@ function RecoleccionFormDatosScreen() {
                   className={`rounded-xl border px-3 py-2 text-sm font-bold transition ${
                     unit === option.value
                       ? 'border-brand-500 bg-brand-500 text-white shadow-sm'
-                      : 'border-slate-200 bg-white text-slate-600 hover:border-brand-300 hover:bg-brand-50'
+                      : 'border-neutral-200 bg-white text-neutral-600 hover:border-brand-300 hover:bg-brand-50'
                   }`}
                 >
                   {option.label}
@@ -449,13 +449,13 @@ function RecoleccionFormDatosScreen() {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <p className="text-base font-extrabold text-brand-700">
-                Evidencia fotográfica <span className="text-red-500">*</span>
+                Evidencia fotográfica <span className="text-danger-500">*</span>
               </p>
-              <Icon name="arrow-left" className="h-4 w-4 rotate-180 text-slate-400" />
+              <Icon name="arrow-left" className="h-4 w-4 rotate-180 text-neutral-400" />
             </div>
 
             {isEditMode && (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-semibold text-amber-800">
+              <div className="rounded-2xl border border-warning-200 bg-warning-50 px-4 py-3 text-xs font-semibold text-warning-800">
                 Las imágenes subidas anteriormente no se pueden modificar ni reemplazar en edición.
                 Solo puedes agregar imágenes nuevas.
               </div>
@@ -481,7 +481,7 @@ function RecoleccionFormDatosScreen() {
               }}
             />
 
-            <div className="flex items-center gap-2 text-xs font-semibold text-slate-600">
+            <div className="flex items-center gap-2 text-xs font-semibold text-neutral-600">
               <Icon name="info" className="h-4 w-4 text-brand-500" />
               <span className={hasMinimumPhotos ? "text-brand-600" : ""}>
                 {/* 🔄 FASE 4: Leemos del contexto global */}
@@ -489,7 +489,7 @@ function RecoleccionFormDatosScreen() {
               </span>
             </div>
             {errors.photos && (
-              <p className="text-xs font-semibold text-red-500">* Debes agregar al menos 1 foto de Lugar y 1 de Total recolectado</p>
+              <p className="text-xs font-semibold text-danger-500">* Debes agregar al menos 1 foto de Lugar y 1 de Total recolectado</p>
             )}
           </div>
 
@@ -500,7 +500,7 @@ function RecoleccionFormDatosScreen() {
               onChange={(event) => setNotes(event.target.value)}
               rows={4}
               placeholder="Acá escribes las notas mientras vas haciendo la recolección, hasta 4000"
-              className="w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base font-semibold text-slate-700 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
+              className="w-full resize-none rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-base font-semibold text-neutral-700 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
             />
           </div>
 
@@ -518,12 +518,12 @@ function RecoleccionFormDatosScreen() {
       {showSpeciesModal && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50">
           <div className="w-full max-w-md rounded-t-3xl bg-white pb-8 max-h-[85vh] flex flex-col">
-            <div className="rounded-3xl sticky top-0 flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4">
+            <div className="rounded-3xl sticky top-0 flex items-center justify-between border-b border-neutral-200 bg-white px-5 py-4">
               <h2 className="text-lg font-extrabold text-brand-700">Catálogo Botánico</h2>
               <button
                 type="button"
                 onClick={() => setShowSpeciesModal(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200 active:scale-95"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-neutral-100 text-neutral-600 transition hover:bg-neutral-200 active:scale-95"
               >
                 <Icon name="x" className="h-5 w-5" />
               </button>

@@ -1,13 +1,9 @@
 import Icon from '../../components/Icon'
+import { Badge, statusVariant } from '../../components/ui'
 import type { Recoleccion } from '../../services/recolecciones.service'
 import { formatUnidadCanonicaDisplay } from '../../utils/recoleccionUnidad'
 import { getUbicacionDisplay } from '../../utils/ubicacion'
-import {
-  estadoOperativoBadgeClass,
-  estadoRegistroBadgeClass,
-  resolveEstadoOperativo,
-  resolveEstadoRegistro,
-} from './recoleccionStatus'
+import { resolveEstadoOperativo, resolveEstadoRegistro } from './recoleccionStatus'
 
 type Props = {
   recoleccion: Recoleccion
@@ -25,18 +21,6 @@ function formatDate(value: string) {
     year: 'numeric',
   })
 }
-
-function materialBadgeClass(tipoMaterial: string) {
-  switch (tipoMaterial) {
-    case 'SEMILLA':
-      return 'bg-emerald-50 text-emerald-700 ring-emerald-100'
-    case 'ESQUEJE':
-      return 'bg-amber-50 text-amber-700 ring-amber-100'
-    default:
-      return 'bg-slate-100 text-slate-700 ring-slate-200'
-  }
-}
-
 
 function RecoleccionCard({ recoleccion }: Props) {
   const recoleccionCompat = recoleccion as RecoleccionCompat
@@ -69,10 +53,10 @@ function RecoleccionCard({ recoleccion }: Props) {
           <p className="text-xs font-semibold uppercase tracking-wide text-brand-600">
             {recoleccion.codigo_trazabilidad}
           </p>
-          <h3 className="truncate text-lg font-extrabold text-slate-800">{nombreComercial}</h3>
-          <p className="truncate text-sm italic text-slate-500">{nombreCientifico || 'Sin nombre científico'}</p>
+          <h3 className="truncate text-lg font-extrabold text-neutral-800">{nombreComercial}</h3>
+          <p className="truncate text-sm italic text-neutral-500">{nombreCientifico || 'Sin nombre científico'}</p>
 
-          <div className="mt-3 space-y-1 text-sm font-semibold text-slate-600">
+          <div className="mt-3 space-y-1 text-sm font-semibold text-neutral-600">
             <p className="flex items-center gap-2">
               <Icon name="package" className="h-4 w-4 text-brand-500" />
               {cantidadActual} {unidadDisplay}
@@ -88,30 +72,24 @@ function RecoleccionCard({ recoleccion }: Props) {
           </div>
         </div>
 
-        <div className="h-24 w-24 shrink-0 overflow-hidden rounded-2xl bg-slate-100">
+        <div className="h-24 w-24 shrink-0 overflow-hidden rounded-2xl bg-neutral-100">
           {imageUrl ? (
             <img src={imageUrl} alt={nombreComercial} className="h-full w-full object-cover" loading="lazy" />
           ) : (
             <div className="flex h-full w-full items-center justify-center">
-              <Icon name="photo" className="h-8 w-8 text-slate-400" />
+              <Icon name="photo" className="h-8 w-8 text-neutral-400" />
             </div>
           )}
         </div>
       </div>
 
       <div className="mt-3 flex flex-wrap gap-2">
-        <span className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${materialBadgeClass(recoleccion.tipo_material)}`}>
+        <Badge variant={recoleccion.tipo_material === 'SEMILLA' ? 'success' : recoleccion.tipo_material === 'ESQUEJE' ? 'warning' : 'neutral'}>
           {recoleccion.tipo_material}
-        </span>
-        <span className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${estadoRegistroBadgeClass(estadoRegistro)}`}>
-          {estadoRegistro}
-        </span>
-        <span className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${estadoOperativoBadgeClass(estadoOperativo)}`}>
-          {estadoOperativo}
-        </span>
-        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
-          Evidencias: {evidenciasCount}
-        </span>
+        </Badge>
+        <Badge variant={statusVariant(estadoRegistro)}>{estadoRegistro}</Badge>
+        <Badge variant={statusVariant(estadoOperativo)}>{estadoOperativo}</Badge>
+        <Badge variant="neutral">Evidencias: {evidenciasCount}</Badge>
       </div>
     </article>
   )

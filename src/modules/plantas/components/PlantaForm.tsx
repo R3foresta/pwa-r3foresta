@@ -1,7 +1,5 @@
 import { type FormEvent, useEffect, useState } from 'react'
-import FormField from '../../../components/crud/FormField'
-import { inputClasses, selectWrapperClasses } from '../../../components/crud/form-classes'
-import ImageUploader from '../../../components/crud/ImageUploader'
+import { Field, ImageUploader, inputClasses, selectWrapperClasses } from '../../../components/ui'
 import Icon from '../../../components/Icon'
 import type { PlantaCatalogo, PlantaFormInput, TipoPlantaCatalogo } from '../../../types/plantas.types'
 import { withImageVersion } from '../../../utils/imageUrl'
@@ -95,8 +93,8 @@ function PlantaForm({ mode, initial, tiposPlantas, submitting, submitError, onSu
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {submitError && (
-        <section className="rounded-2xl bg-red-50 px-4 py-3 shadow-soft ring-1 ring-red-200">
-          <p className="text-sm font-semibold text-red-700">{submitError}</p>
+        <section className="rounded-2xl bg-danger-50 px-4 py-3 shadow-soft ring-1 ring-danger-200">
+          <p className="text-sm font-semibold text-danger-700">{submitError}</p>
         </section>
       )}
 
@@ -108,12 +106,12 @@ function PlantaForm({ mode, initial, tiposPlantas, submitting, submitError, onSu
           disabled={submitting}
         />
         {errors.imagen && (
-          <p className="mt-2 text-center text-xs font-semibold text-red-600">{errors.imagen}</p>
+          <p className="mt-2 text-center text-xs font-semibold text-danger-600">{errors.imagen}</p>
         )}
       </section>
 
       <section className="space-y-4 rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
-        <FormField label="Nombre común principal">
+        <Field label="Nombre común principal">
           <input
             type="text"
             value={form.nombre_comun_principal}
@@ -124,9 +122,9 @@ function PlantaForm({ mode, initial, tiposPlantas, submitting, submitError, onSu
             disabled={submitting}
             className={inputClasses(false)}
           />
-        </FormField>
+        </Field>
 
-        <FormField label="Especie" required error={errors.especie}>
+        <Field label="Especie" required error={errors.especie}>
           <input
             type="text"
             value={form.especie}
@@ -135,9 +133,9 @@ function PlantaForm({ mode, initial, tiposPlantas, submitting, submitError, onSu
             disabled={submitting}
             className={inputClasses(Boolean(errors.especie))}
           />
-        </FormField>
+        </Field>
 
-        <FormField label="Nombre científico" required error={errors.nombre_cientifico}>
+        <Field label="Nombre científico" required error={errors.nombre_cientifico}>
           <input
             type="text"
             value={form.nombre_cientifico}
@@ -146,9 +144,9 @@ function PlantaForm({ mode, initial, tiposPlantas, submitting, submitError, onSu
             disabled={submitting}
             className={`${inputClasses(Boolean(errors.nombre_cientifico))} italic`}
           />
-        </FormField>
+        </Field>
 
-        <FormField label="Variedad / raza" required error={errors.variedad}>
+        <Field label="Variedad / raza" required error={errors.variedad}>
           <input
             type="text"
             value={form.variedad}
@@ -157,9 +155,9 @@ function PlantaForm({ mode, initial, tiposPlantas, submitting, submitError, onSu
             disabled={submitting}
             className={inputClasses(Boolean(errors.variedad))}
           />
-        </FormField>
+        </Field>
 
-        <FormField label="Tipo de planta" required error={errors.tipo_planta_id}>
+        <Field label="Tipo de planta" required error={errors.tipo_planta_id}>
           <div className={selectWrapperClasses(Boolean(errors.tipo_planta_id))}>
             <select
               value={form.tipo_planta_id || ''}
@@ -167,7 +165,7 @@ function PlantaForm({ mode, initial, tiposPlantas, submitting, submitError, onSu
                 setForm({ ...form, tipo_planta_id: Number(event.target.value) || 0 })
               }
               disabled={submitting}
-              className="w-full bg-transparent py-3 text-sm font-semibold text-slate-700 outline-none"
+              className="w-full bg-transparent py-3 text-sm font-semibold text-neutral-700 outline-none"
             >
               <option value="">Seleccionar tipo...</option>
               {tiposPlantas.map((tipo) => (
@@ -176,11 +174,11 @@ function PlantaForm({ mode, initial, tiposPlantas, submitting, submitError, onSu
                 </option>
               ))}
             </select>
-            <Icon name="chevron-down" className="h-4 w-4 text-slate-400" />
+            <Icon name="chevron-down" className="h-4 w-4 text-neutral-400" />
           </div>
-        </FormField>
+        </Field>
 
-        <FormField label="Otros nombres comunes" hint="Separa con comas: Roble, Cedro real">
+        <Field label="Otros nombres comunes" hint="Separa con comas: Roble, Cedro real">
           <input
             type="text"
             value={form.nombres_comunes}
@@ -189,9 +187,9 @@ function PlantaForm({ mode, initial, tiposPlantas, submitting, submitError, onSu
             disabled={submitting}
             className={inputClasses(false)}
           />
-        </FormField>
+        </Field>
 
-        <FormField label="Notas">
+        <Field label="Notas">
           <textarea
             value={form.notas}
             onChange={(event) => setForm({ ...form, notas: event.target.value })}
@@ -200,7 +198,7 @@ function PlantaForm({ mode, initial, tiposPlantas, submitting, submitError, onSu
             className={`${inputClasses(false)} min-h-[100px]`}
             placeholder="Información adicional..."
           />
-        </FormField>
+        </Field>
       </section>
 
       <button

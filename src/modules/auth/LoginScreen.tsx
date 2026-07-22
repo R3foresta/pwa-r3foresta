@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useWebAuthn } from '../../hooks/useWebAuthn'
 import { useAuth } from '../../contexts/AuthContext'
 import Icon from '../../components/Icon'
+import { Button } from '../../components/ui'
 import heroCanopy from '../../assets/home/hero-canopy.jpg'
 
 function LoginScreen() {
@@ -109,7 +110,7 @@ function LoginScreen() {
             </div>
           </div>
 
-          <div className="relative rounded-full border border-white/60 bg-slate-100/90 p-1 shadow-soft backdrop-blur">
+          <div className="relative rounded-full border border-white/60 bg-neutral-100/90 p-1 shadow-soft backdrop-blur">
             <div
               className={`absolute top-1 h-[calc(100%-8px)] w-[48%] rounded-full bg-gradient-to-r from-brand-600 to-brand-700 shadow-soft transition-all duration-300 ${isRegistering ? 'translate-x-[104%]' : 'translate-x-[4%]'
                 }`}
@@ -118,7 +119,7 @@ function LoginScreen() {
               <button
                 type="button"
                 onClick={() => setIsRegistering(false)}
-                className={`flex items-center justify-center gap-1 rounded-full px-4 py-2 transition ${!isRegistering ? 'text-white mix-blend-difference' : 'text-slate-600'
+                className={`flex items-center justify-center gap-1 rounded-full px-4 py-2 transition ${!isRegistering ? 'text-white mix-blend-difference' : 'text-neutral-600'
                   }`}
               >
                 <span>Iniciar</span>
@@ -127,7 +128,7 @@ function LoginScreen() {
               <button
                 type="button"
                 onClick={() => setIsRegistering(true)}
-                className={`flex items-center justify-center gap-1 rounded-full px-4 py-2 transition ${isRegistering ? 'text-white mix-blend-difference' : 'text-slate-600'
+                className={`flex items-center justify-center gap-1 rounded-full px-4 py-2 transition ${isRegistering ? 'text-white mix-blend-difference' : 'text-neutral-600'
                   }`}
               >
                 <span>Crear</span>
@@ -137,9 +138,9 @@ function LoginScreen() {
           </div>
 
           {error && (
-            <div className="rounded-2xl border-l-4 border-red-500 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 shadow-soft">
+            <div className="rounded-2xl border-l-4 border-danger-500 bg-danger-50 px-4 py-3 text-sm font-semibold text-danger-700 shadow-soft">
               <div className="flex items-center gap-2">
-                <Icon name="info" className="h-5 w-5 text-red-600" />
+                <Icon name="info" className="h-5 w-5 text-danger-600" />
                 <span>{error}</span>
               </div>
             </div>
@@ -147,41 +148,18 @@ function LoginScreen() {
 
           {!isRegistering ? (
             <div className="flex flex-col gap-5">
-              <button
-                type="button"
+              <Button
+                variant="primary"
+                size="lg"
+                fullWidth
+                loading={loading}
+                leftIcon="user"
                 onClick={handleLogin}
-                disabled={loading}
-                className="flex w-full items-center justify-center gap-3 rounded-2xl bg-brand-600 px-4 py-4 text-center text-lg font-extrabold text-white shadow-soft transition hover:bg-brand-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {loading ? (
-                  <>
-                    <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24">
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                        fill="none"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      />
-                    </svg>
-                    <span>Autenticando...</span>
-                  </>
-                ) : (
-                  <>
-                    <Icon name="user" className="h-5 w-5" />
-                    <span>Entrar con Passkey</span>
-                  </>
-                )}
-              </button>
+                {loading ? 'Autenticando...' : 'Entrar con Passkey'}
+              </Button>
 
-              <p className="text-center text-xs font-semibold text-slate-700">
+              <p className="text-center text-xs font-semibold text-neutral-700">
                 Biometría solo cuando sea necesario.
               </p>
             </div>
@@ -189,14 +167,14 @@ function LoginScreen() {
             <form onSubmit={handleRegister} className="flex flex-col gap-5">
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-brand-700">
-                  Nombre de usuario <span className="text-red-500">*</span>
+                  Nombre de usuario <span className="text-danger-500">*</span>
                 </label>
                 <input
                   type="text"
                   required
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-base font-semibold text-slate-800 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
+                  className="w-full rounded-2xl border border-neutral-200 bg-white/80 px-4 py-3 text-base font-semibold text-neutral-800 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
                   placeholder="Tu nombre"
                 />
               </div>
@@ -204,10 +182,10 @@ function LoginScreen() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-semibold text-brand-700">
-                    Correo electrónico <span className="text-red-500">*</span>
+                    Correo electrónico <span className="text-danger-500">*</span>
                   </label>
                   {emailError && (
-                    <span className="text-xs font-semibold text-red-500">{emailError}</span>
+                    <span className="text-xs font-semibold text-danger-500">{emailError}</span>
                   )}
                 </div>
                 <input
@@ -218,48 +196,27 @@ function LoginScreen() {
                     setEmail(e.target.value)
                     if (emailError) setEmailError('')
                   }}
-                  className={`w-full rounded-2xl border bg-white/80 px-4 py-3 text-base font-semibold text-slate-800 shadow-soft outline-none transition focus:ring-2 ${emailError
-                      ? 'border-red-400 focus:border-red-500 focus:ring-red-200'
-                      : 'border-slate-200 focus:border-brand-400 focus:ring-brand-200'
+                  className={`w-full rounded-2xl border bg-white/80 px-4 py-3 text-base font-semibold text-neutral-800 shadow-soft outline-none transition focus:ring-2 ${emailError
+                      ? 'border-danger-400 focus:border-danger-500 focus:ring-danger-200'
+                      : 'border-neutral-200 focus:border-brand-400 focus:ring-brand-200'
                     }`}
                   placeholder="tu@correo.com"
                 />
               </div>
 
-              <button
+              <Button
                 type="submit"
+                variant="primary"
+                size="lg"
+                fullWidth
+                loading={loading}
+                leftIcon="user"
                 disabled={loading || !username.trim() || !email.trim()}
-                className="flex w-full items-center justify-center gap-3 rounded-2xl bg-brand-600 px-4 py-4 text-center text-lg font-extrabold text-white shadow-soft transition hover:bg-brand-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {loading ? (
-                  <>
-                    <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24">
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                        fill="none"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      />
-                    </svg>
-                    <span>Registrando...</span>
-                  </>
-                ) : (
-                  <>
-                    <Icon name="user" className="h-5 w-5" />
-                    <span>Crear cuenta con Passkey</span>
-                  </>
-                )}
-              </button>
+                {loading ? 'Registrando...' : 'Crear cuenta con Passkey'}
+              </Button>
 
-              <p className="text-center text-xs font-semibold text-slate-700">
+              <p className="text-center text-xs font-semibold text-neutral-700">
                 Face ID / huella para confirmar alta.
               </p>
             </form>

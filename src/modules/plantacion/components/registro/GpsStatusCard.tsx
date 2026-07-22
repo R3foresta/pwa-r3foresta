@@ -68,8 +68,8 @@ function GpsStatusCard({
 
   const meta: StatusMeta = ({
     buscando: {
-      tone: 'bg-amber-50 ring-amber-200 text-amber-800',
-      iconTone: 'bg-white/70 text-amber-600',
+      tone: 'bg-warning-50 ring-warning-200 text-warning-800',
+      iconTone: 'bg-white/70 text-warning-600',
       icon: 'crosshair',
       label: 'Buscando señal GPS…',
       detail: 'Mantente en un punto con cielo abierto.',
@@ -85,15 +85,15 @@ function GpsStatusCard({
           : 'Coordenadas ingresadas manualmente.',
     },
     baja: {
-      tone: 'bg-amber-50 ring-amber-200 text-amber-800',
-      iconTone: 'bg-white/70 text-amber-600',
+      tone: 'bg-warning-50 ring-warning-200 text-warning-800',
+      iconTone: 'bg-white/70 text-warning-600',
       icon: 'alert',
       label: `Precisión baja (±${precisionM} m)`,
       detail: `Supera los ${precisionAdvertenciaM} m recomendados. Reintenta a cielo abierto; puedes continuar igual.`,
     },
     error: {
-      tone: 'bg-red-50 ring-red-200 text-red-700',
-      iconTone: 'bg-white/70 text-red-500',
+      tone: 'bg-danger-50 ring-danger-200 text-danger-700',
+      iconTone: 'bg-white/70 text-danger-500',
       icon: 'alert',
       label: 'Sin señal GPS',
       detail: error ?? 'No se pudo obtener tu ubicación.',
@@ -113,7 +113,7 @@ function GpsStatusCard({
         <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
           Ubicación GPS
         </p>
-        <span className="text-[10px] font-bold uppercase tracking-wider text-red-500">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-danger-500">
           Obligatorio
         </span>
       </div>
@@ -155,9 +155,9 @@ function GpsStatusCard({
       )}
 
       {dentroDePoligono === false && (
-        <div className="mt-3 flex items-start gap-2 rounded-2xl border border-amber-300 bg-amber-50 p-3">
-          <Icon name="map" className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
-          <p className="text-xs font-bold leading-snug text-amber-700">
+        <div className="mt-3 flex items-start gap-2 rounded-2xl border border-warning-300 bg-warning-50 p-3">
+          <Icon name="map" className="mt-0.5 h-4 w-4 shrink-0 text-warning-600" />
+          <p className="text-xs font-bold leading-snug text-warning-700">
             El punto parece estar fuera del polígono de la subcampaña. No se
             bloquea el registro: el servidor lo evaluará y guardará la
             advertencia.
@@ -195,7 +195,7 @@ function GpsStatusCard({
                 placeholder={field.placeholder}
                 className={`w-full rounded-2xl border px-3 py-2.5 text-sm font-semibold tabular-nums text-neutral-700 shadow-soft outline-none transition focus:ring-2 ${
                   showValidation && !coordsInRange
-                    ? 'border-red-400 bg-red-50 focus:border-red-400 focus:ring-red-200'
+                    ? 'border-danger-400 bg-danger-50 focus:border-danger-400 focus:ring-danger-200'
                     : 'border-neutral-200 bg-white focus:border-brand-400 focus:ring-brand-200'
                 }`}
               />
@@ -205,12 +205,12 @@ function GpsStatusCard({
       )}
 
       {showValidation && !hasCoords && (
-        <p className="mt-2 text-xs font-semibold text-red-500">
+        <p className="mt-2 text-xs font-semibold text-danger-500">
           * La ubicación GPS es obligatoria para continuar.
         </p>
       )}
       {showValidation && hasCoords && !coordsInRange && (
-        <p className="mt-2 text-xs font-semibold text-red-500">
+        <p className="mt-2 text-xs font-semibold text-danger-500">
           * Coordenadas fuera de rango: latitud entre -90 y 90, longitud entre
           -180 y 180.
         </p>

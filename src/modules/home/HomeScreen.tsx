@@ -80,7 +80,7 @@ function HomeScreen() {
           >
             <Icon name="user" className="h-5 w-5 text-brand-700" />
             {!isProfileComplete && (
-              <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-amber-500 border-2 border-white shadow-sm">
+              <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-warning-500 border-2 border-white shadow-sm">
                 <span className="sr-only">Perfil incompleto</span>
               </span>
             )}
@@ -103,7 +103,7 @@ function HomeScreen() {
             <h1 className="mt-1 text-2xl font-semibold leading-tight">{hero.title}</h1>
             <p className="mt-2 text-sm text-white/85">{hero.subtitle}</p>
             <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-sm font-semibold">
-              <Icon name="dot" className="h-3 w-3 text-emerald-200" />
+              <Icon name="dot" className="h-3 w-3 text-success-200" />
               <span>{hero.badge}</span>
             </div>
           </div>
@@ -115,9 +115,9 @@ function HomeScreen() {
         <section className="mt-4">
           <button
             onClick={() => navigate('/complete-profile', { replace: true })}
-            className="w-full flex items-start gap-3 rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm font-medium text-amber-800 shadow-soft hover:bg-amber-100 transition-colors"
+            className="w-full flex items-start gap-3 rounded-2xl bg-warning-50 border border-warning-200 px-4 py-3 text-sm font-medium text-warning-800 shadow-soft hover:bg-warning-100 transition-colors"
           >
-            <span className="mt-1 inline-flex h-7 w-7 items-center justify-center rounded-full bg-amber-200 text-amber-700">
+            <span className="mt-1 inline-flex h-7 w-7 items-center justify-center rounded-full bg-warning-200 text-warning-700">
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.732 15.5c-.77.833.192 2.5 1.732 2.5z" />
               </svg>
@@ -125,7 +125,7 @@ function HomeScreen() {
             
             <div className="flex flex-col text-left">
               <span className="font-semibold">Perfil incompleto</span>
-              <span className="text-xs font-normal text-amber-600">Necesitas completar tu perfil para acceder a todas las funcionalidades de la aplicación.</span>
+              <span className="text-xs font-normal text-warning-600">Necesitas completar tu perfil para acceder a todas las funcionalidades de la aplicación.</span>
             </div>
             
             <span className="ml-auto mt-1">

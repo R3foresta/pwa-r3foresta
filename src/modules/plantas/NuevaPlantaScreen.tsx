@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import CrudHeader from '../../components/crud/CrudHeader'
+import { PageHeader } from '../../components/ui'
 import { PlantasService } from '../../services/plantas.service'
 import type { PlantaFormInput, TipoPlantaCatalogo } from '../../types/plantas.types'
 import PlantaForm from './components/PlantaForm'
@@ -62,7 +62,7 @@ function NuevaPlantaScreen() {
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-28 pt-6 text-brand-700">
-      <CrudHeader
+      <PageHeader
         title="Nueva especie"
         subtitle="Registra una especie en el catálogo botánico"
         backTo="/app/plantas"
@@ -73,8 +73,8 @@ function NuevaPlantaScreen() {
           Cargando catálogo de tipos...
         </section>
       ) : tiposError ? (
-        <section className="rounded-2xl bg-red-50 px-4 py-4 text-center shadow-soft ring-1 ring-red-200">
-          <p className="text-sm font-semibold text-red-700">{tiposError}</p>
+        <section className="rounded-2xl bg-danger-50 px-4 py-4 text-center shadow-soft ring-1 ring-danger-200">
+          <p className="text-sm font-semibold text-danger-700">{tiposError}</p>
         </section>
       ) : (
         <PlantaForm

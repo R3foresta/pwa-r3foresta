@@ -101,7 +101,7 @@ function AssignmentMetric({ label, value, danger = false }: { label: string; val
   return (
     <div className="rounded-2xl bg-neutral-50 px-2.5 py-2 text-center ring-1 ring-neutral-100">
       <p className="text-[8px] font-black uppercase tracking-wider text-neutral-400">{label}</p>
-      <p className={`mt-0.5 text-sm font-extrabold ${danger ? 'text-red-600' : 'text-brand-700'}`}>
+      <p className={`mt-0.5 text-sm font-extrabold ${danger ? 'text-danger-600' : 'text-brand-700'}`}>
         {value}
       </p>
     </div>
@@ -172,7 +172,7 @@ function DevolucionSuccessDialog({
     >
       <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl ring-1 ring-black/5">
         <div className="flex flex-col items-center space-y-5 text-center">
-          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-sky-100 text-sky-600">
+          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-info-100 text-info-600">
             <Icon name="package" className="h-12 w-12" />
           </div>
           <div>
@@ -289,7 +289,7 @@ function DevolucionDialog({
       <div className="flex max-h-[92vh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl ring-1 ring-black/5 sm:rounded-3xl">
         <header className="flex items-start justify-between gap-3 border-b border-neutral-100 px-5 pb-3 pt-5">
           <div className="min-w-0">
-            <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-sky-600">
+            <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-info-600">
               Devolver al vivero
             </p>
             <h2 id="devolucion-title" className="mt-1 truncate text-lg font-extrabold text-brand-800">
@@ -312,8 +312,8 @@ function DevolucionDialog({
           onSubmit={handleSubmit}
           className="flex-1 space-y-3 overflow-y-auto px-5 py-4"
         >
-          <div className="flex items-start gap-2 rounded-2xl bg-sky-50 px-3 py-2.5 text-xs font-semibold text-sky-800 ring-1 ring-sky-100">
-            <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-sky-600" />
+          <div className="flex items-start gap-2 rounded-2xl bg-info-50 px-3 py-2.5 text-xs font-semibold text-info-800 ring-1 ring-info-100">
+            <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-info-600" />
             <span>
               La devolucion sube el saldo vivo del lote. Si el lote estaba FINALIZADO, puede reabrirse.
             </span>
@@ -369,12 +369,12 @@ function DevolucionDialog({
               disabled={submitting}
               className={`w-full resize-none rounded-2xl border px-3 py-2.5 text-sm font-semibold text-brand-700 outline-none transition ${
                 showErrors && !motivoValid
-                  ? 'border-red-300 bg-red-50'
+                  ? 'border-danger-300 bg-danger-50'
                   : 'border-brand-100 bg-white focus:border-brand-300'
               }`}
             />
             {showErrors && !motivoValid && (
-              <p className="mt-1 text-xs font-semibold text-red-500">Minimo 3 caracteres.</p>
+              <p className="mt-1 text-xs font-semibold text-danger-500">Minimo 3 caracteres.</p>
             )}
           </div>
 
@@ -392,7 +392,7 @@ function DevolucionDialog({
           </div>
 
           {submitError && (
-            <p className="whitespace-pre-line rounded-2xl bg-red-50 px-3 py-2 text-center text-xs font-semibold text-red-600 ring-1 ring-red-200">
+            <p className="whitespace-pre-line rounded-2xl bg-danger-50 px-3 py-2 text-center text-xs font-semibold text-danger-600 ring-1 ring-danger-200">
               {submitError}
             </p>
           )}
@@ -406,7 +406,7 @@ function DevolucionDialog({
             type="submit"
             form={DEVOLUCION_FORM_ID}
             disabled={!canSubmit}
-            className="flex items-center justify-center gap-2 rounded-2xl bg-sky-600 px-3 py-3 text-sm font-extrabold text-white shadow-soft transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-neutral-300"
+            className="flex items-center justify-center gap-2 rounded-2xl bg-info-600 px-3 py-3 text-sm font-extrabold text-white shadow-soft transition hover:bg-info-700 disabled:cursor-not-allowed disabled:bg-neutral-300"
           >
             <Icon name="package" className="h-4 w-4" />
             {submitting ? 'Devolviendo...' : 'Devolver al vivero'}
@@ -701,7 +701,7 @@ function ViveroLotAsignacionesTab({ lote, onLoteChanged }: Props) {
         )}
 
         {maxAsignable <= 0 && loteActivo && (
-          <div className="rounded-2xl bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800 ring-1 ring-amber-200">
+          <div className="rounded-2xl bg-warning-50 px-3 py-2 text-xs font-bold text-warning-800 ring-1 ring-warning-200">
             No hay saldo vivo en el lote para entregar.
           </div>
         )}
@@ -716,7 +716,7 @@ function ViveroLotAsignacionesTab({ lote, onLoteChanged }: Props) {
             disabled={submitting || campanias.length === 0}
             className={`w-full rounded-2xl border px-3 py-3 text-sm font-extrabold text-brand-700 outline-none transition ${
               showErrors && !campaniaValid
-                ? 'border-red-300 bg-red-50'
+                ? 'border-danger-300 bg-danger-50'
                 : 'border-brand-100 bg-white focus:border-brand-300'
             }`}
           >
@@ -731,7 +731,7 @@ function ViveroLotAsignacionesTab({ lote, onLoteChanged }: Props) {
             ))}
           </select>
           {showErrors && !campaniaValid && (
-            <p className="mt-1 text-xs font-semibold text-red-500">Selecciona una campaña.</p>
+            <p className="mt-1 text-xs font-semibold text-danger-500">Selecciona una campaña.</p>
           )}
         </label>
 
@@ -745,7 +745,7 @@ function ViveroLotAsignacionesTab({ lote, onLoteChanged }: Props) {
             disabled={submitting || !campaniaValid || subcampaniasLoading || subcampanias.length === 0}
             className={`w-full rounded-2xl border px-3 py-3 text-sm font-extrabold text-brand-700 outline-none transition ${
               showErrors && !subcampaniaValid
-                ? 'border-red-300 bg-red-50'
+                ? 'border-danger-300 bg-danger-50'
                 : 'border-brand-100 bg-white focus:border-brand-300'
             }`}
           >
@@ -765,7 +765,7 @@ function ViveroLotAsignacionesTab({ lote, onLoteChanged }: Props) {
             )}
           </select>
           {showErrors && campaniaValid && !subcampaniaValid && (
-            <p className="mt-1 text-xs font-semibold text-red-500">Selecciona una subcampania.</p>
+            <p className="mt-1 text-xs font-semibold text-danger-500">Selecciona una subcampania.</p>
           )}
         </label>
 
@@ -786,7 +786,7 @@ function ViveroLotAsignacionesTab({ lote, onLoteChanged }: Props) {
                   className={`rounded-2xl px-3 py-2.5 text-left ring-1 transition ${
                     selected
                       ? isReposicion
-                        ? 'bg-amber-50 text-amber-800 ring-amber-200'
+                        ? 'bg-warning-50 text-warning-800 ring-warning-200'
                         : 'bg-success-50 text-success-800 ring-success-200'
                       : 'bg-white text-brand-700 ring-brand-100 hover:bg-brand-50'
                   }`}
@@ -852,7 +852,7 @@ function ViveroLotAsignacionesTab({ lote, onLoteChanged }: Props) {
         </Button>
 
         {submitError && (
-          <p className="whitespace-pre-line rounded-2xl bg-red-50 px-3 py-2 text-center text-xs font-semibold text-red-600 ring-1 ring-red-200">
+          <p className="whitespace-pre-line rounded-2xl bg-danger-50 px-3 py-2 text-center text-xs font-semibold text-danger-600 ring-1 ring-danger-200">
             {submitError}
           </p>
         )}
@@ -887,14 +887,14 @@ function ViveroLotAsignacionesTab({ lote, onLoteChanged }: Props) {
                       <span
                         className={`inline-flex items-center rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-widest ring-1 ${
                           isReposicion
-                            ? 'bg-amber-50 text-amber-700 ring-amber-100'
+                            ? 'bg-warning-50 text-warning-700 ring-warning-100'
                             : 'bg-success-50 text-success-700 ring-success-100'
                         }`}
                       >
                         {isReposicion ? 'REPOSICION' : 'INICIAL'}
                       </span>
                       {hasMerma && (
-                        <span className="inline-flex items-center rounded-full bg-red-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-red-700 ring-1 ring-red-100">
+                        <span className="inline-flex items-center rounded-full bg-danger-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-danger-700 ring-1 ring-danger-100">
                           Afectada por merma
                         </span>
                       )}
@@ -940,7 +940,7 @@ function ViveroLotAsignacionesTab({ lote, onLoteChanged }: Props) {
                     className={`shrink-0 rounded-xl px-3 py-2 text-[11px] font-extrabold ring-1 transition ${
                       isExhausted
                         ? 'cursor-not-allowed bg-white text-neutral-400 ring-neutral-200'
-                        : 'bg-white text-sky-700 ring-sky-200 hover:bg-sky-50'
+                        : 'bg-white text-info-700 ring-info-200 hover:bg-info-50'
                     }`}
                   >
                     Devolver al vivero

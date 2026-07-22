@@ -311,9 +311,9 @@ function RecoleccionFormUbicacionScreen() {
   ])
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#f6f7f3] to-[#eef1eb] text-brand-700">
+    <div className="min-h-screen bg-gradient-to-b from-brand-50 to-brand-50 text-brand-700">
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-24">
-        <header className="sticky top-0 z-40 flex items-center justify-center border-b border-slate-200/50 bg-white/10 pb-4 pt-6 shadow-sm backdrop-blur-md">
+        <header className="sticky top-0 z-40 flex items-center justify-center border-b border-neutral-200/50 bg-white/10 pb-4 pt-6 shadow-sm backdrop-blur-md">
           <button
             type="button"
             aria-label="Volver"
@@ -325,7 +325,7 @@ function RecoleccionFormUbicacionScreen() {
           <div className="text-center">
             <h1 className="text-xl font-extrabold tracking-tight text-brand-700">Recoleccion</h1>
             <p className="text-sm font-semibold text-brand-500">
-              Paso 2 de 3 · <span className="text-slate-500">Ubicacion y almacen</span>
+              Paso 2 de 3 · <span className="text-neutral-500">Ubicacion y almacen</span>
             </p>
           </div>
         </header>
@@ -342,7 +342,7 @@ function RecoleccionFormUbicacionScreen() {
                   value={ubicacionNombre}
                   onChange={(event) => setUbicacionNombre(event.target.value)}
                   placeholder="Parcela Don Lucho"
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
+                  className="w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm font-semibold text-neutral-700 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
                 />
               </div>
 
@@ -356,7 +356,7 @@ function RecoleccionFormUbicacionScreen() {
                     readOnly
                     rows={2}
                     placeholder="Se llenara al capturar GPS..."
-                    className="flex-1 resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 shadow-soft outline-none"
+                    className="flex-1 resize-none rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-semibold text-neutral-700 shadow-soft outline-none"
                   />
                   <button
                     type="button"
@@ -392,7 +392,7 @@ function RecoleccionFormUbicacionScreen() {
                     )}
                   </button>
                 </div>
-                <p className="text-xs font-semibold text-slate-500">
+                <p className="text-xs font-semibold text-neutral-500">
                   Fuente: GPS_MOVIL{precisionM ? ` · Precision aproximada: ${precisionM} m` : ''}
                 </p>
               </div>
@@ -400,7 +400,7 @@ function RecoleccionFormUbicacionScreen() {
               <div className="flex gap-3">
                 <div className="flex-1 space-y-2">
                   <p className="text-sm font-semibold text-brand-700">
-                    Latitud <span className="text-red-500">*</span>
+                    Latitud <span className="text-danger-500">*</span>
                   </p>
                   <input
                     type="text"
@@ -410,16 +410,16 @@ function RecoleccionFormUbicacionScreen() {
                       setErrors((prev) => ({ ...prev, coordinates: false, coordinateRange: false }))
                     }}
                     placeholder="-16.500000"
-                    className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-slate-700 shadow-soft outline-none transition focus:ring-2 ${
+                    className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-neutral-700 shadow-soft outline-none transition focus:ring-2 ${
                       errors.coordinates || errors.coordinateRange
-                        ? 'border-red-400 bg-red-50 focus:border-red-400 focus:ring-red-200'
-                        : 'border-slate-200 bg-white focus:border-brand-400 focus:ring-brand-200'
+                        ? 'border-danger-400 bg-danger-50 focus:border-danger-400 focus:ring-danger-200'
+                        : 'border-neutral-200 bg-white focus:border-brand-400 focus:ring-brand-200'
                     }`}
                   />
                 </div>
                 <div className="flex-1 space-y-2">
                   <p className="text-sm font-semibold text-brand-700">
-                    Longitud <span className="text-red-500">*</span>
+                    Longitud <span className="text-danger-500">*</span>
                   </p>
                   <input
                     type="text"
@@ -429,21 +429,21 @@ function RecoleccionFormUbicacionScreen() {
                       setErrors((prev) => ({ ...prev, coordinates: false, coordinateRange: false }))
                     }}
                     placeholder="-68.150000"
-                    className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-slate-700 shadow-soft outline-none transition focus:ring-2 ${
+                    className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-neutral-700 shadow-soft outline-none transition focus:ring-2 ${
                       errors.coordinates || errors.coordinateRange
-                        ? 'border-red-400 bg-red-50 focus:border-red-400 focus:ring-red-200'
-                        : 'border-slate-200 bg-white focus:border-brand-400 focus:ring-brand-200'
+                        ? 'border-danger-400 bg-danger-50 focus:border-danger-400 focus:ring-danger-200'
+                        : 'border-neutral-200 bg-white focus:border-brand-400 focus:ring-brand-200'
                     }`}
                   />
                 </div>
               </div>
               {errors.coordinates && (
-                <p className="text-xs font-semibold text-red-500">
+                <p className="text-xs font-semibold text-danger-500">
                   * Latitud y longitud son obligatorias.
                 </p>
               )}
               {errors.coordinateRange && (
-                <p className="text-xs font-semibold text-red-500">
+                <p className="text-xs font-semibold text-danger-500">
                   * Coordenadas invalidas. Latitud debe estar entre -90 y 90, longitud entre -180 y
                   180.
                 </p>
@@ -451,19 +451,19 @@ function RecoleccionFormUbicacionScreen() {
 
               <div className="space-y-2">
                 <p className="text-sm font-semibold text-brand-700">
-                  Pais <span className="text-red-500">*</span>
+                  Pais <span className="text-danger-500">*</span>
                 </p>
                 <div
                   className={`flex items-center rounded-2xl border px-4 shadow-soft focus-within:ring-2 ${
                     errors.pais
-                      ? 'border-red-400 bg-red-50 focus-within:border-red-400 focus-within:ring-red-200'
-                      : 'border-slate-200 bg-white focus-within:border-brand-400 focus-within:ring-brand-200'
+                      ? 'border-danger-400 bg-danger-50 focus-within:border-danger-400 focus-within:ring-danger-200'
+                      : 'border-neutral-200 bg-white focus-within:border-brand-400 focus-within:ring-brand-200'
                   }`}
                 >
                   <select
                     value={selectedPaisId ?? ''}
                     onChange={(event) => handlePaisChange(event.target.value)}
-                    className="w-full bg-transparent py-3 text-sm font-semibold text-slate-700 outline-none"
+                    className="w-full bg-transparent py-3 text-sm font-semibold text-neutral-700 outline-none"
                     disabled={loadingPaises}
                   >
                     <option value="">
@@ -475,10 +475,10 @@ function RecoleccionFormUbicacionScreen() {
                       </option>
                     ))}
                   </select>
-                  <Icon name="chevron-down" className="h-4 w-4 text-slate-400" />
+                  <Icon name="chevron-down" className="h-4 w-4 text-neutral-400" />
                 </div>
                 {errors.pais && (
-                  <p className="text-xs font-semibold text-red-500">
+                  <p className="text-xs font-semibold text-danger-500">
                     * Selecciona un pais.
                   </p>
                 )}
@@ -507,7 +507,7 @@ function RecoleccionFormUbicacionScreen() {
               )}
 
               {errors.division && (
-                <p className="text-xs font-semibold text-red-500">
+                <p className="text-xs font-semibold text-danger-500">
                   * Selecciona una comunidad existente para continuar.
                 </p>
               )}
@@ -524,12 +524,12 @@ function RecoleccionFormUbicacionScreen() {
               )}
 
               {catalogoError && (
-                <p className="text-xs font-semibold text-red-500">{catalogoError}</p>
+                <p className="text-xs font-semibold text-danger-500">{catalogoError}</p>
               )}
 
               <div className="space-y-2">
                 <p className="text-sm font-semibold text-brand-700">
-                  Almacenamiento <span className="text-red-500">*</span>
+                  Almacenamiento <span className="text-danger-500">*</span>
                 </p>
                 {viveroLoading ? (
                   <div className="rounded-2xl bg-brand-50 px-4 py-3 text-sm font-semibold text-brand-600 shadow-soft">
@@ -540,8 +540,8 @@ function RecoleccionFormUbicacionScreen() {
                     <div
                       className={`flex items-center rounded-2xl border px-4 shadow-soft focus-within:ring-2 ${
                         errors.vivero
-                          ? 'border-red-400 bg-red-50 focus-within:border-red-400 focus-within:ring-red-200'
-                          : 'border-slate-200 bg-white focus-within:border-brand-400 focus-within:ring-brand-200'
+                          ? 'border-danger-400 bg-danger-50 focus-within:border-danger-400 focus-within:ring-danger-200'
+                          : 'border-neutral-200 bg-white focus-within:border-brand-400 focus-within:ring-brand-200'
                       }`}
                     >
                       <select
@@ -553,7 +553,7 @@ function RecoleccionFormUbicacionScreen() {
                             setErrors((prev) => ({ ...prev, vivero: false }))
                           }
                         }}
-                        className="w-full bg-transparent py-3 text-sm font-semibold text-slate-700 outline-none"
+                        className="w-full bg-transparent py-3 text-sm font-semibold text-neutral-700 outline-none"
                       >
                         <option value="">Selecciona un vivero</option>
                         {viveros.map((vivero) => (
@@ -562,11 +562,11 @@ function RecoleccionFormUbicacionScreen() {
                           </option>
                         ))}
                       </select>
-                      <Icon name="chevron-down" className="h-4 w-4 text-slate-400" />
+                      <Icon name="chevron-down" className="h-4 w-4 text-neutral-400" />
                     </div>
-                    {viveroError && <p className="text-xs font-semibold text-red-500">{viveroError}</p>}
+                    {viveroError && <p className="text-xs font-semibold text-danger-500">{viveroError}</p>}
                     {errors.vivero && (
-                      <p className="text-xs font-semibold text-red-500">
+                      <p className="text-xs font-semibold text-danger-500">
                         * El vivero es obligatorio para continuar.
                       </p>
                     )}

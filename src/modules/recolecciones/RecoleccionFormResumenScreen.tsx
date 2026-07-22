@@ -185,9 +185,9 @@ function RecoleccionFormResumenScreen() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-100 to-slate-200">
+    <div className="min-h-screen bg-gradient-to-b from-neutral-100 to-neutral-200">
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-24">
-        <div className="flex rounded-b-3xl bg-[#0f8351] mb-3 px-5 pb-8 pt-10 text-white shadow-soft">
+        <div className="flex rounded-b-3xl bg-brand-600 mb-3 px-5 pb-8 pt-10 text-white shadow-soft">
           <button
             type="button"
             aria-label="Volver"
@@ -208,23 +208,23 @@ function RecoleccionFormResumenScreen() {
 
         <div className="flex-1 space-y-4 px-5 pb-6">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-slate-700">
+            <p className="text-sm font-semibold text-neutral-700">
               Paso 3 de 3:
             </p>
             <button
               type="button"
               onClick={() => navigate(datosRoute)}
-              className="text-sm font-semibold text-slate-500 underline"
+              className="text-sm font-semibold text-neutral-500 underline"
             >
               Revisar datos
             </button>
           </div>
 
           <div className="space-y-4">
-            <h2 className="text-lg font-extrabold text-slate-800">Revisar y confirmar</h2>
+            <h2 className="text-lg font-extrabold text-neutral-800">Revisar y confirmar</h2>
 
             <div className="rounded-2xl bg-white px-4 py-4 shadow-soft">
-              <p className="text-center text-sm font-medium text-slate-600">
+              <p className="text-center text-sm font-medium text-neutral-600">
                 Por favor revise toda la información antes de confirmar
               </p>
             </div>
@@ -239,12 +239,12 @@ function RecoleccionFormResumenScreen() {
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="font-semibold text-slate-600">Fecha:</span>
-                  <span className="font-bold text-slate-800">{formData.date}</span>
+                  <span className="font-semibold text-neutral-600">Fecha:</span>
+                  <span className="font-bold text-neutral-800">{formData.date}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="font-semibold text-slate-600">Recolector:</span>
-                  <span className="font-bold text-slate-800">{user?.nombre && user?.apellido ? `${user.nombre} ${user.apellido}` : user?.nombre || user?.username || user?.email || 'Usuario'}</span>
+                  <span className="font-semibold text-neutral-600">Recolector:</span>
+                  <span className="font-bold text-neutral-800">{user?.nombre && user?.apellido ? `${user.nombre} ${user.apellido}` : user?.nombre || user?.username || user?.email || 'Usuario'}</span>
                 </div>
               </div>
             </div>
@@ -259,24 +259,24 @@ function RecoleccionFormResumenScreen() {
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="font-semibold text-slate-600">Tipo:</span>
-                  <span className="font-bold text-slate-800">{typeLabel}</span>
+                  <span className="font-semibold text-neutral-600">Tipo:</span>
+                  <span className="font-bold text-neutral-800">{typeLabel}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="font-semibold text-slate-600">Nombre comercial:</span>
-                  <span className="ml-4 text-right font-bold text-slate-800">{commercialName}</span>
+                  <span className="font-semibold text-neutral-600">Nombre comercial:</span>
+                  <span className="ml-4 text-right font-bold text-neutral-800">{commercialName}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="font-semibold text-slate-600">Nombre científico:</span>
-                  <span className="ml-4 text-right font-bold italic text-slate-800">{scientificName}</span>
+                  <span className="font-semibold text-neutral-600">Nombre científico:</span>
+                  <span className="ml-4 text-right font-bold italic text-neutral-800">{scientificName}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="font-semibold text-slate-600">Cantidad:</span>
-                  <span className="font-bold text-slate-800">{formData.quantity} {unitLabel}</span>
+                  <span className="font-semibold text-neutral-600">Cantidad:</span>
+                  <span className="font-bold text-neutral-800">{formData.quantity} {unitLabel}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="font-semibold text-slate-600">Método:</span>
-                  <span className="font-bold text-slate-800">{formData.method || 'No especificado'}</span>
+                  <span className="font-semibold text-neutral-600">Método:</span>
+                  <span className="font-bold text-neutral-800">{formData.method || 'No especificado'}</span>
                 </div>
               </div>
             </div>
@@ -291,16 +291,16 @@ function RecoleccionFormResumenScreen() {
                   </h3>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Icon name="info" className="h-4 w-4 text-green-500" />
-                  <span className="text-xs font-semibold text-green-600">✓</span>
+                  <Icon name="info" className="h-4 w-4 text-success-500" />
+                  <span className="text-xs font-semibold text-success-600">✓</span>
                 </div>
               </div>
-              <p className="mb-3 text-xs font-semibold text-slate-600">
+              <p className="mb-3 text-xs font-semibold text-neutral-600">
                 Lugar: {formData.placePhotos.length} foto(s) | Total: {formData.totalPhotos.length} foto(s)
               </p>
               <div className="grid grid-cols-2 gap-3">
                 {formData.placePhotos.slice(0, 2).map((photo, index) => (
-                  <div key={index} className="aspect-square overflow-hidden rounded-xl bg-slate-100">
+                  <div key={index} className="aspect-square overflow-hidden rounded-xl bg-neutral-100">
                     <img
                       src={photo.previewUrl}
                       alt={`Lugar ${index + 1}`}
@@ -309,7 +309,7 @@ function RecoleccionFormResumenScreen() {
                   </div>
                 ))}
                 {formData.totalPhotos.slice(0, 2).map((photo, index) => (
-                  <div key={index} className="aspect-square overflow-hidden rounded-xl bg-slate-100">
+                  <div key={index} className="aspect-square overflow-hidden rounded-xl bg-neutral-100">
                     <img
                       src={photo.previewUrl}
                       alt={`Total ${index + 1}`}
@@ -320,7 +320,7 @@ function RecoleccionFormResumenScreen() {
               </div>
 
               {isEditMode && (
-                <div className="mt-4 space-y-3 border-t border-slate-100 pt-4"> 
+                <div className="mt-4 space-y-3 border-t border-neutral-100 pt-4"> 
                   <label className="inline-flex cursor-pointer items-center rounded-xl border border-brand-200 bg-brand-50 px-3 py-2 text-xs font-bold text-brand-700 transition hover:bg-brand-100">
                     <input
                       type="file"
@@ -336,7 +336,7 @@ function RecoleccionFormResumenScreen() {
                     <div className="grid grid-cols-2 gap-3">
                       {newDraftPreviewUrls.map((previewUrl, index) => (
                         <div key={`${previewUrl}-${index}`} className="space-y-1">
-                          <div className="aspect-square overflow-hidden rounded-xl bg-slate-100">
+                          <div className="aspect-square overflow-hidden rounded-xl bg-neutral-100">
                             <img
                               src={previewUrl}
                               alt={`Nueva evidencia ${index + 1}`}
@@ -346,7 +346,7 @@ function RecoleccionFormResumenScreen() {
                           <button
                             type="button"
                             onClick={() => removeNewDraftFile(index)}
-                            className="w-full rounded-lg border border-red-200 bg-red-50 py-1.5 text-[11px] font-bold text-red-700 transition hover:bg-red-100"
+                            className="w-full rounded-lg border border-danger-200 bg-danger-50 py-1.5 text-[11px] font-bold text-danger-700 transition hover:bg-danger-100"
                           >
                             Quitar
                           </button>
@@ -355,7 +355,7 @@ function RecoleccionFormResumenScreen() {
                     </div>
                   )}
 
-                  <p className="text-[11px] font-semibold text-slate-500">
+                  <p className="text-[11px] font-semibold text-neutral-500">
                     Máximo 5 fotos nuevas. Formatos JPG, PNG, WEBP, HEIC o HEIF. Se suben como archivo original.
                   </p>
                 </div>
@@ -373,49 +373,49 @@ function RecoleccionFormResumenScreen() {
               <div className="space-y-2">
                 {formData.ubicacionNombre && (
                   <div className="flex justify-between text-sm">
-                    <span className="font-semibold text-slate-600">Nombre:</span>
-                    <span className="ml-4 text-right font-bold text-slate-800">{formData.ubicacionNombre}</span>
+                    <span className="font-semibold text-neutral-600">Nombre:</span>
+                    <span className="ml-4 text-right font-bold text-neutral-800">{formData.ubicacionNombre}</span>
                   </div>
                 )}
                 {formData.referencia && (
                   <div className="flex justify-between text-sm">
-                    <span className="font-semibold text-slate-600">Referencia:</span>
-                    <span className="ml-4 text-right font-bold text-slate-800">{formData.referencia}</span>
+                    <span className="font-semibold text-neutral-600">Referencia:</span>
+                    <span className="ml-4 text-right font-bold text-neutral-800">{formData.referencia}</span>
                   </div>
                 )}
                 {(formData.latitud && formData.longitud) && (
                   <div className="flex justify-between text-sm">
-                    <span className="font-semibold text-slate-600">Coordenadas:</span>
-                    <span className="font-bold text-slate-800">{formData.latitud}, {formData.longitud}</span>
+                    <span className="font-semibold text-neutral-600">Coordenadas:</span>
+                    <span className="font-bold text-neutral-800">{formData.latitud}, {formData.longitud}</span>
                   </div>
                 )}
                 {formData.paisNombre && (
                   <div className="flex justify-between text-sm">
-                    <span className="font-semibold text-slate-600">País:</span>
-                    <span className="font-bold text-slate-800">{formData.paisNombre}</span>
+                    <span className="font-semibold text-neutral-600">País:</span>
+                    <span className="font-bold text-neutral-800">{formData.paisNombre}</span>
                   </div>
                 )}
                 {formData.divisionRuta.length > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span className="font-semibold text-slate-600">Ruta administrativa:</span>
-                    <span className="ml-4 text-right font-bold text-slate-800">
+                    <span className="font-semibold text-neutral-600">Ruta administrativa:</span>
+                    <span className="ml-4 text-right font-bold text-neutral-800">
                       {formData.divisionRuta.join(' > ')}
                     </span>
                   </div>
                 )}
                 {formData.precisionM && (
                   <div className="flex justify-between text-sm">
-                    <span className="font-semibold text-slate-600">Precisión GPS:</span>
-                    <span className="font-bold text-slate-800">{formData.precisionM} m</span>
+                    <span className="font-semibold text-neutral-600">Precisión GPS:</span>
+                    <span className="font-bold text-neutral-800">{formData.precisionM} m</span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm">
-                  <span className="font-semibold text-slate-600">Fuente:</span>
-                  <span className="font-bold text-slate-800">GPS_MOVIL</span>
+                  <span className="font-semibold text-neutral-600">Fuente:</span>
+                  <span className="font-bold text-neutral-800">GPS_MOVIL</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="font-semibold text-slate-600">Almacenamiento:</span>
-                  <span className="font-bold text-slate-800">{formData.almacenamiento}</span>
+                  <span className="font-semibold text-neutral-600">Almacenamiento:</span>
+                  <span className="font-bold text-neutral-800">{formData.almacenamiento}</span>
                 </div>
               </div>
             </div>
@@ -428,8 +428,8 @@ function RecoleccionFormResumenScreen() {
                   Trazabilidad
                 </h3>
               </div>
-              <div className="rounded-xl bg-slate-50 px-4 py-3">
-                <p className="text-sm font-semibold text-slate-700">
+              <div className="rounded-xl bg-neutral-50 px-4 py-3">
+                <p className="text-sm font-semibold text-neutral-700">
                   El código de trazabilidad oficial se asignará automáticamente después de guardar la recolección.
                 </p>
               </div>
@@ -444,17 +444,17 @@ function RecoleccionFormResumenScreen() {
                     Notas
                   </h3>
                 </div>
-                <p className="text-sm text-slate-700">
+                <p className="text-sm text-neutral-700">
                   {formData.notes}
                 </p>
               </div>
             )}
 
             {formData.isNewFind && (
-              <div className="rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3 shadow-soft">
+              <div className="rounded-2xl bg-warning-50 border border-warning-200 px-4 py-3 shadow-soft">
                 <div className="flex items-center gap-2">
-                  <Icon name="info" className="h-5 w-5 text-amber-600" />
-                  <p className="text-sm font-semibold text-amber-800">
+                  <Icon name="info" className="h-5 w-5 text-warning-600" />
+                  <p className="text-sm font-semibold text-warning-800">
                     Marcado como posible nuevo hallazgo
                   </p>
                 </div>
@@ -463,12 +463,12 @@ function RecoleccionFormResumenScreen() {
 
             {/* Mensaje de error */}
             {error && (
-              <div className="rounded-2xl bg-red-50 border border-red-200 px-4 py-4 shadow-soft">
+              <div className="rounded-2xl bg-danger-50 border border-danger-200 px-4 py-4 shadow-soft">
                 <div className="flex items-start gap-3">
-                  <Icon name="info" className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <Icon name="info" className="h-5 w-5 text-danger-600 flex-shrink-0 mt-0.5" />
                   <div className="flex-1">
-                    <h3 className="text-sm font-extrabold text-red-900 mb-1">No se pudo completar la acción</h3>
-                    <p className="text-xs font-semibold text-red-700">{error}</p>
+                    <h3 className="text-sm font-extrabold text-danger-900 mb-1">No se pudo completar la acción</h3>
+                    <p className="text-xs font-semibold text-danger-700">{error}</p>
                   </div>
                 </div>
               </div>

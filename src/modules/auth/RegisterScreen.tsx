@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
+import { Button } from '../../components/ui'
 import plantacionImg from '../../assets/home/plantacion.jpg'
 
 function RegisterScreen() {
@@ -53,7 +54,7 @@ function RegisterScreen() {
               required
               value={name}
               onChange={(event) => setName(event.target.value)}
-              className="w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-base font-semibold text-slate-800 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
+              className="w-full rounded-2xl border border-neutral-200 bg-white/80 px-4 py-3 text-base font-semibold text-neutral-800 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
               placeholder="Tu nombre"
             />
           </div>
@@ -65,7 +66,7 @@ function RegisterScreen() {
               required
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              className="w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-base font-semibold text-slate-800 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
+              className="w-full rounded-2xl border border-neutral-200 bg-white/80 px-4 py-3 text-base font-semibold text-neutral-800 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
               placeholder="tu@correo.com"
             />
           </div>
@@ -77,7 +78,7 @@ function RegisterScreen() {
               required
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              className="w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-base font-semibold text-slate-800 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
+              className="w-full rounded-2xl border border-neutral-200 bg-white/80 px-4 py-3 text-base font-semibold text-neutral-800 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
               placeholder="••••••••"
             />
           </div>
@@ -91,17 +92,13 @@ function RegisterScreen() {
             </span>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-2xl bg-gradient-to-r from-brand-500 to-brand-600 py-3.5 text-center text-lg font-extrabold text-white shadow-soft transition hover:shadow-lg active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
-          >
+          <Button type="submit" size="lg" fullWidth disabled={loading}>
             {loading ? 'Creando cuenta...' : 'Crear cuenta'}
-          </button>
+          </Button>
 
           <div className="grid grid-cols-2 gap-3 text-[12px] font-semibold text-brand-600">
-            <div className="rounded-2xl bg-slate-100 px-3 py-2">CO₂ y plantación</div>
-            <div className="rounded-2xl bg-slate-100 px-3 py-2">Alertas y reportes</div>
+            <div className="rounded-2xl bg-neutral-100 px-3 py-2">CO₂ y plantación</div>
+            <div className="rounded-2xl bg-neutral-100 px-3 py-2">Alertas y reportes</div>
           </div>
         </form>
       </div>

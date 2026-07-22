@@ -1,7 +1,5 @@
 import { type FormEvent, useState } from 'react'
-import FormField from '../../../components/crud/FormField'
-import { inputClasses, selectWrapperClasses } from '../../../components/crud/form-classes'
-import ImageUploader from '../../../components/crud/ImageUploader'
+import { Field, ImageUploader, inputClasses, selectWrapperClasses } from '../../../components/ui'
 import Icon from '../../../components/Icon'
 import type {
   Organizacion,
@@ -95,8 +93,8 @@ function OrganizacionForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {submitError && (
-        <section className="rounded-2xl bg-red-50 px-4 py-3 shadow-soft ring-1 ring-red-200">
-          <p className="text-sm font-semibold text-red-700">{submitError}</p>
+        <section className="rounded-2xl bg-danger-50 px-4 py-3 shadow-soft ring-1 ring-danger-200">
+          <p className="text-sm font-semibold text-danger-700">{submitError}</p>
         </section>
       )}
 
@@ -108,12 +106,12 @@ function OrganizacionForm({
           disabled={submitting}
         />
         {errors.logo && (
-          <p className="mt-2 text-center text-xs font-semibold text-red-600">{errors.logo}</p>
+          <p className="mt-2 text-center text-xs font-semibold text-danger-600">{errors.logo}</p>
         )}
       </section>
 
       <section className="space-y-4 rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
-        <FormField label="Nombre" required error={errors.nombre}>
+        <Field label="Nombre" required error={errors.nombre}>
           <input
             type="text"
             value={form.nombre}
@@ -122,9 +120,9 @@ function OrganizacionForm({
             disabled={submitting}
             className={inputClasses(Boolean(errors.nombre))}
           />
-        </FormField>
+        </Field>
 
-        <FormField label="Tipo de organización" required error={errors.tipo}>
+        <Field label="Tipo de organización" required error={errors.tipo}>
           <div className={selectWrapperClasses(Boolean(errors.tipo))}>
             <select
               value={form.tipo}
@@ -132,7 +130,7 @@ function OrganizacionForm({
                 setForm({ ...form, tipo: event.target.value as TipoOrganizacion | '' })
               }
               disabled={submitting}
-              className="w-full bg-transparent py-3 text-sm font-semibold text-slate-700 outline-none"
+              className="w-full bg-transparent py-3 text-sm font-semibold text-neutral-700 outline-none"
             >
               <option value="">Seleccionar tipo...</option>
               {TIPOS_ORGANIZACION.map((tipo) => (
@@ -141,9 +139,9 @@ function OrganizacionForm({
                 </option>
               ))}
             </select>
-            <Icon name="chevron-down" className="h-4 w-4 text-slate-400" />
+            <Icon name="chevron-down" className="h-4 w-4 text-neutral-400" />
           </div>
-        </FormField>
+        </Field>
 
         <label className="flex items-center gap-2 text-sm font-semibold text-brand-700">
           <input
@@ -151,7 +149,7 @@ function OrganizacionForm({
             checked={form.activo}
             onChange={(event) => setForm({ ...form, activo: event.target.checked })}
             disabled={submitting}
-            className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-400"
+            className="h-4 w-4 rounded border-neutral-300 text-brand-600 focus:ring-brand-400"
           />
           Organización activa
         </label>

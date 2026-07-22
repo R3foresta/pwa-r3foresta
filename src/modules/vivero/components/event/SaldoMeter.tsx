@@ -13,9 +13,9 @@ function SaldoMeter({ saldo, cantidad, unidad }: Props) {
   const pct = Math.round(Math.min(1, ratio) * 100)
   const overLimit = ratio > 1
   const tone = overLimit
-    ? 'bg-red-500'
+    ? 'bg-danger-500'
     : ratio >= 0.9
-      ? 'bg-amber-400'
+      ? 'bg-warning-400'
       : ratio > 0
         ? 'bg-success-500'
         : 'bg-brand-200'

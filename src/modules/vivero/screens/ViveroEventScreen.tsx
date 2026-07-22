@@ -157,7 +157,7 @@ function ViveroEventScreen() {
 
   if (error || !lote) {
     return (
-      <div className="relative min-h-screen bg-[#eef2ed]">
+      <div className="relative min-h-screen bg-brand-50">
         <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-28 pt-10">
           <button
             type="button"
@@ -167,7 +167,7 @@ function ViveroEventScreen() {
             <Icon name="arrow-left" className="h-5 w-5" />
           </button>
           <div className="rounded-3xl bg-white p-6 shadow-soft ring-1 ring-black/5">
-            <p className="text-sm font-semibold text-red-500">
+            <p className="text-sm font-semibold text-danger-500">
               {error ?? 'Lote no encontrado.'}
             </p>
           </div>
@@ -197,9 +197,9 @@ function ViveroEventScreen() {
   // en ese caso los tabs respectivos no quedan disponibles.
   const fechaEmbolsado = lote.ultimo_evento_por_tipo?.EMBOLSADO?.fecha_evento ?? null
   return (
-    <div className="relative min-h-screen bg-[#eef2ed] text-brand-700">
+    <div className="relative min-h-screen bg-brand-50 text-brand-700">
       {/* Header sticky */}
-      <div className="sticky top-0 z-30 bg-[#eef2ed]/95 px-5 pb-3 pt-6 backdrop-blur">
+      <div className="sticky top-0 z-30 bg-brand-50/95 px-5 pb-3 pt-6 backdrop-blur">
         <div className="mx-auto flex w-full max-w-md flex-col gap-3">
           <div className="flex items-center gap-3">
             <button

@@ -9,7 +9,7 @@ type Props = {
 
 const ACCENTS: Record<NonNullable<Props['accent']>, string> = {
   brand: 'bg-brand-50 text-brand-700',
-  amber: 'bg-amber-50 text-amber-700',
+  amber: 'bg-warning-50 text-warning-700',
   emerald: 'bg-success-50 text-success-700',
 }
 

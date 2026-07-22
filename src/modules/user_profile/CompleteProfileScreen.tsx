@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { ProfileService } from './profile.service'
 import type { ProfileFormData, ProfileValidationErrors } from './types'
 import { AvatarUpload } from './components/AvatarUpload'
+import { Button } from '../../components/ui'
 import { useNavigate, useLocation } from 'react-router-dom'
 
 const COUNTRIES = [
@@ -320,7 +321,7 @@ export function CompleteProfileScreen() {
             {/* Nombre */}
             <div className="space-y-1">
               <label htmlFor="nombre" className="text-sm font-semibold text-brand-700">
-                Nombre <span className="text-red-500">*</span>
+                Nombre <span className="text-danger-500">*</span>
               </label>
               <input
                 id="nombre"
@@ -328,23 +329,23 @@ export function CompleteProfileScreen() {
                 value={formData.nombre}
                 onChange={(e) => handleInputChange('nombre', e.target.value)}
                 maxLength={20}
-                className={`w-full rounded-2xl border bg-white/80 px-4 py-3 text-base font-semibold text-slate-800 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200 ${errors.nombre ? 'border-red-400' : 'border-slate-200'
+                className={`w-full rounded-2xl border bg-white/80 px-4 py-3 text-base font-semibold text-neutral-800 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200 ${errors.nombre ? 'border-danger-400' : 'border-neutral-200'
                   }`}
                 placeholder="Tu nombre (máx. 20 letras)"
                 disabled={isSubmitting}
               />
               {errors.nombre && (
-                <p className="text-xs font-medium text-red-500">{errors.nombre}</p>
+                <p className="text-xs font-medium text-danger-500">{errors.nombre}</p>
               )}
               {formData.nombre && (
-                <p className="text-xs text-slate-500">{formData.nombre.length}/20 caracteres</p>
+                <p className="text-xs text-neutral-500">{formData.nombre.length}/20 caracteres</p>
               )}
             </div>
 
             {/* Apellido */}
             <div className="space-y-1">
               <label htmlFor="apellido" className="text-sm font-semibold text-brand-700">
-                Apellido <span className="text-red-500">*</span>
+                Apellido <span className="text-danger-500">*</span>
               </label>
               <input
                 id="apellido"
@@ -352,23 +353,23 @@ export function CompleteProfileScreen() {
                 value={formData.apellido}
                 onChange={(e) => handleInputChange('apellido', e.target.value)}
                 maxLength={20}
-                className={`w-full rounded-2xl border bg-white/80 px-4 py-3 text-base font-semibold text-slate-800 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200 ${errors.apellido ? 'border-red-400' : 'border-slate-200'
+                className={`w-full rounded-2xl border bg-white/80 px-4 py-3 text-base font-semibold text-neutral-800 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200 ${errors.apellido ? 'border-danger-400' : 'border-neutral-200'
                   }`}
                 placeholder="Tu apellido (máx. 20 letras)"
                 disabled={isSubmitting}
               />
               {errors.apellido && (
-                <p className="text-xs font-medium text-red-500">{errors.apellido}</p>
+                <p className="text-xs font-medium text-danger-500">{errors.apellido}</p>
               )}
               {formData.apellido && (
-                <p className="text-xs text-slate-500">{formData.apellido.length}/20 caracteres</p>
+                <p className="text-xs text-neutral-500">{formData.apellido.length}/20 caracteres</p>
               )}
             </div>
 
             {/* Documento de identidad */}
             <div className="space-y-1">
               <label htmlFor="doc_identidad" className="text-sm font-semibold text-brand-700">
-                Documento de identidad <span className="text-red-500">*</span>
+                Documento de identidad <span className="text-danger-500">*</span>
               </label>
               <input
                 id="doc_identidad"
@@ -376,19 +377,19 @@ export function CompleteProfileScreen() {
                 value={formData.doc_identidad}
                 onChange={(e) => handleInputChange('doc_identidad', e.target.value)}
                 maxLength={8}
-                className={`w-full rounded-2xl border bg-white/80 px-4 py-3 text-base font-semibold text-slate-800 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200 ${errors.doc_identidad ? 'border-red-400' : 'border-slate-200'
+                className={`w-full rounded-2xl border bg-white/80 px-4 py-3 text-base font-semibold text-neutral-800 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200 ${errors.doc_identidad ? 'border-danger-400' : 'border-neutral-200'
                   }`}
                 placeholder="DNI, Cédula, etc. (8 dígitos)"
                 disabled={isSubmitting}
               />
               {errors.doc_identidad && (
-                <p className="text-xs font-medium text-red-500">{errors.doc_identidad}</p>
+                <p className="text-xs font-medium text-danger-500">{errors.doc_identidad}</p>
               )}
               {formData.doc_identidad && (
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-neutral-500">
                   {formData.doc_identidad.length}/8 caracteres
                   {formData.doc_identidad.length === 8 && (
-                    <span className="ml-1 text-green-600">✓</span>
+                    <span className="ml-1 text-success-600">✓</span>
                   )}
                 </p>
               )}
@@ -405,12 +406,12 @@ export function CompleteProfileScreen() {
                 value={formData.organizacion}
                 onChange={(e) => handleInputChange('organizacion', e.target.value)}
                 maxLength={25}
-                className="w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-base font-semibold text-slate-800 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
+                className="w-full rounded-2xl border border-neutral-200 bg-white/80 px-4 py-3 text-base font-semibold text-neutral-800 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
                 placeholder="Opcional (máx. 25 caracteres)"
                 disabled={isSubmitting}
               />
               {formData.organizacion && (
-                <p className="text-xs text-slate-500">{formData.organizacion.length}/25 caracteres</p>
+                <p className="text-xs text-neutral-500">{formData.organizacion.length}/25 caracteres</p>
               )}
             </div>
 
@@ -425,16 +426,16 @@ export function CompleteProfileScreen() {
                 value={formData.wallet_address}
                 onChange={(e) => handleInputChange('wallet_address', e.target.value)}
                 maxLength={42}
-                className={`w-full rounded-2xl border bg-white/80 px-4 py-3 text-base font-semibold text-slate-800 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200 ${errors.wallet_address ? 'border-red-400' : 'border-slate-200'
+                className={`w-full rounded-2xl border bg-white/80 px-4 py-3 text-base font-semibold text-neutral-800 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200 ${errors.wallet_address ? 'border-danger-400' : 'border-neutral-200'
                   }`}
                 placeholder="0x... (42 caracteres)"
                 disabled={isSubmitting}
               />
               {errors.wallet_address && (
-                <p className="text-xs font-medium text-red-500">{errors.wallet_address}</p>
+                <p className="text-xs font-medium text-danger-500">{errors.wallet_address}</p>
               )}
               {formData.wallet_address && (
-                <p className="text-xs text-slate-500">{formData.wallet_address.length}/42 caracteres</p>
+                <p className="text-xs text-neutral-500">{formData.wallet_address.length}/42 caracteres</p>
               )}
             </div>
 
@@ -452,7 +453,7 @@ export function CompleteProfileScreen() {
                       const country = COUNTRIES.find(c => c.code === e.target.value)
                       if (country) handleCountryChange(country)
                     }}
-                    className="appearance-none rounded-2xl border border-slate-200 bg-white/80 px-3 py-3 text-base font-semibold text-slate-800 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200 pr-10 min-w-[120px]"
+                    className="appearance-none rounded-2xl border border-neutral-200 bg-white/80 px-3 py-3 text-base font-semibold text-neutral-800 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200 pr-10 min-w-[120px]"
                     disabled={isSubmitting}
                   >
                     {COUNTRIES.map((country) => (
@@ -461,7 +462,7 @@ export function CompleteProfileScreen() {
                       </option>
                     ))}
                   </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-neutral-400">
                     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
@@ -475,7 +476,7 @@ export function CompleteProfileScreen() {
                   value={phoneNumber}
                   onChange={(e) => handlePhoneChange(e.target.value)}
                   maxLength={10}
-                  className={`flex-1 rounded-2xl border bg-white/80 px-4 py-3 text-base font-semibold text-slate-800 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200 ${errors.contacto ? 'border-red-400' : 'border-slate-200'
+                  className={`flex-1 rounded-2xl border bg-white/80 px-4 py-3 text-base font-semibold text-neutral-800 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200 ${errors.contacto ? 'border-danger-400' : 'border-neutral-200'
                     }`}
                   placeholder={
                     selectedCountry.code === '+591' ? '12345678 (máx. 10 díg.)' :
@@ -486,34 +487,30 @@ export function CompleteProfileScreen() {
                 />
               </div>
               {errors.contacto && (
-                <p className="text-xs font-medium text-red-500">{errors.contacto}</p>
+                <p className="text-xs font-medium text-danger-500">{errors.contacto}</p>
               )}
               {phoneNumber && (
-                <p className="text-xs text-slate-500">{phoneNumber.length}/10 números</p>
+                <p className="text-xs text-neutral-500">{phoneNumber.length}/10 números</p>
               )}
             </div>
 
             {/* Error general */}
             {errors.general && (
-              <div className="rounded-2xl border-l-4 border-red-500 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 shadow-soft">
+              <div className="rounded-2xl border-l-4 border-danger-500 bg-danger-50 px-4 py-3 text-sm font-semibold text-danger-700 shadow-soft">
                 {errors.general}
               </div>
             )}
 
             {/* Submit */}
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full rounded-2xl bg-gradient-to-r from-brand-500 to-brand-600 py-3.5 text-center text-lg font-extrabold text-white shadow-soft transition hover:shadow-lg active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
-            >
+            <Button type="submit" size="lg" fullWidth disabled={isSubmitting}>
               {isSubmitting
                 ? (isEditing ? 'Guardando...' : 'Guardando...')
                 : (isEditing ? 'Actualizar perfil' : 'Completar perfil')
               }
-            </button>
+            </Button>
 
-            <p className="text-center text-[11px] text-slate-400">
-              Los campos con <span className="text-red-500">*</span> son obligatorios
+            <p className="text-center text-[11px] text-neutral-400">
+              Los campos con <span className="text-danger-500">*</span> son obligatorios
               {isEditing && <span className="block mt-1">Campos vacíos mantendrán su valor actual</span>}
             </p>
           </form>
@@ -526,13 +523,13 @@ export function CompleteProfileScreen() {
           <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl">
             <div className="flex flex-col items-center space-y-6">
 
-              <h2 className="text-center text-2xl font-extrabold text-slate-800">
+              <h2 className="text-center text-2xl font-extrabold text-neutral-800">
                 ¡Actualización Exitosa!
               </h2>
 
-              <div className="flex h-32 w-32 items-center justify-center rounded-full bg-emerald-100">
+              <div className="flex h-32 w-32 items-center justify-center rounded-full bg-success-100">
                 <svg
-                  className="h-20 w-20 text-emerald-500"
+                  className="h-20 w-20 text-success-500"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -547,7 +544,7 @@ export function CompleteProfileScreen() {
               </div>
 
               <div className="text-center">
-                <p className="text-base font-semibold text-slate-700">
+                <p className="text-base font-semibold text-neutral-700">
                   {isEditing
                     ? 'Tu perfil se ha actualizado exitosamente.'
                     : 'Tu perfil se ha completado exitosamente.'}

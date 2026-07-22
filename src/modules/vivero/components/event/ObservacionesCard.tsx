@@ -41,12 +41,12 @@ function ObservacionesCard({
         rows={3}
         disabled={disabled}
         className={`w-full resize-none rounded-2xl border bg-white px-3 py-2 text-sm font-semibold text-brand-700 outline-none transition focus:border-brand-300 disabled:opacity-50 ${
-          showError ? 'border-red-300' : 'border-brand-100'
+          showError ? 'border-danger-300' : 'border-brand-100'
         }`}
       />
       <div className="flex items-center justify-between gap-2">
         {showError && errorMessage ? (
-          <p className="text-xs font-semibold text-red-500">{errorMessage}</p>
+          <p className="text-xs font-semibold text-danger-500">{errorMessage}</p>
         ) : (
           <span />
         )}

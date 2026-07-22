@@ -133,16 +133,16 @@ function SubcampaniaResumenStep({
     return (
       <>
         <main className="space-y-4 px-5 pt-4">
-          <section className="rounded-3xl bg-amber-50 p-4 shadow-soft ring-1 ring-amber-100">
+          <section className="rounded-3xl bg-warning-50 p-4 shadow-soft ring-1 ring-warning-100">
             <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-800">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-warning-100 text-warning-800">
                 <Icon name="info" className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-sm font-extrabold text-amber-950">
+                <p className="text-sm font-extrabold text-warning-950">
                   La subcampaña aún no fue creada
                 </p>
-                <p className="mt-1 text-xs font-bold leading-relaxed text-amber-900">
+                <p className="mt-1 text-xs font-bold leading-relaxed text-warning-900">
                   Completa los pasos anteriores antes de revisar el resumen.
                 </p>
               </div>
@@ -150,7 +150,7 @@ function SubcampaniaResumenStep({
           </section>
         </main>
         <div className="px-5">
-          <div className="sticky bottom-0 -mx-5 bg-gradient-to-t from-[#eef2ed] via-[#eef2ed]/95 to-transparent px-5 pb-5 pt-3">
+          <div className="sticky bottom-0 -mx-5 bg-gradient-to-t from-brand-50 via-brand-50/95 to-transparent px-5 pb-5 pt-3">
             <button
               type="button"
               onClick={onBackToEquipo}
@@ -263,7 +263,7 @@ function SubcampaniaResumenStep({
         )}
 
         {loadError && (
-          <p className="whitespace-pre-line rounded-2xl bg-red-50 px-4 py-2 text-center text-xs font-extrabold text-red-700 ring-1 ring-red-100">
+          <p className="whitespace-pre-line rounded-2xl bg-danger-50 px-4 py-2 text-center text-xs font-extrabold text-danger-700 ring-1 ring-danger-100">
             {loadError}
           </p>
         )}
@@ -472,9 +472,9 @@ function SubcampaniaResumenStep({
       </main>
 
       <div className="px-5">
-        <div className="sticky bottom-0 -mx-5 bg-gradient-to-t from-[#eef2ed] via-[#eef2ed]/95 to-transparent px-5 pb-5 pt-3">
+        <div className="sticky bottom-0 -mx-5 bg-gradient-to-t from-brand-50 via-brand-50/95 to-transparent px-5 pb-5 pt-3">
           {(activateError || saveError) && (
-            <p className="mb-2 whitespace-pre-line rounded-2xl bg-red-50 px-4 py-2 text-center text-xs font-extrabold text-red-700 ring-1 ring-red-100">
+            <p className="mb-2 whitespace-pre-line rounded-2xl bg-danger-50 px-4 py-2 text-center text-xs font-extrabold text-danger-700 ring-1 ring-danger-100">
               {activateError ?? saveError}
             </p>
           )}

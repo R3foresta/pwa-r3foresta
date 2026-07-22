@@ -66,7 +66,7 @@ export default function ViveroLotAsignacionesCollapsible({
           ) : loadingAsig ? (
             <p className="text-[11px] font-semibold text-neutral-400 text-center py-2">Cargando...</p>
           ) : loadError ? (
-            <p className="py-2 text-center text-[11px] font-semibold text-red-500">
+            <p className="py-2 text-center text-[11px] font-semibold text-danger-500">
               {loadError}
             </p>
           ) : (
@@ -80,7 +80,7 @@ export default function ViveroLotAsignacionesCollapsible({
                     <div className="flex items-center gap-1.5">
                       <span className={`rounded px-1.5 py-0.5 text-[9px] font-extrabold ring-1 ${
                         asig.proposito === 'REPOSICION'
-                          ? 'bg-amber-50 text-amber-700 ring-amber-100'
+                          ? 'bg-warning-50 text-warning-700 ring-warning-100'
                           : 'bg-success-50 text-success-700 ring-success-100'
                       }`}>
                         {asig.proposito}

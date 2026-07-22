@@ -281,8 +281,8 @@ export function OrganizacionSelector({
         </div>
 
         {selectedOrganizations.length === 0 && (
-          <div className="rounded-2xl bg-amber-50 px-3 py-2 ring-1 ring-amber-100">
-            <p className="text-[11px] font-bold leading-relaxed text-amber-800">
+          <div className="rounded-2xl bg-warning-50 px-3 py-2 ring-1 ring-warning-100">
+            <p className="text-[11px] font-bold leading-relaxed text-warning-800">
               Recomendado: asociar al menos una organización para transparencia institucional.
             </p>
           </div>
@@ -330,7 +330,7 @@ export function OrganizacionSelector({
             </div>
 
             <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-5 pb-4">
-              <label className="mb-1 flex items-center gap-2 rounded-2xl border border-neutral-200 bg-[#f8fbf7] px-3 py-2.5">
+              <label className="mb-1 flex items-center gap-2 rounded-2xl border border-neutral-200 bg-brand-50 px-3 py-2.5">
                 <Icon name="search" className="h-4 w-4 shrink-0 text-neutral-400" />
                 <input
                   type="search"
@@ -358,12 +358,12 @@ export function OrganizacionSelector({
               )}
 
               {error && !loading && (
-                <div className="rounded-2xl bg-red-50 px-4 py-6 text-center text-sm font-semibold text-red-700 ring-1 ring-red-200">
+                <div className="rounded-2xl bg-danger-50 px-4 py-6 text-center text-sm font-semibold text-danger-700 ring-1 ring-danger-200">
                   <p>{error}</p>
                   <button
                     type="button"
                     onClick={onRetry}
-                    className="mt-3 rounded-xl bg-red-100 px-4 py-2 text-xs font-bold text-red-700 transition hover:bg-red-200"
+                    className="mt-3 rounded-xl bg-danger-100 px-4 py-2 text-xs font-bold text-danger-700 transition hover:bg-danger-200"
                   >
                     Reintentar
                   </button>
@@ -391,7 +391,7 @@ export function OrganizacionSelector({
                       className={`flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left shadow-soft ring-1 transition ${
                         selected
                           ? 'bg-brand-600 text-white ring-brand-700'
-                          : 'bg-[#f8fbf7] text-brand-800 ring-brand-100 hover:ring-brand-300'
+                          : 'bg-brand-50 text-brand-800 ring-brand-100 hover:ring-brand-300'
                       }`}
                     >
                       <OrganizationLogo organization={organization} selected={selected} />

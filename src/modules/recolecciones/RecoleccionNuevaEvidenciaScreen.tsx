@@ -88,7 +88,7 @@ function RecoleccionNuevaEvidenciaScreen() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#f6f7f3] to-[#eef1eb] text-brand-700">
+    <div className="min-h-screen bg-gradient-to-b from-brand-50 to-brand-50 text-brand-700">
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-24">
         <header className="px-5 pb-4 pt-6">
           <button
@@ -106,36 +106,36 @@ function RecoleccionNuevaEvidenciaScreen() {
         <form onSubmit={(event) => void handleSubmit(event)} className="space-y-5 px-5 pb-8">
           <section className="space-y-3 rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
             <label className="block space-y-1">
-              <span className="text-sm font-semibold text-slate-700">Título</span>
+              <span className="text-sm font-semibold text-neutral-700">Título</span>
               <input
                 type="text"
                 value={titulo}
                 onChange={(event) => setTitulo(event.target.value)}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+                className="w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm font-semibold text-neutral-700 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
               />
             </label>
 
             <label className="block space-y-1">
-              <span className="text-sm font-semibold text-slate-700">Descripción</span>
+              <span className="text-sm font-semibold text-neutral-700">Descripción</span>
               <textarea
                 value={descripcion}
                 onChange={(event) => setDescripcion(event.target.value)}
                 rows={3}
-                className="w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+                className="w-full resize-none rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm font-semibold text-neutral-700 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
               />
             </label>
 
             <label className="block space-y-1">
-              <span className="text-sm font-semibold text-slate-700">Metadata (JSON)</span>
+              <span className="text-sm font-semibold text-neutral-700">Metadata (JSON)</span>
               <textarea
                 value={metadataText}
                 onChange={(event) => setMetadataText(event.target.value)}
                 rows={4}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 font-mono text-xs font-semibold text-slate-700 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+                className="w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 font-mono text-xs font-semibold text-neutral-700 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
               />
             </label>
 
-            <label className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">
+            <label className="flex items-center gap-2 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-semibold text-neutral-700">
               <input
                 type="checkbox"
                 checked={esPrincipal}
@@ -149,7 +149,7 @@ function RecoleccionNuevaEvidenciaScreen() {
           <section className="space-y-3 rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-extrabold text-brand-700">Fotos</h2>
-              <span className="text-xs font-semibold text-slate-500">{fotos.length}/{MAX_FOTOS}</span>
+              <span className="text-xs font-semibold text-neutral-500">{fotos.length}/{MAX_FOTOS}</span>
             </div>
 
             <PhotoPicker
@@ -168,12 +168,12 @@ function RecoleccionNuevaEvidenciaScreen() {
             />
 
             {error && (
-              <p className="text-xs font-semibold text-red-500">{error}</p>
+              <p className="text-xs font-semibold text-danger-500">{error}</p>
             )}
           </section>
 
           {error && (
-            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+            <div className="rounded-2xl border border-danger-200 bg-danger-50 px-4 py-3 text-sm font-semibold text-danger-700">
               {error}
             </div>
           )}

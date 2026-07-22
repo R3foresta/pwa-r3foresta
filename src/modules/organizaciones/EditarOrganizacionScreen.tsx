@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import ConfirmDialog from '../../components/ConfirmDialog'
-import CrudHeader from '../../components/crud/CrudHeader'
+import { PageHeader } from '../../components/ui'
 import { OrganizacionesService } from '../../services/organizaciones.service'
 import type { Organizacion, OrganizacionFormInput } from './types'
 import OrganizacionForm from './components/OrganizacionForm'
@@ -117,7 +117,7 @@ function EditarOrganizacionScreen() {
   if (loading) {
     return (
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-28 pt-6 text-brand-700">
-        <CrudHeader title="Editar organización" backTo="/app/organizaciones" />
+        <PageHeader title="Editar organización" backTo="/app/organizaciones" />
         <section className="rounded-2xl bg-white px-4 py-6 text-center text-sm font-semibold text-brand-600 shadow-soft ring-1 ring-black/5">
           Cargando organización...
         </section>
@@ -128,7 +128,7 @@ function EditarOrganizacionScreen() {
   if (notFound) {
     return (
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-28 pt-6 text-brand-700">
-        <CrudHeader title="Editar organización" backTo="/app/organizaciones" />
+        <PageHeader title="Editar organización" backTo="/app/organizaciones" />
         <section className="rounded-2xl bg-white px-4 py-6 text-center shadow-soft ring-1 ring-black/5">
           <p className="text-base font-semibold text-brand-700">Organización no encontrada</p>
           <button
@@ -146,15 +146,15 @@ function EditarOrganizacionScreen() {
   if (loadError || !organizacion) {
     return (
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-28 pt-6 text-brand-700">
-        <CrudHeader title="Editar organización" backTo="/app/organizaciones" />
-        <section className="rounded-2xl bg-red-50 px-4 py-4 text-center shadow-soft ring-1 ring-red-200">
-          <p className="text-sm font-semibold text-red-700">
+        <PageHeader title="Editar organización" backTo="/app/organizaciones" />
+        <section className="rounded-2xl bg-danger-50 px-4 py-4 text-center shadow-soft ring-1 ring-danger-200">
+          <p className="text-sm font-semibold text-danger-700">
             {loadError || 'No se pudo cargar la organización.'}
           </p>
           <button
             type="button"
             onClick={() => void cargar()}
-            className="mt-3 rounded-xl bg-red-100 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-200"
+            className="mt-3 rounded-xl bg-danger-100 px-3 py-2 text-xs font-semibold text-danger-700 transition hover:bg-danger-200"
           >
             Reintentar
           </button>
@@ -165,15 +165,15 @@ function EditarOrganizacionScreen() {
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-28 pt-6 text-brand-700">
-      <CrudHeader
+      <PageHeader
         title="Editar organización"
         subtitle={organizacion.nombre}
         backTo="/app/organizaciones"
       />
 
       {!organizacion.activo && (
-        <section className="mb-4 rounded-2xl bg-amber-50 px-4 py-3 shadow-soft ring-1 ring-amber-200">
-          <p className="text-sm font-semibold text-amber-700">
+        <section className="mb-4 rounded-2xl bg-warning-50 px-4 py-3 shadow-soft ring-1 ring-warning-200">
+          <p className="text-sm font-semibold text-warning-700">
             Esta organización está inactiva. No aparece en selectores operativos hasta que la reactives.
           </p>
         </section>
@@ -194,7 +194,7 @@ function EditarOrganizacionScreen() {
             type="button"
             onClick={() => setConfirmOpen(true)}
             disabled={actionLoading || submitting}
-            className="w-full rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 shadow-soft ring-1 ring-red-200 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-2xl bg-danger-50 px-4 py-3 text-sm font-semibold text-danger-700 shadow-soft ring-1 ring-danger-200 transition hover:bg-danger-100 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {actionLoading ? 'Procesando...' : 'Eliminar o desactivar organización'}
           </button>
@@ -203,7 +203,7 @@ function EditarOrganizacionScreen() {
             type="button"
             onClick={() => void handleReactivar()}
             disabled={actionLoading || submitting}
-            className="w-full rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 shadow-soft ring-1 ring-emerald-200 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-2xl bg-success-50 px-4 py-3 text-sm font-semibold text-success-700 shadow-soft ring-1 ring-success-200 transition hover:bg-success-100 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {actionLoading ? 'Reactivando...' : 'Reactivar organización'}
           </button>

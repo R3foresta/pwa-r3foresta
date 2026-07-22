@@ -145,7 +145,7 @@ function EmbolsadoForm({ lote, onCompleted }: Props) {
         {/* Contexto del lote */}
         <section className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-warning-50 text-warning-600">
               <Icon name="package" className="h-5 w-5" />
             </div>
             <div className="min-w-0 flex-1">
@@ -189,7 +189,7 @@ function EmbolsadoForm({ lote, onCompleted }: Props) {
             disabled={submitting}
           />
           {showSoftWarning && (
-            <div className="mt-3 flex items-start gap-2 rounded-2xl bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 ring-1 ring-amber-200">
+            <div className="mt-3 flex items-start gap-2 rounded-2xl bg-warning-50 px-3 py-2 text-xs font-semibold text-warning-700 ring-1 ring-warning-200">
               <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0" />
               <span>
                 Cantidad inusualmente alta para {lote.cantidad_inicial_en_proceso} g de semillas.
@@ -236,7 +236,7 @@ function EmbolsadoForm({ lote, onCompleted }: Props) {
         </section>
 
         {submitError && (
-          <p className="whitespace-pre-line rounded-2xl bg-red-50 px-3 py-2 text-center text-xs font-semibold text-red-600 ring-1 ring-red-200">
+          <p className="whitespace-pre-line rounded-2xl bg-danger-50 px-3 py-2 text-center text-xs font-semibold text-danger-600 ring-1 ring-danger-200">
             {submitError}
           </p>
         )}

@@ -77,7 +77,7 @@ function CantidadInput({ value, tipoMaterial, unidad, error, onChange}: Props) {
           type="button"
           onClick={() => changeQuantity(-1)}
           disabled={numericValue <= 0}
-          className="rounded-2xl border border-slate-200 p-3 text-slate-600 transition hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded-2xl border border-neutral-200 p-3 text-neutral-600 transition hover:border-neutral-300 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <Icon name="minus" className="h-4 w-4" />
         </button>
@@ -91,13 +91,13 @@ function CantidadInput({ value, tipoMaterial, unidad, error, onChange}: Props) {
         <button
           type="button"
           onClick={() => changeQuantity(1)}
-          className="rounded-2xl border border-slate-200 p-3 text-slate-600 transition hover:border-slate-300"
+          className="rounded-2xl border border-neutral-200 p-3 text-neutral-600 transition hover:border-neutral-300"
         >
           <Icon name="plus" className="h-4 w-4" />
         </button>
       </div>
       {error && (
-        <p className="text-xs font-semibold text-red-500">
+        <p className="text-xs font-semibold text-danger-500">
           {requiresInteger ? 'Ingresa un entero ≥ 1' : 'Ingresa una cantidad mayor a 0'}
         </p>
       )}

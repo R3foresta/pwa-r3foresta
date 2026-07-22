@@ -44,13 +44,13 @@ function RecoleccionSuccessModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
       <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl">
         <div className="flex flex-col items-center space-y-6">
-          <h2 className="text-center text-2xl font-extrabold text-slate-800">
+          <h2 className="text-center text-2xl font-extrabold text-neutral-800">
             {title ?? 'Operación completada'}
           </h2>
 
-          <div className="flex h-32 w-32 items-center justify-center rounded-full bg-emerald-100">
+          <div className="flex h-32 w-32 items-center justify-center rounded-full bg-success-100">
             <svg
-              className="h-20 w-20 text-emerald-500"
+              className="h-20 w-20 text-success-500"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -66,11 +66,11 @@ function RecoleccionSuccessModal({
 
           <div className="text-center">
             {description && (
-              <p className="text-sm font-semibold text-slate-600">
+              <p className="text-sm font-semibold text-neutral-600">
                 {description}
               </p>
             )}
-            <p className="mt-1 text-lg font-extrabold text-slate-800">
+            <p className="mt-1 text-lg font-extrabold text-neutral-800">
               {summaryText ?? 'Registro actualizado'}
             </p>
           </div>
@@ -88,7 +88,7 @@ function RecoleccionSuccessModal({
               <button
                 type="button"
                 onClick={onSecondaryAction}
-                className="w-full rounded-2xl border-2 border-slate-300 bg-white py-4 text-center text-base font-extrabold text-slate-700 shadow-soft transition hover:bg-slate-50 active:scale-[0.99]"
+                className="w-full rounded-2xl border-2 border-neutral-300 bg-white py-4 text-center text-base font-extrabold text-neutral-700 shadow-soft transition hover:bg-neutral-50 active:scale-[0.99]"
               >
                 {secondaryLabel ?? 'Registrar otra recolección'}
               </button>

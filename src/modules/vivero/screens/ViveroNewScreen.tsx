@@ -389,7 +389,7 @@ function ViveroNewScreen() {
     submitPhase === 'uploading' ? 'Subiendo evidencias…' : 'Creando lote…'
 
   return (
-    <div className="relative min-h-screen bg-[#eef2ed] text-brand-700">
+    <div className="relative min-h-screen bg-brand-50 text-brand-700">
       <ProgressHeader
         steps={steps}
         onBack={() => navigate('/app/vivero')}
@@ -437,7 +437,7 @@ function ViveroNewScreen() {
               Cargando viveros…
             </p>
           ) : viveroError ? (
-            <p className="rounded-2xl bg-red-50 px-3 py-3 text-sm font-semibold text-red-600">
+            <p className="rounded-2xl bg-danger-50 px-3 py-3 text-sm font-semibold text-danger-600">
               {viveroError}
             </p>
           ) : viveroSeleccionado ? (
@@ -470,7 +470,7 @@ function ViveroNewScreen() {
                   }
                   className={`w-full appearance-none rounded-2xl border px-4 py-3 pr-10 text-sm font-semibold outline-none transition ${
                     showErrors && validation.vivero
-                      ? 'border-red-300 bg-red-50 text-red-700'
+                      ? 'border-danger-300 bg-danger-50 text-danger-700'
                       : 'border-brand-100 bg-white text-brand-700 focus:border-brand-300'
                   }`}
                 >
@@ -487,7 +487,7 @@ function ViveroNewScreen() {
                 />
               </div>
               {showErrors && validation.vivero && (
-                <p className="text-xs font-semibold text-red-500">
+                <p className="text-xs font-semibold text-danger-500">
                   Selecciona un vivero para continuar.
                 </p>
               )}
@@ -520,7 +520,7 @@ function ViveroNewScreen() {
               Cargando recolecciones…
             </p>
           ) : recoleccionError ? (
-            <p className="rounded-2xl bg-red-50 px-3 py-3 text-sm font-semibold text-red-600">
+            <p className="rounded-2xl bg-danger-50 px-3 py-3 text-sm font-semibold text-danger-600">
               {recoleccionError}
             </p>
           ) : selectedRecoleccion && !pickingRecoleccion && unidadMedida ? (
@@ -537,7 +537,7 @@ function ViveroNewScreen() {
                 <button
                   type="button"
                   onClick={handleClearRecoleccion}
-                  className="rounded-full bg-white px-3 py-1 text-xs font-bold text-red-600 ring-1 ring-red-200 transition hover:bg-red-50"
+                  className="rounded-full bg-white px-3 py-1 text-xs font-bold text-danger-600 ring-1 ring-danger-200 transition hover:bg-danger-50"
                 >
                   Quitar
                 </button>
@@ -619,7 +619,7 @@ function ViveroNewScreen() {
           )}
 
           {showErrors && validation.recoleccion && (
-            <p className="mt-2 text-xs font-semibold text-red-500">
+            <p className="mt-2 text-xs font-semibold text-danger-500">
               Selecciona una recolección para continuar.
             </p>
           )}
@@ -658,7 +658,7 @@ function ViveroNewScreen() {
               />
 
               {overSaldo && (
-                <div className="flex items-start gap-2 rounded-2xl bg-red-50 px-3 py-2.5 text-xs font-bold text-red-700 ring-1 ring-red-200">
+                <div className="flex items-start gap-2 rounded-2xl bg-danger-50 px-3 py-2.5 text-xs font-bold text-danger-700 ring-1 ring-danger-200">
                   <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0" />
                   <span>
                     La cantidad supera el saldo disponible (
@@ -676,7 +676,7 @@ function ViveroNewScreen() {
               />
 
               {showErrors && validation.cantidad && !overSaldo && (
-                <p className="text-xs font-semibold text-red-500">
+                <p className="text-xs font-semibold text-danger-500">
                   {cantidadValidation.message ?? 'Cantidad inválida.'}
                 </p>
               )}
@@ -698,7 +698,7 @@ function ViveroNewScreen() {
                 className={`rounded-full px-3 py-1 text-[11px] font-bold ${
                   photos.length >= 1 && photos.length <= 5
                     ? 'bg-success-100 text-success-700'
-                    : 'bg-red-100 text-red-700'
+                    : 'bg-danger-100 text-danger-700'
                 }`}
               >
                 {photos.length}/5
@@ -736,13 +736,13 @@ function ViveroNewScreen() {
         </section>
 
         {showErrors && validation.auth && (
-          <p className="text-center text-xs font-semibold text-red-500">
+          <p className="text-center text-xs font-semibold text-danger-500">
             No hay sesión activa. Inicia sesión de nuevo.
           </p>
         )}
 
         {submitError && (
-          <p className="rounded-2xl bg-red-50 px-3 py-2 text-center text-xs font-semibold text-red-600 ring-1 ring-red-200">
+          <p className="rounded-2xl bg-danger-50 px-3 py-2 text-center text-xs font-semibold text-danger-600 ring-1 ring-danger-200">
             {submitError}
           </p>
         )}

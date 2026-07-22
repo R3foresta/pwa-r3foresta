@@ -80,8 +80,8 @@ function SubcampaniasOperativasSheet({ onVer, onRegistrar, onBack }: Props) {
       )}
 
       {state === 'error' && (
-        <div className="space-y-3 rounded-2xl bg-red-50 p-4 text-center">
-          <p className="text-sm font-semibold text-red-600">{error}</p>
+        <div className="space-y-3 rounded-2xl bg-danger-50 p-4 text-center">
+          <p className="text-sm font-semibold text-danger-600">{error}</p>
           <Button variant="danger" size="sm" onClick={() => setAttempt((prev) => prev + 1)}>
             Reintentar
           </Button>

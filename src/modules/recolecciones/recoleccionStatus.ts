@@ -63,24 +63,6 @@ export function resolveEstadoOperativo(recoleccion: EstadoOperativoSource): Esta
   return 'CERRADO'
 }
 
-export function estadoRegistroBadgeClass(estadoRegistro: string | null | undefined) {
-  switch (estadoRegistro) {
-    case 'BORRADOR':
-      return 'bg-amber-50 text-amber-700 ring-amber-200'
-    case 'VALIDADO':
-      return 'bg-emerald-50 text-emerald-700 ring-emerald-200'
-    default:
-      return 'bg-slate-100 text-slate-700 ring-slate-200'
-  }
-}
-
-export function estadoOperativoBadgeClass(estadoOperativo: EstadoOperativo) {
-  switch (estadoOperativo) {
-    case 'ABIERTO':
-      return 'bg-cyan-50 text-cyan-700 ring-cyan-200'
-    case 'CERRADO':
-      return 'bg-slate-100 text-slate-700 ring-slate-200'
-    default:
-      return 'bg-slate-100 text-slate-700 ring-slate-200'
-  }
-}
+// El color de estado (registro/operativo) se centraliza en
+// `src/components/ui/status.ts` (`statusVariant`) y se renderiza con <Badge>.
+// Aquí solo vive la resolución de dominio del estado, no su color.

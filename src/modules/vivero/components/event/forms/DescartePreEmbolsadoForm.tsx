@@ -215,8 +215,8 @@ function DescartePreEmbolsadoForm({ lote, onCompleted }: Props) {
   return (
     <>
       <form id={FORM_ID} onSubmit={handleSubmit} className="flex flex-col gap-4 pb-[230px]">
-        <div className="flex items-start gap-2 rounded-2xl bg-red-50 px-3 py-2.5 text-xs font-semibold text-red-700 ring-1 ring-red-200">
-          <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
+        <div className="flex items-start gap-2 rounded-2xl bg-danger-50 px-3 py-2.5 text-xs font-semibold text-danger-700 ring-1 ring-danger-200">
+          <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-danger-600" />
           <span>
             Este evento descarta todo el material en proceso y finaliza el lote. No registra
             plantas vivas ni merma de saldo vivo.
@@ -231,7 +231,7 @@ function DescartePreEmbolsadoForm({ lote, onCompleted }: Props) {
 
         <section className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-700">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-warning-50 text-warning-700">
               <Icon name="package" className="h-5 w-5" />
             </div>
             <div className="min-w-0 flex-1">
@@ -254,7 +254,7 @@ function DescartePreEmbolsadoForm({ lote, onCompleted }: Props) {
         <section className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
           <div className="mb-2 flex items-center justify-between">
             <p className="text-sm font-extrabold text-brand-700">Causa del descarte</p>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-red-500">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-danger-500">
               Obligatorio
             </span>
           </div>
@@ -269,7 +269,7 @@ function DescartePreEmbolsadoForm({ lote, onCompleted }: Props) {
                   disabled={submitting}
                   className={`rounded-2xl border px-3 py-2.5 text-left transition ${
                     isSelected
-                      ? 'border-red-300 bg-red-50 text-red-700 shadow-soft'
+                      ? 'border-danger-300 bg-danger-50 text-danger-700 shadow-soft'
                       : 'border-brand-100 bg-white text-brand-700 hover:border-brand-200'
                   }`}
                 >
@@ -282,7 +282,7 @@ function DescartePreEmbolsadoForm({ lote, onCompleted }: Props) {
             })}
           </div>
           {showErrors && !causaValid && (
-            <p className="mt-2 text-xs font-semibold text-red-500">Seleccioná una causa.</p>
+            <p className="mt-2 text-xs font-semibold text-danger-500">Seleccioná una causa.</p>
           )}
         </section>
 
@@ -320,7 +320,7 @@ function DescartePreEmbolsadoForm({ lote, onCompleted }: Props) {
         </section>
 
         {submitError && (
-          <p className="whitespace-pre-line rounded-2xl bg-red-50 px-3 py-2 text-center text-xs font-semibold text-red-600 ring-1 ring-red-200">
+          <p className="whitespace-pre-line rounded-2xl bg-danger-50 px-3 py-2 text-center text-xs font-semibold text-danger-600 ring-1 ring-danger-200">
             {submitError}
           </p>
         )}
@@ -360,7 +360,7 @@ function DescartePreEmbolsadoForm({ lote, onCompleted }: Props) {
         >
           <div className="w-full max-w-sm rounded-3xl bg-white p-6 text-center shadow-soft ring-1 ring-black/5">
             <div className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center">
-              <div className="h-10 w-10 animate-spin rounded-full border-4 border-brand-100 border-t-red-600" />
+              <div className="h-10 w-10 animate-spin rounded-full border-4 border-brand-100 border-t-danger-600" />
             </div>
             <h2 className="text-base font-extrabold text-brand-700">
               Registrando descarte...

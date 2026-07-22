@@ -65,7 +65,7 @@ function PhotoPicker({ label, photos, badgeLabel, maxPhotos = 5, onChange, onFil
     <div className="rounded-2xl bg-white px-4 py-3 shadow-soft ring-1 ring-black/5 space-y-2">
       <div className="flex items-center justify-between">
         <p className="text-base font-extrabold text-brand-700">{label}</p>
-        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700 ring-1 ring-slate-200">
+        <span className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-bold text-neutral-700 ring-1 ring-neutral-200">
           {photos.length}/{maxPhotos}
         </span>
       </div>
@@ -84,13 +84,13 @@ function PhotoPicker({ label, photos, badgeLabel, maxPhotos = 5, onChange, onFil
         <span>Subir fotos</span>
       </label>
 
-      {error && <p className="text-xs font-semibold text-red-500">{error}</p>}
+      {error && <p className="text-xs font-semibold text-danger-500">{error}</p>}
 
       {photos.length > 0 && (
         <div className="grid grid-cols-3 gap-3">
           {photos.map((photo, index) => (
             <div key={`${photo.previewUrl}-${index}`} className="space-y-1">
-              <div className="relative h-24 overflow-hidden rounded-2xl bg-slate-100">
+              <div className="relative h-24 overflow-hidden rounded-2xl bg-neutral-100">
                 <img src={photo.previewUrl} alt={`${label} ${index + 1}`} className="h-full w-full object-cover" />
                 <button
                   type="button"
@@ -100,7 +100,7 @@ function PhotoPicker({ label, photos, badgeLabel, maxPhotos = 5, onChange, onFil
                   <Icon name="x" className="h-4 w-4" />
                 </button>
               </div>
-              <p className="text-center text-[11px] font-semibold text-slate-500">
+              <p className="text-center text-[11px] font-semibold text-neutral-500">
                 {badgeLabel ? `${badgeLabel} ${index + 1}` : `Foto ${index + 1}`}
               </p>
             </div>

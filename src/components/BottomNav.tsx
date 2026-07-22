@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import Icon, { type IconName } from './Icon'
+import { Button } from './ui'
 import { NAV_ITEMS } from '../data/navigation'
 import { useAuth } from '../contexts/AuthContext'
 import { ProfileService } from '../modules/user_profile'
@@ -144,7 +145,7 @@ function BottomNav() {
               <button
                 type="button"
                 onClick={closeSheet}
-                className="rounded-full p-2 text-brand-500 hover:bg-slate-100"
+                className="rounded-full p-2 text-brand-500 hover:bg-neutral-100"
               >
                 <Icon name="x" className="h-5 w-5" />
               </button>
@@ -164,13 +165,13 @@ function BottomNav() {
                 }}
               />
             ) : (
-              <div className="divide-y divide-slate-100 px-2 pb-2 pt-2">
+              <div className="divide-y divide-neutral-100 px-2 pb-2 pt-2">
                 {quickActions.map((action) => (
                   <button
                     key={action.label}
                     type="button"
                     onClick={() => handleQuickNav(action.to)}
-                    className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-slate-50 active:bg-slate-100"
+                    className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-neutral-50 active:bg-neutral-100"
                   >
                     <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
                       <Icon name={action.icon} className="h-5 w-5" />
@@ -194,8 +195,8 @@ function BottomNav() {
           <div className="fixed inset-x-0 top-1/2 z-50 -translate-y-1/2 px-6">
             <div className="mx-auto w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl">
               <div className="mb-4 flex justify-center">
-                {/* <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-100">
-                  <Icon name="alert-triangle" className="h-8 w-8 text-amber-600" />
+                {/* <div className="flex h-16 w-16 items-center justify-center rounded-full bg-warning-100">
+                  <Icon name="alert-triangle" className="h-8 w-8 text-warning-600" />
                 </div> */}
               </div>
               
@@ -208,18 +209,12 @@ function BottomNav() {
               </p>
               
               <div className="flex flex-col gap-3">
-                <button
-                  onClick={handleCompleteProfile}
-                  className="w-full rounded-xl bg-brand-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
-                >
+                <Button variant="primary" fullWidth onClick={handleCompleteProfile}>
                   Completar perfil
-                </button>
-                <button
-                  onClick={() => setShowProfileWarning(false)}
-                  className="w-full rounded-xl px-4 py-3 text-sm font-semibold text-brand-600 transition hover:bg-slate-50"
-                >
+                </Button>
+                <Button variant="ghost" fullWidth onClick={() => setShowProfileWarning(false)}>
                   Continuar sin completar
-                </button>
+                </Button>
               </div>
             </div>
           </div>

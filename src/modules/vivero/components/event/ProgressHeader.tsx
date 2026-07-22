@@ -12,7 +12,7 @@ type Props = {
 function ProgressHeader({ steps, onBack, eyebrow, title, counterLabel = 'listos' }: Props) {
   const completed = steps.filter((s) => s.done).length
   return (
-    <div className="sticky top-0 z-30 bg-[#eef2ed]/95 px-5 pb-4 pt-6 backdrop-blur">
+    <div className="sticky top-0 z-30 bg-brand-50/95 px-5 pb-4 pt-6 backdrop-blur">
       <div className="mx-auto flex w-full max-w-md flex-col gap-3">
         <div className="flex items-center gap-3">
           <button

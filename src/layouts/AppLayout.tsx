@@ -3,7 +3,7 @@ import BottomNav from '../components/BottomNav'
 
 function AppLayout() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#f6f7f3] to-[#eef1eb] text-brand-700">
+    <div className="min-h-screen bg-gradient-to-b from-brand-50 to-brand-50 text-brand-700">
       <Outlet />
       <BottomNav />
     </div>

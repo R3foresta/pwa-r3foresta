@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { listarComunidades } from '../../api/comunidades.api'
-import CrudHeader from '../../components/crud/CrudHeader'
-import FlashMessage from '../../components/crud/FlashMessage'
-import SearchBar from '../../components/crud/SearchBar'
+import { FlashMessage, PageHeader, SearchBar } from '../../components/ui'
 import Icon from '../../components/Icon'
 import type { ApiListComunidades, ComunidadCard } from '../../tipos/comunidades'
 
@@ -53,8 +51,8 @@ function ComunidadCardItem({ comunidad, onEdit }: CardProps) {
         <span
           className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ring-1 ${
             isActive
-              ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
-              : 'bg-slate-100 text-slate-600 ring-slate-200'
+              ? 'bg-success-50 text-success-700 ring-success-200'
+              : 'bg-neutral-100 text-neutral-600 ring-neutral-200'
           }`}
         >
           {isActive ? 'Activa' : 'Inactiva'}
@@ -165,7 +163,7 @@ function ComunidadesScreen() {
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-28 pt-6 text-brand-700">
-      <CrudHeader
+      <PageHeader
         title="Comunidades"
         subtitle="Listado de comunidades registradas"
         backTo="/app/home"
@@ -194,7 +192,7 @@ function ComunidadesScreen() {
             type="checkbox"
             checked={incluirInactivas}
             onChange={(event) => setIncluirInactivas(event.target.checked)}
-            className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-400"
+            className="h-4 w-4 rounded border-neutral-300 text-brand-600 focus:ring-brand-400"
           />
           Mostrar comunidades inactivas
         </label>
@@ -207,12 +205,12 @@ function ComunidadesScreen() {
       )}
 
       {!loading && error && (
-        <section className="rounded-2xl bg-red-50 px-4 py-4 text-center shadow-soft ring-1 ring-red-200">
-          <p className="text-sm font-semibold text-red-700">{error}</p>
+        <section className="rounded-2xl bg-danger-50 px-4 py-4 text-center shadow-soft ring-1 ring-danger-200">
+          <p className="text-sm font-semibold text-danger-700">{error}</p>
           <button
             type="button"
             onClick={() => void cargar(1, 'replace')}
-            className="mt-3 rounded-xl bg-red-100 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-200"
+            className="mt-3 rounded-xl bg-danger-100 px-3 py-2 text-xs font-semibold text-danger-700 transition hover:bg-danger-200"
           >
             Reintentar
           </button>
@@ -257,12 +255,12 @@ function ComunidadesScreen() {
           )}
 
           {loadMoreError && (
-            <section className="mt-3 rounded-2xl bg-red-50 px-4 py-3 text-center shadow-soft ring-1 ring-red-200">
-              <p className="text-xs font-semibold text-red-700">{loadMoreError}</p>
+            <section className="mt-3 rounded-2xl bg-danger-50 px-4 py-3 text-center shadow-soft ring-1 ring-danger-200">
+              <p className="text-xs font-semibold text-danger-700">{loadMoreError}</p>
               <button
                 type="button"
                 onClick={() => void cargar(pagination.page + 1, 'append')}
-                className="mt-2 rounded-xl bg-red-100 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-200"
+                className="mt-2 rounded-xl bg-danger-100 px-3 py-2 text-xs font-semibold text-danger-700 transition hover:bg-danger-200"
               >
                 Reintentar carga
               </button>

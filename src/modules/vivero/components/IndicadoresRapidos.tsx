@@ -40,7 +40,7 @@ export default function IndicadoresRapidos({ detail, stats }: Props) {
 
       <div className="mt-2 grid grid-cols-2 gap-2">
         {smallCards.map(s => {
-          const toneText = s.tone === 'red' ? 'text-red-700' : s.tone === 'blue' ? 'text-blue-700' : 'text-brand-800'
+          const toneText = s.tone === 'red' ? 'text-danger-700' : s.tone === 'blue' ? 'text-info-700' : 'text-brand-800'
           return (
             <div key={s.label} className="rounded-2xl bg-white px-3 py-2.5 shadow-soft ring-1 ring-black/5">
               <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-brand-500">{s.label}</p>

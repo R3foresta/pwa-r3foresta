@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import CrudHeader from '../../components/crud/CrudHeader'
+import { PageHeader } from '../../components/ui'
 import { OrganizacionesService } from '../../services/organizaciones.service'
 import type { OrganizacionFormInput } from './types'
 import OrganizacionForm from './components/OrganizacionForm'
@@ -38,7 +38,7 @@ function NuevaOrganizacionScreen() {
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-28 pt-6 text-brand-700">
-      <CrudHeader
+      <PageHeader
         title="Nueva organización"
         subtitle="Registra una institución aliada o responsable"
         backTo="/app/organizaciones"

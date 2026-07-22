@@ -58,7 +58,7 @@ function ViveroScreen() {
   const passiveLots = filteredLots.filter((l) => l.estadoLote === 'FINALIZADO')
 
   return (
-    <div className="relative min-h-screen bg-[#eef2ed] text-brand-700">
+    <div className="relative min-h-screen bg-brand-50 text-brand-700">
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-28">
         <div className="flex items-start gap-3 px-5 pt-10">
           {/* Botón sólo-ícono (volver): excepción documentada, se mantiene nativo. */}
@@ -183,7 +183,7 @@ function ViveroScreen() {
 
           {error && !loading && (
             <>
-              <div className="rounded-3xl bg-white px-4 py-6 text-center text-sm font-semibold text-red-500 shadow-soft ring-1 ring-black/5">
+              <div className="rounded-3xl bg-white px-4 py-6 text-center text-sm font-semibold text-danger-500 shadow-soft ring-1 ring-black/5">
                 {error}
               </div>
               <div className="flex justify-center">
@@ -199,7 +199,7 @@ function ViveroScreen() {
               {actionLots.length > 0 && (
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 px-1">
-                    <span className="h-2 w-2 rounded-full bg-amber-400" />
+                    <span className="h-2 w-2 rounded-full bg-warning-400" />
                     <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-brand-600">
                       Requieren acción ({actionLots.length})
                     </p>

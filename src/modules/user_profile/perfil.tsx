@@ -119,7 +119,7 @@ function PerfilScreen() {
         <div className="flex flex-col items-center space-y-3">
           <button
             onClick={() => navigate('/app/edit-profile')}
-            className="w-full max-w-xs flex items-center justify-center gap-3 rounded-2xl bg-white px-6 py-4 text-center shadow-soft transition hover:bg-gray-50"
+            className="w-full max-w-xs flex items-center justify-center gap-3 rounded-2xl bg-white px-6 py-4 text-center shadow-soft transition hover:bg-neutral-50"
           >
             <Icon name="user" className="h-5 w-5 text-brand-600" />
             <span className="text-sm font-medium text-brand-700">Editar perfil</span>
@@ -127,10 +127,10 @@ function PerfilScreen() {
 
           <button
             onClick={handleLogout}
-            className="w-full max-w-xs flex items-center justify-center gap-3 rounded-2xl bg-red-50 px-6 py-4 text-center shadow-soft transition hover:bg-red-100"
+            className="w-full max-w-xs flex items-center justify-center gap-3 rounded-2xl bg-danger-50 px-6 py-4 text-center shadow-soft transition hover:bg-danger-100"
           >
-            <Icon name="x" className="h-5 w-5 text-red-600" />
-            <span className="text-sm font-medium text-red-700">Cerrar sesión</span>
+            <Icon name="x" className="h-5 w-5 text-danger-600" />
+            <span className="text-sm font-medium text-danger-700">Cerrar sesión</span>
           </button>
         </div>
       </section>

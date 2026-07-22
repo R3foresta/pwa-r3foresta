@@ -6,9 +6,7 @@ import {
   obtenerComunidad,
 } from '../../api/comunidades.api'
 import ConfirmDialog from '../../components/ConfirmDialog'
-import CrudHeader from '../../components/crud/CrudHeader'
-import FormField from '../../components/crud/FormField'
-import { inputClasses, selectWrapperClasses } from '../../components/crud/form-classes'
+import { Field, PageHeader, inputClasses, selectWrapperClasses } from '../../components/ui'
 import Icon from '../../components/Icon'
 import {
   UbicacionesService,
@@ -330,12 +328,14 @@ function EditarComunidadScreen() {
 
   useEffect(() => {
     void loadInitialData()
+    // loadInitialData se ejecuta al montar y cuando cambia el id de ruta.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
   if (loading) {
     return (
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-28 pt-6 text-brand-700">
-        <CrudHeader title="Editar comunidad" backTo="/app/comunidades" />
+        <PageHeader title="Editar comunidad" backTo="/app/comunidades" />
         <section className="rounded-2xl bg-white px-4 py-6 text-center text-sm font-semibold text-brand-600 shadow-soft ring-1 ring-black/5">
           Cargando comunidad...
         </section>
@@ -346,7 +346,7 @@ function EditarComunidadScreen() {
   if (notFound) {
     return (
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-28 pt-6 text-brand-700">
-        <CrudHeader title="Editar comunidad" backTo="/app/comunidades" />
+        <PageHeader title="Editar comunidad" backTo="/app/comunidades" />
         <section className="rounded-2xl bg-white px-4 py-6 text-center shadow-soft ring-1 ring-black/5">
           <p className="text-base font-semibold text-brand-700">Comunidad no encontrada</p>
           <button
@@ -363,19 +363,19 @@ function EditarComunidadScreen() {
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-28 pt-6 text-brand-700">
-      <CrudHeader
+      <PageHeader
         title="Editar comunidad"
         subtitle={comunidad?.nombre}
         backTo="/app/comunidades"
       />
 
       {loadError && (
-        <section className="mb-4 rounded-2xl bg-red-50 px-4 py-4 text-center shadow-soft ring-1 ring-red-200">
-          <p className="text-sm font-semibold text-red-700">{loadError}</p>
+        <section className="mb-4 rounded-2xl bg-danger-50 px-4 py-4 text-center shadow-soft ring-1 ring-danger-200">
+          <p className="text-sm font-semibold text-danger-700">{loadError}</p>
           <button
             type="button"
             onClick={() => void loadInitialData()}
-            className="mt-3 rounded-xl bg-red-100 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-200"
+            className="mt-3 rounded-xl bg-danger-100 px-3 py-2 text-xs font-semibold text-danger-700 transition hover:bg-danger-200"
           >
             Reintentar
           </button>
@@ -383,16 +383,16 @@ function EditarComunidadScreen() {
       )}
 
       {comunidad && !comunidad.activo && (
-        <section className="mb-4 rounded-2xl bg-amber-50 px-4 py-3 shadow-soft ring-1 ring-amber-200">
-          <p className="text-sm font-semibold text-amber-700">
+        <section className="mb-4 rounded-2xl bg-warning-50 px-4 py-3 shadow-soft ring-1 ring-warning-200">
+          <p className="text-sm font-semibold text-warning-700">
             Esta comunidad está inactiva. No aparece en los selectores hasta que la reactives.
           </p>
         </section>
       )}
 
       {submitError && (
-        <section className="mb-4 rounded-2xl bg-red-50 px-4 py-3 shadow-soft ring-1 ring-red-200">
-          <p className="text-sm font-semibold text-red-700">{submitError}</p>
+        <section className="mb-4 rounded-2xl bg-danger-50 px-4 py-3 shadow-soft ring-1 ring-danger-200">
+          <p className="text-sm font-semibold text-danger-700">{submitError}</p>
         </section>
       )}
 
@@ -407,12 +407,12 @@ function EditarComunidadScreen() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <section className="space-y-4 rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
-          <FormField label="País" hint="El país de una comunidad no se puede modificar.">
-            <div className="flex items-center rounded-2xl border border-slate-200 bg-slate-50 px-4 shadow-soft">
+          <Field label="País" hint="El país de una comunidad no se puede modificar.">
+            <div className="flex items-center rounded-2xl border border-neutral-200 bg-neutral-50 px-4 shadow-soft">
               <select
                 value={selectedPaisId ?? ''}
                 disabled
-                className="w-full bg-transparent py-3 text-sm font-semibold text-slate-700 outline-none"
+                className="w-full bg-transparent py-3 text-sm font-semibold text-neutral-700 outline-none"
               >
                 <option value="">{comunidad?.pais?.nombre || 'País no disponible'}</option>
                 {paises.map((pais) => (
@@ -421,15 +421,15 @@ function EditarComunidadScreen() {
                   </option>
                 ))}
               </select>
-              <Icon name="chevron-down" className="h-4 w-4 text-slate-400" />
+              <Icon name="chevron-down" className="h-4 w-4 text-neutral-400" />
             </div>
-          </FormField>
+          </Field>
 
           {divisionLevels.slice(0, MAX_LEVELS).map((level, index) => {
             const validationKey = (['nivel1', 'nivel2', 'nivel3'] as const)[index]
             const hasError = showErrors && validation[validationKey]
             return (
-              <FormField
+              <Field
                 key={`${level.parentId ?? 'root'}-${index}`}
                 label={level.label || `Nivel ${index + 1}`}
                 required
@@ -442,7 +442,7 @@ function EditarComunidadScreen() {
                       void handleDivisionSelect(index, event.target.value)
                     }}
                     disabled={loadingDivisiones || submitting || actionLoading}
-                    className="w-full bg-transparent py-3 text-sm font-semibold text-slate-700 outline-none"
+                    className="w-full bg-transparent py-3 text-sm font-semibold text-neutral-700 outline-none"
                   >
                     <option value="">
                       {loadingDivisiones ? 'Cargando...' : `Selecciona ${level.label || 'nivel'}`}
@@ -453,17 +453,17 @@ function EditarComunidadScreen() {
                       </option>
                     ))}
                   </select>
-                  <Icon name="chevron-down" className="h-4 w-4 text-slate-400" />
+                  <Icon name="chevron-down" className="h-4 w-4 text-neutral-400" />
                 </div>
-              </FormField>
+              </Field>
             )
           })}
 
           {catalogoError && (
-            <p className="text-xs font-semibold text-red-500">{catalogoError}</p>
+            <p className="text-xs font-semibold text-danger-500">{catalogoError}</p>
           )}
 
-          <FormField
+          <Field
             label="Nombre de la comunidad"
             required
             error={
@@ -483,7 +483,7 @@ function EditarComunidadScreen() {
               placeholder="Ingresa el nombre de la comunidad"
               className={inputClasses(showErrors && validation.nombre)}
             />
-          </FormField>
+          </Field>
 
           <label className="flex items-center gap-2 text-sm font-semibold text-brand-700">
             <input
@@ -491,13 +491,13 @@ function EditarComunidadScreen() {
               checked={activo}
               onChange={(event) => setActivo(event.target.checked)}
               disabled={submitting || actionLoading}
-              className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-400"
+              className="h-4 w-4 rounded border-neutral-300 text-brand-600 focus:ring-brand-400"
             />
             Comunidad activa
           </label>
 
-          <div className="rounded-xl bg-slate-50 px-3 py-2">
-            <p className="text-xs font-semibold text-slate-600">
+          <div className="rounded-xl bg-neutral-50 px-3 py-2">
+            <p className="text-xs font-semibold text-neutral-600">
               Ruta seleccionada: {rutaSeleccionada || 'Selección pendiente'}
             </p>
           </div>
@@ -516,7 +516,7 @@ function EditarComunidadScreen() {
             type="button"
             onClick={() => setConfirmOpen(true)}
             disabled={actionLoading || submitting}
-            className="w-full rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 shadow-soft ring-1 ring-red-200 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-2xl bg-danger-50 px-4 py-3 text-sm font-semibold text-danger-700 shadow-soft ring-1 ring-danger-200 transition hover:bg-danger-100 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {actionLoading ? 'Desactivando...' : 'Desactivar comunidad'}
           </button>
@@ -525,7 +525,7 @@ function EditarComunidadScreen() {
             type="button"
             onClick={() => void handleReactivar()}
             disabled={actionLoading || submitting}
-            className="w-full rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 shadow-soft ring-1 ring-emerald-200 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-2xl bg-success-50 px-4 py-3 text-sm font-semibold text-success-700 shadow-soft ring-1 ring-success-200 transition hover:bg-success-100 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {actionLoading ? 'Reactivando...' : 'Reactivar comunidad'}
           </button>

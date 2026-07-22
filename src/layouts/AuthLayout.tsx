@@ -3,16 +3,16 @@ import heroCanopy from '../assets/home/hero-canopy.jpg'
 
 function AuthLayout() {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-[#081c13] via-[#0c2a1e] to-[#08140f] text-white">
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-brand-900 via-brand-800 to-brand-900 text-white">
       <img
         src={heroCanopy}
         alt="Dosel verde"
         className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-30"
         loading="lazy"
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-[#0f3b29]/70 to-[#0a1f18]/90" />
-      <div className="absolute -left-24 -top-20 h-72 w-72 rounded-full bg-emerald-400/20 blur-[110px]" />
-      <div className="absolute -right-10 bottom-10 h-64 w-64 rounded-full bg-lime-200/15 blur-[120px]" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-brand-700/70 to-brand-900/90" />
+      <div className="absolute -left-24 -top-20 h-72 w-72 rounded-full bg-success-400/20 blur-[110px]" />
+      <div className="absolute -right-10 bottom-10 h-64 w-64 rounded-full bg-success-200/15 blur-[120px]" />
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-10 pt-8">
         <header className="mb-6 flex items-center justify-between">

@@ -17,7 +17,7 @@ function StepFooter({ label, onClick, disabled = false, hint, tone = 'brand' }: 
       : 'bg-brand-500 hover:bg-brand-600'
 
   return (
-    <div className="sticky bottom-24 z-30 -mx-5 bg-gradient-to-t from-[#eef1eb] via-[#eef1eb]/95 to-transparent px-5 pb-1 pt-5">
+    <div className="sticky bottom-24 z-30 -mx-5 bg-gradient-to-t from-brand-50 via-brand-50/95 to-transparent px-5 pb-1 pt-5">
       {/* CTA de paso themeable (brand|success). `success` no es variante de <Button>
           y el verde de acción se preserva por paridad → se mantiene nativo. (gotcha §6.6) */}
       <button

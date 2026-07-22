@@ -54,7 +54,7 @@ function MenuLateral({ isOpen, onClose }: Props) {
             type="button"
             onClick={onClose}
             aria-label="Cerrar menú"
-            className="rounded-full bg-slate-100 p-2 text-slate-700 transition hover:bg-slate-200"
+            className="rounded-full bg-neutral-100 p-2 text-neutral-700 transition hover:bg-neutral-200"
           >
             <Icon name="x" className="h-5 w-5" />
           </button>

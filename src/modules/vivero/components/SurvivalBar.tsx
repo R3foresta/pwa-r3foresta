@@ -7,8 +7,8 @@ type Props = {
 
 function getTone(pct: number) {
   if (pct >= 80) return { bar: 'bg-success-500', text: 'text-success-600' }
-  if (pct >= 50) return { bar: 'bg-amber-400', text: 'text-amber-600' }
-  return { bar: 'bg-red-500', text: 'text-red-600' }
+  if (pct >= 50) return { bar: 'bg-warning-400', text: 'text-warning-600' }
+  return { bar: 'bg-danger-500', text: 'text-danger-600' }
 }
 
 function SurvivalBar({ alive, initial, showLabel = false, className }: Props) {

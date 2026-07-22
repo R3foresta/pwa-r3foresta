@@ -59,7 +59,7 @@ function ViveroLotCard({ lot, onClick, cta, compact }: Props) {
     flowStatus === 'ASIGNADO_A_DESTINO'
       ? 'bg-success-50 text-success-700 ring-success-200'
       : flowStatus === 'LISTO_PARA_DESPACHO'
-        ? 'bg-blue-50 text-blue-700 ring-blue-200'
+        ? 'bg-info-50 text-info-700 ring-info-200'
         : 'bg-neutral-50 text-neutral-600 ring-neutral-200'
 
   return (
@@ -83,7 +83,7 @@ function ViveroLotCard({ lot, onClick, cta, compact }: Props) {
                 </span>
               )}
               {enVivero === 0 && entregado > 0 && (
-                <span className="shrink-0 rounded bg-red-50 px-1.5 py-0.5 text-[9px] font-bold text-red-700 ring-1 ring-red-200">
+                <span className="shrink-0 rounded bg-danger-50 px-1.5 py-0.5 text-[9px] font-bold text-danger-700 ring-1 ring-danger-200">
                   SIN STOCK EN VIVERO
                 </span>
               )}
@@ -135,7 +135,7 @@ function ViveroLotCard({ lot, onClick, cta, compact }: Props) {
                   {lot.vivero} · {lot.diasDesdeInicio}d
                 </p>
               </div>
-              <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700 ring-1 ring-amber-200">
+              <span className="rounded-full bg-warning-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-warning-700 ring-1 ring-warning-200">
                 Pendiente embolsado
               </span>
             </div>
@@ -147,13 +147,13 @@ function ViveroLotCard({ lot, onClick, cta, compact }: Props) {
           <div className="grid grid-cols-2 gap-2 border-t border-neutral-100 pt-3 mt-4 text-center">
             <div>
               <p className="text-[9px] font-bold uppercase tracking-wider text-brand-600">En vivero</p>
-              <p className={`text-xs font-extrabold mt-1 ${enVivero === 0 ? 'text-red-500' : 'text-success-700'}`}>
+              <p className={`text-xs font-extrabold mt-1 ${enVivero === 0 ? 'text-danger-500' : 'text-success-700'}`}>
                 {enVivero}
               </p>
             </div>
             <div>
               <p className="text-[9px] font-bold uppercase tracking-wider text-brand-600">Entregado</p>
-              <p className="text-xs font-extrabold text-amber-600 mt-1">{entregado}</p>
+              <p className="text-xs font-extrabold text-warning-600 mt-1">{entregado}</p>
             </div>
           </div>
         )}

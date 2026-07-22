@@ -40,10 +40,10 @@ function FlashMessage() {
     <section
       role="status"
       className={`mb-4 rounded-2xl px-4 py-3 shadow-soft ring-1 ${
-        isError ? 'bg-red-50 ring-red-200' : 'bg-emerald-50 ring-emerald-200'
+        isError ? 'bg-danger-50 ring-danger-200' : 'bg-success-50 ring-success-200'
       }`}
     >
-      <p className={`text-sm font-semibold ${isError ? 'text-red-700' : 'text-emerald-700'}`}>
+      <p className={`text-sm font-semibold ${isError ? 'text-danger-700' : 'text-success-700'}`}>
         {message.text}
       </p>
     </section>

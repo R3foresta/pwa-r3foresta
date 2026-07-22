@@ -448,7 +448,7 @@ function RegistrarPlantacionScreen() {
   // --------------------------------------------------------------------
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-[#f6f7f3] to-[#eef1eb] text-brand-700">
+      <div className="min-h-screen bg-gradient-to-b from-brand-50 to-brand-50 text-brand-700">
         <div className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center gap-4 px-8 text-center">
           <div className="relative flex h-16 w-16 items-center justify-center">
             <div className="absolute inset-0 rounded-full border-4 border-brand-100" />
@@ -470,10 +470,10 @@ function RegistrarPlantacionScreen() {
 
   if (error || !context) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-[#f6f7f3] to-[#eef1eb] text-brand-700">
+      <div className="min-h-screen bg-gradient-to-b from-brand-50 to-brand-50 text-brand-700">
         <div className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center px-6 text-center">
           <div className="w-full rounded-3xl bg-white p-6 shadow-soft ring-1 ring-black/5">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-100 text-red-500">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-danger-100 text-danger-500">
               <Icon name="alert" className="h-7 w-7" />
             </div>
             <h2 className="mt-4 text-lg font-extrabold text-brand-700">
@@ -498,10 +498,10 @@ function RegistrarPlantacionScreen() {
 
   if (motivoBloqueo) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-[#f6f7f3] to-[#eef1eb] text-brand-700">
+      <div className="min-h-screen bg-gradient-to-b from-brand-50 to-brand-50 text-brand-700">
         <div className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center px-6 text-center">
           <div className="w-full rounded-3xl bg-white p-6 shadow-soft ring-1 ring-black/5">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-warning-100 text-warning-600">
               <Icon name="shield" className="h-7 w-7" />
             </div>
             <h2 className="mt-4 text-lg font-extrabold text-brand-700">
@@ -524,7 +524,7 @@ function RegistrarPlantacionScreen() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#f6f7f3] to-[#eef1eb] text-brand-700">
+    <div className="min-h-screen bg-gradient-to-b from-brand-50 to-brand-50 text-brand-700">
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-28">
         <WizardHeader
           paso={step}
@@ -640,7 +640,7 @@ function RegistrarPlantacionScreen() {
               ))}
 
               {step2Touched && totalDeclarado === 0 && !hasCantidadErrors && (
-                <p className="text-xs font-semibold text-red-500">
+                <p className="text-xs font-semibold text-danger-500">
                   * Declara al menos una planta para continuar.
                 </p>
               )}
@@ -660,7 +660,7 @@ function RegistrarPlantacionScreen() {
                   onChange={(event) => setFecha(event.target.value)}
                   className={`mt-2 w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-neutral-700 shadow-soft outline-none transition focus:ring-2 ${
                     step2Touched && !fechaValida
-                      ? 'border-red-400 bg-red-50 focus:border-red-400 focus:ring-red-200'
+                      ? 'border-danger-400 bg-danger-50 focus:border-danger-400 focus:ring-danger-200'
                       : 'border-neutral-200 bg-white focus:border-brand-400 focus:ring-brand-200'
                   }`}
                 />
@@ -668,7 +668,7 @@ function RegistrarPlantacionScreen() {
                   Se admite hasta {maxDiasRetroactivos} días hacia atrás.
                 </p>
                 {step2Touched && !fechaValida && (
-                  <p className="mt-1 text-xs font-semibold text-red-500">
+                  <p className="mt-1 text-xs font-semibold text-danger-500">
                     * La fecha debe estar entre {fechaMinima} y {hoyISO}.
                   </p>
                 )}
@@ -820,7 +820,7 @@ function RegistrarPlantacionScreen() {
                       {parsedLat.toFixed(6)}, {parsedLng.toFixed(6)}
                       <span
                         className={`ml-1.5 text-[11px] font-bold ${
-                          precisionBaja ? 'text-amber-600' : 'text-neutral-400'
+                          precisionBaja ? 'text-warning-600' : 'text-neutral-400'
                         }`}
                       >
                         {precisionM !== null ? `±${precisionM} m` : 'manual'}
@@ -907,12 +907,12 @@ function RegistrarPlantacionScreen() {
               </div>
 
               {(precisionBaja || dentroDePoligono === false) && (
-                <div className="flex items-start gap-2 rounded-2xl border border-amber-300 bg-amber-50 p-3">
+                <div className="flex items-start gap-2 rounded-2xl border border-warning-300 bg-warning-50 p-3">
                   <Icon
                     name="alert"
-                    className="mt-0.5 h-4 w-4 shrink-0 text-amber-600"
+                    className="mt-0.5 h-4 w-4 shrink-0 text-warning-600"
                   />
-                  <div className="space-y-1 text-xs font-bold text-amber-700">
+                  <div className="space-y-1 text-xs font-bold text-warning-700">
                     {precisionBaja && (
                       <p>La precisión del GPS es baja (±{precisionM} m).</p>
                     )}
@@ -927,15 +927,15 @@ function RegistrarPlantacionScreen() {
               )}
 
               {submitError && (
-                <div className="space-y-1 rounded-2xl border border-red-200 bg-red-50 p-4">
-                  <p className="whitespace-pre-line text-sm font-bold text-red-600">
+                <div className="space-y-1 rounded-2xl border border-danger-200 bg-danger-50 p-4">
+                  <p className="whitespace-pre-line text-sm font-bold text-danger-600">
                     {submitError}
                   </p>
-                  <p className="text-xs font-semibold text-red-500">
+                  <p className="text-xs font-semibold text-danger-500">
                     El registro no se guardó. Revisa los datos e intenta de nuevo.
                   </p>
                   {cleanupWarning && (
-                    <p className="text-xs font-semibold text-amber-600">
+                    <p className="text-xs font-semibold text-warning-600">
                       {cleanupWarning}
                     </p>
                   )}

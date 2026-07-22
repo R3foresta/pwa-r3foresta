@@ -327,8 +327,8 @@ function MermaForm({ lote, fechaEmbolsado, onCompleted }: Props) {
         </div>
 
         {/* Warning destructivo */}
-        <div className="flex items-start gap-2 rounded-2xl bg-amber-50 px-3 py-2.5 text-xs font-semibold text-amber-800 ring-1 ring-amber-200">
-          <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+        <div className="flex items-start gap-2 rounded-2xl bg-warning-50 px-3 py-2.5 text-xs font-semibold text-warning-800 ring-1 ring-warning-200">
+          <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-warning-600" />
           <span>
             Esta acción reduce el inventario vivo y no se puede revertir.
           </span>
@@ -348,25 +348,25 @@ function MermaForm({ lote, fechaEmbolsado, onCompleted }: Props) {
           <div
             className={`rounded-2xl px-3 py-3 shadow-soft ring-1 ${
               cantidadValid
-                ? 'bg-red-50 ring-red-200'
+                ? 'bg-danger-50 ring-danger-200'
                 : 'bg-white ring-black/5'
             }`}
           >
             <p
               className={`text-[10px] font-extrabold uppercase tracking-wider ${
-                cantidadValid ? 'text-red-700' : 'text-brand-500'
+                cantidadValid ? 'text-danger-700' : 'text-brand-500'
               }`}
             >
               Saldo después
             </p>
             <p
               className={`mt-1 text-2xl font-extrabold leading-none ${
-                cantidadValid ? 'text-red-700' : 'text-brand-300'
+                cantidadValid ? 'text-danger-700' : 'text-brand-300'
               }`}
             >
               {cantidadValid ? saldoDespues : '—'}
               {cantidadValid && (
-                <span className="ml-1 text-xs font-bold text-red-500">plantas</span>
+                <span className="ml-1 text-xs font-bold text-danger-500">plantas</span>
               )}
             </p>
           </div>
@@ -407,8 +407,8 @@ function MermaForm({ lote, fechaEmbolsado, onCompleted }: Props) {
           {/* Warning: la merma vaciaría el lote. Aparece solo cuando la
               cantidad ingresada coincide con el saldo actual. */}
           {cantidadValid && saldoDespues === 0 && (
-            <div className="mt-3 flex items-start gap-2 rounded-2xl bg-red-50 px-3 py-2.5 text-xs font-extrabold text-red-700 ring-1 ring-red-200">
-              <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
+            <div className="mt-3 flex items-start gap-2 rounded-2xl bg-danger-50 px-3 py-2.5 text-xs font-extrabold text-danger-700 ring-1 ring-danger-200">
+              <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-danger-600" />
               <span>
                 Esta merma cerrará el lote definitivamente. No quedarán plantas vivas.
               </span>
@@ -420,7 +420,7 @@ function MermaForm({ lote, fechaEmbolsado, onCompleted }: Props) {
         <section className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
           <div className="mb-2 flex items-center justify-between">
             <p className="text-sm font-extrabold text-brand-700">Causa de la merma</p>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-red-500">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-danger-500">
               Obligatorio
             </span>
           </div>
@@ -435,7 +435,7 @@ function MermaForm({ lote, fechaEmbolsado, onCompleted }: Props) {
                   disabled={submitting}
                   className={`flex items-center gap-2 rounded-2xl border px-3 py-2.5 text-sm font-extrabold transition ${
                     isSelected
-                      ? 'border-red-300 bg-red-50 text-red-700 shadow-soft'
+                      ? 'border-danger-300 bg-danger-50 text-danger-700 shadow-soft'
                       : 'border-brand-100 bg-white text-brand-700 hover:border-brand-200'
                   }`}
                 >
@@ -448,7 +448,7 @@ function MermaForm({ lote, fechaEmbolsado, onCompleted }: Props) {
             })}
           </div>
           {showErrors && !causaValid && (
-            <p className="mt-2 text-xs font-semibold text-red-500">
+            <p className="mt-2 text-xs font-semibold text-danger-500">
               Seleccioná una causa.
             </p>
           )}
@@ -498,7 +498,7 @@ function MermaForm({ lote, fechaEmbolsado, onCompleted }: Props) {
         </section>
 
         {submitError && (
-          <p className="whitespace-pre-line rounded-2xl bg-red-50 px-3 py-2 text-center text-xs font-semibold text-red-600 ring-1 ring-red-200">
+          <p className="whitespace-pre-line rounded-2xl bg-danger-50 px-3 py-2 text-center text-xs font-semibold text-danger-600 ring-1 ring-danger-200">
             {submitError}
           </p>
         )}

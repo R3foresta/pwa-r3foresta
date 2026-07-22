@@ -1,4 +1,5 @@
 import Icon from './Icon'
+import { Button } from './ui'
 import { useAndroidPwaInstallPrompt } from '../hooks/useAndroidPwaInstallPrompt'
 
 type Props = {
@@ -25,24 +26,19 @@ function PwaInstallPrompt({ className = 'bottom-4' }: Props) {
 
         <div className="min-w-0 flex-1">
           <h2 className="text-sm font-bold text-brand-700">Instala R3foresta</h2>
-          <p className="text-xs font-medium leading-5 text-slate-600">
+          <p className="text-xs font-medium leading-5 text-neutral-600">
             Accede desde la pantalla principal de tu celular.
           </p>
         </div>
 
         <div className="flex shrink-0 items-center gap-1">
-          <button
-            type="button"
-            onClick={install}
-            disabled={isPrompting}
-            className="rounded-xl bg-brand-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-brand-500/70"
-          >
+          <Button size="sm" onClick={install} disabled={isPrompting}>
             {isPrompting ? 'Abriendo...' : 'Instalar'}
-          </button>
+          </Button>
           <button
             type="button"
             onClick={dismiss}
-            className="rounded-xl p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+            className="rounded-xl p-2 text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-700"
             aria-label="Ocultar sugerencia de instalación"
           >
             <Icon name="x" className="h-5 w-5" />

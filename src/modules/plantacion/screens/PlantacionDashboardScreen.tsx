@@ -87,8 +87,8 @@ function Progress({
   const tones: Record<ProgressTone, string> = {
     brand: 'bg-brand-600',
     emerald: 'bg-success-500',
-    amber: 'bg-amber-500',
-    blue: 'bg-blue-500',
+    amber: 'bg-warning-500',
+    blue: 'bg-info-500',
   }
   return (
     <div
@@ -170,7 +170,7 @@ function EstadoCampaniaBadge({ estado }: { estado: EstadoCampaniaKey }) {
 }
 
 function getTipoTone(tipo: TipoCampania): string {
-  if (tipo === 'ARBORIZACION') return 'bg-sky-50 text-sky-800 ring-sky-100'
+  if (tipo === 'ARBORIZACION') return 'bg-info-50 text-info-800 ring-info-100'
   if (tipo === 'FORESTACION') return 'bg-success-50 text-success-800 ring-success-100'
   return 'bg-brand-50 text-brand-700 ring-brand-100'
 }
@@ -247,7 +247,7 @@ function DashboardHeader({
           >
             <Icon name="bell" className="h-5 w-5" />
             {hayAlertas && (
-              <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-amber-300 ring-2 ring-brand-700" />
+              <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-warning-300 ring-2 ring-brand-700" />
             )}
           </button>
         </div>
@@ -498,8 +498,8 @@ function MetricCard({
   const toneText: Record<ProgressTone, string> = {
     brand: 'text-brand-700',
     emerald: 'text-success-700',
-    amber: 'text-amber-700',
-    blue: 'text-blue-700',
+    amber: 'text-warning-700',
+    blue: 'text-info-700',
   }
   return (
     <div className="rounded-3xl bg-white p-3.5 shadow-soft ring-1 ring-black/5">
@@ -716,7 +716,7 @@ function CampaniaRow({
       </p>
 
       {organizaciones.length > 0 && (
-        <div className="mt-2 flex items-center justify-between gap-3 rounded-2xl bg-[#f8fbf7] px-3 py-2.5 ring-1 ring-brand-100">
+        <div className="mt-2 flex items-center justify-between gap-3 rounded-2xl bg-brand-50 px-3 py-2.5 ring-1 ring-brand-100">
           <div className="min-w-0 flex-1">
             <p className="text-[9.5px] font-extrabold uppercase tracking-[0.14em] text-brand-500">
               Organizaciones asociadas
@@ -771,8 +771,8 @@ function ActividadRow({ item }: { item: ActividadDemoItem }) {
   const kindMeta: Record<ActividadDemoItem['kind'], { icon: IconName; tone: string }> = {
     PLANTACION: { icon: 'planting', tone: 'bg-success-50 text-success-700' },
     CAMPANA: { icon: 'plus-circle', tone: 'bg-brand-50 text-brand-700' },
-    EQUIPO: { icon: 'users', tone: 'bg-blue-50 text-blue-700' },
-    PAUSA: { icon: 'pause', tone: 'bg-amber-50 text-amber-800' },
+    EQUIPO: { icon: 'users', tone: 'bg-info-50 text-info-700' },
+    PAUSA: { icon: 'pause', tone: 'bg-warning-50 text-warning-800' },
   }
   const meta = kindMeta[item.kind]
   return (
@@ -908,7 +908,7 @@ function PlantacionDashboardScreen() {
   }
 
   return (
-    <div className="relative min-h-screen bg-[#eef2ed] text-brand-700">
+    <div className="relative min-h-screen bg-brand-50 text-brand-700">
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-32">
         <DashboardHeader
           saludo={saludo}
@@ -925,12 +925,12 @@ function PlantacionDashboardScreen() {
           {loading && <DashboardSkeleton />}
 
           {error && !loading && (
-            <div className="rounded-3xl bg-red-50 px-4 py-6 text-center text-sm font-semibold text-red-700 shadow-soft ring-1 ring-red-200">
+            <div className="rounded-3xl bg-danger-50 px-4 py-6 text-center text-sm font-semibold text-danger-700 shadow-soft ring-1 ring-danger-200">
               <p>{error}</p>
               <button
                 type="button"
                 onClick={() => void loadCampanias()}
-                className="mt-3 rounded-xl bg-red-100 px-4 py-2 text-xs font-bold text-red-700 transition hover:bg-red-200"
+                className="mt-3 rounded-xl bg-danger-100 px-4 py-2 text-xs font-bold text-danger-700 transition hover:bg-danger-200"
               >
                 Reintentar
               </button>
@@ -1121,7 +1121,7 @@ function PlantacionDashboardScreen() {
                   <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
                     Actividad reciente
                   </p>
-                  <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.14em] text-amber-700 ring-1 ring-amber-100">
+                  <span className="rounded-full bg-warning-50 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.14em] text-warning-700 ring-1 ring-warning-100">
                     Vista previa
                   </span>
                 </header>

@@ -145,8 +145,8 @@ function AdaptabilidadForm({ lote, fechaEmbolsado, onCompleted }: Props) {
     <>
       <form id={FORM_ID} onSubmit={handleSubmit} className="flex flex-col gap-4 pb-[230px]">
         {/* Banner informativo */}
-        <div className="flex items-start gap-2 rounded-2xl bg-sky-50 px-3 py-2.5 text-xs font-semibold text-sky-800 ring-1 ring-sky-200">
-          <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-sky-600" />
+        <div className="flex items-start gap-2 rounded-2xl bg-info-50 px-3 py-2.5 text-xs font-semibold text-info-800 ring-1 ring-info-200">
+          <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-info-600" />
           <span>
             La adaptabilidad mueve todo el lote a una nueva subetapa. No afecta el saldo vivo
             ({lote.saldo_vivo_actual ?? 0} plantas).
@@ -157,7 +157,7 @@ function AdaptabilidadForm({ lote, fechaEmbolsado, onCompleted }: Props) {
         <section className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
           <div className="mb-2 flex items-center justify-between">
             <p className="text-sm font-extrabold text-brand-700">Nueva subetapa</p>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-red-500">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-danger-500">
               Obligatorio
             </span>
           </div>
@@ -194,12 +194,12 @@ function AdaptabilidadForm({ lote, fechaEmbolsado, onCompleted }: Props) {
             })}
           </div>
           {showErrors && !subetapaValid && (
-            <p className="mt-2 text-xs font-semibold text-red-500">
+            <p className="mt-2 text-xs font-semibold text-danger-500">
               Seleccioná la subetapa destino.
             </p>
           )}
           {showErrors && subetapaValid && !subetapaIsNew && (
-            <p className="mt-2 text-xs font-semibold text-amber-600">
+            <p className="mt-2 text-xs font-semibold text-warning-600">
               El lote ya está en esa subetapa.
             </p>
           )}
@@ -238,7 +238,7 @@ function AdaptabilidadForm({ lote, fechaEmbolsado, onCompleted }: Props) {
         </section>
 
         {submitError && (
-          <p className="whitespace-pre-line rounded-2xl bg-red-50 px-3 py-2 text-center text-xs font-semibold text-red-600 ring-1 ring-red-200">
+          <p className="whitespace-pre-line rounded-2xl bg-danger-50 px-3 py-2 text-center text-xs font-semibold text-danger-600 ring-1 ring-danger-200">
             {submitError}
           </p>
         )}

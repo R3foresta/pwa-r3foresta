@@ -48,7 +48,7 @@ function SpeciesCounterRow({
     <div
       className={`rounded-3xl bg-white p-4 shadow-soft ring-1 transition ${
         inputError
-          ? 'ring-red-300'
+          ? 'ring-danger-300'
           : cantidad > 0
             ? 'ring-brand-300'
             : 'ring-black/5'
@@ -96,7 +96,7 @@ function SpeciesCounterRow({
             placeholder="0"
             aria-label={`Cantidad de ${nombre}`}
             className={`w-full bg-transparent text-center text-[28px] font-extrabold leading-none tracking-tight tabular-nums outline-none [appearance:textfield] placeholder:text-neutral-300 disabled:text-neutral-300 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none ${
-              inputError ? 'text-red-500' : 'text-brand-800'
+              inputError ? 'text-danger-500' : 'text-brand-800'
             }`}
           />
           <p className="mt-0.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-brand-500">
@@ -132,14 +132,14 @@ function SpeciesCounterRow({
         <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] font-bold text-neutral-400">
           <span>Plantado {plantado}</span>
           <span className="text-brand-600">Pendiente {pendiente}</span>
-          <span className={stock > 0 ? 'text-success-600' : 'text-red-500'}>
+          <span className={stock > 0 ? 'text-success-600' : 'text-danger-500'}>
             Stock {stock}
           </span>
         </div>
       </div>
 
       {inputError && (
-        <p className="mt-2 text-xs font-semibold text-red-500">{inputError}</p>
+        <p className="mt-2 text-xs font-semibold text-danger-500">{inputError}</p>
       )}
       {disabled && !inputError && (
         <p className="mt-2 text-xs font-semibold text-neutral-400">

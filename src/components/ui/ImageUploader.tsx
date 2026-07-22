@@ -100,7 +100,7 @@ function ImageUploader({
                 if (inputRef.current) inputRef.current.value = ''
                 void handleFile(null)
               }}
-              className="rounded-xl bg-white px-3 py-2 text-xs font-bold uppercase tracking-wide text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-xl bg-white px-3 py-2 text-xs font-bold uppercase tracking-wide text-neutral-600 ring-1 ring-neutral-200 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
               Quitar
             </button>
@@ -118,7 +118,7 @@ function ImageUploader({
       </div>
 
       {localError && (
-        <p className="text-center text-xs font-semibold text-red-600">{localError}</p>
+        <p className="text-center text-xs font-semibold text-danger-600">{localError}</p>
       )}
       <p className="text-center text-[11px] font-medium text-brand-400">
         PNG, JPG, WEBP o HEIC · se convierte al subir

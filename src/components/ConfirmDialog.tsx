@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import Icon from './Icon'
 import type { IconName } from './Icon'
+import { Button } from './ui'
 
 type Variant = 'default' | 'danger'
 
@@ -47,9 +48,6 @@ function ConfirmDialog({
   if (!open) return null
 
   const isDanger = variant === 'danger'
-  const confirmClasses = isDanger
-    ? 'bg-red-600 text-white hover:bg-red-500 active:bg-red-700'
-    : 'bg-brand-700 text-white hover:bg-brand-600 active:bg-brand-800'
 
   return (
     <div
@@ -62,7 +60,7 @@ function ConfirmDialog({
         {iconName && (
           <div
             className={`mb-3 inline-flex h-10 w-10 items-center justify-center rounded-full ${
-              isDanger ? 'bg-red-50 text-red-600' : 'bg-brand-50 text-brand-600'
+              isDanger ? 'bg-danger-50 text-danger-600' : 'bg-brand-50 text-brand-600'
             }`}
           >
             <Icon name={iconName} className="h-5 w-5" />
@@ -78,29 +76,24 @@ function ConfirmDialog({
           <p className="mt-1 text-sm font-semibold text-brand-500">{description}</p>
         )}
         {errorMessage && (
-          <div className="mt-3 rounded-2xl bg-red-50 px-3 py-2 text-[12.5px] font-semibold text-red-700 ring-1 ring-red-200">
+          <div className="mt-3 rounded-2xl bg-danger-50 px-3 py-2 text-[12.5px] font-semibold text-danger-700 ring-1 ring-danger-200">
             {errorMessage}
           </div>
         )}
 
         <div className="mt-5 flex flex-col gap-2">
-          <button
-            type="button"
+          <Button
+            variant={isDanger ? 'danger' : 'primary'}
+            fullWidth
             onClick={onConfirm}
             disabled={loading}
-            className={`flex h-11 items-center justify-center rounded-2xl text-sm font-extrabold shadow-soft transition disabled:cursor-not-allowed disabled:opacity-60 ${confirmClasses}`}
           >
             {loading ? 'Procesando…' : confirmLabel}
-          </button>
+          </Button>
           {cancelLabel && (
-            <button
-              type="button"
-              onClick={onCancel}
-              disabled={loading}
-              className="flex h-11 items-center justify-center rounded-2xl bg-white text-sm font-extrabold text-brand-700 ring-1 ring-brand-100 transition hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-60"
-            >
+            <Button variant="secondary" fullWidth onClick={onCancel} disabled={loading}>
               {cancelLabel}
-            </button>
+            </Button>
           )}
         </div>
       </div>

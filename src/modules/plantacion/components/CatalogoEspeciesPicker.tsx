@@ -203,7 +203,7 @@ function CatalogoEspeciesPicker({ open, excludedPlantaIds, onClose, onConfirm }:
           )}
 
           {!loading && error && (
-            <p className="rounded-2xl bg-red-50 px-4 py-3 text-xs font-bold text-red-700 ring-1 ring-red-100">
+            <p className="rounded-2xl bg-danger-50 px-4 py-3 text-xs font-bold text-danger-700 ring-1 ring-danger-100">
               {error}
             </p>
           )}
@@ -256,7 +256,7 @@ function CatalogoEspeciesPicker({ open, excludedPlantaIds, onClose, onConfirm }:
                       <span
                         className={`shrink-0 rounded-full px-2.5 py-1 text-[10.5px] font-extrabold uppercase tracking-wider ring-1 ${
                           isOutOfStock
-                            ? 'bg-amber-50 text-amber-700 ring-amber-200'
+                            ? 'bg-warning-50 text-warning-700 ring-warning-200'
                             : 'bg-brand-50 text-brand-700 ring-brand-100'
                         }`}
                       >

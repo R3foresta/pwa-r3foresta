@@ -46,13 +46,13 @@ export function AvatarUpload({ currentPhotoUrl, onUploadSuccess }: AvatarUploadP
   return (
     <div className="flex flex-col items-center space-y-4">
       <div 
-        className="relative h-24 w-24 cursor-pointer overflow-hidden rounded-full border-4 border-brand-200 bg-slate-100 shadow-soft transition-transform hover:scale-105"
+        className="relative h-24 w-24 cursor-pointer overflow-hidden rounded-full border-4 border-brand-200 bg-neutral-100 shadow-soft transition-transform hover:scale-105"
         onClick={() => !isUploading && fileInputRef.current?.click()}
       >
         {currentPhotoUrl ? (
           <img src={currentPhotoUrl} alt="Perfil" className="h-full w-full object-cover" />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-slate-400">
+          <div className="flex h-full w-full items-center justify-center text-neutral-400">
             <svg className="h-12 w-12" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
             </svg>

@@ -389,16 +389,16 @@ function SubcampaniaEspeciesStep({
     return (
       <>
         <main className="space-y-4 px-5 pt-4">
-          <section className="rounded-3xl bg-amber-50 p-4 shadow-soft ring-1 ring-amber-100">
+          <section className="rounded-3xl bg-warning-50 p-4 shadow-soft ring-1 ring-warning-100">
             <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-800">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-warning-100 text-warning-800">
                 <Icon name="info" className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-sm font-extrabold text-amber-950">
+                <p className="text-sm font-extrabold text-warning-950">
                   Guarda primero los datos base
                 </p>
-                <p className="mt-1 text-xs font-bold leading-relaxed text-amber-900">
+                <p className="mt-1 text-xs font-bold leading-relaxed text-warning-900">
                   El mix de especies se guarda sobre el mismo borrador de la subcampaña.
                 </p>
               </div>
@@ -406,7 +406,7 @@ function SubcampaniaEspeciesStep({
           </section>
         </main>
         <div className="px-5">
-          <div className="sticky bottom-0 -mx-5 bg-gradient-to-t from-[#eef2ed] via-[#eef2ed]/95 to-transparent px-5 pb-5 pt-3">
+          <div className="sticky bottom-0 -mx-5 bg-gradient-to-t from-brand-50 via-brand-50/95 to-transparent px-5 pb-5 pt-3">
             <Button variant="primary" size="lg" fullWidth onClick={onBackToBase}>
               Volver al paso anterior
             </Button>
@@ -488,7 +488,7 @@ function SubcampaniaEspeciesStep({
             </p>
             <p
               className={`text-[11px] font-extrabold tabular-nums ${
-                balanced ? 'text-success-700' : 'text-amber-700'
+                balanced ? 'text-success-700' : 'text-warning-700'
               }`}
             >
               {total}% asignado
@@ -529,13 +529,13 @@ function SubcampaniaEspeciesStep({
                       </p>
                       <p
                         className={`mt-1 text-[10px] font-bold uppercase tracking-wider ${
-                          especie.saldo_disponible <= 0 ? 'text-amber-700' : 'text-neutral-400'
+                          especie.saldo_disponible <= 0 ? 'text-warning-700' : 'text-neutral-400'
                         }`}
                       >
                         Vivero:{' '}
                         <span
                           className={
-                            especie.saldo_disponible <= 0 ? 'text-amber-700' : 'text-brand-700'
+                            especie.saldo_disponible <= 0 ? 'text-warning-700' : 'text-brand-700'
                           }
                         >
                           {especie.saldo_disponible.toLocaleString('es-BO')}
@@ -579,14 +579,14 @@ function SubcampaniaEspeciesStep({
                       type="button"
                       onClick={() => handleRemoveEspecie(especie.planta_id)}
                       aria-label={`Quitar ${nombreMostrado} del mix`}
-                      className="flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-red-700 transition hover:bg-red-100"
+                      className="flex items-center gap-1 rounded-full bg-danger-50 px-2 py-0.5 text-danger-700 transition hover:bg-danger-100"
                     >
                       <Icon name="trash" className="h-3 w-3" />
                       Quitar
                     </button>
                   </div>
                   {(sinStock || cubrimientoExcedido) && (
-                    <p className="mt-2 rounded-xl bg-amber-50 px-2 py-1 text-[10.5px] font-extrabold text-amber-800 ring-1 ring-amber-100">
+                    <p className="mt-2 rounded-xl bg-warning-50 px-2 py-1 text-[10.5px] font-extrabold text-warning-800 ring-1 ring-warning-100">
                       {sinStock
                         ? 'No hay stock en vivero todavía. Sirve para planificación.'
                         : `Excede el stock disponible (${especie.saldo_disponible.toLocaleString(
@@ -611,9 +611,9 @@ function SubcampaniaEspeciesStep({
       </main>
 
       <div className="px-5">
-        <div className="sticky bottom-0 -mx-5 bg-gradient-to-t from-[#eef2ed] via-[#eef2ed]/95 to-transparent px-5 pb-5 pt-3">
+        <div className="sticky bottom-0 -mx-5 bg-gradient-to-t from-brand-50 via-brand-50/95 to-transparent px-5 pb-5 pt-3">
           {submitError && (
-            <p className="mb-2 whitespace-pre-line rounded-2xl bg-red-50 px-4 py-2 text-center text-xs font-extrabold text-red-700 ring-1 ring-red-100">
+            <p className="mb-2 whitespace-pre-line rounded-2xl bg-danger-50 px-4 py-2 text-center text-xs font-extrabold text-danger-700 ring-1 ring-danger-100">
               {submitError}
             </p>
           )}

@@ -47,8 +47,8 @@ export default function HeroHeader({ detail, customImage }: HeroHeaderProps) {
           )}
 
           {detail.subetapaActual && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/20 px-2.5 py-1 text-[9px] font-black tracking-widest text-amber-50 backdrop-blur-md ring-1 ring-amber-300/30">
-              <Icon name="sun" className="h-3 w-3 text-amber-300" /> {detail.subetapaActual.replace('_', ' ')}
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-warning-500/20 px-2.5 py-1 text-[9px] font-black tracking-widest text-warning-50 backdrop-blur-md ring-1 ring-warning-300/30">
+              <Icon name="sun" className="h-3 w-3 text-warning-300" /> {detail.subetapaActual.replace('_', ' ')}
             </span>
           )}
 

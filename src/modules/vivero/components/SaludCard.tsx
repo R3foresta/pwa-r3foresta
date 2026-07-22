@@ -31,11 +31,11 @@ export default function SaludCard({ detail, stats }: SaludCardProps) {
       <div className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
         <div className="mb-3 flex items-center justify-between">
           <p className="text-sm font-extrabold text-brand-950">Material en proceso</p>
-          <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-amber-700 ring-1 ring-amber-200">
+          <span className="rounded-full bg-warning-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-warning-700 ring-1 ring-warning-200">
             Pendiente embolsado
           </span>
         </div>
-        <p className="text-xs font-semibold text-brand-600 bg-[#f4f7f2] px-3 py-2.5 rounded-2xl ring-1 ring-brand-100">
+        <p className="text-xs font-semibold text-brand-600 bg-brand-50 px-3 py-2.5 rounded-2xl ring-1 ring-brand-100">
           El conteo oficial de plantas vivas se inaugura cuando se registre el embolsado.
         </p>
       </div>
@@ -72,23 +72,23 @@ export default function SaludCard({ detail, stats }: SaludCardProps) {
 
       <div className="mt-4 flex h-3 w-full overflow-hidden rounded-full bg-neutral-100">
         <div style={{ width: `${pctDisponibles}%` }} className="bg-brand-700 transition-all duration-500" />
-        <div style={{ width: `${pctDespachadas}%` }} className="bg-blue-500 transition-all duration-500" />
-        <div style={{ width: `${pctMermas}%` }} className="bg-red-500 transition-all duration-500" />
+        <div style={{ width: `${pctDespachadas}%` }} className="bg-info-500 transition-all duration-500" />
+        <div style={{ width: `${pctMermas}%` }} className="bg-danger-500 transition-all duration-500" />
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] font-black tracking-wide">
         <span className="flex items-center gap-1.5 text-brand-950">
           <span className="h-2 w-2 rounded-full bg-brand-700" /> Disponibles · {disponibles}
         </span>
-        <span className="flex items-center gap-1.5 text-blue-700">
-          <span className="h-2 w-2 rounded-full bg-blue-500" /> Despachadas · {despachadas}
+        <span className="flex items-center gap-1.5 text-info-700">
+          <span className="h-2 w-2 rounded-full bg-info-500" /> Despachadas · {despachadas}
         </span>
-        <span className="flex items-center gap-1.5 text-red-600">
-          <span className="h-2 w-2 rounded-full bg-red-500" /> Mermas · {mermas}
+        <span className="flex items-center gap-1.5 text-danger-600">
+          <span className="h-2 w-2 rounded-full bg-danger-500" /> Mermas · {mermas}
         </span>
       </div>
 
-      <div className="mt-4 flex items-center gap-2 rounded-xl bg-[#f4f7f2] px-3 py-2.5 ring-1 ring-brand-100/50">
+      <div className="mt-4 flex items-center gap-2 rounded-xl bg-brand-50 px-3 py-2.5 ring-1 ring-brand-100/50">
         <Icon name="info" className="h-4 w-4 shrink-0 text-brand-600" />
         <p className="text-[10.5px] font-bold text-brand-950 leading-snug">
           {diasDesdeUltimaMerma !== null ? `Última merma hace ${diasDesdeUltimaMerma} días.` : 'Sin mermas registradas.'} Subetapa actual: <span className="font-black">{detail.subetapaActual?.replace('_', ' ') || 'SOMBRA'}</span>.

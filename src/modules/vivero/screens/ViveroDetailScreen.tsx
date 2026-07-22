@@ -89,9 +89,9 @@ export default function ViveroDetailScreen() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#d8e0d3]">
+      <div className="flex min-h-screen items-center justify-center bg-brand-100">
         <div className="rounded-3xl bg-white p-6 text-center shadow-2xl max-w-sm">
-          <p className="text-red-500 font-bold mb-2">Error</p>
+          <p className="text-danger-500 font-bold mb-2">Error</p>
           <p className="text-sm text-neutral-600">{error}</p>
         </div>
       </div>
@@ -100,8 +100,8 @@ export default function ViveroDetailScreen() {
 
   if (loading || !detail) {
     return (
-      <div className="flex justify-center min-h-screen bg-[#d8e0d3]">
-        <div className="w-full max-w-md bg-[#eef2ed] min-h-screen flex flex-col items-center justify-center shadow-2xl relative">
+      <div className="flex justify-center min-h-screen bg-brand-100">
+        <div className="w-full max-w-md bg-brand-50 min-h-screen flex flex-col items-center justify-center shadow-2xl relative">
           <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-white shadow-soft ring-1 ring-black/5 mb-4 animate-pulse">
             <Icon name="leaf" className="h-7 w-7 text-brand-600" />
           </div>
@@ -115,11 +115,11 @@ export default function ViveroDetailScreen() {
 
   return (
     <NowContext.Provider value={now}>
-      <div className="flex justify-center min-h-screen bg-[#d8e0d3]">
-        <div className="w-full max-w-md bg-[#eef2ed] min-h-screen shadow-2xl relative overflow-y-auto">
+      <div className="flex justify-center min-h-screen bg-brand-100">
+        <div className="w-full max-w-md bg-brand-50 min-h-screen shadow-2xl relative overflow-y-auto">
           <HeroHeader detail={detail} customImage={ultimaFotoLote} />
 
-          <div className="sticky top-0 z-20 px-5 pt-4 pb-2 bg-[#eef2ed]/95 backdrop-blur-sm">
+          <div className="sticky top-0 z-20 px-5 pt-4 pb-2 bg-brand-50/95 backdrop-blur-sm">
             {/* Control segmentado de pestañas (a medida, no calza en <Button>): tokens migrados. */}
             <div className="flex rounded-full bg-white p-1 ring-1 ring-neutral-200">
               {(['resumen', 'asignaciones', 'historial', 'evidencia'] as const).map(tab => (

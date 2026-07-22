@@ -15,11 +15,11 @@ export default function EventCard({ event, isLast, onOpenGallery }: EventCardPro
   // dominio; se mantiene inline con tokens migrados y no deriva de status.ts.
   const configMap: Record<string, { icon: IconName; bg: string; text: string; ring: string }> = {
     INICIO: { icon: 'leaf', bg: 'bg-success-50', text: 'text-success-700', ring: 'ring-success-200' },
-    EMBOLSADO: { icon: 'box', bg: 'bg-[#f4f7f2]', text: 'text-brand-950', ring: 'ring-brand-950/10' },
-    DESCARTE_PRE_EMBOLSADO: { icon: 'trash', bg: 'bg-red-50/80', text: 'text-red-700', ring: 'ring-red-200' },
-    MERMA: { icon: 'loss', bg: 'bg-red-50/80', text: 'text-red-700', ring: 'ring-red-200' },
-    ADAPTABILIDAD: { icon: 'sun', bg: 'bg-amber-50', text: 'text-amber-700', ring: 'ring-amber-200' },
-    DESPACHO: { icon: 'truck', bg: 'bg-blue-50', text: 'text-blue-700', ring: 'ring-blue-200' },
+    EMBOLSADO: { icon: 'box', bg: 'bg-brand-50', text: 'text-brand-950', ring: 'ring-brand-950/10' },
+    DESCARTE_PRE_EMBOLSADO: { icon: 'trash', bg: 'bg-danger-50/80', text: 'text-danger-700', ring: 'ring-danger-200' },
+    MERMA: { icon: 'loss', bg: 'bg-danger-50/80', text: 'text-danger-700', ring: 'ring-danger-200' },
+    ADAPTABILIDAD: { icon: 'sun', bg: 'bg-warning-50', text: 'text-warning-700', ring: 'ring-warning-200' },
+    DESPACHO: { icon: 'truck', bg: 'bg-info-50', text: 'text-info-700', ring: 'ring-info-200' },
     CIERRE_AUTOMATICO: { icon: 'flag', bg: 'bg-neutral-50', text: 'text-neutral-700', ring: 'ring-neutral-200' },
   }
 
@@ -120,9 +120,9 @@ export default function EventCard({ event, isLast, onOpenGallery }: EventCardPro
                   <p className="mt-0.5 text-[9px] font-bold uppercase tracking-widest text-neutral-400">{event.causa || 'N/A'}</p>
                 </div>
               </div>
-              <div className="flex items-start gap-2 rounded-xl bg-amber-50 px-3 py-2.5 ring-1 ring-amber-100">
-                <Icon name="info" className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600" />
-                <p className="text-[11px] font-bold leading-tight text-amber-800">
+              <div className="flex items-start gap-2 rounded-xl bg-warning-50 px-3 py-2.5 ring-1 ring-warning-100">
+                <Icon name="info" className="mt-0.5 h-4 w-4 flex-shrink-0 text-warning-600" />
+                <p className="text-[11px] font-bold leading-tight text-warning-800">
                   Cierre antes de EMBOLSADO. No hubo nacimiento de saldo vivo.
                 </p>
               </div>
@@ -202,7 +202,7 @@ export default function EventCard({ event, isLast, onOpenGallery }: EventCardPro
               <div className="px-2">
                 <Icon 
                   name="arrow-down" 
-                  className={`h-4 w-4 ${event.kind === 'MERMA' ? 'text-red-500' : 'text-blue-500'}`} 
+                  className={`h-4 w-4 ${event.kind === 'MERMA' ? 'text-danger-500' : 'text-info-500'}`} 
                 />
               </div>
               <div className="text-center flex-1">
@@ -237,7 +237,7 @@ export default function EventCard({ event, isLast, onOpenGallery }: EventCardPro
 
           {/* Observación Inferior */}
           {event.observacion && (
-            <div className="mt-3 rounded-2xl bg-[#f4f7f2]/60 p-3.5 ring-1 ring-neutral-200/60">
+            <div className="mt-3 rounded-2xl bg-brand-50/60 p-3.5 ring-1 ring-neutral-200/60">
               <p className="text-[9px] font-black uppercase tracking-widest text-neutral-500 mb-1.5">Observación</p>
               <p className="text-[13px] font-medium text-neutral-600 leading-relaxed">
                 {event.observacion}

@@ -24,8 +24,8 @@ const SUBETAPA_LABEL: Record<SubetapaAdaptabilidad, string> = {
 // así que se conserva por paridad.
 const SUBETAPA_BADGE_TONE: Record<SubetapaAdaptabilidad, string> = {
   SOMBRA: 'bg-neutral-100 text-neutral-700 ring-neutral-200',
-  MEDIA_SOMBRA: 'bg-amber-50 text-amber-700 ring-amber-200',
-  SOL_DIRECTO: 'bg-orange-100 text-orange-700 ring-orange-200',
+  MEDIA_SOMBRA: 'bg-warning-50 text-warning-700 ring-warning-200',
+  SOL_DIRECTO: 'bg-warning-100 text-warning-700 ring-warning-200',
 }
 
 function formatFecha(iso: string): string {
@@ -72,7 +72,7 @@ function AdaptabilidadTimeline({ loteId }: Props) {
 
   if (error) {
     return (
-      <p className="whitespace-pre-line rounded-2xl bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 ring-1 ring-red-200">
+      <p className="whitespace-pre-line rounded-2xl bg-danger-50 px-3 py-2 text-xs font-semibold text-danger-600 ring-1 ring-danger-200">
         {error}
       </p>
     )

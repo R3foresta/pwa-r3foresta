@@ -175,8 +175,8 @@ function DespachoForm({ lote, onCompleted }: Props) {
   return (
     <>
       <form id={FORM_ID} onSubmit={handleSubmit} className="flex flex-col gap-4 pb-[230px]">
-        <div className="flex items-start gap-2 rounded-2xl bg-amber-50 px-3 py-2.5 text-xs font-semibold text-amber-800 ring-1 ring-amber-200">
-          <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+        <div className="flex items-start gap-2 rounded-2xl bg-warning-50 px-3 py-2.5 text-xs font-semibold text-warning-800 ring-1 ring-warning-200">
+          <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-warning-600" />
           <span>
             Este es un despacho manual y sale del saldo vivo del lote. Lo ya entregado a
             subcampanias se consume desde Plantacion, no desde aqui.
@@ -230,7 +230,7 @@ function DespachoForm({ lote, onCompleted }: Props) {
         <section className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
           <div className="mb-2 flex items-center justify-between">
             <p className="text-sm font-extrabold text-brand-700">Tipo de destino</p>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-red-500">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-danger-500">
               Obligatorio
             </span>
           </div>
@@ -259,7 +259,7 @@ function DespachoForm({ lote, onCompleted }: Props) {
             })}
           </div>
           {showErrors && !destinoValid && (
-            <p className="mt-2 text-xs font-semibold text-red-500">
+            <p className="mt-2 text-xs font-semibold text-danger-500">
               Selecciona el tipo de destino.
             </p>
           )}
@@ -277,7 +277,7 @@ function DespachoForm({ lote, onCompleted }: Props) {
               disabled={submitting}
             />
             {showErrors && !comunidadValid && (
-              <p className="mt-2 text-xs font-semibold text-red-500">
+              <p className="mt-2 text-xs font-semibold text-danger-500">
                 Selecciona una comunidad.
               </p>
             )}
@@ -306,11 +306,11 @@ function DespachoForm({ lote, onCompleted }: Props) {
             rows={2}
             disabled={submitting}
             className={`w-full resize-none rounded-2xl border bg-white px-3 py-2 text-sm font-semibold text-brand-700 outline-none transition focus:border-brand-300 disabled:opacity-50 ${
-              showErrors && !referenciaValid ? 'border-red-300' : 'border-brand-100'
+              showErrors && !referenciaValid ? 'border-danger-300' : 'border-brand-100'
             }`}
           />
           {showErrors && !referenciaValid && (
-            <p className="mt-2 text-xs font-semibold text-red-500">
+            <p className="mt-2 text-xs font-semibold text-danger-500">
               Describe el destino del despacho.
             </p>
           )}
@@ -349,14 +349,14 @@ function DespachoForm({ lote, onCompleted }: Props) {
         </section>
 
         {finalizaLote && (
-          <div className="flex items-start gap-2 rounded-2xl bg-red-50 px-3 py-2.5 text-xs font-extrabold text-red-700 ring-1 ring-red-200">
-            <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
+          <div className="flex items-start gap-2 rounded-2xl bg-danger-50 px-3 py-2.5 text-xs font-extrabold text-danger-700 ring-1 ring-danger-200">
+            <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-danger-600" />
             <span>Este despacho dejara el lote en 0 y lo cerrara automaticamente.</span>
           </div>
         )}
 
         {submitError && (
-          <p className="whitespace-pre-line rounded-2xl bg-red-50 px-3 py-2 text-center text-xs font-semibold text-red-600 ring-1 ring-red-200">
+          <p className="whitespace-pre-line rounded-2xl bg-danger-50 px-3 py-2 text-center text-xs font-semibold text-danger-600 ring-1 ring-danger-200">
             {submitError}
           </p>
         )}

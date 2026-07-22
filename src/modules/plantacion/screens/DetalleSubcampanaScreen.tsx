@@ -88,12 +88,12 @@ function clampPct(pct: number): number {
 
 function StateBadgeLight({ estado }: { estado: EstadoSubcampania }) {
   const map: Record<EstadoSubcampania, string> = {
-    BORRADOR: 'bg-amber-400/20 text-amber-100 ring-amber-300/40',
+    BORRADOR: 'bg-warning-400/20 text-warning-100 ring-warning-300/40',
     ACTIVA: 'bg-success-400/20 text-success-100 ring-success-300/40',
     COMPLETADA: 'bg-white/15 text-white ring-white/20',
     FINALIZADA_PARCIAL: 'bg-white/15 text-white ring-white/20',
-    PAUSADA: 'bg-orange-400/20 text-orange-100 ring-orange-300/40',
-    CANCELADA: 'bg-red-400/20 text-red-100 ring-red-300/40',
+    PAUSADA: 'bg-warning-400/20 text-warning-100 ring-warning-300/40',
+    CANCELADA: 'bg-danger-400/20 text-danger-100 ring-danger-300/40',
   }
 
   const tone = map[estado] ?? map.COMPLETADA
@@ -112,7 +112,7 @@ function FaseBadgeLight({ fase }: { fase: Subcampania['fase_mantenimiento'] }) {
   if (!fase || fase === 'NO_APLICA') return null
   const label = fase === 'MANTENIMIENTO_ACTIVO' ? 'Mantenimiento' : 'Monitoreo'
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-blue-400/20 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.14em] text-blue-100 ring-1 ring-blue-300/40">
+    <span className="inline-flex items-center gap-1 rounded-full bg-info-400/20 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.14em] text-info-100 ring-1 ring-info-300/40">
       <Icon name="shield" className="h-3 w-3" />
       {label}
     </span>
@@ -221,18 +221,18 @@ function SubcampanaHeader({
         </div>
 
         {sub.estado === 'FINALIZADA_PARCIAL' && (
-          <div className="mt-3 flex items-start gap-2 rounded-2xl bg-amber-400/15 px-3 py-2.5 ring-1 ring-amber-300/40">
-            <Icon name="flag" className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-200" />
-            <p className="text-[11.5px] font-bold leading-snug text-amber-100">
+          <div className="mt-3 flex items-start gap-2 rounded-2xl bg-warning-400/15 px-3 py-2.5 ring-1 ring-warning-300/40">
+            <Icon name="flag" className="mt-0.5 h-4 w-4 flex-shrink-0 text-warning-200" />
+            <p className="text-[11.5px] font-bold leading-snug text-warning-100">
               <b className="text-white">Cerrada parcialmente:</b> finalizada antes de alcanzar la
               meta. El saldo asignado queda solo para reposición.
             </p>
           </div>
         )}
         {sub.estado === 'COMPLETADA' && sub.fase_mantenimiento === 'MANTENIMIENTO_ACTIVO' && (
-          <div className="mt-3 flex items-start gap-2 rounded-2xl bg-blue-400/15 px-3 py-2.5 ring-1 ring-blue-300/40">
-            <Icon name="shield" className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-200" />
-            <p className="text-[11.5px] font-bold leading-snug text-blue-100">
+          <div className="mt-3 flex items-start gap-2 rounded-2xl bg-info-400/15 px-3 py-2.5 ring-1 ring-info-300/40">
+            <Icon name="shield" className="mt-0.5 h-4 w-4 flex-shrink-0 text-info-200" />
+            <p className="text-[11.5px] font-bold leading-snug text-info-100">
               <b className="text-white">Meta alcanzada.</b> La subcampaña está en mantenimiento
               activo.
             </p>
@@ -290,7 +290,7 @@ function DetailTabs({
   onChange: (tab: DetailTab) => void
 }) {
   return (
-    <div className="sticky top-0 z-20 -mx-5 bg-[#eef2ed]/95 px-5 pb-2 pt-3 backdrop-blur-sm">
+    <div className="sticky top-0 z-20 -mx-5 bg-brand-50/95 px-5 pb-2 pt-3 backdrop-blur-sm">
       <div className="flex rounded-full bg-white p-1 shadow-soft ring-1 ring-black/5">
         {DETAIL_TABS.map((tab) => {
           const selected = active === tab.key
@@ -476,19 +476,19 @@ function ActivacionCard({
       </div>
 
       {faltantes.length > 0 && (
-        <div className="mt-3 rounded-2xl bg-amber-50 px-3 py-2 ring-1 ring-amber-100">
-          <p className="flex items-center gap-1.5 text-[10.5px] font-extrabold uppercase tracking-wide text-amber-800">
+        <div className="mt-3 rounded-2xl bg-warning-50 px-3 py-2 ring-1 ring-warning-100">
+          <p className="flex items-center gap-1.5 text-[10.5px] font-extrabold uppercase tracking-wide text-warning-800">
             <Icon name="info" className="h-3.5 w-3.5" />
             Falta para activar
           </p>
-          <p className="mt-0.5 text-[11.5px] font-bold leading-snug text-amber-900">
+          <p className="mt-0.5 text-[11.5px] font-bold leading-snug text-warning-900">
             {faltantes.map((p) => p.label).join(' · ')}
           </p>
         </div>
       )}
 
       {activationError && (
-        <p className="mt-3 whitespace-pre-line rounded-2xl bg-red-50 px-4 py-2 text-center text-xs font-extrabold text-red-700 ring-1 ring-red-100">
+        <p className="mt-3 whitespace-pre-line rounded-2xl bg-danger-50 px-4 py-2 text-center text-xs font-extrabold text-danger-700 ring-1 ring-danger-100">
           {activationError}
         </p>
       )}
@@ -990,13 +990,13 @@ function MoreSheet({
               <button
                 type="button"
                 onClick={onCancelar}
-                className="flex w-full items-center gap-3 rounded-xl px-1 py-3 text-left hover:bg-red-50"
+                className="flex w-full items-center gap-3 rounded-xl px-1 py-3 text-left hover:bg-danger-50"
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-red-50 text-red-600">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-danger-50 text-danger-600">
                   <Icon name="trash" className="h-4 w-4" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-extrabold text-red-700">Cancelar subcampaña</p>
+                  <p className="text-sm font-extrabold text-danger-700">Cancelar subcampaña</p>
                   <p className="text-[11px] font-medium text-neutral-500">
                     {isBorrador
                       ? 'El registro se conserva pero deja de aparecer en los listados'
@@ -1173,7 +1173,7 @@ function DetalleSubcampanaScreen() {
   }
 
   return (
-    <div className="relative min-h-screen bg-[#eef2ed] text-brand-700">
+    <div className="relative min-h-screen bg-brand-50 text-brand-700">
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-28">
         {sub && !loading ? (
           <SubcampanaHeader sub={sub} onBack={goBack} onMore={() => setMoreOpen(true)} />
@@ -1189,14 +1189,14 @@ function DetalleSubcampanaScreen() {
           )}
 
           {!loading && error && (
-            <div className="rounded-3xl bg-red-50 px-4 py-6 text-center shadow-soft ring-1 ring-red-200">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600">
+            <div className="rounded-3xl bg-danger-50 px-4 py-6 text-center shadow-soft ring-1 ring-danger-200">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-danger-100 text-danger-600">
                 <Icon name="info" className="h-6 w-6" />
               </div>
-              <p className="mt-3 text-sm font-extrabold text-red-700">
+              <p className="mt-3 text-sm font-extrabold text-danger-700">
                 No se pudo cargar la subcampaña
               </p>
-              <p className="mt-1 text-[11.5px] font-semibold leading-relaxed text-red-600">
+              <p className="mt-1 text-[11.5px] font-semibold leading-relaxed text-danger-600">
                 {error}
               </p>
               <div className="mt-4 flex justify-center gap-2">
@@ -1207,7 +1207,7 @@ function DetalleSubcampanaScreen() {
                   <button
                     type="button"
                     onClick={handleRetry}
-                    className="rounded-xl bg-red-100 px-4 py-2 text-xs font-bold text-red-700 transition hover:bg-red-200"
+                    className="rounded-xl bg-danger-100 px-4 py-2 text-xs font-bold text-danger-700 transition hover:bg-danger-200"
                   >
                     Reintentar
                   </button>

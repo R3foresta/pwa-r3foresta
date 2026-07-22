@@ -324,7 +324,7 @@ function MapScreen() {
   const center = userLocation || defaultCenter
 
   return (
-    <div className="fixed inset-0 z-0 bg-gray-100">
+    <div className="fixed inset-0 z-0 bg-neutral-100">
       {/* Contenedor responsive */}
       <div className="w-full h-screen bg-white flex flex-col">
         {/* Encabezado */}

@@ -20,7 +20,7 @@ const SEARCH_DEBOUNCE_MS = 300
 function RolBadge({ rol }: { rol: EquipoMember['rol'] }) {
   if (rol === 'COORDINADOR') {
     return (
-      <span className="inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.14em] text-amber-700 ring-1 ring-amber-100">
+      <span className="inline-flex rounded-full bg-warning-50 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.14em] text-warning-700 ring-1 ring-warning-100">
         Coordinador
       </span>
     )
@@ -231,7 +231,7 @@ export function SubcampaniaEquipoManager({
       </div>
 
       {mutationError && (
-        <p className="whitespace-pre-line rounded-2xl bg-red-50 px-4 py-2 text-center text-xs font-extrabold text-red-700 ring-1 ring-red-100">
+        <p className="whitespace-pre-line rounded-2xl bg-danger-50 px-4 py-2 text-center text-xs font-extrabold text-danger-700 ring-1 ring-danger-100">
           {mutationError}
         </p>
       )}
@@ -243,7 +243,7 @@ export function SubcampaniaEquipoManager({
             <UserAvatar
               nombre={coordinador.nombre_usuario ?? 'C'}
               fotoUrl={coordinador.foto_perfil_url}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-amber-50 text-sm font-extrabold text-amber-700"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-warning-50 text-sm font-extrabold text-warning-700"
             />
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-1.5">
@@ -322,7 +322,7 @@ export function SubcampaniaEquipoManager({
                   onClick={() => void handleRemoveOperario(operario.usuario_id)}
                   disabled={busy}
                   aria-label={`Quitar operario ${operario.nombre_usuario ?? operario.usuario_id}`}
-                  className="flex shrink-0 items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-[10.5px] font-extrabold text-red-700 transition hover:bg-red-100 disabled:cursor-wait disabled:opacity-50"
+                  className="flex shrink-0 items-center gap-1 rounded-full bg-danger-50 px-2.5 py-1 text-[10.5px] font-extrabold text-danger-700 transition hover:bg-danger-100 disabled:cursor-wait disabled:opacity-50"
                 >
                   {removingId === operario.usuario_id ? (
                     <Spinner className="h-3 w-3 animate-spin" />
@@ -371,7 +371,7 @@ export function SubcampaniaEquipoManager({
             )}
 
             {!searchLoading && searchError && (
-              <p className="whitespace-pre-line rounded-2xl bg-red-50 px-4 py-2 text-center text-xs font-extrabold text-red-700 ring-1 ring-red-100">
+              <p className="whitespace-pre-line rounded-2xl bg-danger-50 px-4 py-2 text-center text-xs font-extrabold text-danger-700 ring-1 ring-danger-100">
                 {searchError}
               </p>
             )}

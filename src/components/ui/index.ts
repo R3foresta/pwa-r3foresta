@@ -17,6 +17,10 @@ export { default as SearchBar } from './SearchBar'
 export { default as PageHeader } from './PageHeader'
 
 export { default as Field, Input, Select, Textarea } from './Field'
+export { inputClasses, selectWrapperClasses } from './form-classes'
+
+export { default as FlashMessage } from './FlashMessage'
+export { default as ImageUploader } from './ImageUploader'
 
 export { cn } from './cn'
 export type { ClassValue } from './cn'

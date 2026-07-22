@@ -151,7 +151,7 @@ function CantidadStepper({
       )}
 
       {showError && errorMessage && (
-        <p className="text-xs font-semibold text-red-500">{errorMessage}</p>
+        <p className="text-xs font-semibold text-danger-500">{errorMessage}</p>
       )}
     </div>
   )

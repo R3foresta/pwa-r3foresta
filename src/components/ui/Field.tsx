@@ -4,7 +4,7 @@ import type {
   SelectHTMLAttributes,
   TextareaHTMLAttributes,
 } from 'react'
-import { inputClasses } from '../crud/form-classes'
+import { inputClasses } from './form-classes'
 import { cn } from './cn'
 
 type FieldProps = {

@@ -47,7 +47,7 @@ function CancelarSubcampaniaModal({
       <div className="flex w-full max-w-md flex-col rounded-t-3xl bg-white shadow-2xl ring-1 ring-black/5 sm:rounded-3xl">
         <header className="flex items-start justify-between gap-3 border-b border-neutral-100 px-5 pb-3 pt-5">
           <div className="min-w-0">
-            <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-red-500">
+            <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-danger-500">
               Cancelar subcampaña
             </p>
             <h2
@@ -69,9 +69,9 @@ function CancelarSubcampaniaModal({
         </header>
 
         <div className="space-y-3 px-5 pt-4">
-          <div className="flex items-start gap-3 rounded-2xl bg-red-50 p-3 ring-1 ring-red-100">
-            <Icon name="info" className="h-5 w-5 shrink-0 text-red-600" />
-            <p className="text-[12px] font-bold leading-snug text-red-900">
+          <div className="flex items-start gap-3 rounded-2xl bg-danger-50 p-3 ring-1 ring-danger-100">
+            <Icon name="info" className="h-5 w-5 shrink-0 text-danger-600" />
+            <p className="text-[12px] font-bold leading-snug text-danger-900">
               La subcampaña quedará <strong>CANCELADA</strong>. Se conserva el registro pero
               deja de ser visible y no se puede reabrir. Las asignaciones de vivero activas
               devuelven su stock al vivero automáticamente.
@@ -80,7 +80,7 @@ function CancelarSubcampaniaModal({
 
           <div>
             <label className="mb-1 block text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
-              Motivo <span className="text-red-500">*</span>
+              Motivo <span className="text-danger-500">*</span>
             </label>
             <textarea
               value={motivo}
@@ -99,7 +99,7 @@ function CancelarSubcampaniaModal({
           </div>
 
           {error && (
-            <p className="whitespace-pre-line rounded-2xl bg-red-50 px-3 py-2 text-xs font-extrabold text-red-700 ring-1 ring-red-100">
+            <p className="whitespace-pre-line rounded-2xl bg-danger-50 px-3 py-2 text-xs font-extrabold text-danger-700 ring-1 ring-danger-100">
               {error}
             </p>
           )}

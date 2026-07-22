@@ -138,12 +138,12 @@ function SelectorCampania({
   return (
     <div ref={containerRef} className="space-y-2">
       <p className="text-sm font-semibold text-brand-700">
-        {label} <span className="text-red-500">*</span>
+        {label} <span className="text-danger-500">*</span>
       </p>
 
       <div
         className={`rounded-2xl border bg-white px-4 py-3 shadow-soft ${
-          error ? 'border-red-400 bg-red-50' : 'border-neutral-200'
+          error ? 'border-danger-400 bg-danger-50' : 'border-neutral-200'
         }`}
       >
         <div className="flex items-center gap-2">
@@ -178,7 +178,7 @@ function SelectorCampania({
             ) : null}
 
             {!loading && fetchError && (
-              <p className="px-3 py-2 text-xs font-semibold text-red-600">{fetchError}</p>
+              <p className="px-3 py-2 text-xs font-semibold text-danger-600">{fetchError}</p>
             )}
 
             {!loading && !fetchError && filteredOptions.length === 0 && (

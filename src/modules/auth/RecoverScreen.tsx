@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Button } from '../../components/ui'
 
 function RecoverScreen() {
   const [email, setEmail] = useState('')
@@ -21,11 +22,11 @@ function RecoverScreen() {
           required
           value={email}
           onChange={(event) => setEmail(event.target.value)}
-          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base font-semibold text-slate-700 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
+          className="w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-base font-semibold text-neutral-700 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
           placeholder="tu@correo.com"
         />
         {sent && (
-          <p className="text-sm font-semibold text-green-600">
+          <p className="text-sm font-semibold text-success-600">
             Te enviamos un enlace de recuperación.
           </p>
         )}
@@ -37,12 +38,9 @@ function RecoverScreen() {
         </Link>
       </div>
 
-      <button
-        type="submit"
-        className="w-full rounded-2xl bg-brand-500 py-3 text-center text-lg font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99]"
-      >
+      <Button type="submit" size="lg" fullWidth>
         Enviar enlace
-      </button>
+      </Button>
     </form>
   )
 }

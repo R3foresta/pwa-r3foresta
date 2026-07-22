@@ -95,7 +95,7 @@ function ViveroEmbolsadoScreen() {
 
   if (step === 'error') {
     return (
-      <div className="relative min-h-screen bg-[#eef2ed]">
+      <div className="relative min-h-screen bg-brand-50">
         <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-28 pt-10">
           <button
             type="button"
@@ -105,7 +105,7 @@ function ViveroEmbolsadoScreen() {
             <Icon name="arrow-left" className="h-5 w-5" />
           </button>
           <div className="rounded-3xl bg-white p-6 shadow-soft ring-1 ring-black/5">
-            <p className="text-sm font-semibold text-red-500">
+            <p className="text-sm font-semibold text-danger-500">
               {submitError ?? 'No se pudo cargar la información del lote.'}
             </p>
           </div>
@@ -116,7 +116,7 @@ function ViveroEmbolsadoScreen() {
 
   if (step === 'blocked') {
     return (
-      <div className="relative min-h-screen bg-[#eef2ed]">
+      <div className="relative min-h-screen bg-brand-50">
         <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-28 pt-10">
           <div className="flex items-start gap-3">
             <button
@@ -136,7 +136,7 @@ function ViveroEmbolsadoScreen() {
             </div>
           </div>
           <div className="mt-6 rounded-3xl bg-white p-6 shadow-soft ring-1 ring-black/5">
-            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-warning-100 text-warning-700">
               <Icon name="info" className="h-6 w-6" />
             </div>
             <p className="text-base font-bold text-brand-700">
@@ -167,7 +167,7 @@ function ViveroEmbolsadoScreen() {
 
   if (step === 'success' && result) {
     return (
-      <div className="relative min-h-screen bg-[#eef2ed]">
+      <div className="relative min-h-screen bg-brand-50">
         <div className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center px-5 pb-28">
           <div className="w-full rounded-3xl bg-white p-6 text-center shadow-soft ring-1 ring-black/5">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-success-100 text-success-600">
@@ -212,7 +212,7 @@ function ViveroEmbolsadoScreen() {
   }
 
   return (
-    <div className="relative min-h-screen bg-[#eef2ed] text-brand-700">
+    <div className="relative min-h-screen bg-brand-50 text-brand-700">
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-28">
         {/* Header propio del screen, distinto del ProgressHeader compartido
             (components/event/ProgressHeader.tsx) porque acá no hay barras de
@@ -277,9 +277,9 @@ function ViveroEmbolsadoScreen() {
           )}
 
           {/* Info banner */}
-          <div className="flex items-start gap-2.5 rounded-2xl bg-blue-50 px-4 py-3 ring-1 ring-blue-100">
-            <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
-            <p className="text-xs font-semibold leading-relaxed text-blue-700">
+          <div className="flex items-start gap-2.5 rounded-2xl bg-info-50 px-4 py-3 ring-1 ring-info-100">
+            <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-info-500" />
+            <p className="text-xs font-semibold leading-relaxed text-info-700">
               En esta etapa registramos las nuevas plantas que oficialmente son contadas.
             </p>
           </div>
@@ -310,7 +310,7 @@ function ViveroEmbolsadoScreen() {
             )}
 
             {(overMax || overSuggestedMax) && (
-              <div className="flex items-start gap-2 rounded-2xl bg-red-50 px-3 py-2.5 text-xs font-bold text-red-700 ring-1 ring-red-200">
+              <div className="flex items-start gap-2 rounded-2xl bg-danger-50 px-3 py-2.5 text-xs font-bold text-danger-700 ring-1 ring-danger-200">
                 <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0" />
                 <span>
                   {overSuggestedMax
@@ -372,8 +372,8 @@ function ViveroEmbolsadoScreen() {
           </div>
 
           {submitError && (
-            <div className="rounded-2xl bg-red-50 px-4 py-3 ring-1 ring-red-200">
-              <p className="text-sm font-semibold text-red-600">{submitError}</p>
+            <div className="rounded-2xl bg-danger-50 px-4 py-3 ring-1 ring-danger-200">
+              <p className="text-sm font-semibold text-danger-600">{submitError}</p>
             </div>
           )}
 

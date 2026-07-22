@@ -309,7 +309,7 @@ function StateBadge({ label, light = false }: { label: string; light?: boolean }
 
 function TipoSubBadge({ tipo }: { tipo: Campania['tipo'] }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-md bg-amber-50 px-2 py-1 text-[10.5px] font-extrabold uppercase tracking-[0.16em] text-amber-800 ring-1 ring-amber-100">
+    <span className="inline-flex items-center gap-1.5 rounded-md bg-warning-50 px-2 py-1 text-[10.5px] font-extrabold uppercase tracking-[0.16em] text-warning-800 ring-1 ring-warning-100">
       <Icon name="file" className="h-3 w-3" />
       {TIPO_CAMPANIA_LABEL[tipo]}
     </span>
@@ -324,9 +324,9 @@ function SubcampanaBadge({ estado }: { estado: EstadoSubcampania }) {
     : isBorrador
       ? 'bg-neutral-100 text-neutral-600 ring-neutral-200'
       : estado === 'PAUSADA'
-        ? 'bg-orange-50 text-orange-700 ring-orange-100'
+        ? 'bg-warning-50 text-warning-700 ring-warning-100'
         : estado === 'CANCELADA'
-          ? 'bg-red-50 text-red-700 ring-red-100'
+          ? 'bg-danger-50 text-danger-700 ring-danger-100'
           : 'bg-neutral-50 text-neutral-700 ring-neutral-200'
   const dot = isActiva ? 'bg-success-500' : isBorrador ? 'bg-neutral-500' : 'bg-current'
   return (
@@ -447,7 +447,7 @@ function KebabMenu({
             className={`flex w-full items-start gap-2.5 border-t border-neutral-100 px-4 py-3 text-left text-sm font-bold ${
               desactivarDisabled
                 ? 'cursor-not-allowed text-neutral-400'
-                : 'text-red-700 hover:bg-red-50'
+                : 'text-danger-700 hover:bg-danger-50'
             }`}
           >
             <Icon name="trash" className="mt-0.5 h-4 w-4 shrink-0" />
@@ -613,7 +613,7 @@ function DCTabs({
   onChange: (tab: DashboardTab) => void
 }) {
   return (
-    <div className="sticky top-0 z-20 -mx-5 bg-[#eef2ed]/95 px-5 pb-2 pt-3 backdrop-blur-sm">
+    <div className="sticky top-0 z-20 -mx-5 bg-brand-50/95 px-5 pb-2 pt-3 backdrop-blur-sm">
       <div className="flex rounded-full bg-white p-1 shadow-soft ring-1 ring-black/5">
         {DASHBOARD_TABS.map((tab) => {
           const selected = active === tab.key
@@ -717,15 +717,15 @@ function NoCoordinadorAlert({ count }: { count: number }) {
   const plural = count === 1 ? 'sub-campaña' : 'sub-campañas'
   const puedenPlural = count === 1 ? 'puede activarse' : 'pueden activarse'
   return (
-    <section className="flex items-start gap-3 rounded-2xl bg-amber-50 px-4 py-3 ring-1 ring-amber-100">
-      <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-800">
+    <section className="flex items-start gap-3 rounded-2xl bg-warning-50 px-4 py-3 ring-1 ring-warning-100">
+      <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-warning-100 text-warning-800">
         <Icon name="info" className="h-4 w-4" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[13.5px] font-extrabold leading-tight text-amber-950">
+        <p className="text-[13.5px] font-extrabold leading-tight text-warning-950">
           {count} {plural} sin coordinador
         </p>
-        <p className="mt-0.5 text-[12px] font-semibold text-amber-900">
+        <p className="mt-0.5 text-[12px] font-semibold text-warning-900">
           No {puedenPlural} hasta asignar uno.
         </p>
       </div>
@@ -775,7 +775,7 @@ function CoverageMapPreview({
     <button
       type="button"
       onClick={onOpen}
-      className="relative block w-full overflow-hidden rounded-3xl bg-[#eaf1eb] p-4 text-left shadow-soft ring-1 ring-black/5 transition hover:ring-brand-200"
+      className="relative block w-full overflow-hidden rounded-3xl bg-brand-50 p-4 text-left shadow-soft ring-1 ring-black/5 transition hover:ring-brand-200"
     >
       <svg
         viewBox="0 0 100 100"
@@ -987,12 +987,12 @@ function SubcampaniaCardBorradorPendiente({
       className="block w-full rounded-3xl bg-white p-4 text-left shadow-soft ring-1 ring-success-100/70 transition hover:ring-success-200"
     >
       {header}
-      <div className="mt-3 rounded-2xl bg-amber-50 px-3 py-2.5 ring-1 ring-amber-100">
-        <p className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-amber-800">
+      <div className="mt-3 rounded-2xl bg-warning-50 px-3 py-2.5 ring-1 ring-warning-100">
+        <p className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-warning-800">
           <Icon name="info" className="h-3.5 w-3.5" />
           Falta para activar
         </p>
-        <p className="mt-0.5 text-[12px] font-bold leading-snug text-amber-900">
+        <p className="mt-0.5 text-[12px] font-bold leading-snug text-warning-900">
           {faltantes.join(' · ')}
         </p>
       </div>
@@ -1262,8 +1262,8 @@ const ACTIVITY_TONE_CLASSES: Record<
 > = {
   emerald: 'bg-success-50 text-success-700',
   brand: 'bg-brand-50 text-brand-700',
-  amber: 'bg-amber-50 text-amber-700',
-  red: 'bg-red-50 text-red-700',
+  amber: 'bg-warning-50 text-warning-700',
+  red: 'bg-danger-50 text-danger-700',
   slate: 'bg-neutral-50 text-neutral-600',
 }
 
@@ -1577,7 +1577,7 @@ function CampaniaAdminDashboardScreen() {
   const draftBackendCount = countByEstado(subcampanias, 'BORRADOR')
 
   return (
-    <div className="relative min-h-screen bg-[#eef2ed] text-brand-700">
+    <div className="relative min-h-screen bg-brand-50 text-brand-700">
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-28">
         {campania && !loading ? (
           <CampaniaHeader
@@ -1606,13 +1606,13 @@ function CampaniaAdminDashboardScreen() {
           )}
 
           {visibleError && !loading && (
-            <div className="rounded-3xl bg-red-50 px-4 py-6 text-center text-sm font-semibold text-red-700 shadow-soft ring-1 ring-red-200">
+            <div className="rounded-3xl bg-danger-50 px-4 py-6 text-center text-sm font-semibold text-danger-700 shadow-soft ring-1 ring-danger-200">
               <p>{visibleError}</p>
               {hasValidCampaniaId && (
                 <button
                   type="button"
                   onClick={() => void refetchDashboard()}
-                  className="mt-3 rounded-xl bg-red-100 px-4 py-2 text-xs font-bold text-red-700 transition hover:bg-red-200"
+                  className="mt-3 rounded-xl bg-danger-100 px-4 py-2 text-xs font-bold text-danger-700 transition hover:bg-danger-200"
                 >
                   Reintentar
                 </button>

@@ -34,13 +34,13 @@ function PlantSelector({ plantas, loading, onSelect, onCreateNew }: Props) {
   return (
     <div className="space-y-3">
       <div className="relative">
-        <Icon name="search" className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+        <Icon name="search" className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400" />
         <input
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder="Buscar especie..."
-          className="w-full rounded-2xl border border-slate-200 bg-white pl-12 pr-4 py-3 text-base font-semibold text-slate-700 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
+          className="w-full rounded-2xl border border-neutral-200 bg-white pl-12 pr-4 py-3 text-base font-semibold text-neutral-700 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
         />
       </div>
 
@@ -58,10 +58,10 @@ function PlantSelector({ plantas, loading, onSelect, onCreateNew }: Props) {
 
       <div className="space-y-3">
         {loading ? (
-          <p className="text-sm font-semibold text-slate-500 text-center py-4">Cargando catálogo...</p>
+          <p className="text-sm font-semibold text-neutral-500 text-center py-4">Cargando catálogo...</p>
         ) : filtered.length === 0 ? (
           <div className="py-8 text-center">
-            <p className="text-sm font-semibold text-slate-500">No se encontraron plantas</p>
+            <p className="text-sm font-semibold text-neutral-500">No se encontraron plantas</p>
           </div>
         ) : (
           filtered.map((planta) => {
@@ -71,9 +71,9 @@ function PlantSelector({ plantas, loading, onSelect, onCreateNew }: Props) {
               key={planta.id}
               type="button"
               onClick={() => onSelect(planta)}
-              className="w-full flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-soft transition hover:border-brand-300 hover:bg-brand-50 active:scale-[0.99]"
+              className="w-full flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white p-3 shadow-soft transition hover:border-brand-300 hover:bg-brand-50 active:scale-[0.99]"
             >
-              <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-slate-100">
+              <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-neutral-100">
                 {imageUrl ? (
                   <img
                     src={imageUrl}
@@ -82,7 +82,7 @@ function PlantSelector({ plantas, loading, onSelect, onCreateNew }: Props) {
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center">
-                    <Icon name="photo" className="h-8 w-8 text-slate-300" />
+                    <Icon name="photo" className="h-8 w-8 text-neutral-300" />
                   </div>
                 )}
               </div>
@@ -91,7 +91,7 @@ function PlantSelector({ plantas, loading, onSelect, onCreateNew }: Props) {
                   {/* Priorizamos el nombre común principal */}
                   {planta.nombre_comun_principal || planta.especie || 'Sin nombre común'}
                 </p>
-                <p className="text-sm font-semibold text-slate-500 italic">
+                <p className="text-sm font-semibold text-neutral-500 italic">
                   {planta.nombre_cientifico}
                 </p>
               </div>

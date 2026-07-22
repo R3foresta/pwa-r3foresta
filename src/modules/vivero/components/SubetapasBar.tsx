@@ -41,9 +41,9 @@ export default function SubetapasBar({ detail, events }: SubetapasBarProps) {
   const totalDias = diasSombra + diasMediaSombra + diasSolDirecto;
 
   const subetapasData = [
-    { key: 'SOMBRA', label: 'Sombra', icon: 'shield', dias: diasSombra, color: 'bg-amber-300' },
-    { key: 'MEDIA_SOMBRA', label: 'Media sombra', icon: 'sun', dias: diasMediaSombra, color: 'bg-amber-400' },
-    { key: 'SOL_DIRECTO', label: 'Sol directo', icon: 'sunny', dias: diasSolDirecto, color: 'bg-amber-500' },
+    { key: 'SOMBRA', label: 'Sombra', icon: 'shield', dias: diasSombra, color: 'bg-warning-300' },
+    { key: 'MEDIA_SOMBRA', label: 'Media sombra', icon: 'sun', dias: diasMediaSombra, color: 'bg-warning-400' },
+    { key: 'SOL_DIRECTO', label: 'Sol directo', icon: 'sunny', dias: diasSolDirecto, color: 'bg-warning-500' },
   ]
 
   const safeTotal = totalDias > 0 ? totalDias : 1;
@@ -75,7 +75,7 @@ export default function SubetapasBar({ detail, events }: SubetapasBarProps) {
           const isCurrent = s.key === currentSub
           return (
             <li key={s.key} className="flex items-center gap-4 py-2 relative">
-              <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ring-1 ${isCurrent ? 'bg-amber-50 text-amber-600 ring-amber-300' : 'bg-white text-amber-700/60 ring-amber-200/50'}`}>
+              <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ring-1 ${isCurrent ? 'bg-warning-50 text-warning-600 ring-warning-300' : 'bg-white text-warning-700/60 ring-warning-200/50'}`}>
                 <Icon name={s.icon as IconName} className="h-5 w-5" />
               </div>
               
@@ -86,7 +86,7 @@ export default function SubetapasBar({ detail, events }: SubetapasBarProps) {
                     {s.dias}<span className="text-xs font-bold text-neutral-500">d</span>
                   </p>
                   {isCurrent && (
-                    <p className="text-[9px] font-black uppercase tracking-widest text-amber-600 mt-1 absolute right-0 bottom-[-4px]">
+                    <p className="text-[9px] font-black uppercase tracking-widest text-warning-600 mt-1 absolute right-0 bottom-[-4px]">
                       Actual
                     </p>
                   )}

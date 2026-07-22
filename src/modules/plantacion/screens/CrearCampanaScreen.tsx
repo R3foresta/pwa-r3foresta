@@ -121,7 +121,7 @@ function CrearCampanaScreen() {
   }
 
   return (
-    <div className="relative min-h-screen bg-[#eef2ed] text-brand-700">
+    <div className="relative min-h-screen bg-brand-50 text-brand-700">
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-28">
         <header className="relative overflow-hidden rounded-b-3xl bg-brand-700 text-white shadow-soft">
           <img
@@ -157,13 +157,13 @@ function CrearCampanaScreen() {
 
         <main className="flex-1 space-y-4 px-5 pt-4">
           {!canCreate && (
-            <div className="rounded-3xl bg-amber-50 px-4 py-4 text-sm font-semibold text-amber-800 shadow-soft ring-1 ring-amber-100">
+            <div className="rounded-3xl bg-warning-50 px-4 py-4 text-sm font-semibold text-warning-800 shadow-soft ring-1 ring-warning-100">
               Solo usuarios ADMIN pueden crear campañas para cada comunidad.
             </div>
           )}
 
           {formError && (
-            <div className="rounded-2xl bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 ring-1 ring-amber-100">
+            <div className="rounded-2xl bg-warning-50 px-4 py-3 text-sm font-semibold text-warning-800 ring-1 ring-warning-100">
               {formError}
             </div>
           )}
@@ -189,14 +189,14 @@ function CrearCampanaScreen() {
           />
 
           {submitError && (
-            <div className="whitespace-pre-line rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 ring-1 ring-red-200">
+            <div className="whitespace-pre-line rounded-2xl bg-danger-50 px-4 py-3 text-sm font-semibold text-danger-700 ring-1 ring-danger-200">
               {submitError}
             </div>
           )}
         </main>
 
         <div className="px-5">
-          <div className="sticky bottom-0 -mx-5 bg-gradient-to-t from-[#eef2ed] via-[#eef2ed]/95 to-transparent px-5 pb-5 pt-3">
+          <div className="sticky bottom-0 -mx-5 bg-gradient-to-t from-brand-50 via-brand-50/95 to-transparent px-5 pb-5 pt-3">
             {/* CTA de confirmación en verde success: `success` no es variante de
                 <Button> (que usa el verde brand); se mantiene a medida con tokens
                 migrados para preservar el verde de acción. (gotcha §6.6) */}

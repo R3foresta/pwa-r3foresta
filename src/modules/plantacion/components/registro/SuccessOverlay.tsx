@@ -103,7 +103,7 @@ function SuccessOverlay({
               <div
                 className={`mt-2 flex w-full items-center gap-2.5 rounded-2xl px-4 py-3 ring-1 ${
                   comprobante.gps_dentro_poligono === false
-                    ? 'bg-amber-400/15 ring-amber-300/40'
+                    ? 'bg-warning-400/15 ring-warning-300/40'
                     : 'bg-success-400/15 ring-success-300/40'
                 }`}
               >
@@ -111,7 +111,7 @@ function SuccessOverlay({
                   name={comprobante.gps_dentro_poligono === false ? 'alert' : 'pin'}
                   className={`h-4 w-4 shrink-0 ${
                     comprobante.gps_dentro_poligono === false
-                      ? 'text-amber-200'
+                      ? 'text-warning-200'
                       : 'text-success-200'
                   }`}
                 />

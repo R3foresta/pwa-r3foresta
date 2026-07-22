@@ -24,8 +24,8 @@ function TipoMaterialSwitcher({ value, onChange }: Props) {
               onClick={() => onChange(option.value)}
               className={`flex-1 rounded-2xl border px-4 py-3 text-center text-base font-extrabold shadow-soft transition ${
                 isActive
-                  ? 'border-brand-500 bg-emerald-50 text-brand-600 ring-2 ring-emerald-100'
-                  : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                  ? 'border-brand-500 bg-success-50 text-brand-600 ring-2 ring-success-100'
+                  : 'border-neutral-200 bg-white text-neutral-600 hover:border-neutral-300'
               }`}
             >
               {option.label}

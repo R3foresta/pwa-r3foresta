@@ -39,25 +39,25 @@ const STAGE_CONFIG: Record<
   EMBOLSADO: {
     iconName: 'package',
     doneClass: 'bg-neutral-200 text-neutral-500',
-    activeClass: 'bg-teal-50 text-teal-600 ring-2 ring-teal-400',
+    activeClass: 'bg-success-50 text-success-600 ring-2 ring-success-400',
     pendingClass: 'bg-neutral-100 text-neutral-400',
   },
   MERMA: {
     iconName: 'trash',
-    doneClass: 'bg-red-100 text-red-600',
-    activeClass: 'bg-red-50 text-red-500 ring-2 ring-red-300',
+    doneClass: 'bg-danger-100 text-danger-600',
+    activeClass: 'bg-danger-50 text-danger-500 ring-2 ring-danger-300',
     pendingClass: 'bg-neutral-100 text-neutral-400',
   },
   ADAPTABILIDAD: {
     iconName: 'leaf',
     doneClass: 'bg-neutral-200 text-neutral-500',
-    activeClass: 'bg-amber-50 text-amber-600 ring-2 ring-amber-400',
+    activeClass: 'bg-warning-50 text-warning-600 ring-2 ring-warning-400',
     pendingClass: 'bg-neutral-100 text-neutral-400',
   },
   DESPACHO: {
     iconName: 'planting',
     doneClass: 'bg-neutral-200 text-neutral-500',
-    activeClass: 'bg-blue-50 text-blue-600 ring-2 ring-blue-400',
+    activeClass: 'bg-info-50 text-info-600 ring-2 ring-info-400',
     pendingClass: 'bg-neutral-100 text-neutral-400',
   },
   CIERRE: {
@@ -131,7 +131,7 @@ function StageTimeline({ stages, imagenUrl, nextAction, mermaAction }: Props) {
                         <span
                           className={`rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${
                             sub.active
-                              ? 'bg-blue-100 text-blue-700 ring-1 ring-blue-300'
+                              ? 'bg-info-100 text-info-700 ring-1 ring-info-300'
                               : 'bg-neutral-100 text-neutral-500'
                           }`}
                         >
@@ -187,7 +187,7 @@ function StageTimeline({ stages, imagenUrl, nextAction, mermaAction }: Props) {
           <button
             type="button"
             onClick={mermaAction.onClick}
-            className="flex flex-col items-center justify-center gap-1 rounded-2xl border-2 border-red-400 bg-white px-2 py-2.5 text-red-500 transition hover:bg-red-50 active:scale-95"
+            className="flex flex-col items-center justify-center gap-1 rounded-2xl border-2 border-danger-400 bg-white px-2 py-2.5 text-danger-500 transition hover:bg-danger-50 active:scale-95"
           >
             <Icon name="trash" className="h-5 w-5" />
             <span className="text-center text-[11px] font-bold leading-tight">

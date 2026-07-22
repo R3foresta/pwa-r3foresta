@@ -289,12 +289,12 @@ function CoordinadorSelector({
   return (
     <div ref={containerRef} className="space-y-2">
       <p className="text-sm font-semibold text-brand-700">
-        Coordinador <span className="text-red-500">*</span>
+        Coordinador <span className="text-danger-500">*</span>
       </p>
 
       <div
         className={`rounded-2xl border bg-white px-4 py-3 shadow-soft ${
-          error ? 'border-red-400 bg-red-50' : 'border-neutral-200'
+          error ? 'border-danger-400 bg-danger-50' : 'border-neutral-200'
         }`}
       >
         <div className="flex items-center gap-2">
@@ -328,7 +328,7 @@ function CoordinadorSelector({
             )}
 
             {!loading && fetchError && (
-              <p className="px-3 py-2 text-xs font-semibold text-red-600">{fetchError}</p>
+              <p className="px-3 py-2 text-xs font-semibold text-danger-600">{fetchError}</p>
             )}
 
             {!loading && !fetchError && options.length === 0 && (
@@ -500,12 +500,12 @@ function SubcampaniaBaseStep({
               maxLength={200}
               className={`w-full rounded-2xl border bg-white px-3 py-3 text-sm font-extrabold text-brand-800 outline-none placeholder:font-medium placeholder:text-neutral-400 focus:ring-2 ${
                 errors.nombre
-                  ? 'border-red-400 focus:border-red-400 focus:ring-red-200'
+                  ? 'border-danger-400 focus:border-danger-400 focus:ring-danger-200'
                   : 'border-neutral-200 focus:border-brand-500 focus:ring-brand-100'
               }`}
             />
             {errors.nombre && (
-              <p className="mt-2 text-xs font-semibold text-red-500">
+              <p className="mt-2 text-xs font-semibold text-danger-500">
                 * El nombre debe tener al menos 3 caracteres.
               </p>
             )}
@@ -521,7 +521,7 @@ function SubcampaniaBaseStep({
           />
 
           {errors.comunidad && (
-            <p className="text-xs font-semibold text-red-500">
+            <p className="text-xs font-semibold text-danger-500">
               * Selecciona una comunidad existente.
             </p>
           )}
@@ -541,7 +541,7 @@ function SubcampaniaBaseStep({
           />
 
           {errors.coordinador && (
-            <p className="text-xs font-semibold text-red-500">
+            <p className="text-xs font-semibold text-danger-500">
               * Selecciona un coordinador.
             </p>
           )}
@@ -557,7 +557,7 @@ function SubcampaniaBaseStep({
                 onChange={(event) => handleFechaInicioChange(event.target.value)}
                 className={`w-full rounded-2xl border bg-white px-3 py-3 text-sm font-extrabold text-brand-800 outline-none focus:ring-2 ${
                   errors.fechas
-                    ? 'border-red-400 focus:border-red-400 focus:ring-red-200'
+                    ? 'border-danger-400 focus:border-danger-400 focus:ring-danger-200'
                     : 'border-neutral-200 focus:border-brand-500 focus:ring-brand-100'
                 }`}
               />
@@ -573,7 +573,7 @@ function SubcampaniaBaseStep({
                 onChange={(event) => handleFechaFinChange(event.target.value)}
                 className={`w-full rounded-2xl border bg-white px-3 py-3 text-sm font-extrabold text-brand-800 outline-none focus:ring-2 ${
                   errors.fechas
-                    ? 'border-red-400 focus:border-red-400 focus:ring-red-200'
+                    ? 'border-danger-400 focus:border-danger-400 focus:ring-danger-200'
                     : 'border-neutral-200 focus:border-brand-500 focus:ring-brand-100'
                 }`}
               />
@@ -581,7 +581,7 @@ function SubcampaniaBaseStep({
           </div>
 
           {errors.fechas && (
-            <p className="mt-2 text-xs font-semibold text-red-500">
+            <p className="mt-2 text-xs font-semibold text-danger-500">
               * La fecha de cierre no puede ser anterior al inicio.
             </p>
           )}
@@ -589,7 +589,7 @@ function SubcampaniaBaseStep({
       </main>
 
       <div className="px-5">
-        <div className="sticky bottom-0 -mx-5 bg-gradient-to-t from-[#eef2ed] via-[#eef2ed]/95 to-transparent px-5 pb-5 pt-3">
+        <div className="sticky bottom-0 -mx-5 bg-gradient-to-t from-brand-50 via-brand-50/95 to-transparent px-5 pb-5 pt-3">
           {statusMessage && (
             <p className="mb-2 rounded-2xl bg-success-50 px-4 py-2 text-center text-xs font-extrabold text-success-700 ring-1 ring-success-100">
               {statusMessage}
@@ -751,7 +751,7 @@ function CrearSubcampanaScreen() {
   }
 
   return (
-    <div className="relative min-h-screen bg-[#eef2ed] text-brand-700">
+    <div className="relative min-h-screen bg-brand-50 text-brand-700">
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-32">
         <header className="relative overflow-hidden rounded-b-3xl bg-brand-700 text-white shadow-soft">
           <img src={plantacionHero} alt="" className="absolute inset-0 h-full w-full object-cover opacity-45" />
@@ -797,7 +797,7 @@ function CrearSubcampanaScreen() {
 
         {visibleError && !isLoading && (
           <main className="space-y-4 px-5 pt-4">
-            <div className="rounded-3xl bg-red-50 px-4 py-6 text-center text-sm font-semibold text-red-700 shadow-soft ring-1 ring-red-200">
+            <div className="rounded-3xl bg-danger-50 px-4 py-6 text-center text-sm font-semibold text-danger-700 shadow-soft ring-1 ring-danger-200">
               {visibleError}
             </div>
           </main>

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Icon from '../../components/Icon'
+import { Badge, statusVariant } from '../../components/ui'
 import {
   RecoleccionesService,
   type EvidenciaTrazabilidad,
@@ -8,12 +9,7 @@ import {
 } from '../../services/recolecciones.service'
 import { formatUnidadCanonicaDisplay } from '../../utils/recoleccionUnidad'
 import { getUbicacionCoords, getUbicacionDisplay, getUbicacionDivision } from '../../utils/ubicacion'
-import {
-  estadoOperativoBadgeClass,
-  estadoRegistroBadgeClass,
-  resolveEstadoOperativo,
-  resolveEstadoRegistro,
-} from './recoleccionStatus'
+import { resolveEstadoOperativo, resolveEstadoRegistro } from './recoleccionStatus'
 
 function formatDate(value: string) {
   return new Date(value).toLocaleDateString('es-BO', {
@@ -126,7 +122,7 @@ function RecoleccionDetailScreen() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-[#f6f7f3] to-[#eef1eb]">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-brand-50 to-brand-50">
         <div className="text-center">
           <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-brand-500 border-t-transparent" />
           <p className="mt-4 text-sm font-semibold text-brand-700">Cargando detalle...</p>
@@ -137,10 +133,10 @@ function RecoleccionDetailScreen() {
 
   if (error || !recoleccion) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-[#f6f7f3] to-[#eef1eb] px-5">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-brand-50 to-brand-50 px-5">
         <div className="rounded-3xl bg-white p-6 text-center shadow-soft ring-1 ring-black/5">
-          <p className="text-lg font-bold text-slate-800">No se pudo cargar la recolección</p>
-          <p className="mt-1 text-sm text-slate-600">{error || 'Registro no encontrado.'}</p>
+          <p className="text-lg font-bold text-neutral-800">No se pudo cargar la recolección</p>
+          <p className="mt-1 text-sm text-neutral-600">{error || 'Registro no encontrado.'}</p>
           <button
             type="button"
             onClick={() => navigate('/app/collections')}
@@ -172,7 +168,7 @@ function RecoleccionDetailScreen() {
   const isBorrador = estadoRegistro === 'BORRADOR'
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#f6f7f3] to-[#eef1eb] text-brand-700">
+    <div className="min-h-screen bg-gradient-to-b from-brand-50 to-brand-50 text-brand-700">
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-24">
         <header className="relative px-5 pb-4 pt-6 text-center">
           <button
@@ -194,51 +190,39 @@ function RecoleccionDetailScreen() {
         <div className="space-y-4 px-5 pb-8">
           <section className="rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
             <h2 className="text-lg font-extrabold text-brand-700">Material</h2>
-            <div className="mt-3 space-y-2 text-sm font-semibold text-slate-700">
+            <div className="mt-3 space-y-2 text-sm font-semibold text-neutral-700">
               <p className="flex items-center justify-between gap-4">
-                <span className="text-slate-500">Nombre comercial</span>
+                <span className="text-neutral-500">Nombre comercial</span>
                 <span className="text-right">{plantaNombre}</span>
               </p>
               <p className="flex items-center justify-between gap-4">
-                <span className="text-slate-500">Nombre científico</span>
+                <span className="text-neutral-500">Nombre científico</span>
                 <span className="text-right italic">{nombreCientifico || 'No disponible'}</span>
               </p>
               <p className="flex items-center justify-between gap-4">
-                <span className="text-slate-500">Tipo material</span>
+                <span className="text-neutral-500">Tipo material</span>
                 <span>{recoleccion.tipo_material}</span>
               </p>
               <p className="flex items-center justify-between gap-4">
-                <span className="text-slate-500">Saldo actual</span>
+                <span className="text-neutral-500">Saldo actual</span>
                 <span>
                   {cantidadActual} {unidadDisplay}
                 </span>
               </p>
               <p className="flex items-center justify-between gap-4">
-                <span className="text-slate-500">Estado registro</span>
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${estadoRegistroBadgeClass(
-                    estadoRegistro,
-                  )}`}
-                >
-                  {estadoRegistro}
-                </span>
+                <span className="text-neutral-500">Estado registro</span>
+                <Badge variant={statusVariant(estadoRegistro)}>{estadoRegistro}</Badge>
               </p>
               <p className="flex items-center justify-between gap-4">
-                <span className="text-slate-500">Estado operativo</span>
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${estadoOperativoBadgeClass(
-                    estadoOperativo,
-                  )}`}
-                >
-                  {estadoOperativo}
-                </span>
+                <span className="text-neutral-500">Estado operativo</span>
+                <Badge variant={statusVariant(estadoOperativo)}>{estadoOperativo}</Badge>
               </p>
               <p className="flex items-center justify-between gap-4">
-                <span className="text-slate-500">Método</span>
+                <span className="text-neutral-500">Método</span>
                 <span className="text-right">{recoleccion.metodo?.nombre || 'No disponible'}</span>
               </p>
               <p className="flex items-center justify-between gap-4">
-                <span className="text-slate-500">Vivero</span>
+                <span className="text-neutral-500">Vivero</span>
                 <span className="text-right">{recoleccion.vivero?.nombre || 'No disponible'}</span>
               </p>
             </div>
@@ -246,10 +230,10 @@ function RecoleccionDetailScreen() {
 
           <section className="rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
             <h2 className="text-lg font-extrabold text-brand-700">Ubicación</h2>
-            <div className="mt-3 space-y-2 text-sm font-semibold text-slate-700">
+            <div className="mt-3 space-y-2 text-sm font-semibold text-neutral-700">
               <p>{ubicacionDisplay}</p>
-              {ubicacionDivision && <p className="text-slate-600">{ubicacionDivision}</p>}
-              {ubicacionCoords && <p className="text-xs text-slate-500">{ubicacionCoords}</p>}
+              {ubicacionDivision && <p className="text-neutral-600">{ubicacionDivision}</p>}
+              {ubicacionCoords && <p className="text-xs text-neutral-500">{ubicacionCoords}</p>}
             </div>
           </section>
 
@@ -265,7 +249,7 @@ function RecoleccionDetailScreen() {
 
                   return (
                     <div key={evidencia.id} className="space-y-1">
-                      <div className="h-24 overflow-hidden rounded-2xl bg-slate-100">
+                      <div className="h-24 overflow-hidden rounded-2xl bg-neutral-100">
                         {imageUrl ? (
                           <img
                             src={imageUrl}
@@ -275,43 +259,43 @@ function RecoleccionDetailScreen() {
                           />
                         ) : (
                           <div className="flex h-full w-full items-center justify-center">
-                            <Icon name="photo" className="h-8 w-8 text-slate-400" />
+                            <Icon name="photo" className="h-8 w-8 text-neutral-400" />
                           </div>
                         )}
                       </div>
-                      <p className="text-center text-[11px] font-semibold text-slate-500">{evidencia.titulo || `#${evidencia.id}`}</p>
+                      <p className="text-center text-[11px] font-semibold text-neutral-500">{evidencia.titulo || `#${evidencia.id}`}</p>
                     </div>
                   )
                 })}
               </div>
             ) : (
-              <p className="mt-3 text-sm font-semibold text-slate-500">No hay evidencias registradas.</p>
+              <p className="mt-3 text-sm font-semibold text-neutral-500">No hay evidencias registradas.</p>
             )}
           </section>
 
           <section className="rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
             <h2 className="text-lg font-extrabold text-brand-700">Auditoría</h2>
-            <div className="mt-3 space-y-2 text-sm font-semibold text-slate-700">
+            <div className="mt-3 space-y-2 text-sm font-semibold text-neutral-700">
               <p className="flex items-center justify-between gap-4">
-                <span className="text-slate-500">Creado en</span>
+                <span className="text-neutral-500">Creado en</span>
                 <span className="text-right">{formatDateTime(recoleccion.created_at)}</span>
               </p>
               <p className="flex items-center justify-between gap-4">
-                <span className="text-slate-500">Validado en</span>
+                <span className="text-neutral-500">Validado en</span>
                 <span className="text-right">{formatDateTime(recoleccion.fecha_validacion)}</span>
               </p>
               <p className="flex items-center justify-between gap-4">
-                <span className="text-slate-500">Responsable</span>
+                <span className="text-neutral-500">Responsable</span>
                 <span className="text-right">{recoleccion.usuario?.nombre || recoleccion.usuario?.username || 'No disponible'} {recoleccion.usuario?.apellido}</span>
               </p>
               <p className="flex items-center justify-between gap-4">
-                <span className="text-slate-500">Usuario</span>
+                <span className="text-neutral-500">Usuario</span>
                 <span className="text-right">{recoleccion.usuario?.username || 'No disponible'}</span>
               </p>
             </div>
 
             {isBorrador && (
-              <div className="mt-4 space-y-3 border-t border-slate-100 pt-4">
+              <div className="mt-4 space-y-3 border-t border-neutral-100 pt-4">
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
@@ -333,7 +317,7 @@ function RecoleccionDetailScreen() {
                 {actionMessage && (
                   <p
                     className={`text-xs font-semibold ${
-                      actionMessage.type === 'success' ? 'text-green-700' : 'text-red-700'
+                      actionMessage.type === 'success' ? 'text-success-700' : 'text-danger-700'
                     }`}
                   >
                     {actionMessage.text}
@@ -348,11 +332,11 @@ function RecoleccionDetailScreen() {
       {showValidationPopup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5">
           <div className="w-full max-w-sm rounded-3xl bg-white p-6 text-center shadow-2xl ring-1 ring-black/5">
-            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
-              <Icon name="check" className="h-8 w-8 text-green-600" />
+            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-success-100">
+              <Icon name="check" className="h-8 w-8 text-success-600" />
             </div>
-            <h3 className="text-base font-extrabold text-slate-800">Envío exitoso</h3>
-            <p className="mt-1 text-sm font-semibold text-slate-600">
+            <h3 className="text-base font-extrabold text-neutral-800">Envío exitoso</h3>
+            <p className="mt-1 text-sm font-semibold text-neutral-600">
               La recolección se envió a validar correctamente.
             </p>
             <button

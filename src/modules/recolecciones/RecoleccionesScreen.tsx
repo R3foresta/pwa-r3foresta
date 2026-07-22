@@ -67,9 +67,9 @@ function RecoleccionesScreen() {
   }, [error, items.length, loading])
 
   return (
-    <div className="relative min-h-screen bg-[#eef2ed] text-brand-700">
+    <div className="relative min-h-screen bg-brand-50 text-brand-700">
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-32">
-        <header className="mb-3 flex rounded-b-3xl bg-[#0f8351] px-5 pb-12 pt-10 text-white shadow-soft">
+        <header className="mb-3 flex rounded-b-3xl bg-brand-600 px-5 pb-12 pt-10 text-white shadow-soft">
           <button
             type="button"
             aria-label="Volver"
@@ -86,7 +86,7 @@ function RecoleccionesScreen() {
             <button
               type="button"
               onClick={() => navigate('/app/collections/validate')}
-              className="my-auto ml-2 flex items-center gap-1.5 rounded-full bg-amber-400 px-4 py-2 text-sm font-extrabold text-amber-900 transition hover:bg-amber-300 active:scale-[0.97]"
+              className="my-auto ml-2 flex items-center gap-1.5 rounded-full bg-warning-400 px-4 py-2 text-sm font-extrabold text-warning-900 transition hover:bg-warning-300 active:scale-[0.97]"
             >
               <Icon name="check" className="h-4 w-4" />
               Validar
@@ -95,13 +95,13 @@ function RecoleccionesScreen() {
         </header>
 
         <div className="-mt-10 space-y-4 px-5">
-          <label className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-500 shadow-soft ring-1 ring-black/5">
-            <Icon name="search" className="h-5 w-5 text-slate-400" />
+          <label className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-neutral-500 shadow-soft ring-1 ring-black/5">
+            <Icon name="search" className="h-5 w-5 text-neutral-400" />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Buscar por código, especie o ubicación"
-              className="w-full border-none bg-transparent text-base font-semibold text-slate-700 outline-none placeholder:font-medium placeholder:text-slate-400"
+              className="w-full border-none bg-transparent text-base font-semibold text-neutral-700 outline-none placeholder:font-medium placeholder:text-neutral-400"
               type="search"
             />
           </label>
@@ -143,18 +143,18 @@ function RecoleccionesScreen() {
           </div>
 
           {loading && (
-            <div className="rounded-3xl bg-white px-4 py-6 text-center text-sm font-semibold text-slate-600 shadow-soft ring-1 ring-black/5">
+            <div className="rounded-3xl bg-white px-4 py-6 text-center text-sm font-semibold text-neutral-600 shadow-soft ring-1 ring-black/5">
               Cargando recolecciones...
             </div>
           )}
 
           {error && (
-            <div className="rounded-3xl bg-red-50 px-4 py-6 text-center text-sm font-semibold text-red-700 shadow-soft ring-1 ring-red-200">
+            <div className="rounded-3xl bg-danger-50 px-4 py-6 text-center text-sm font-semibold text-danger-700 shadow-soft ring-1 ring-danger-200">
               <p>{error}</p>
               <button
                 type="button"
                 onClick={() => void loadRecolecciones(query, filter)}
-                className="mt-3 rounded-xl bg-red-100 px-4 py-2 text-xs font-bold text-red-700 transition hover:bg-red-200"
+                className="mt-3 rounded-xl bg-danger-100 px-4 py-2 text-xs font-bold text-danger-700 transition hover:bg-danger-200"
               >
                 Reintentar
               </button>
@@ -178,11 +178,11 @@ function RecoleccionesScreen() {
 
           {!loading && !error && !hasResults && (
             <div className="rounded-3xl bg-white px-4 py-8 text-center shadow-soft ring-1 ring-black/5">
-              <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100">
-                <Icon name="package" className="h-8 w-8 text-slate-400" />
+              <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100">
+                <Icon name="package" className="h-8 w-8 text-neutral-400" />
               </div>
-              <p className="text-base font-bold text-slate-700">No hay recolecciones</p>
-              <p className="mt-1 text-sm font-medium text-slate-500">
+              <p className="text-base font-bold text-neutral-700">No hay recolecciones</p>
+              <p className="mt-1 text-sm font-medium text-neutral-500">
                 {query.trim() ? 'No hay coincidencias con la búsqueda.' : 'Aún no existen registros.'}
               </p>
             </div>

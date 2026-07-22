@@ -199,16 +199,16 @@ function SubcampaniaEquipoStep({
     return (
       <>
         <main className="space-y-4 px-5 pt-4">
-          <section className="rounded-3xl bg-amber-50 p-4 shadow-soft ring-1 ring-amber-100">
+          <section className="rounded-3xl bg-warning-50 p-4 shadow-soft ring-1 ring-warning-100">
             <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-800">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-warning-100 text-warning-800">
                 <Icon name="info" className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-sm font-extrabold text-amber-950">
+                <p className="text-sm font-extrabold text-warning-950">
                   La subcampaña aún no fue creada
                 </p>
-                <p className="mt-1 text-xs font-bold leading-relaxed text-amber-900">
+                <p className="mt-1 text-xs font-bold leading-relaxed text-warning-900">
                   Completa y guarda los pasos anteriores antes de asignar el equipo.
                 </p>
               </div>
@@ -216,7 +216,7 @@ function SubcampaniaEquipoStep({
           </section>
         </main>
         <div className="px-5">
-          <div className="sticky bottom-0 -mx-5 bg-gradient-to-t from-[#eef2ed] via-[#eef2ed]/95 to-transparent px-5 pb-5 pt-3">
+          <div className="sticky bottom-0 -mx-5 bg-gradient-to-t from-brand-50 via-brand-50/95 to-transparent px-5 pb-5 pt-3">
             <Button variant="primary" size="lg" fullWidth onClick={onBackToPolygon}>
               Volver al paso anterior
             </Button>
@@ -277,7 +277,7 @@ function SubcampaniaEquipoStep({
           )}
 
           {!loadingEquipo && equipoError && (
-            <p className="mt-2 whitespace-pre-line rounded-2xl bg-red-50 px-4 py-2 text-center text-xs font-extrabold text-red-700 ring-1 ring-red-100">
+            <p className="mt-2 whitespace-pre-line rounded-2xl bg-danger-50 px-4 py-2 text-center text-xs font-extrabold text-danger-700 ring-1 ring-danger-100">
               {equipoError}
             </p>
           )}
@@ -351,7 +351,7 @@ function SubcampaniaEquipoStep({
                   onClick={() => void handleRemoveOperario(operario.usuario_id)}
                   disabled={removingId === operario.usuario_id || addingId !== null}
                   aria-label={`Quitar operario ${operario.nombre_usuario ?? operario.usuario_id}`}
-                  className="flex shrink-0 items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-[10.5px] font-extrabold text-red-700 transition hover:bg-red-100 disabled:cursor-wait disabled:opacity-50"
+                  className="flex shrink-0 items-center gap-1 rounded-full bg-danger-50 px-2.5 py-1 text-[10.5px] font-extrabold text-danger-700 transition hover:bg-danger-100 disabled:cursor-wait disabled:opacity-50"
                 >
                   <Icon name="trash" className="h-3 w-3" />
                   {removingId === operario.usuario_id ? 'Quitando…' : 'Quitar'}
@@ -394,7 +394,7 @@ function SubcampaniaEquipoStep({
             )}
 
             {!searchLoading && searchError && (
-              <p className="whitespace-pre-line rounded-2xl bg-red-50 px-4 py-2 text-center text-xs font-extrabold text-red-700 ring-1 ring-red-100">
+              <p className="whitespace-pre-line rounded-2xl bg-danger-50 px-4 py-2 text-center text-xs font-extrabold text-danger-700 ring-1 ring-danger-100">
                 {searchError}
               </p>
             )}
@@ -465,9 +465,9 @@ function SubcampaniaEquipoStep({
       </main>
 
       <div className="px-5">
-        <div className="sticky bottom-0 -mx-5 bg-gradient-to-t from-[#eef2ed] via-[#eef2ed]/95 to-transparent px-5 pb-5 pt-3">
+        <div className="sticky bottom-0 -mx-5 bg-gradient-to-t from-brand-50 via-brand-50/95 to-transparent px-5 pb-5 pt-3">
           {mutationError && (
-            <p className="mb-2 whitespace-pre-line rounded-2xl bg-red-50 px-4 py-2 text-center text-xs font-extrabold text-red-700 ring-1 ring-red-100">
+            <p className="mb-2 whitespace-pre-line rounded-2xl bg-danger-50 px-4 py-2 text-center text-xs font-extrabold text-danger-700 ring-1 ring-danger-100">
               {mutationError}
             </p>
           )}

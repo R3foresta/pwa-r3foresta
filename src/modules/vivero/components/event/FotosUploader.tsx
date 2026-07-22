@@ -79,7 +79,7 @@ function FotosUploader({
           <p className="text-sm font-extrabold text-brand-700">
             Evidencia fotográfica
             {required && (
-              <span className="ml-2 text-[10px] font-bold uppercase tracking-wider text-red-500">
+              <span className="ml-2 text-[10px] font-bold uppercase tracking-wider text-danger-500">
                 Obligatorio
               </span>
             )}
@@ -96,7 +96,7 @@ function FotosUploader({
         <label
           className={`flex min-h-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed px-4 py-5 text-center text-brand-700 transition ${
             showError
-              ? 'border-red-300 bg-red-50'
+              ? 'border-danger-300 bg-danger-50'
               : 'border-brand-200 bg-brand-50/60 hover:border-brand-300 hover:bg-brand-50'
           } ${isDisabled ? 'pointer-events-none opacity-50' : ''}`}
         >
@@ -130,7 +130,7 @@ function FotosUploader({
                 type="button"
                 onClick={() => onRemove(index)}
                 disabled={isDisabled}
-                className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow-md ring-2 ring-white transition hover:bg-red-600 disabled:opacity-50"
+                className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-danger-500 text-white shadow-md ring-2 ring-white transition hover:bg-danger-600 disabled:opacity-50"
                 aria-label="Quitar foto"
               >
                 <Icon name="x" className="h-3.5 w-3.5" />
@@ -161,10 +161,10 @@ function FotosUploader({
       )}
 
       {fileError && (
-        <p className="text-xs font-semibold text-red-500">{fileError}</p>
+        <p className="text-xs font-semibold text-danger-500">{fileError}</p>
       )}
       {showError && errorMessage && (
-        <p className="text-xs font-semibold text-red-500">{errorMessage}</p>
+        <p className="text-xs font-semibold text-danger-500">{errorMessage}</p>
       )}
     </div>
   )
