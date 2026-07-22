@@ -27,14 +27,18 @@ src/services/
 2. Conversiones de payload/respuesta se centralizan en `mappers/`.
 3. Tipos de dominio viven en `types/` y se exportan desde `index.ts`.
 4. Componentes reutilizables se promueven a `src/components` solo si son cross-modulo.
-5. Mientras backend no habilite timeline/eventos completos, mantener placeholders en UI pero no acoplar mocks dentro de `screens/`.
+5. El timeline completo se consume desde `GET /lotes-vivero/:id/timeline`; los formularios de evento usan evidencias pendientes antes del POST transaccional.
 6. Los filtros por etapa se construyen en dos niveles: pre-filtro backend (`estado_lote`) y post-filtro local (`utils/stageFilters.ts`) para mantener consistencia de UX.
 7. Los hooks no deben conocer detalles de consulta backend; consumen solo métodos de service y exponen `refetch`.
 
-## Siguiente paso recomendado
+## Estado actual
 
-Implementar pantallas por evento (`EMBOLSADO`, `ADAPTABILIDAD`, `MERMA`, `DESPACHO`) reutilizando:
+Las pantallas de `EMBOLSADO`, `ADAPTABILIDAD`, `MERMA`, `DESPACHO`, `DESCARTE_PRE_EMBOLSADO`, el timeline, las evidencias, las asignaciones físicas y las devoluciones ya están conectadas al service/API correspondiente.
+
+El flujo principal de eventos reutiliza:
 
 1. `types/contracts.ts` como fuente única de enums y DTOs.
 2. `services/lotes-vivero.service.ts` para consumo HTTP.
 3. `utils/validators.ts` para reglas de cantidad, unidad y fecha.
+
+Pendientes reales documentados en `FRONTEND_AUDIT.md`: retirar la ruta legacy de Embolsado, definir idempotencia para operaciones append-only y completar la cobertura automatizada.

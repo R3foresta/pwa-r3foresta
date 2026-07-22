@@ -592,8 +592,3 @@ export class LotesViveroService {
     return { ...data, lote_reabierto: Boolean(data.lote_reabierto) }
   }
 }
-
-// TODO(backend-pendiente): funciones cliente faltantes — el backend ya las expone
-// pero todavía no las consumimos desde el frontend. Agregar cuando se conecte:
-//   • GET  /lotes-vivero/:id/adaptabilidad
-//   • GET  /lotes-vivero/:id/merma

@@ -1,6 +1,6 @@
 # DOMAIN_INDEX.md — Índice de dominio para Frontend R3foresta
 
-Actualizado: 2026-04-30
+Actualizado: 2026-07-21
 
 ## 1. Propósito
 
@@ -27,7 +27,7 @@ La documentación oficial del dominio vive fuera del repo frontend, en:
 
 - Repositorio remoto: `https://github.com/R3foresta/r3foresta-docs`
 - Ruta local recomendada: `../r3foresta-docs`
-- Tambien puedes consultar el esquema de la base de datos en `./docs/db-strucuture.md`
+- `./docs/db-strucuture.md` se conserva como referencia legacy; para el esquema vigente usar `../r3foresta-docs/database/00_database_schema.md`.
 
 El frontend no debe copiar estos documentos dentro de su repo.  
 Debe consultarlos como fuente externa del dominio.

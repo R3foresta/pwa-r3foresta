@@ -1,378 +1,97 @@
-# React + TypeScript + Vite
+# R3Foresta PWA
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Frontend operativo de R3Foresta para trazabilidad de material biológico desde la recolección hasta el vivero y la plantación.
 
-Currently, two official plugins are available:
+La aplicación está construida con React, TypeScript, Vite, React Router y Tailwind CSS. La estructura principal es feature-first:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```txt
+src/
+  api/                 # llamadas HTTP de bajo nivel
+  services/            # casos de uso, parseo y mapeos
+  modules/
+    auth/
+    recolecciones/
+    vivero/
+    plantacion/
+    comunidades/
+    organizaciones/
+    plantas/
+  components/          # componentes compartidos
+  contexts/            # sesión y proveedores globales
+  utils/               # validaciones y utilidades transversales
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Requisitos
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- Node.js compatible con Vite 7.
+- npm.
+- Backend de R3Foresta accesible desde la URL configurada.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Configuración local
+
+1. Instala dependencias:
+
+   ```bash
+   npm install
+   ```
+
+2. Crea `.env.local` a partir de `.env.example` y configura:
+
+   ```env
+   VITE_API_URL=http://localhost:3000
+   ```
+
+   La aplicación agrega `/api` a esta URL para consumir el backend.
+
+3. Inicia el servidor de desarrollo:
+
+   ```bash
+   npm run dev
+   ```
+
+## Comandos
+
+| Comando | Uso |
+|---|---|
+| `npm run dev` | Servidor de desarrollo con Vite. |
+| `npm run build` | TypeScript + bundle de producción. |
+| `npm run lint` | ESLint sobre el workspace activo. |
+| `npm run preview` | Servir localmente el bundle generado. |
+
+Actualmente no hay scripts independientes de `test` o `typecheck`; `npm run build` sí ejecuta la comprobación de TypeScript mediante `tsc -b`.
+
+## Flujos implementados
+
+- Recolección: creación de borradores, ubicación, resumen, evidencias, validación y detalle del lote.
+- Vivero: inicio de lote, Embolsado, Adaptabilidad, Merma, Despacho manual, Descarte pre-embolsado, timeline y evidencias.
+- Integración Vivero → Plantación: asignación física con evidencia, devolución física y saldos separados.
+- Plantación: campañas, subcampañas, equipo, polígono, activación/cancelación y registro inicial de plantación en campo con GPS, evidencias y consumo de asignaciones.
+- Catálogos operativos: comunidades, organizaciones y plantas.
+
+La ruta de registro de plantación inicial es:
+
+```txt
+/app/planting/subcampanias/:id/plantaciones/new
 ```
 
-## Estrucutra de la DB
-```mermaid
-erDiagram
-    %% =====================================================
-    %% R3Foresta - BD Oficial (vFinal + Módulo Plantación)
-    %% Postgres/Supabase aligned
-    %% =====================================================
+## Reglas de dominio importantes
 
-    USUARIO {
-        bigint id PK
-        string userid "handle visible: andy, pablex, etc."
-        string nombre
-        string doc_identidad "UNIQUE, opcional"
-        string wallet_address "UNIQUE, opcional; formato: 0x + 40 hex"
-        string organizacion "texto (si luego es catálogo se migra)"
-        string contacto "opcional; formato: +########"
-        string rol "DEFAULT=GENERAL; {RECOLECTOR|VIVERO|VOLUNTARIO|GENERAL}"
-        datetime created_at
-    }
+- Los eventos de Vivero son append-only; no se editan ni eliminan desde la UI.
+- `EMBOLSADO` registra plantas vivas observadas. No se convierte automáticamente gramos en plantas.
+- `INICIO` representa material en proceso y no crea plantas vivas.
+- El saldo vivo y los cierres automáticos son responsabilidad del backend.
+- Las operaciones críticas requieren evidencia según el contrato vigente.
+- La asignación a Plantación es física; Plantación consume asignaciones y no genera un despacho automático adicional.
 
-    UBICACION {
-        bigint id PK
-        string pais
-        string departamento
-        string provincia
-        string comunidad
-        string zona
-        decimal latitud "OBLIGATORIO [-90..90] (6 decimales)"
-        decimal longitud "OBLIGATORIO [-180..180] (6 decimales)"
-        datetime created_at
-    }
+Las reglas completas viven en el repositorio documental de R3Foresta. En este repo, consultar [FRONTEND_GUIDE.md](FRONTEND_GUIDE.md), [FRONTEND_AUDIT.md](FRONTEND_AUDIT.md), [DOMAIN_INDEX.md](DOMAIN_INDEX.md) y [AGENTS.md](AGENTS.md).
 
-    VIVERO {
-        bigint id PK
-        string codigo "UNIQUE; ej: VIV-001 (autogenerado)"
-        string nombre "UNIQUE (case-insensitive)"
-        bigint ubicacion_id FK "UNIQUE (1:1 con UBICACION)"
-        datetime created_at
-    }
+## Verificación antes de cerrar cambios
 
-    PLANTA {
-        bigint id PK
-        string especie
-        string nombre_cientifico
-        string variedad
-        string tipo_planta "Árbol/Arbusto/.../Otro"
-        string tipo_planta_otro "OBLIGATORIO si tipo_planta=Otro"
-        string fuente "tipo_material_origen {SEMILLA|ESQUEJE}"
-        datetime created_at
-    }
+Ejecuta al menos:
 
-    METODO_RECOLECCION {
-        bigint id PK
-        string nombre "UNIQUE (case-insensitive)"
-        string descripcion
-    }
-
-    RECOLECCION {
-        bigint id PK
-        string codigo_trazabilidad "UNIQUE; REC-YYYY-XXXXX"
-        date fecha "OBLIGATORIO; [hoy-45d .. hoy]"
-        string nombre_cientifico "si no hay planta_id"
-        string nombre_comercial "si no hay planta_id"
-        decimal cantidad "OBLIGATORIO > 0"
-        string unidad "UNIDAD/UNIDADES para ESQUEJE; KG/G para SEMILLA"
-        string tipo_material "tipo_material_origen {SEMILLA|ESQUEJE}"
-        string estado "DEFAULT=ALMACENADO; {USADO|ALMACENADO|DESECHADO}"
-        boolean especie_nueva "DEFAULT=false"
-        string observaciones "max 1000 chars"
-        bigint usuario_id FK
-        bigint ubicacion_id FK
-        bigint vivero_id FK "opcional"
-        bigint metodo_id FK
-        bigint planta_id FK "opcional (si no existe en catálogo)"
-        datetime created_at
-    }
-
-
-    %% =========================================
-    %% FASE VIVERO (antes: LOTE_PLANTACION)
-    %% =========================================
-    LOTE_FASE_VIVERO {
-        bigint id PK
-        string codigo_trazabilidad "UNIQUE; LFV-YYYY-XXXXX"
-        bigint planta_id FK
-        bigint vivero_id FK
-        bigint responsable_id FK "creador/responsable"
-        date fecha_inicio
-        int cantidad_inicio
-        int cantidad_embolsadas "DEFAULT=0"
-        int cantidad_sombra "DEFAULT=0"
-        int cantidad_lista_plantar "DEFAULT=0"
-        date fecha_embolsado
-        date fecha_sombra
-        date fecha_salida
-        decimal altura_prom_sombra
-        decimal altura_prom_salida
-        string estado "DEFAULT=INICIO; {INICIO|EMBOLSADO|SOMBRA|LISTA_PLANTAR|SALIDA_VIVERO}"
-        datetime created_at
-        datetime updated_at
-        bigint updated_by FK "obligatorio en UPDATE (para historial)"
-    }
-
-    LOTE_FASE_VIVERO_RECOLECCION {
-        bigint lote_id PK, FK
-        bigint recoleccion_id PK, FK
-        %% PK compuesta (lote_id, recoleccion_id)
-    }
-
-    LOTE_FASE_VIVERO_HISTORIAL {
-        bigint id PK
-        bigint lote_id FK
-        int nro_cambio "UNIQUE por lote (lote_id, nro_cambio)"
-        datetime fecha_cambio "DEFAULT=now()"
-        bigint responsable_id FK
-        string accion "{INICIO|EMBOLSADO|SOMBRA|LISTA_PLANTAR|SALIDA|AJUSTE}"
-        string estado "{INICIO|EMBOLSADO|SOMBRA|LISTA_PLANTAR|SALIDA_VIVERO}"
-
-        int cantidad_inicio
-        int cantidad_embolsadas
-        int cantidad_sombra
-        int cantidad_lista_plantar
-
-        date fecha_inicio
-        date fecha_embolsado
-        date fecha_sombra
-        date fecha_salida
-
-        decimal altura_prom_sombra
-        decimal altura_prom_salida
-
-        string notas "max 2000 chars"
-        %% Se llena automáticamente en INSERT/UPDATE del LOTE_FASE_VIVERO (triggers)
-    }
-
-    LOTE_FASE_VIVERO_FOTO {
-        bigint id PK
-        bigint lote_historial_id FK
-        string url
-        int peso_bytes "max 5MB (regla de negocio)"
-        string formato "JPG/JPEG/PNG"
-        boolean es_portada "TRUE si es la foto principal de ese cambio"
-        string descripcion "ej: detalle de raíces, vista general"
-        datetime created_at
-    }
-
-    LOTE_FASE_VIVERO_HISTORIAL ||--o{ LOTE_FASE_VIVERO_FOTO : tiene_fotos
-
-    %% =========================================
-    %% MÓDULO PLANTACIÓN (campo)
-    %% =========================================
-
-    TIPO_RIEGO {
-        bigint id PK
-        string nombre "UNIQUE; Botellas recicladas / Goteo / Natural / Inundación"
-        string descripcion
-    }
-
-    TIPO_ABONO {
-        bigint id PK
-        string nombre "UNIQUE; Humus / Tierra negra / Compost / etc."
-        string descripcion
-    }
-
-    PLANTACION {
-        bigint id PK
-        string codigo_trazabilidad "UNIQUE; PLA-YYYY-XXXXX"
-        string destino "{ARBORIZACION|FORESTACION|REFORESTACION}"
-        bigint ubicacion_id FK "dónde se plantó (campo)"
-
-        int cantidad_arboles "OBLIGATORIO > 0"
-        date fecha_plantacion "OBLIGATORIO"
-
-        decimal superficie_m2 "opcional: área de la plantación"
-
-        decimal tamano_promedio_cm "tamaño promedio al plantar/monitoreo base"
-        string propietario "nombre del dueño del terreno"
-        string origen_propiedad "{DONADO|ADQUIRIDO|OTRO|NULL}"
-        int frecuencia_monitoreo_dias "cada cuánto se monitorea"
-
-        bigint created_by FK "USUARIO que registra la plantación"
-        datetime created_at
-    }
-
-    PLANTACION_USUARIO {
-        bigint plantacion_id PK, FK
-        bigint usuario_id PK, FK
-        string rol "RESPONSABLE / VOLUNTARIO / TECNICO / etc."
-    }
-
-    PLANTACION_LOTE_FASE_VIVERO {
-        bigint plantacion_id PK, FK
-        bigint lote_fase_vivero_id PK, FK
-        int cantidad_plantines_usados "OBLIGATORIO > 0"
-        %% permite que una plantación use varios lotes de vivero
-    }
-
-    PLANTACION_RIEGO {
-        bigint plantacion_id PK, FK
-        bigint tipo_riego_id PK, FK
-        %% relación N:M entre PLANTACION y TIPO_RIEGO
-    }
-
-    PLANTACION_ABONO {
-        bigint plantacion_id PK, FK
-        bigint tipo_abono_id PK, FK
-        %% relación N:M entre PLANTACION y TIPO_ABONO
-    }
-
-    PLANTACION_FOTO {
-        bigint id PK
-        bigint plantacion_id FK
-        string url
-        int peso_bytes
-        string formato "JPG/JPEG/PNG"
-        string descripcion
-        datetime created_at
-    }
-
-    PLANTACION_MONITOREO {
-        bigint id PK
-        bigint plantacion_id FK
-        date fecha_monitoreo
-        int arboles_vivos
-        int arboles_muertos
-        int arboles_reemplazados
-        string notas
-        bigint usuario_id FK "quién monitorea"
-        datetime created_at
-    }
-
-    %% =====================================================
-    %% Relaciones
-    %% =====================================================
-
-    UBICACION ||--o{ VIVERO : tiene
-    UBICACION ||--o{ RECOLECCION : ocurre_en
-    UBICACION ||--o{ PLANTACION : se_ubica_en
-
-    USUARIO ||--o{ RECOLECCION : recolecta
-    USUARIO ||--o{ LOTE_FASE_VIVERO : crea
-    USUARIO ||--o{ LOTE_FASE_VIVERO_HISTORIAL : registra
-    USUARIO ||--o{ LOTE_FASE_VIVERO : actualiza "via updated_by"
-    USUARIO ||--o{ PLANTACION : registra
-    USUARIO ||--o{ PLANTACION_USUARIO : participa
-    USUARIO ||--o{ PLANTACION_MONITOREO : monitorea
-
-    VIVERO ||--o{ RECOLECCION : almacena
-    VIVERO ||--o{ LOTE_FASE_VIVERO : se_realiza_en
-
-    PLANTA ||--o{ RECOLECCION : corresponde_a
-    PLANTA ||--o{ LOTE_FASE_VIVERO : se_siembra
-
-    METODO_RECOLECCION ||--o{ RECOLECCION : se_usa_en
-
-    LOTE_FASE_VIVERO ||--o{ LOTE_FASE_VIVERO_RECOLECCION : usa
-    RECOLECCION ||--o{ LOTE_FASE_VIVERO_RECOLECCION : proviene_de
-
-    LOTE_FASE_VIVERO ||--o{ LOTE_FASE_VIVERO_HISTORIAL : versiona
-
-    PLANTACION ||--o{ PLANTACION_USUARIO : tiene
-    PLANTACION ||--o{ PLANTACION_LOTE_FASE_VIVERO : usa_lotes_vivero
-    LOTE_FASE_VIVERO ||--o{ PLANTACION_LOTE_FASE_VIVERO : provee_plantines
-
-    PLANTACION ||--o{ PLANTACION_RIEGO : usa_riego
-    TIPO_RIEGO ||--o{ PLANTACION_RIEGO : se_aplica_en
-
-    PLANTACION ||--o{ PLANTACION_ABONO : usa_abono
-    TIPO_ABONO ||--o{ PLANTACION_ABONO : se_aplica_en
-
-    PLANTACION ||--o{ PLANTACION_FOTO : tiene
-    PLANTACION ||--o{ PLANTACION_MONITOREO : tiene_monitoreos
-
+```bash
+npm run lint
+npm run build
 ```
 
----
-
-### Aclaraciones (déjalas aparte tal como pediste)
-
-**En PLANTA:**
-
-- `string tipo_planta` // Árbol, Arbusto, etc.
-- `string tipo_planta_otro` // texto libre si es "Otro"
-- `string fuente` // SEMILLA / ESQUEJE
-
-**En RECOLECCION:**
-
-- `string unidad` // UNIDAD / UNIDADES / KG / G
-- `string tipo_material` // SEMILLA / ESQUEJE
-- `string estado` // USADO / ALMACENADO / DESECHADO
-
-**En LOTE_FASE_VIVERO:**
-
-- `string estado` // INICIO / EMBOLSADO / SOMBRA / LISTA_PLANTAR / SALIDA_VIVERO
-
-**En LOTE_FASE_VIVERO_HISTORIAL:**
-
-- `string accion` // INICIO, EMBOLSADO, SOMBRA, LISTA_PLANTAR, SALIDA, AJUSTE...
-
-**En PLANTACION:**
-
-- `string destino` // ARBORIZACION / FORESTACION / REFORESTACION
-- `string origen_propiedad` // DONADO / ADQUIRIDO / OTRO / NULL
-- `string codigo_trazabilidad` // código único visible en el bono
+Si el cambio toca un flujo de dominio, valida también el contrato correspondiente en `r3foresta-docs` y documenta cualquier verificación que no haya sido posible ejecutar.

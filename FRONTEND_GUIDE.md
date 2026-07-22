@@ -75,47 +75,53 @@ Idea central:
 
 ## 4. Arquitectura general
 
-El frontend debe organizarse por features/módulos.
+El frontend se organiza por módulos de dominio. En el repo actual la implementación usa `src/modules/` para las features y mantiene `src/api/` y `src/services/` como capas compartidas de acceso a datos y casos de uso.
 
 ```txt
 src/
-  app/
-  shared/
-  features/
-    recoleccion/
+  api/
+  components/
+  contexts/
+  hooks/
+  layouts/
+  modules/
+    recolecciones/
     vivero/
+    plantacion/
     evidencias/
     auth/
+  services/
+  utils/
 ```
 
 Adaptar nombres a la estructura real del repo, pero mantener la separación conceptual.
 
-### 4.1 `app/`
+### 4.1 Entrada y composición de la aplicación
 
-Contiene providers globales, router principal, layout base y configuración general.
+El router principal vive en `src/App.tsx`; los providers globales viven en `src/contexts/`, los layouts en `src/layouts/` y la configuración de build en la raíz.
 
 No debe contener lógica específica de Recolección, Vivero o Evidencias.
 
-### 4.2 `shared/`
+### 4.2 Capas compartidas
 
-Contiene componentes reutilizables, utilidades generales, helpers de formato, cliente HTTP base, tipos genéricos, constantes compartidas y layouts comunes.
+`src/components/`, `src/hooks/`, `src/utils/`, `src/api/` y `src/services/` contienen componentes reutilizables, utilidades, tipos transversales, llamadas HTTP y casos de uso compartidos.
 
 No debe depender de una feature concreta.
 
-### 4.3 `features/`
+### 4.3 `modules/`
 
-Contiene pantallas, componentes, hooks, servicios API, tipos, mappers y validaciones de UI de cada módulo.
+Contiene pantallas, componentes, hooks, tipos, mappers, validaciones de UI y composición específica de cada módulo.
 
 Cada feature debe poder entenderse sin revisar todo el proyecto.
 
 ---
 
-## 5. Estructura recomendada por feature
+## 5. Estructura recomendada por módulo
 
 Ejemplo:
 
 ```txt
-features/vivero/
+modules/vivero/
   api/
   components/
   hooks/
@@ -143,9 +149,9 @@ Reglas:
 Ejemplos:
 
 ```txt
-features/vivero/api/vivero.api.ts
-features/recoleccion/api/recoleccion.api.ts
-features/evidencias/api/evidencias.api.ts
+src/api/lotes-vivero.api.ts
+src/services/recolecciones.service.ts
+src/api/plantacion.api.ts
 ```
 
 ### 5.2 `components/`
@@ -272,7 +278,7 @@ Usar mappers para pasar de response a view model.
 Patrón recomendado:
 
 ```ts
-// features/vivero/api/vivero.api.ts
+// src/api/lotes-vivero.api.ts
 
 export async function getLotesVivero() {
   // usar client HTTP existente

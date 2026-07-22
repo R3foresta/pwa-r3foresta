@@ -117,15 +117,15 @@ Contexto adicional si aplica.
 
 ## 6. Resumen ejecutivo
 
-Actualizar esta sección cuando se haga una revisión importante.
+Última auditoría estática: `2026-07-21`. Se revisó el repo real, la configuración, los flujos principales y la documentación asociada. `BIEN` significa que no se detectó una desviación crítica en la revisión estática; no reemplaza pruebas de integración ni QA manual.
 
 | Área | Estado | Observación |
 |---|---|---|
-| Arquitectura por features | `SIN_REVISAR` | Pendiente revisar contra estructura real del repo. |
-| Servicios/API | `SIN_REVISAR` | Pendiente confirmar si existe capa centralizada. |
-| Formularios | `SIN_REVISAR` | Pendiente auditar validaciones y manejo de errores. |
-| UI/UX dominio | `SIN_REVISAR` | Pendiente revisar estados, saldos, snapshots y evidencias. |
-| TypeScript | `SIN_REVISAR` | Pendiente revisar uso de `any`, DTOs y view models. |
+| Arquitectura por módulos | `MEJORABLE` | Feature-first funcional, pero hay pantallas y services demasiado grandes. |
+| Servicios/API | `RIESGO` | Existen varias capas y llamadas HTTP repetidas; falta un cliente común. |
+| Formularios | `MEJORABLE` | Los flujos principales manejan loading/error/evidencia; faltan confirmaciones e idempotencia uniforme. |
+| UI/UX dominio | `RIESGO` | Hay una ruta legacy de Embolsado y estados de Recolección incompletos. |
+| TypeScript | `BIEN` | TypeScript estricto; no se encontraron usos de `any` en la revisión. |
 | Testing/build | `MEJORABLE` | `build` y `lint` pasan; no existen scripts de typecheck separado ni tests automatizados. |
 
 Estados sugeridos para esta tabla:
@@ -270,7 +270,8 @@ Usar cuando se revise una pantalla relacionada con Recolección.
 
 Hallazgos relacionados:
 
-- Pendiente registrar.
+- `AUD-008`: precisión canónica de `G` y etiquetas de unidad.
+- `AUD-009`: corrección y reenvío de registros `RECHAZADO`.
 
 ---
 
@@ -295,36 +296,40 @@ Usar cuando se revise una pantalla relacionada con Vivero.
 
 Hallazgos relacionados:
 
-- Pendiente registrar.
+- `AUD-006`: ruta legacy de Embolsado con tope masa → plantas.
+- `AUD-007`: confirmación e idempotencia de eventos append-only.
+- `AUD-010`: comentarios de contratos desactualizados.
 
 ---
 
 ## 10. Checklist de arquitectura por feature
 
-Usar al revisar una carpeta dentro de `features/`.
+Usar al revisar una carpeta dentro de `src/modules/`.
 
 ### Feature revisada
 
-- Nombre: `pendiente`
-- Fecha: `pendiente`
-- Responsable: `pendiente`
+- Nombre: `src/modules/*`, `src/api`, `src/services`
+- Fecha: `2026-07-21`
+- Responsable: `Codex`
 
 ### Estructura
 
-- [ ] Tiene `api/` si consume backend.
+- [ ] Tiene acceso API en `src/api/` o en la capa equivalente existente.
 - [ ] Tiene `components/` si hay UI específica.
 - [ ] Tiene `hooks/` si hay lógica reutilizable.
-- [ ] Tiene `pages/` si maneja rutas.
+- [ ] Tiene `screens/` si maneja rutas.
 - [ ] Tiene `types/` si define contratos o modelos.
 - [ ] Tiene `utils/`, `mappers/` o `schemas/` si transforma datos o valida formularios.
-- [ ] No mezcla responsabilidades de otras features.
-- [ ] No duplica componentes de `shared`.
+- [ ] No mezcla responsabilidades de otros módulos.
+- [ ] No duplica componentes de `src/components`.
 
 ### Resultado
 
-- Estado: `SIN_REVISAR`
+- Estado: `MEJORABLE`
 - Observaciones:
-  - Pendiente.
+  - La separación por módulos existe y los tipos están razonablemente aislados.
+  - Vivero y Plantación tienen hooks, mappers y servicios reutilizables.
+  - Campañas, subcampañas, dashboards y algunos services requieren extracción por caso de uso.
 
 ---
 
@@ -332,7 +337,7 @@ Usar al revisar una carpeta dentro de `features/`.
 
 ### 11.1 `app/`
 
-Estado: `SIN_REVISAR`
+Estado: `MEJORABLE`
 
 Revisar:
 
@@ -345,11 +350,13 @@ Revisar:
 
 Hallazgos:
 
-- Pendiente registrar.
+- Router operativo y rutas de Recolección, Vivero y Plantación conectadas.
+- La ruta `/auth/register` todavía expone un flujo mock; ver `AUD-011`.
+- Existe una ruta legacy `/app/vivero/:id/event/new`; ver `AUD-006`.
 
 ### 11.2 `shared/`
 
-Estado: `SIN_REVISAR`
+Estado: `RIESGO`
 
 Revisar:
 
@@ -362,11 +369,12 @@ Revisar:
 
 Hallazgos:
 
-- Pendiente registrar.
+- No hay un cliente HTTP único: `fetch`, base URL y headers se repiten entre `src/api` y services.
+- La PWA declara sincronización offline, pero el service worker no implementa una cola de sincronización; ver `AUD-012`.
 
-### 11.3 `features/recoleccion`
+### 11.3 `modules/recolecciones`
 
-Estado: `SIN_REVISAR`
+Estado: `RIESGO`
 
 Revisar:
 
@@ -380,11 +388,13 @@ Revisar:
 
 Hallazgos:
 
-- Pendiente registrar.
+- `RECHAZADO` no recibe las mismas acciones de corrección/reenvío que `BORRADOR`.
+- La conversión a `G` no limita la precisión a un decimal y algunas etiquetas muestran `gr`.
+- El formateo de fechas puede desplazarse por zona horaria.
 
-### 11.4 `features/vivero`
+### 11.4 `modules/vivero`
 
-Estado: `SIN_REVISAR`
+Estado: `RIESGO`
 
 Revisar:
 
@@ -401,11 +411,13 @@ Revisar:
 
 Hallazgos:
 
-- Pendiente registrar.
+- Embolsado, Adaptabilidad, Merma, Despacho, Descarte pre-embolsado, timeline, evidencias, asignaciones y devoluciones ya tienen implementación conectada.
+- La ruta legacy de Embolsado mantiene una regla de tope incompatible con el dominio.
+- Los comentarios de contratos fueron sincronizados en esta auditoría; ver `AUD-010` como `RESUELTO`.
 
-### 11.5 `features/evidencias`
+### 11.5 `modules/evidencias`
 
-Estado: `SIN_REVISAR`
+Estado: `MEJORABLE`
 
 Revisar:
 
@@ -418,11 +430,12 @@ Revisar:
 
 Hallazgos:
 
-- Pendiente registrar.
+- Los eventos críticos exigen fotos desde los formularios revisados.
+- Falta una estrategia de idempotencia para reintentos después de respuestas perdidas.
 
-### 11.6 `features/auth`
+### 11.6 `modules/auth`
 
-Estado: `SIN_REVISAR`
+Estado: `CRITICO`
 
 Revisar:
 
@@ -435,7 +448,9 @@ Revisar:
 
 Hallazgos:
 
-- Pendiente registrar.
+- `/auth/register` crea sesión mock sin validar credenciales.
+- `AuthContext.logout` no elimina el token persistido por WebAuthn.
+- El manejo de sesión restaurada depende del cache local y no valida siempre el token contra backend.
 
 ---
 
@@ -445,52 +460,21 @@ Mantener esta tabla actualizada.
 
 | ID | Severidad | Estado | Módulo | Tipo | Resumen | Ubicación |
 |---|---|---|---|---|---|---|
-| AUD-001 | `MEDIA` | `PENDIENTE` | `general` | `deuda` | Primera auditoría pendiente contra repo real. | `frontend/` |
 | AUD-002 | `ALTA` | `RESUELTO` | `general` | `testing` | `build` vuelve a completar correctamente. | `src/` |
 | AUD-003 | `ALTA` | `RESUELTO` | `general` | `testing` | `npm run lint` pasa y excluye worktrees internos. | `eslint.config.js`, `src/` |
 | AUD-004 | `BAJA` | `PENDIENTE` | `general` | `deuda` | `formatDate` y `formatRelativeTime` viven duplicados/en línea por módulo; conviene extraerlos a un util compartido. | `src/modules/plantacion/utils/subcampaniaFormatters.ts`, `src/modules/plantacion/screens/CampaniaAdminDashboardScreen.tsx` |
 | AUD-005 | `BAJA` | `PENDIENTE` | `plantacion` | `deuda` | `CAMPANIA_TYPES` está definido dos veces con distinto orden (validación en service, orden visual en form). | `src/services/plantacion.service.ts`, `src/modules/plantacion/components/CrearCampaniaForm.tsx` |
+| AUD-006 | `CRITICA` | `PENDIENTE` | `vivero` | `dominio` | Ruta legacy de Embolsado limita plantas según gramos, contradiciendo RN-VIV-17C. | `src/modules/vivero/utils/validators.ts`, `src/modules/vivero/screens/ViveroEmbolsadoScreen.tsx` |
+| AUD-007 | `ALTA` | `BLOQUEADO` | `vivero` | `api` | Eventos append-only no tienen idempotencia para reintentos después de respuestas perdidas. | `src/modules/vivero/components/event/forms/` |
+| AUD-008 | `ALTA` | `PENDIENTE` | `recoleccion` | `dominio` | La precisión de `G` no está limitada a un decimal y la UI usa `gr` en algunos lugares. | `src/utils/recoleccionUnidad.ts`, `src/modules/recolecciones/` |
+| AUD-009 | `ALTA` | `PENDIENTE` | `recoleccion` | `flujo` | Los registros `RECHAZADO` no se pueden corregir y reenviar desde el detalle. | `src/modules/recolecciones/RecoleccionDetailScreen.tsx` |
+| AUD-010 | `MEDIA` | `RESUELTO` | `vivero` | `deuda` | Comentarios de contratos y README describían como pendientes funciones ya conectadas. | `src/api/lotes-vivero.api.ts`, `src/modules/vivero/types/contracts.ts`, `src/modules/vivero/README.md` |
+| AUD-011 | `CRITICA` | `PENDIENTE` | `auth` | `seguridad` | Registro mock accesible y logout incompleto para tokens persistidos. | `src/modules/auth/RegisterScreen.tsx`, `src/contexts/AuthContext.tsx` |
+| AUD-012 | `ALTA` | `PENDIENTE` | `shared` | `pwa` | La UI promete sync offline, pero el service worker no precachea el bundle ni implementa outbox/API offline. | `public/sw.js`, `src/layouts/AuthLayout.tsx` |
 
 ---
 
 ## 13. Hallazgos detallados
-
-### AUD-001 — Primera auditoría pendiente contra repo real
-
-- Estado: `PENDIENTE`
-- Severidad: `MEDIA`
-- Módulo: `general`
-- Ubicación: `frontend/`
-- Tipo: `deuda`
-- Detectado por: `equipo`
-- Fecha: `pendiente`
-
-#### Problema
-
-Este documento define el marco de auditoría, pero todavía falta revisar el repo real con checklist por módulos.
-
-#### Riesgo
-
-Podrían existir pantallas, formularios o servicios que no sigan la arquitectura esperada o que dupliquen lógica.
-
-#### Acción sugerida
-
-Hacer una primera auditoría por carpetas:
-
-1. `app`
-2. `shared`
-3. `features/recoleccion`
-4. `features/vivero`
-5. `features/evidencias`
-6. `features/auth`
-
-#### Verificación esperada
-
-Cada módulo debe quedar marcado como `BIEN`, `MEJORABLE`, `RIESGO` o `CRITICO` en el resumen ejecutivo.
-
-#### Notas
-
-Actualizar este hallazgo después de la primera revisión real.
 
 ### AUD-002 — Build roto por errores de TypeScript fuera del flujo corregido
 
@@ -606,16 +590,158 @@ Los dos arrays incluyen exactamente los mismos elementos (comparados por `sort()
 
 ---
 
+### AUD-006 — Ruta legacy de Embolsado limita plantas según gramos
+
+- Estado: `PENDIENTE`
+- Severidad: `CRITICA`
+- Módulo: `vivero`
+- Ubicación: `src/modules/vivero/utils/validators.ts`, `src/modules/vivero/hooks/useEmbolsado.ts`, `src/modules/vivero/screens/ViveroEmbolsadoScreen.tsx`
+- Tipo: `dominio`
+- Detectado por: `Codex`
+- Fecha: `2026-07-21`
+
+#### Problema
+
+La ruta `/app/vivero/:id/event/new` conserva una pantalla antigua que calcula un tope de plantas desde gramos. El contrato vigente define `EMBOLSADO` como un conteo observado y prohíbe convertir masa en plantas.
+
+#### Acción sugerida
+
+Redirigir la ruta legacy al formulario único de eventos y eliminar el cálculo `PLANTAS_POR_GRAMO_TOPE`.
+
+#### Verificación esperada
+
+Una única pantalla registra Embolsado; una cantidad observada válida no se rechaza por una conversión de gramos.
+
+### AUD-007 — Operaciones append-only sin idempotencia
+
+- Estado: `BLOQUEADO`
+- Severidad: `ALTA`
+- Módulo: `vivero`
+- Ubicación: `src/modules/vivero/components/event/forms/`
+- Tipo: `api`
+- Detectado por: `Codex`
+- Fecha: `2026-07-21`
+
+#### Problema
+
+Merma, Adaptabilidad, Despacho y otros eventos definitivos pueden duplicarse si la respuesta se pierde y el usuario reintenta. El frontend no puede resolverlo de forma fiable sin soporte del backend.
+
+#### Acción sugerida
+
+Definir con backend una clave de idempotencia por operación y persistirla junto al intento local.
+
+#### Verificación esperada
+
+Repetir la misma operación con la misma clave devuelve el evento original sin crear otro.
+
+### AUD-008 — Unidad `G` sin precisión canónica única
+
+- Estado: `PENDIENTE`
+- Severidad: `ALTA`
+- Módulo: `recoleccion`
+- Ubicación: `src/utils/recoleccionUnidad.ts`, `src/modules/recolecciones/`
+- Tipo: `dominio`
+- Detectado por: `Codex`
+- Fecha: `2026-07-21`
+
+#### Problema
+
+La conversión redondea a seis decimales y algunos labels muestran `gr`, mientras el contrato exige persistir `G` con máximo un decimal.
+
+#### Acción sugerida
+
+Validar la precisión después de convertir `kg` a `G`, mostrar siempre `G` y evitar redondeos silenciosos que cambien el dato observado.
+
+### AUD-009 — Recolección rechazada sin corrección/reenvío
+
+- Estado: `PENDIENTE`
+- Severidad: `ALTA`
+- Módulo: `recoleccion`
+- Ubicación: `src/modules/recolecciones/RecoleccionDetailScreen.tsx`, `src/modules/recolecciones/recoleccionStatus.ts`
+- Tipo: `flujo`
+- Detectado por: `Codex`
+- Fecha: `2026-07-21`
+
+#### Problema
+
+El detalle solo muestra acciones de edición y envío para `BORRADOR`; `RECHAZADO` queda sin camino visible de corrección aunque el dominio lo permite.
+
+#### Acción sugerida
+
+Centralizar la política de acciones por estado y mostrar badges distintos para `PENDIENTE_VALIDACION` y `RECHAZADO`.
+
+### AUD-010 — Documentación inline de Vivero desactualizada
+
+- Estado: `RESUELTO`
+- Severidad: `MEDIA`
+- Módulo: `vivero`
+- Ubicación: `src/api/lotes-vivero.api.ts`, `src/services/lotes-vivero.service.ts`, `src/modules/vivero/types/contracts.ts`, `src/modules/vivero/README.md`
+- Tipo: `deuda`
+- Detectado por: `Codex`
+- Fecha: `2026-07-21`
+
+#### Problema
+
+Comentarios antiguos indicaban que Despacho, Timeline, Asignaciones y endpoints de eventos no se consumían, aunque el código ya los usaba.
+
+#### Acción sugerida
+
+Eliminar bloques históricos y documentar el contrato vigente junto con los pendientes reales.
+
+#### Cierre
+
+- Fecha: `2026-07-21`
+- Corregido por: `Codex`
+- Verificación: `rg` sin referencias a Despacho/Timeline deshabilitados en los contratos revisados.
+- Evidencia: `src/api/lotes-vivero.api.ts`, `src/services/lotes-vivero.service.ts`, `src/modules/vivero/types/contracts.ts`, `src/modules/vivero/README.md`.
+
+### AUD-011 — Registro mock y logout incompleto
+
+- Estado: `PENDIENTE`
+- Severidad: `CRITICA`
+- Módulo: `auth`
+- Ubicación: `src/modules/auth/RegisterScreen.tsx`, `src/contexts/AuthContext.tsx`
+- Tipo: `seguridad`
+- Detectado por: `Codex`
+- Fecha: `2026-07-21`
+
+#### Problema
+
+El registro crea una sesión local sin autenticación real y el logout del contexto no limpia el token persistido por WebAuthn.
+
+#### Acción sugerida
+
+Eliminar el flujo mock, usar una sola fuente de sesión y limpiar/invalidatear token y usuario en cada logout.
+
+### AUD-012 — Promesa offline superior a la implementación
+
+- Estado: `PENDIENTE`
+- Severidad: `ALTA`
+- Módulo: `shared`
+- Ubicación: `public/sw.js`, `src/layouts/AuthLayout.tsx`
+- Tipo: `pwa`
+- Detectado por: `Codex`
+- Fecha: `2026-07-21`
+
+#### Problema
+
+La interfaz anuncia sync offline, pero el service worker solo precachea `/` y el manifest; ante un fallo de red puede responder HTML para solicitudes que esperaban JSON.
+
+#### Acción sugerida
+
+O retirar la promesa hasta implementar offline real, o añadir precache de assets, fallback solo para navegación y una estrategia explícita de API/outbox.
+
+---
+
 ## 14. Riesgos conocidos
 
 Registrar riesgos que todavía no son bugs confirmados.
 
 | Riesgo | Impacto | Estado | Acción |
 |---|---|---|---|
-| Falta confirmar estructura real del repo | Puede haber desalineación con la guía | `PENDIENTE` | Revisar carpetas reales. |
-| Falta confirmar capa API | Puede haber llamadas HTTP dispersas | `PENDIENTE` | Buscar `fetch`, `axios` o cliente HTTP. |
-| Falta confirmar manejo de formularios | Puede haber validaciones duplicadas o débiles | `PENDIENTE` | Revisar formularios principales. |
-| Falta confirmar comandos de verificación | Puede dificultar cierre de tareas | `PENDIENTE` | Revisar `package.json`. |
+| La implementación y el contrato backend pueden desfasarse | Cambios de API o migraciones no aplicadas | `PENDIENTE` | Verificar staging y mantener `ESTADO.md` actualizado. |
+| El backend no ofrece idempotencia para eventos | Reintentos pueden duplicar trazabilidad | `BLOQUEADO` | Definir contrato con backend. |
+| El service worker no representa sync offline real | La operación en campo puede fallar sin red | `PENDIENTE` | Decidir alcance offline antes de prometerlo en UI. |
 
 ---
 
@@ -625,7 +751,8 @@ Registrar deuda que se permite por ahora, con límite claro.
 
 | Deuda | Motivo | Límite | Responsable | Estado |
 |---|---|---|---|---|
-| Pendiente | Pendiente | Pendiente | Pendiente | `PENDIENTE` |
+| Bundle principal grande y pantallas monolíticas | No bloquea el MVP; priorizar claridad operativa | Extraer por caso de uso y cargar rutas bajo demanda | Frontend | `PENDIENTE` |
+| Ausencia de pruebas automatizadas | No hay runner configurado actualmente | Añadir unitarias de dominio y E2E de flujos críticos | Frontend | `PENDIENTE` |
 
 Regla:
 

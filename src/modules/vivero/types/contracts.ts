@@ -442,17 +442,9 @@ export interface DevolverAsignacionViveroResponse {
   data: DevolverAsignacionViveroResponseData
 }
 
-// TODO(despacho-bloqueado): la pantalla de despacho está deshabilitada en el
-// front (DespachoForm.tsx → DESPACHO_EVIDENCE_ENDPOINT_READY = false) por dos
-// motivos cruzados:
-//   1. RF-VIV-05 exige mínimo 1 evidencia obligatoria, pero este contrato NO
-//      incluye `evidencia_ids` todavía. Cuando backend lo agregue, será
-//      `evidencia_ids: number[]` (obligatorio, mínimo 1).
-//   2. El destino real del despacho conecta con Módulo 3 (Plantación), que aún
-//      no tiene backend. Sin él no hay dónde despachar, así que reactivar el
-//      form requiere coordinar ambas piezas.
-// No es bloqueante para producción mientras no haya usuarios reales operando
-// despacho (estado pre-producción).
+// Despacho manual activo: exige evidencia y descuenta el saldo físico actual
+// del lote. No se vincula a campaña/subcampaña; el destino se expresa mediante
+// `destino_tipo`, comunidad cuando aplica y/o una referencia estructurada.
 export interface RegistrarDespachoRequest {
   fecha_evento: string
   cantidad_afectada: number
@@ -528,18 +520,6 @@ export interface EvidenciaDto {
   tomado_en?: string;
 }
 
-// TODO(backend-pendiente): falta definir RegistrarDespachoResponse en el
-// contrato (existen RegistrarMermaResponse y RegistrarAdaptabilidadResponse).
-// Mientras tanto, LotesViveroService.registrarDespacho retorna `unknown`.
-// Bloqueante real: ver TODO(despacho-bloqueado) más arriba — el método del
-// service queda inalcanzable desde la UI hasta que se levante el flag.
-
-// TODO(vivero-destino-enum): backend evalúa migrar DestinoTipoVivero del set
-// actual (4 valores) al set spec (5 valores, con PLANTACION_COMUNIDAD +
-// DONACION separadas). Cuando se concrete, ampliar la unión arriba y los
-// radios de DespachoForm. No bloquea: la UI de despacho hoy está deshabilitada
-// vía DESPACHO_EVIDENCE_ENDPOINT_READY = false.
-
 // ─── Detalle de lote (GET /api/lotes-vivero/:id) ─────────────────────────────
 //
 // Endpoint dedicado de detalle: superset del shape de list + un mapa
@@ -589,10 +569,9 @@ export interface LoteViveroDetalleResponse {
 // Acepta filtros opcionales por query string: `tipo_evento`, `responsable_id`,
 // `fecha_inicio`, `fecha_fin`. No paginado — backend devuelve todo el historial.
 //
-// Tipado actual: solo la variante ADAPTABILIDAD del payload está implementada
-// (consumida por `AdaptabilidadTimeline` en el detalle del lote). Cuando
-// aparezcan consumers de otros tipos, sumar variantes al union y reusar la
-// estructura del response.
+// El detalle del lote consume el timeline unificado para representar todos los
+// eventos. La variante tipada de ADAPTABILIDAD se mantiene para el historial
+// filtrado específico de esa etapa.
 
 export interface LoteTimelineQuery {
   tipo_evento?: TipoEventoVivero
@@ -608,8 +587,9 @@ export interface LoteTimelinePayloadAdaptabilidad {
   saldo_vivo_despues: number | null
 }
 
-// TODO(backend-disponible): completar variantes del payload cuando aparezca
-// consumer en el front. Backend ya las devuelve, pero no las consumimos:
+// Estas variantes pueden agregarse si una pantalla necesita payloads
+// discriminados por tipo. El timeline general ya se consume mediante
+// `TimelineEventDto` y no requiere tipar variantes que la UI no usa:
 //   - LoteTimelinePayloadInicio
 //   - LoteTimelinePayloadEmbolsado
 //   - LoteTimelinePayloadMerma
@@ -648,25 +628,3 @@ export interface LoteTimelineAdaptabilidadResponse {
     eventos: LoteTimelineEventoAdaptabilidad[]
   }
 }
-
-// ─── Endpoints disponibles pero todavía no consumidos ────────────────────────
-//
-// TODO(backend-disponible): el backend expone estos endpoints alternativos pero
-// el front no los consume hoy. Para ADAPTABILIDAD usamos `/timeline` filtrado
-// (ver bloque anterior) — preferido por el backend. Estos quedan como
-// alternativa para pantallas admin/debugging si hicieran falta:
-//
-//   GET /api/lotes-vivero/:id/adaptabilidad
-//     → dump crudo del tipo (sin responsable_nombre, sin filtros, full payload).
-//
-//   GET /api/lotes-vivero/:id/merma
-//     → listado de eventos de merma del lote.
-//     → tipo sugerido: ObtenerMermasResponse
-//
-//   GET /api/lotes-vivero/:id/timeline
-//     → línea de tiempo consolidada de eventos del lote (todas las etapas).
-//     → tipo sugerido: TimelineLoteResponse
-//
-// Hoy el `ViveroDetailScreen` arma la timeline desde el detalle del lote, así
-// que esto no bloquea ninguna pantalla actual. Migrar cuando el front necesite
-// historial granular o paginado de eventos.
