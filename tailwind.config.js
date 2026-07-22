@@ -1,4 +1,6 @@
 /** @type {import('tailwindcss').Config} */
+import colors from 'tailwindcss/colors'
+
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
@@ -18,7 +20,15 @@ export default {
           700: '#0f3b23',
           800: '#0c2e1c',
           900: '#08140f',
+          950: '#002b15', // absorbe el hex fijo del HeroHeader
         },
+        // Tokens semánticos (alias de escalas existentes → paridad visual).
+        // Ver FRONTEND_UI_STANDARD.md §3.
+        success: colors.emerald,
+        warning: colors.amber,
+        danger: colors.red,
+        info: colors.sky,
+        neutral: colors.slate,
       },
       boxShadow: {
         soft: '0 10px 30px rgba(0, 0, 0, 0.06)',
