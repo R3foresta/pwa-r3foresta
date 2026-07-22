@@ -264,14 +264,14 @@ function Progress({
     tone === 'brand'
       ? 'bg-brand-50'
       : tone === 'emerald'
-        ? 'bg-emerald-50'
+        ? 'bg-success-50'
         : 'bg-white/15'
   const bar =
     tone === 'brand'
       ? 'bg-brand-600'
       : tone === 'emerald'
-        ? 'bg-emerald-500'
-        : 'bg-emerald-300'
+        ? 'bg-success-500'
+        : 'bg-success-300'
   return (
     <div className={`h-2 w-full overflow-hidden rounded-full ${track}`}>
       <div
@@ -287,16 +287,16 @@ function StateBadge({ label, light = false }: { label: string; light?: boolean }
   const isActiva = normalized.includes('ACTIVA')
   const tone = isActiva
     ? light
-      ? 'bg-emerald-300/25 text-emerald-100 ring-emerald-200/40'
-      : 'bg-emerald-50 text-emerald-700 ring-emerald-100'
+      ? 'bg-success-300/25 text-success-100 ring-success-200/40'
+      : 'bg-success-50 text-success-700 ring-success-100'
     : normalized === 'CREADA'
       ? light
         ? 'bg-white/15 text-white ring-white/25'
         : 'bg-brand-50 text-brand-700 ring-brand-100'
       : light
         ? 'bg-white/15 text-white ring-white/20'
-        : 'bg-slate-50 text-slate-600 ring-slate-200'
-  const dot = isActiva ? 'bg-emerald-400' : 'bg-current'
+        : 'bg-neutral-50 text-neutral-600 ring-neutral-200'
+  const dot = isActiva ? 'bg-success-400' : 'bg-current'
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] font-extrabold uppercase tracking-[0.16em] ring-1 ${tone}`}
@@ -320,15 +320,15 @@ function SubcampanaBadge({ estado }: { estado: EstadoSubcampania }) {
   const isActiva = estado === 'ACTIVA'
   const isBorrador = estado === 'BORRADOR'
   const tone = isActiva
-    ? 'bg-emerald-50 text-emerald-700 ring-emerald-100'
+    ? 'bg-success-50 text-success-700 ring-success-100'
     : isBorrador
-      ? 'bg-slate-100 text-slate-600 ring-slate-200'
+      ? 'bg-neutral-100 text-neutral-600 ring-neutral-200'
       : estado === 'PAUSADA'
         ? 'bg-orange-50 text-orange-700 ring-orange-100'
         : estado === 'CANCELADA'
           ? 'bg-red-50 text-red-700 ring-red-100'
-          : 'bg-slate-50 text-slate-700 ring-slate-200'
-  const dot = isActiva ? 'bg-emerald-500' : isBorrador ? 'bg-slate-500' : 'bg-current'
+          : 'bg-neutral-50 text-neutral-700 ring-neutral-200'
+  const dot = isActiva ? 'bg-success-500' : isBorrador ? 'bg-neutral-500' : 'bg-current'
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[10.5px] font-extrabold uppercase tracking-[0.16em] ring-1 ${tone}`}
@@ -444,9 +444,9 @@ function KebabMenu({
             }}
             disabled={desactivarDisabled}
             title={desactivarDisabled ? desactivarDisabledReason : undefined}
-            className={`flex w-full items-start gap-2.5 border-t border-slate-100 px-4 py-3 text-left text-sm font-bold ${
+            className={`flex w-full items-start gap-2.5 border-t border-neutral-100 px-4 py-3 text-left text-sm font-bold ${
               desactivarDisabled
-                ? 'cursor-not-allowed text-slate-400'
+                ? 'cursor-not-allowed text-neutral-400'
                 : 'text-red-700 hover:bg-red-50'
             }`}
           >
@@ -454,7 +454,7 @@ function KebabMenu({
             <span className="min-w-0 flex-1">
               Desactivar campaña
               {desactivarDisabled && desactivarDisabledReason && (
-                <span className="mt-0.5 block text-[11px] font-semibold text-slate-500">
+                <span className="mt-0.5 block text-[11px] font-semibold text-neutral-500">
                   {desactivarDisabledReason}
                 </span>
               )}
@@ -587,13 +587,13 @@ function CampaniaHeader({
           </span>
           {borradoresCount > 0 && (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-white/12 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-[0.16em] text-white ring-1 ring-white/20">
-              <span className="h-1.5 w-1.5 rounded-full bg-slate-300" />
+              <span className="h-1.5 w-1.5 rounded-full bg-neutral-300" />
               {borradoresCount} borrador
             </span>
           )}
           {activasCount > 0 && (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-white/12 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-[0.16em] text-white ring-1 ring-white/20">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              <span className="h-1.5 w-1.5 rounded-full bg-success-400" />
               {activasCount} activa
             </span>
           )}
@@ -658,7 +658,7 @@ function MetricCard({
       <p className="mt-2 text-[30px] font-extrabold leading-none tracking-tight text-brand-900 tabular-nums">
         {value}
         {unit && (
-          <span className="ml-1 text-base font-extrabold text-slate-400">{unit}</span>
+          <span className="ml-1 text-base font-extrabold text-neutral-400">{unit}</span>
         )}
       </p>
       {children && <div className="mt-2">{children}</div>}
@@ -682,7 +682,7 @@ function MetricsGrid({ metrics }: { metrics: CampaniaMetrics | null }) {
         value={formatMetricNumber(metrics?.co2_proyectado_ton, 1)}
         unit="T"
       >
-        <p className="text-[11px] font-semibold leading-tight text-slate-500">
+        <p className="text-[11px] font-semibold leading-tight text-neutral-500">
           Agregado (estimado)
         </p>
       </MetricCard>
@@ -691,7 +691,7 @@ function MetricsGrid({ metrics }: { metrics: CampaniaMetrics | null }) {
         value={formatMetricNumber(metrics?.hectareas, 2)}
         unit="ha"
       >
-        <p className="text-[11px] font-semibold leading-tight text-slate-500">
+        <p className="text-[11px] font-semibold leading-tight text-neutral-500">
           {metrics ? (
             <>
               {comunidades} comunidad{comunidades === 1 ? '' : 'es'}
@@ -702,7 +702,7 @@ function MetricsGrid({ metrics }: { metrics: CampaniaMetrics | null }) {
         </p>
       </MetricCard>
       <MetricCard label="Eventos" value={formatMetricNumber(metrics?.eventos_count)}>
-        <p className="truncate text-[11px] font-semibold leading-tight text-slate-500">
+        <p className="truncate text-[11px] font-semibold leading-tight text-neutral-500">
           {formatUltimaActividadHint(metrics?.ultima_actividad ?? null)}
         </p>
       </MetricCard>
@@ -838,7 +838,7 @@ function CoverageMapPreview({
       </div>
       <div className="relative h-32" />
       {totalMarkers === 0 && (
-        <p className="relative mt-2 text-center text-[11px] font-semibold text-slate-500">
+        <p className="relative mt-2 text-center text-[11px] font-semibold text-neutral-500">
           Sin polígonos definidos aún
         </p>
       )}
@@ -894,7 +894,7 @@ function SubcampaniaFilterTabs({
             {tab.label}
             <span
               className={`inline-flex min-w-[18px] items-center justify-center rounded-full text-[10.5px] font-extrabold ${
-                selected ? 'bg-white/20 text-white' : 'text-slate-500'
+                selected ? 'bg-white/20 text-white' : 'text-neutral-500'
               }`}
             >
               {tab.count}
@@ -928,13 +928,13 @@ function SubcampaniaCardHeader({
           {nombre}
         </p>
         {ubicacion && (
-          <p className="mt-0.5 flex items-center gap-1 truncate text-[12px] font-semibold text-slate-500">
-            <Icon name="pin" className="h-3.5 w-3.5 text-slate-400" />
+          <p className="mt-0.5 flex items-center gap-1 truncate text-[12px] font-semibold text-neutral-500">
+            <Icon name="pin" className="h-3.5 w-3.5 text-neutral-400" />
             {ubicacion}
           </p>
         )}
       </div>
-      <Icon name="chevron-right" className="mt-1 h-4 w-4 shrink-0 text-slate-400" />
+      <Icon name="chevron-right" className="mt-1 h-4 w-4 shrink-0 text-neutral-400" />
     </div>
   )
 }
@@ -951,17 +951,17 @@ function SubcampaniaCardBorradorCompleto({
       <button type="button" onClick={onTap} className="block w-full text-left">
         {header}
       </button>
-      <div className="mt-3 flex items-center gap-2 rounded-2xl bg-emerald-50 px-3 py-2 ring-1 ring-emerald-100">
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white">
+      <div className="mt-3 flex items-center gap-2 rounded-2xl bg-success-50 px-3 py-2 ring-1 ring-success-100">
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-success-500 text-white">
           <Icon name="check" className="h-3.5 w-3.5" />
         </span>
-        <p className="flex-1 text-[12px] font-bold leading-tight text-emerald-900">
+        <p className="flex-1 text-[12px] font-bold leading-tight text-success-900">
           Configuración completa · lista para activar.
         </p>
         <button
           type="button"
           onClick={onTap}
-          className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-wide text-white shadow-soft transition hover:bg-emerald-700"
+          className="inline-flex items-center gap-1 rounded-full bg-success-600 px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-wide text-white shadow-soft transition hover:bg-success-700"
         >
           <Icon name="chevron-right" className="h-3 w-3" />
           Abrir
@@ -984,7 +984,7 @@ function SubcampaniaCardBorradorPendiente({
     <button
       type="button"
       onClick={onTap}
-      className="block w-full rounded-3xl bg-white p-4 text-left shadow-soft ring-1 ring-emerald-100/70 transition hover:ring-emerald-200"
+      className="block w-full rounded-3xl bg-white p-4 text-left shadow-soft ring-1 ring-success-100/70 transition hover:ring-success-200"
     >
       {header}
       <div className="mt-3 rounded-2xl bg-amber-50 px-3 py-2.5 ring-1 ring-amber-100">
@@ -1033,13 +1033,13 @@ function SubcampaniaCardActiva({
     >
       {header}
       <div className="mt-3 flex items-center gap-2">
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[11px] font-extrabold text-emerald-800">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-success-100 text-[11px] font-extrabold text-success-800">
           {coordinadorIniciales}
         </span>
         <p className="flex-1 truncate text-[12.5px] font-bold text-brand-800">
           {coordinadorNombre}
         </p>
-        <p className="whitespace-nowrap text-[11.5px] font-bold text-slate-400">
+        <p className="whitespace-nowrap text-[11.5px] font-bold text-neutral-400">
           {areaHectareas === null ? 'Sin cobertura' : `${areaHectareas} ha`}
         </p>
       </div>
@@ -1049,16 +1049,16 @@ function SubcampaniaCardActiva({
         </p>
         <p className="text-[12.5px] font-extrabold tabular-nums text-brand-900">
           <span>{formatMetricNumber(plantados)}</span>
-          <span className="mx-1 text-slate-400"> / {formatMetricNumber(meta)}</span>
+          <span className="mx-1 text-neutral-400"> / {formatMetricNumber(meta)}</span>
           {avancePct !== null && (
-            <span className="ml-1 text-emerald-700">{avancePct}%</span>
+            <span className="ml-1 text-success-700">{avancePct}%</span>
           )}
         </p>
       </div>
       <div className="mt-2">
         <Progress pct={avancePct ?? 0} tone="brand" />
       </div>
-      <p className="mt-3 text-[11.5px] font-semibold text-slate-500">
+      <p className="mt-3 text-[11.5px] font-semibold text-neutral-500">
         {personas} pers · {lotes} lote{lotes === 1 ? '' : 's'} · {eventos} eventos
       </p>
     </button>
@@ -1080,7 +1080,7 @@ function AgregarSubcampaniaOutlined({
       className={`flex w-full items-center justify-center gap-2 rounded-3xl border-2 border-dashed px-4 py-4 text-sm font-extrabold transition ${
         canCreate
           ? 'border-brand-300 bg-white text-brand-700 hover:border-brand-500 hover:bg-brand-50'
-          : 'cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400'
+          : 'cursor-not-allowed border-neutral-200 bg-neutral-50 text-neutral-400'
       }`}
     >
       <Icon name="plus" className="h-5 w-5" />
@@ -1116,7 +1116,7 @@ function SubcampaniasSection({
         <p className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-brand-500">
           Sub-campañas
         </p>
-        <p className="text-[11px] font-bold text-slate-400">
+        <p className="text-[11px] font-bold text-neutral-400">
           {items.length} de {totales.todas}
         </p>
       </div>
@@ -1260,11 +1260,11 @@ const ACTIVITY_TONE_CLASSES: Record<
   'emerald' | 'brand' | 'amber' | 'red' | 'slate',
   string
 > = {
-  emerald: 'bg-emerald-50 text-emerald-700',
+  emerald: 'bg-success-50 text-success-700',
   brand: 'bg-brand-50 text-brand-700',
   amber: 'bg-amber-50 text-amber-700',
   red: 'bg-red-50 text-red-700',
-  slate: 'bg-slate-50 text-slate-600',
+  slate: 'bg-neutral-50 text-neutral-600',
 }
 
 function ActivityFeed({ items }: { items: CampaniaActivityItem[] }) {
@@ -1274,7 +1274,7 @@ function ActivityFeed({ items }: { items: CampaniaActivityItem[] }) {
       <p className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-brand-500">
         Actividad reciente
       </p>
-      <ul className="mt-3 divide-y divide-slate-100">
+      <ul className="mt-3 divide-y divide-neutral-100">
         {items.map((item) => {
           const meta =
             ACTIVITY_ICON_BY_TIPO[item.tipo] ?? {
@@ -1301,13 +1301,13 @@ function ActivityFeed({ items }: { items: CampaniaActivityItem[] }) {
                   )}
                 </p>
                 {item.ubicacion && (
-                  <p className="mt-0.5 flex items-center gap-1 truncate text-[11.5px] font-semibold text-slate-500">
-                    <Icon name="chevron-right" className="h-3 w-3 text-slate-400" />
+                  <p className="mt-0.5 flex items-center gap-1 truncate text-[11.5px] font-semibold text-neutral-500">
+                    <Icon name="chevron-right" className="h-3 w-3 text-neutral-400" />
                     {item.ubicacion}
                   </p>
                 )}
               </div>
-              <p className="whitespace-nowrap text-[11px] font-bold text-slate-400">
+              <p className="whitespace-nowrap text-[11px] font-bold text-neutral-400">
                 {formatRelativeTime(item.timestamp)}
               </p>
             </li>
@@ -1358,14 +1358,14 @@ function PendingTabPanel({ tab }: { tab: DashboardTab }) {
   }
   return (
     <section className="rounded-3xl bg-white p-5 text-center shadow-soft ring-1 ring-black/5">
-      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-50 text-slate-500">
+      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-neutral-50 text-neutral-500">
         <Icon
           name={tab === 'mapa' ? 'map' : tab === 'lotes' ? 'package' : 'info'}
           className="h-6 w-6"
         />
       </div>
       <p className="mt-3 text-base font-extrabold text-brand-800">{titleByTab[tab]}</p>
-      <p className="mt-1 text-xs font-semibold leading-relaxed text-slate-500">
+      <p className="mt-1 text-xs font-semibold leading-relaxed text-neutral-500">
         {copyByTab[tab]}
       </p>
     </section>
@@ -1600,7 +1600,7 @@ function CampaniaAdminDashboardScreen() {
 
         <main className="space-y-4 px-5 pt-2">
           {loading && (
-            <div className="rounded-3xl bg-white px-4 py-6 text-center text-sm font-semibold text-slate-600 shadow-soft ring-1 ring-black/5">
+            <div className="rounded-3xl bg-white px-4 py-6 text-center text-sm font-semibold text-neutral-600 shadow-soft ring-1 ring-black/5">
               Cargando campaña...
             </div>
           )}

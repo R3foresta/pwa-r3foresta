@@ -10,7 +10,7 @@ type Props = {
 const ACCENTS: Record<NonNullable<Props['accent']>, string> = {
   brand: 'bg-brand-50 text-brand-700',
   amber: 'bg-amber-50 text-amber-700',
-  emerald: 'bg-emerald-50 text-emerald-700',
+  emerald: 'bg-success-50 text-success-700',
 }
 
 /** Fila de resumen con icono, etiqueta eyebrow y valor. */

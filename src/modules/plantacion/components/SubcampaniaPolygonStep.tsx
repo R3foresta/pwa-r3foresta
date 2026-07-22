@@ -11,6 +11,7 @@ import {
   useMapEvents,
 } from 'react-leaflet'
 import Icon from '../../../components/Icon'
+import { Button } from '../../../components/ui'
 import { PlantacionService } from '../../../services/plantacion.service'
 import type { Campania, GeoJsonPolygon, GeoJsonPosition } from '../types/contracts'
 import {
@@ -481,13 +482,9 @@ function SubcampaniaPolygonStep({
         </main>
         <div className="px-5">
           <div className="sticky bottom-0 -mx-5 bg-gradient-to-t from-[#eef2ed] via-[#eef2ed]/95 to-transparent px-5 pb-5 pt-3">
-            <button
-              type="button"
-              onClick={onBackToBase}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-600 px-4 py-4 text-base font-extrabold text-white shadow-soft transition hover:bg-brand-700 active:scale-[0.99]"
-            >
+            <Button variant="primary" size="lg" fullWidth onClick={onBackToBase}>
               Volver al paso anterior
-            </button>
+            </Button>
           </div>
         </div>
       </>
@@ -516,8 +513,8 @@ function SubcampaniaPolygonStep({
                 {vertices.length}
               </p>
             </div>
-            <div className="rounded-2xl bg-slate-50 px-3 py-2.5 ring-1 ring-slate-200">
-              <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-slate-500">
+            <div className="rounded-2xl bg-neutral-50 px-3 py-2.5 ring-1 ring-neutral-200">
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-neutral-500">
                 {areaSource}
               </p>
               <p className="mt-0.5 text-xl font-extrabold tabular-nums text-brand-800">
@@ -526,7 +523,7 @@ function SubcampaniaPolygonStep({
             </div>
           </div>
 
-          <div className="h-[330px] overflow-hidden rounded-3xl bg-slate-100 ring-1 ring-slate-200">
+          <div className="h-[330px] overflow-hidden rounded-3xl bg-neutral-100 ring-1 ring-neutral-200">
             <MapContainer
               center={mapCenter}
               zoom={15}
@@ -596,7 +593,7 @@ function SubcampaniaPolygonStep({
               type="button"
               onClick={handleRemoveLastVertex}
               disabled={vertices.length === 0 || submitting}
-              className="flex items-center justify-center gap-2 rounded-2xl bg-white px-3 py-3 text-xs font-extrabold text-slate-700 shadow-soft ring-1 ring-slate-200 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex items-center justify-center gap-2 rounded-2xl bg-white px-3 py-3 text-xs font-extrabold text-neutral-700 shadow-soft ring-1 ring-neutral-200 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Icon name="x" className="h-4 w-4" />
               Quitar último
@@ -613,11 +610,11 @@ function SubcampaniaPolygonStep({
           </div>
 
           {ubicacionPoligono && (
-            <div className="rounded-2xl bg-slate-50 px-3 py-2.5 ring-1 ring-slate-200">
-              <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-slate-500">
+            <div className="rounded-2xl bg-neutral-50 px-3 py-2.5 ring-1 ring-neutral-200">
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-neutral-500">
                 Ubicación de referencia
               </p>
-              <p className="mt-1 text-xs font-bold leading-relaxed text-slate-700">
+              <p className="mt-1 text-xs font-bold leading-relaxed text-neutral-700">
                 {ubicacionPoligono.latitud}, {ubicacionPoligono.longitud}
                 {ubicacionPoligono.precision_m
                   ? ` · precisión ${ubicacionPoligono.precision_m} m`
@@ -639,7 +636,7 @@ function SubcampaniaPolygonStep({
       <div className="px-5">
         <div className="sticky bottom-0 -mx-5 bg-gradient-to-t from-[#eef2ed] via-[#eef2ed]/95 to-transparent px-5 pb-5 pt-3">
           {statusMessage && (
-            <p className="mb-2 rounded-2xl bg-emerald-50 px-4 py-2 text-center text-xs font-extrabold text-emerald-700 ring-1 ring-emerald-100">
+            <p className="mb-2 rounded-2xl bg-success-50 px-4 py-2 text-center text-xs font-extrabold text-success-700 ring-1 ring-success-100">
               {statusMessage}
             </p>
           )}
@@ -649,33 +646,23 @@ function SubcampaniaPolygonStep({
             </p>
           )}
           <div className="grid grid-cols-3 gap-2">
-            <button
-              type="button"
-              onClick={onBackToBase}
-              disabled={submitting}
-              className="flex items-center justify-center gap-2 rounded-2xl bg-white px-3 py-4 text-sm font-extrabold text-slate-700 shadow-soft ring-1 ring-slate-200 transition hover:bg-slate-50 active:scale-[0.99] disabled:cursor-wait disabled:opacity-60"
-            >
-              <Icon name="arrow-left" className="h-4 w-4" />
+            <Button variant="secondary" size="lg" fullWidth leftIcon="arrow-left" onClick={onBackToBase} disabled={submitting}>
               Atrás
-            </button>
-            <button
-              type="button"
-              onClick={() => void handleSaveStep('draft')}
-              disabled={submitting}
-              className="flex items-center justify-center gap-2 rounded-2xl bg-white px-3 py-4 text-sm font-extrabold text-brand-700 shadow-soft ring-1 ring-brand-100 transition hover:bg-brand-50 active:scale-[0.99] disabled:cursor-wait disabled:opacity-60"
-            >
-              <Icon name="file" className="h-4 w-4" />
+            </Button>
+            <Button variant="secondary" size="lg" fullWidth leftIcon="file" onClick={() => void handleSaveStep('draft')} disabled={submitting}>
               Borrador
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="primary"
+              size="lg"
+              fullWidth
+              loading={submitting}
+              rightIcon="chevron-right"
               onClick={() => void handleSaveStep('next')}
               disabled={submitting}
-              className="flex items-center justify-center gap-2 rounded-2xl bg-brand-600 px-4 py-4 text-base font-extrabold text-white shadow-soft transition hover:bg-brand-700 active:scale-[0.99] disabled:cursor-wait disabled:opacity-60"
             >
               {submitting ? 'Guardando…' : 'Siguiente'}
-              {!submitting && <Icon name="chevron-right" className="h-5 w-5" />}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import plantacionHero from '../../../assets/home/plantacion.jpg'
 import Icon from '../../../components/Icon'
+import { Button } from '../../../components/ui'
 import SelectorComunidad from '../../comunidades/SelectorComunidad'
 import { useAuth } from '../../../contexts/AuthContext'
 import { obtenerComunidad } from '../../../api/comunidades.api'
@@ -93,7 +94,7 @@ function WizardStepper({
                   isCurrent
                     ? 'bg-white text-brand-800 ring-white shadow-soft'
                     : isCompleted
-                      ? 'bg-emerald-300 text-brand-900 ring-emerald-200'
+                      ? 'bg-success-300 text-brand-900 ring-success-200'
                       : 'bg-white/10 text-white/80 ring-white/25 hover:bg-white/20'
                 }`}
               >
@@ -104,7 +105,7 @@ function WizardStepper({
                   isCurrent
                     ? 'text-white'
                     : isCompleted
-                      ? 'text-emerald-100'
+                      ? 'text-success-100'
                       : 'text-white/60'
                 }`}
               >
@@ -293,25 +294,25 @@ function CoordinadorSelector({
 
       <div
         className={`rounded-2xl border bg-white px-4 py-3 shadow-soft ${
-          error ? 'border-red-400 bg-red-50' : 'border-slate-200'
+          error ? 'border-red-400 bg-red-50' : 'border-neutral-200'
         }`}
       >
         <div className="flex items-center gap-2">
-          <Icon name="user" className="h-4 w-4 text-slate-400" />
+          <Icon name="user" className="h-4 w-4 text-neutral-400" />
           <input
             type="text"
             value={query}
             onChange={(event) => handleQueryChange(event.target.value)}
             onFocus={() => setOpen(true)}
             placeholder="Buscar coordinador..."
-            className="w-full border-none bg-transparent text-sm font-semibold text-slate-700 outline-none placeholder:font-medium placeholder:text-slate-400"
+            className="w-full border-none bg-transparent text-sm font-semibold text-neutral-700 outline-none placeholder:font-medium placeholder:text-neutral-400"
           />
           {(query || value) && (
             <button
               type="button"
               aria-label="Limpiar coordinador seleccionado"
               onClick={handleClear}
-              className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200"
+              className="flex h-6 w-6 items-center justify-center rounded-full bg-neutral-100 text-neutral-500 transition hover:bg-neutral-200"
             >
               <Icon name="x" className="h-3 w-3" />
             </button>
@@ -319,7 +320,7 @@ function CoordinadorSelector({
         </div>
 
         {open && (
-          <div className="mt-3 max-h-64 overflow-y-auto rounded-xl border border-slate-200 bg-white">
+          <div className="mt-3 max-h-64 overflow-y-auto rounded-xl border border-neutral-200 bg-white">
             {loading && (
               <p className="px-3 py-2 text-xs font-semibold text-brand-500">
                 Buscando coordinadores...
@@ -331,7 +332,7 @@ function CoordinadorSelector({
             )}
 
             {!loading && !fetchError && options.length === 0 && (
-              <p className="px-3 py-2 text-xs font-semibold text-slate-500">
+              <p className="px-3 py-2 text-xs font-semibold text-neutral-500">
                 Sin coordinadores disponibles.
               </p>
             )}
@@ -343,7 +344,7 @@ function CoordinadorSelector({
                   key={usuario.id}
                   type="button"
                   onClick={() => handleSelect(usuario)}
-                  className="flex w-full items-center gap-3 border-b border-slate-100 px-3 py-2 text-left transition hover:bg-brand-50 last:border-b-0"
+                  className="flex w-full items-center gap-3 border-b border-neutral-100 px-3 py-2 text-left transition hover:bg-brand-50 last:border-b-0"
                 >
                   <UserAvatar
                     nombre={usuario.nombre}
@@ -354,7 +355,7 @@ function CoordinadorSelector({
                     <span className="block truncate text-sm font-semibold text-brand-700">
                       {usuario.nombre}
                     </span>
-                    <span className="block text-xs font-medium text-slate-500">
+                    <span className="block text-xs font-medium text-neutral-500">
                       {usuario.rol}
                     </span>
                   </span>
@@ -497,10 +498,10 @@ function SubcampaniaBaseStep({
               onChange={(event) => handleNombreChange(event.target.value)}
               placeholder="Ej. Subcampaña Achocalla"
               maxLength={200}
-              className={`w-full rounded-2xl border bg-white px-3 py-3 text-sm font-extrabold text-brand-800 outline-none placeholder:font-medium placeholder:text-slate-400 focus:ring-2 ${
+              className={`w-full rounded-2xl border bg-white px-3 py-3 text-sm font-extrabold text-brand-800 outline-none placeholder:font-medium placeholder:text-neutral-400 focus:ring-2 ${
                 errors.nombre
                   ? 'border-red-400 focus:border-red-400 focus:ring-red-200'
-                  : 'border-slate-200 focus:border-brand-500 focus:ring-brand-100'
+                  : 'border-neutral-200 focus:border-brand-500 focus:ring-brand-100'
               }`}
             />
             {errors.nombre && (
@@ -548,7 +549,7 @@ function SubcampaniaBaseStep({
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="mb-1 block text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
-                Inicio estimado <span className="text-slate-400">(opcional)</span>
+                Inicio estimado <span className="text-neutral-400">(opcional)</span>
               </label>
               <input
                 type="date"
@@ -557,13 +558,13 @@ function SubcampaniaBaseStep({
                 className={`w-full rounded-2xl border bg-white px-3 py-3 text-sm font-extrabold text-brand-800 outline-none focus:ring-2 ${
                   errors.fechas
                     ? 'border-red-400 focus:border-red-400 focus:ring-red-200'
-                    : 'border-slate-200 focus:border-brand-500 focus:ring-brand-100'
+                    : 'border-neutral-200 focus:border-brand-500 focus:ring-brand-100'
                 }`}
               />
             </div>
             <div>
               <label className="mb-1 block text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
-                Cierre estimado <span className="text-slate-400">(opcional)</span>
+                Cierre estimado <span className="text-neutral-400">(opcional)</span>
               </label>
               <input
                 type="date"
@@ -573,7 +574,7 @@ function SubcampaniaBaseStep({
                 className={`w-full rounded-2xl border bg-white px-3 py-3 text-sm font-extrabold text-brand-800 outline-none focus:ring-2 ${
                   errors.fechas
                     ? 'border-red-400 focus:border-red-400 focus:ring-red-200'
-                    : 'border-slate-200 focus:border-brand-500 focus:ring-brand-100'
+                    : 'border-neutral-200 focus:border-brand-500 focus:ring-brand-100'
                 }`}
               />
             </div>
@@ -590,27 +591,23 @@ function SubcampaniaBaseStep({
       <div className="px-5">
         <div className="sticky bottom-0 -mx-5 bg-gradient-to-t from-[#eef2ed] via-[#eef2ed]/95 to-transparent px-5 pb-5 pt-3">
           {statusMessage && (
-            <p className="mb-2 rounded-2xl bg-emerald-50 px-4 py-2 text-center text-xs font-extrabold text-emerald-700 ring-1 ring-emerald-100">
+            <p className="mb-2 rounded-2xl bg-success-50 px-4 py-2 text-center text-xs font-extrabold text-success-700 ring-1 ring-success-100">
               {statusMessage}
             </p>
           )}
           <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => handleSaveStep('draft')}
-              className="flex items-center justify-center gap-2 rounded-2xl bg-white px-3 py-4 text-sm font-extrabold text-brand-700 shadow-soft ring-1 ring-brand-100 transition hover:bg-brand-50 active:scale-[0.99]"
-            >
-              <Icon name="file" className="h-4 w-4" />
+            <Button variant="secondary" size="lg" fullWidth leftIcon="file" onClick={() => handleSaveStep('draft')}>
               Guardar borrador
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="primary"
+              size="lg"
+              fullWidth
+              rightIcon="chevron-right"
               onClick={() => handleSaveStep('next')}
-              className="flex items-center justify-center gap-2 rounded-2xl bg-brand-600 px-4 py-4 text-base font-extrabold text-white shadow-soft transition hover:bg-brand-700 active:scale-[0.99]"
             >
               Siguiente
-              <Icon name="chevron-right" className="h-5 w-5" />
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -792,7 +789,7 @@ function CrearSubcampanaScreen() {
 
         {isLoading && (
           <main className="space-y-4 px-5 pt-4">
-            <div className="rounded-3xl bg-white px-4 py-6 text-center text-sm font-semibold text-slate-600 shadow-soft ring-1 ring-black/5">
+            <div className="rounded-3xl bg-white px-4 py-6 text-center text-sm font-semibold text-neutral-600 shadow-soft ring-1 ring-black/5">
               {loadingMessage}
             </div>
           </main>

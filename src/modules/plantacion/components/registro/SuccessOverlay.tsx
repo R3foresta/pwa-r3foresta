@@ -36,8 +36,8 @@ function SuccessOverlay({
           <>
             <div className="relative flex h-24 w-24 items-center justify-center">
               <div className="absolute inset-0 rounded-full border-4 border-white/15" />
-              <div className="absolute inset-0 animate-spin rounded-full border-4 border-emerald-300 border-t-transparent" />
-              <Icon name="planting" className="h-9 w-9 text-emerald-200" />
+              <div className="absolute inset-0 animate-spin rounded-full border-4 border-success-300 border-t-transparent" />
+              <Icon name="planting" className="h-9 w-9 text-success-200" />
             </div>
             <p className="mt-6 text-[10.5px] font-extrabold uppercase tracking-[0.24em] text-white/80">
               Registrando…
@@ -54,10 +54,10 @@ function SuccessOverlay({
         ) : (
           comprobante && (
             <>
-              <div className="flex h-24 w-24 items-center justify-center rounded-full bg-emerald-400/20 ring-4 ring-emerald-300/40">
-                <Icon name="check-circle" className="h-12 w-12 text-emerald-200" />
+              <div className="flex h-24 w-24 items-center justify-center rounded-full bg-success-400/20 ring-4 ring-success-300/40">
+                <Icon name="check-circle" className="h-12 w-12 text-success-200" />
               </div>
-              <p className="mt-6 text-[10.5px] font-extrabold uppercase tracking-[0.24em] text-emerald-200">
+              <p className="mt-6 text-[10.5px] font-extrabold uppercase tracking-[0.24em] text-success-200">
                 Plantación registrada
               </p>
               <h2 className="mt-1 text-3xl font-extrabold tracking-tight">
@@ -76,7 +76,7 @@ function SuccessOverlay({
                 <p className="text-[10px] font-bold uppercase tracking-wider text-white/70">
                   Código de trazabilidad
                 </p>
-                <p className="mt-0.5 break-all text-base font-extrabold tracking-wide text-emerald-200">
+                <p className="mt-0.5 break-all text-base font-extrabold tracking-wide text-success-200">
                   {comprobante.codigo_trazabilidad}
                 </p>
               </div>
@@ -104,7 +104,7 @@ function SuccessOverlay({
                 className={`mt-2 flex w-full items-center gap-2.5 rounded-2xl px-4 py-3 ring-1 ${
                   comprobante.gps_dentro_poligono === false
                     ? 'bg-amber-400/15 ring-amber-300/40'
-                    : 'bg-emerald-400/15 ring-emerald-300/40'
+                    : 'bg-success-400/15 ring-success-300/40'
                 }`}
               >
                 <Icon
@@ -112,7 +112,7 @@ function SuccessOverlay({
                   className={`h-4 w-4 shrink-0 ${
                     comprobante.gps_dentro_poligono === false
                       ? 'text-amber-200'
-                      : 'text-emerald-200'
+                      : 'text-success-200'
                   }`}
                 />
                 <p className="text-left text-xs font-extrabold">
@@ -144,7 +144,7 @@ function SuccessOverlay({
                               `Lote #${consumo.lote_vivero_id}`}
                             {' · '}Asig. #{consumo.asignacion_id}
                           </span>
-                          <span className="shrink-0 font-extrabold text-emerald-200">
+                          <span className="shrink-0 font-extrabold text-success-200">
                             −{consumo.cantidad_consumida}
                           </span>
                         </div>

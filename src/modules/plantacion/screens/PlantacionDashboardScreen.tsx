@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Icon, { type IconName } from '../../../components/Icon'
+import { Badge, statusVariant } from '../../../components/ui'
 import { useAuth } from '../../../contexts/AuthContext'
 import { PlantacionService } from '../../../services/plantacion.service'
 import heroCanopy from '../../../assets/home/hero-canopy.jpg'
@@ -85,13 +86,13 @@ function Progress({
 }) {
   const tones: Record<ProgressTone, string> = {
     brand: 'bg-brand-600',
-    emerald: 'bg-emerald-500',
+    emerald: 'bg-success-500',
     amber: 'bg-amber-500',
     blue: 'bg-blue-500',
   }
   return (
     <div
-      className="relative w-full overflow-hidden rounded-full bg-slate-100"
+      className="relative w-full overflow-hidden rounded-full bg-neutral-100"
       style={{ height }}
     >
       <div
@@ -158,19 +159,19 @@ function StatesDonut({
 
 function EstadoCampaniaBadge({ estado }: { estado: EstadoCampaniaKey }) {
   const meta = estadoCampaniaMeta(estado)
+  // Color de la píldora desde el registro único (status.ts). El punto conserva el
+  // color de dato del chart (meta.dot), consistente con la leyenda del donut.
   return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.14em] ring-1 ${meta.tone}`}
-    >
+    <Badge variant={statusVariant(estado)} size="sm" className="uppercase tracking-[0.14em]">
       <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
       {meta.short}
-    </span>
+    </Badge>
   )
 }
 
 function getTipoTone(tipo: TipoCampania): string {
   if (tipo === 'ARBORIZACION') return 'bg-sky-50 text-sky-800 ring-sky-100'
-  if (tipo === 'FORESTACION') return 'bg-emerald-50 text-emerald-800 ring-emerald-100'
+  if (tipo === 'FORESTACION') return 'bg-success-50 text-success-800 ring-success-100'
   return 'bg-brand-50 text-brand-700 ring-brand-100'
 }
 
@@ -348,38 +349,38 @@ function CO2LiveHero({
   return (
     // El gradiente va inline (no como clases from/via/to) para garantizar el
     // fondo oscuro aunque el dev server tenga una versión vieja del config de
-    // Tailwind (brand-800/900 son recientes). Colores = emerald-800 → brand-800
+    // Tailwind (brand-800/900 son recientes). Colores = success-800 → brand-800
     // → brand-900 del mock.
     <div
-      className="relative overflow-hidden rounded-3xl p-4 text-white shadow-soft ring-1 ring-emerald-400/15"
+      className="relative overflow-hidden rounded-3xl p-4 text-white shadow-soft ring-1 ring-success-400/15"
       style={{
         backgroundImage: 'linear-gradient(to bottom right, #065f46, #0c2e1c 55%, #08140f)',
       }}
     >
-      <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-emerald-300/20 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-12 -left-8 h-32 w-32 rounded-full bg-emerald-400/10 blur-3xl" />
+      <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-success-300/20 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-12 -left-8 h-32 w-32 rounded-full bg-success-400/10 blur-3xl" />
 
       <div className="relative">
         {/* Bloque 1 — CO₂ proyectado */}
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/15 px-2 py-0.5 ring-1 ring-emerald-300/25">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-success-400/15 px-2 py-0.5 ring-1 ring-success-300/25">
               {hasCo2 && (
                 <span className="relative flex h-1.5 w-1.5">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-300 opacity-75" />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-300" />
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success-300 opacity-75" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-success-300" />
                 </span>
               )}
-              <p className="text-[9.5px] font-extrabold uppercase tracking-[0.18em] text-emerald-100">
+              <p className="text-[9.5px] font-extrabold uppercase tracking-[0.18em] text-success-100">
                 {hasCo2 ? 'Captura en vivo' : 'Captura estimada'}
               </p>
             </div>
-            <p className="mt-2 text-[10px] font-extrabold uppercase tracking-[0.18em] text-emerald-200/90">
+            <p className="mt-2 text-[10px] font-extrabold uppercase tracking-[0.18em] text-success-200/90">
               CO₂ proyectado · acumulado del programa
             </p>
           </div>
-          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-emerald-400/15 ring-1 ring-emerald-300/30">
-            <Icon name="drop" className="h-6 w-6 text-emerald-200" />
+          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-success-400/15 ring-1 ring-success-300/30">
+            <Icon name="drop" className="h-6 w-6 text-success-200" />
           </div>
         </div>
 
@@ -387,16 +388,16 @@ function CO2LiveHero({
           <>
             <p className="mt-2.5 font-extrabold leading-none tracking-tight tabular-nums">
               <span className="text-[44px]">{formatEntero(intPart)}</span>
-              <span className="text-[20px] text-emerald-200/85">,{decPart}</span>
-              <span className="ml-2 text-base font-extrabold text-emerald-200/80">T</span>
+              <span className="text-[20px] text-success-200/85">,{decPart}</span>
+              <span className="ml-2 text-base font-extrabold text-success-200/80">T</span>
             </p>
-            <p className="mt-1.5 text-[11px] font-bold text-emerald-100/80">
+            <p className="mt-1.5 text-[11px] font-bold text-success-100/80">
               midiendo ~{kgPorHora} kg / h en tiempo real
             </p>
           </>
         ) : (
-          <div className="mt-2.5 rounded-2xl bg-emerald-400/10 px-3 py-2.5 ring-1 ring-emerald-300/20">
-            <p className="text-[12px] font-bold leading-snug text-emerald-100/90">
+          <div className="mt-2.5 rounded-2xl bg-success-400/10 px-3 py-2.5 ring-1 ring-success-300/20">
+            <p className="text-[12px] font-bold leading-snug text-success-100/90">
               La captura se proyectará a medida que se registren plantaciones en las
               sub-campañas.
             </p>
@@ -404,51 +405,51 @@ function CO2LiveHero({
         )}
 
         {/* Divisor sutil */}
-        <div className="my-3.5 h-px w-full bg-gradient-to-r from-transparent via-emerald-300/25 to-transparent" />
+        <div className="my-3.5 h-px w-full bg-gradient-to-r from-transparent via-success-300/25 to-transparent" />
 
         {/* Bloque 2 — Árboles plantados (la causa del CO₂) */}
         <div className="flex items-stretch gap-3">
           <div className="flex min-w-0 flex-1 items-center gap-2.5">
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-emerald-400/15 ring-1 ring-emerald-300/25">
-              <Icon name="trees" className="h-5 w-5 text-emerald-200" />
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-success-400/15 ring-1 ring-success-300/25">
+              <Icon name="trees" className="h-5 w-5 text-success-200" />
             </div>
             <div className="min-w-0">
-              <p className="text-[9.5px] font-extrabold uppercase tracking-[0.16em] text-emerald-200/80">
+              <p className="text-[9.5px] font-extrabold uppercase tracking-[0.16em] text-success-200/80">
                 Árboles plantados
               </p>
               <p className="text-[20px] font-extrabold leading-none tabular-nums text-white">
                 {formatEntero(arbolesPlantados)}
               </p>
               {metaArboles > 0 && pctArboles !== null ? (
-                <p className="mt-1 inline-flex items-center gap-1 text-[10.5px] font-bold text-emerald-200/85">
+                <p className="mt-1 inline-flex items-center gap-1 text-[10.5px] font-bold text-success-200/85">
                   <Icon name="trending-up" className="h-3 w-3" />
                   {pctArboles}% de la meta · {formatEntero(metaArboles)}
                 </p>
               ) : (
-                <p className="mt-1 text-[10.5px] font-bold text-emerald-200/80">
+                <p className="mt-1 text-[10.5px] font-bold text-success-200/80">
                   sin meta agregada aún
                 </p>
               )}
             </div>
           </div>
-          <div className="w-px self-stretch bg-emerald-300/15" />
+          <div className="w-px self-stretch bg-success-300/15" />
           <div className="flex min-w-0 flex-1 flex-col justify-center">
-            <p className="text-[9.5px] font-extrabold uppercase tracking-[0.16em] text-emerald-200/80">
+            <p className="text-[9.5px] font-extrabold uppercase tracking-[0.16em] text-success-200/80">
               Captura / árbol
             </p>
             <p className="text-[20px] font-extrabold leading-none tabular-nums text-white">
               {kgPorArbol !== null ? (
                 <>
                   {kgPorArbol.toFixed(2).replace('.', ',')}
-                  <span className="ml-1 text-[13px] font-extrabold text-emerald-200/80">
+                  <span className="ml-1 text-[13px] font-extrabold text-success-200/80">
                     kg
                   </span>
                 </>
               ) : (
-                <span className="text-emerald-100/70">—</span>
+                <span className="text-success-100/70">—</span>
               )}
             </p>
-            <p className="mt-1 text-[10.5px] font-bold text-emerald-200/80">
+            <p className="mt-1 text-[10.5px] font-bold text-success-200/80">
               promedio proyectado
             </p>
           </div>
@@ -457,14 +458,14 @@ function CO2LiveHero({
         {metaArboles > 0 && pctArboles !== null && (
           <div className="mt-3">
             <div className="flex items-baseline justify-between text-[11px] font-extrabold">
-              <span className="text-emerald-100/80">
+              <span className="text-success-100/80">
                 Meta {formatEntero(metaArboles)} árboles
               </span>
-              <span className="tabular-nums text-emerald-200">{pctArboles}%</span>
+              <span className="tabular-nums text-success-200">{pctArboles}%</span>
             </div>
             <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-white/15">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-emerald-300 to-emerald-200 shadow-[0_0_10px_rgba(110,231,183,0.55)]"
+                className="h-full rounded-full bg-gradient-to-r from-success-300 to-success-200 shadow-[0_0_10px_rgba(110,231,183,0.55)]"
                 style={{ width: `${pctArboles}%` }}
               />
             </div>
@@ -496,7 +497,7 @@ function MetricCard({
 }) {
   const toneText: Record<ProgressTone, string> = {
     brand: 'text-brand-700',
-    emerald: 'text-emerald-700',
+    emerald: 'text-success-700',
     amber: 'text-amber-700',
     blue: 'text-blue-700',
   }
@@ -516,14 +517,14 @@ function MetricCard({
         className={`mt-1.5 text-[24px] font-extrabold leading-none tracking-tight tabular-nums ${toneText[tone]}`}
       >
         {value}
-        {unit && <span className="ml-1 text-sm font-extrabold text-slate-400">{unit}</span>}
+        {unit && <span className="ml-1 text-sm font-extrabold text-neutral-400">{unit}</span>}
       </p>
       {pct !== undefined && (
         <div className="mt-2">
           <Progress pct={pct} tone={tone} />
         </div>
       )}
-      {footer && <p className="mt-2 text-[11px] font-medium text-slate-500">{footer}</p>}
+      {footer && <p className="mt-2 text-[11px] font-medium text-neutral-500">{footer}</p>}
     </div>
   )
 }
@@ -563,7 +564,7 @@ function EstadosBreakdown({
         <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
           Estado de campañas
         </p>
-        <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-slate-400">
+        <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-neutral-400">
           {total} total
         </p>
       </div>
@@ -648,7 +649,7 @@ function OrgPile({ campania }: { campania: Campania }) {
       ))}
       {rest > 0 && (
         <span
-          className="flex h-8 w-8 items-center justify-center rounded-2xl bg-slate-100 text-[10px] font-extrabold text-slate-600 ring-2 ring-white"
+          className="flex h-8 w-8 items-center justify-center rounded-2xl bg-neutral-100 text-[10px] font-extrabold text-neutral-600 ring-2 ring-white"
           style={{ marginLeft: -10 }}
         >
           +{rest}
@@ -700,12 +701,12 @@ function CampaniaRow({
           <p className="mt-1 truncate text-[14px] font-extrabold leading-tight text-brand-800">
             {campania.nombre}
           </p>
-          <p className="mt-0.5 flex items-center gap-1 truncate text-[11px] font-semibold text-slate-500">
-            <Icon name="pin" className="h-3 w-3 text-slate-400" />
+          <p className="mt-0.5 flex items-center gap-1 truncate text-[11px] font-semibold text-neutral-500">
+            <Icon name="pin" className="h-3 w-3 text-neutral-400" />
             {zonaResumen(campania)}
           </p>
         </div>
-        <Icon name="chevron-right" className="mt-0.5 h-4 w-4 flex-shrink-0 text-slate-400" />
+        <Icon name="chevron-right" className="mt-0.5 h-4 w-4 flex-shrink-0 text-neutral-400" />
       </div>
 
       {/* Resumen jerárquico: conteo de sub-campañas por estado */}
@@ -720,7 +721,7 @@ function CampaniaRow({
             <p className="text-[9.5px] font-extrabold uppercase tracking-[0.14em] text-brand-500">
               Organizaciones asociadas
             </p>
-            <p className="mt-0.5 truncate text-[11px] font-semibold text-slate-500">
+            <p className="mt-0.5 truncate text-[11px] font-semibold text-neutral-500">
               {organizaciones.map((org) => org.nombre).join(' · ')}
             </p>
           </div>
@@ -736,7 +737,7 @@ function CampaniaRow({
             </p>
             <p className="text-[11px] font-extrabold tabular-nums text-brand-800">
               {formatEntero(plantados)}
-              <span className="text-slate-400"> / {formatEntero(meta)}</span>
+              <span className="text-neutral-400"> / {formatEntero(meta)}</span>
               <span className="ml-1.5 text-brand-500">{pct}%</span>
             </p>
           </div>
@@ -747,8 +748,8 @@ function CampaniaRow({
       )}
 
       <div className="mt-2.5 flex items-center justify-between gap-2">
-        <p className="flex items-center gap-1 text-[10.5px] font-bold text-slate-500">
-          <Icon name="date" className="h-3 w-3 text-slate-400" />
+        <p className="flex items-center gap-1 text-[10.5px] font-bold text-neutral-500">
+          <Icon name="date" className="h-3 w-3 text-neutral-400" />
           {formatDate(campania.fecha_estimada_inicio)} → {formatDate(campania.fecha_estimada_fin)}
         </p>
         {Number.isFinite(hectareas) && hectareas > 0 && (
@@ -764,8 +765,11 @@ function CampaniaRow({
 // ── Actividad reciente ────────────────────────────────────────────────────
 
 function ActividadRow({ item }: { item: ActividadDemoItem }) {
+  // Theming local del feed de actividad (no es el estado de campaña): ícono + tinte
+  // por tipo de evento. Es mini-viz data-driven, distinto de ESTADO_CAMPANIA_META;
+  // se mantiene inline con tokens migrados.
   const kindMeta: Record<ActividadDemoItem['kind'], { icon: IconName; tone: string }> = {
-    PLANTACION: { icon: 'planting', tone: 'bg-emerald-50 text-emerald-700' },
+    PLANTACION: { icon: 'planting', tone: 'bg-success-50 text-success-700' },
     CAMPANA: { icon: 'plus-circle', tone: 'bg-brand-50 text-brand-700' },
     EQUIPO: { icon: 'users', tone: 'bg-blue-50 text-blue-700' },
     PAUSA: { icon: 'pause', tone: 'bg-amber-50 text-amber-800' },
@@ -780,11 +784,11 @@ function ActividadRow({ item }: { item: ActividadDemoItem }) {
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-[13px] font-extrabold leading-tight text-brand-800">{item.label}</p>
-        <p className="mt-0.5 truncate text-[11px] font-semibold text-slate-500">
+        <p className="mt-0.5 truncate text-[11px] font-semibold text-neutral-500">
           {item.contexto}
         </p>
       </div>
-      <p className="whitespace-nowrap pt-0.5 text-[10.5px] font-bold text-slate-400">
+      <p className="whitespace-nowrap pt-0.5 text-[10.5px] font-bold text-neutral-400">
         {item.tiempo}
       </p>
     </li>
@@ -941,7 +945,7 @@ function PlantacionDashboardScreen() {
               <p className="mt-3 text-base font-extrabold text-brand-800">
                 Aún no hay campañas
               </p>
-              <p className="mt-1 text-xs font-semibold leading-relaxed text-slate-500">
+              <p className="mt-1 text-xs font-semibold leading-relaxed text-neutral-500">
                 {canCreate
                   ? 'Crea una campaña para luego agregar sub-campañas operativas.'
                   : 'Cuando existan campañas verás aquí el resumen del programa.'}
@@ -1042,7 +1046,7 @@ function PlantacionDashboardScreen() {
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
                     Campañas{' '}
-                    <span className="text-slate-400">
+                    <span className="text-neutral-400">
                       · {campaniasVisibles.length} de {campaniasPeriodo.length}
                     </span>
                   </p>
@@ -1084,11 +1088,11 @@ function PlantacionDashboardScreen() {
                 <div className="mt-1 space-y-2">
                   {campaniasVisibles.length === 0 ? (
                     <div className="rounded-3xl bg-white p-6 text-center shadow-soft ring-1 ring-black/5">
-                      <Icon name="planting" className="mx-auto h-8 w-8 text-slate-300" />
+                      <Icon name="planting" className="mx-auto h-8 w-8 text-neutral-300" />
                       <p className="mt-2 text-sm font-extrabold text-brand-800">
                         Sin campañas en este estado
                       </p>
-                      <p className="text-[11px] font-semibold text-slate-500">
+                      <p className="text-[11px] font-semibold text-neutral-500">
                         Cambia el filtro o el periodo.
                       </p>
                     </div>
@@ -1121,7 +1125,7 @@ function PlantacionDashboardScreen() {
                     Vista previa
                   </span>
                 </header>
-                <ul className="divide-y divide-slate-100 pb-1.5">
+                <ul className="divide-y divide-neutral-100 pb-1.5">
                   {ACTIVIDAD_DEMO.map((item) => (
                     <ActividadRow key={item.id} item={item} />
                   ))}

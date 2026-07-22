@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Icon from '../../../components/Icon'
+import { Button } from '../../../components/ui'
 import { useAuth } from '../../../contexts/AuthContext'
 import { PlantacionService } from '../../../services/plantacion.service'
 import FotosUploader, { type Photo } from '../../vivero/components/event/FotosUploader'
@@ -478,24 +479,16 @@ function RegistrarPlantacionScreen() {
             <h2 className="mt-4 text-lg font-extrabold text-brand-700">
               No se pudo cargar
             </h2>
-            <p className="mt-1 text-sm font-semibold text-slate-500">
+            <p className="mt-1 text-sm font-semibold text-neutral-500">
               {error || 'No se pudo cargar el contexto de plantación.'}
             </p>
             <div className="mt-5 flex flex-col gap-2">
-              <button
-                type="button"
-                onClick={() => void refetch()}
-                className="w-full rounded-2xl bg-brand-500 px-5 py-3.5 text-sm font-extrabold text-white shadow-soft transition hover:bg-brand-600"
-              >
+              <Button variant="primary" fullWidth onClick={() => void refetch()}>
                 Reintentar
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate(detailPath)}
-                className="w-full rounded-2xl border border-brand-200 bg-white px-5 py-3.5 text-sm font-extrabold text-brand-600 transition hover:bg-brand-50"
-              >
+              </Button>
+              <Button variant="secondary" fullWidth onClick={() => navigate(detailPath)}>
                 Volver
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -515,19 +508,15 @@ function RegistrarPlantacionScreen() {
               No puedes registrar aquí
             </h2>
             <p className="mt-1 text-sm font-semibold text-brand-600">{motivoBloqueo}</p>
-            <p className="mt-3 text-xs font-semibold text-slate-400">
+            <p className="mt-3 text-xs font-semibold text-neutral-400">
               {context.subcampania.nombre}
               {context.subcampania.codigo_trazabilidad
                 ? ` · ${context.subcampania.codigo_trazabilidad}`
                 : ''}
             </p>
-            <button
-              type="button"
-              onClick={() => navigate(detailPath)}
-              className="mt-5 w-full rounded-2xl bg-brand-500 px-6 py-3.5 text-sm font-extrabold text-white shadow-soft transition hover:bg-brand-600"
-            >
+            <Button variant="primary" fullWidth onClick={() => navigate(detailPath)} className="mt-5">
               Volver a la subcampaña
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -669,13 +658,13 @@ function RegistrarPlantacionScreen() {
                   min={fechaMinima}
                   max={hoyISO}
                   onChange={(event) => setFecha(event.target.value)}
-                  className={`mt-2 w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-slate-700 shadow-soft outline-none transition focus:ring-2 ${
+                  className={`mt-2 w-full rounded-2xl border px-4 py-3 text-sm font-semibold text-neutral-700 shadow-soft outline-none transition focus:ring-2 ${
                     step2Touched && !fechaValida
                       ? 'border-red-400 bg-red-50 focus:border-red-400 focus:ring-red-200'
-                      : 'border-slate-200 bg-white focus:border-brand-400 focus:ring-brand-200'
+                      : 'border-neutral-200 bg-white focus:border-brand-400 focus:ring-brand-200'
                   }`}
                 />
-                <p className="mt-1.5 text-xs font-semibold text-slate-400">
+                <p className="mt-1.5 text-xs font-semibold text-neutral-400">
                   Se admite hasta {maxDiasRetroactivos} días hacia atrás.
                 </p>
                 {step2Touched && !fechaValida && (
@@ -693,13 +682,13 @@ function RegistrarPlantacionScreen() {
                       ¿Plantaste con alguien?
                     </p>
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
                     Opcional
                   </span>
                 </div>
 
                 {equipoSeleccionable.length === 0 ? (
-                  <p className="mt-2 text-xs font-semibold text-slate-400">
+                  <p className="mt-2 text-xs font-semibold text-neutral-400">
                     No hay otros miembros en el equipo de esta subcampaña.
                   </p>
                 ) : (
@@ -751,7 +740,7 @@ function RegistrarPlantacionScreen() {
                               className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${
                                 checked
                                   ? 'bg-white text-brand-700'
-                                  : 'bg-slate-100 text-slate-400'
+                                  : 'bg-neutral-100 text-neutral-400'
                               }`}
                             >
                               <Icon
@@ -775,7 +764,7 @@ function RegistrarPlantacionScreen() {
                       Notas de campo
                     </p>
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
                     Opcional
                   </span>
                 </div>
@@ -785,9 +774,9 @@ function RegistrarPlantacionScreen() {
                   rows={3}
                   maxLength={2000}
                   placeholder="Cómo encontraste el terreno, condiciones del suelo, clima..."
-                  className="mt-2 w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-soft outline-none transition placeholder:text-slate-400 focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
+                  className="mt-2 w-full resize-none rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm font-semibold text-neutral-700 shadow-soft outline-none transition placeholder:text-neutral-400 focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
                 />
-                <p className="text-right text-[11px] font-semibold text-slate-400">
+                <p className="text-right text-[11px] font-semibold text-neutral-400">
                   {observaciones.trim().length}/2000
                 </p>
               </section>
@@ -820,7 +809,7 @@ function RegistrarPlantacionScreen() {
                 </div>
               </div>
 
-              <div className="divide-y divide-slate-100 rounded-3xl bg-white shadow-soft ring-1 ring-black/5">
+              <div className="divide-y divide-neutral-100 rounded-3xl bg-white shadow-soft ring-1 ring-black/5">
                 <SummaryRow icon="date" label="Fecha de plantación" value={fecha} />
                 <SummaryRow
                   icon="pin"
@@ -831,7 +820,7 @@ function RegistrarPlantacionScreen() {
                       {parsedLat.toFixed(6)}, {parsedLng.toFixed(6)}
                       <span
                         className={`ml-1.5 text-[11px] font-bold ${
-                          precisionBaja ? 'text-amber-600' : 'text-slate-400'
+                          precisionBaja ? 'text-amber-600' : 'text-neutral-400'
                         }`}
                       >
                         {precisionM !== null ? `±${precisionM} m` : 'manual'}
@@ -855,7 +844,7 @@ function RegistrarPlantacionScreen() {
                     icon="note"
                     label="Notas de campo"
                     value={
-                      <span className="whitespace-pre-line text-xs font-semibold text-slate-600">
+                      <span className="whitespace-pre-line text-xs font-semibold text-neutral-600">
                         {observaciones.trim()}
                       </span>
                     }
@@ -866,7 +855,7 @@ function RegistrarPlantacionScreen() {
                     <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-brand-500">
                       Evidencia fotográfica
                     </p>
-                    <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
+                    <span className="rounded-full bg-success-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-success-700">
                       {photos.length} {photos.length === 1 ? 'foto' : 'fotos'}
                     </span>
                   </div>
@@ -894,7 +883,7 @@ function RegistrarPlantacionScreen() {
                   {especiesConCantidad.map((row) => (
                     <div
                       key={row.planta_id}
-                      className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2"
+                      className="flex items-center justify-between rounded-xl bg-neutral-50 px-3 py-2"
                     >
                       <span className="text-sm font-bold text-brand-800">
                         {row.nombre}
@@ -905,13 +894,13 @@ function RegistrarPlantacionScreen() {
                     </div>
                   ))}
                 </div>
-                <div className="mt-2 flex items-center justify-between border-t border-slate-100 px-3 pt-2">
+                <div className="mt-2 flex items-center justify-between border-t border-neutral-100 px-3 pt-2">
                   <span className="text-sm font-extrabold text-brand-700">Total</span>
                   <span className="text-base font-extrabold tabular-nums text-brand-700">
                     {totalDeclarado}
                   </span>
                 </div>
-                <p className="mt-2 text-[11px] font-semibold text-slate-400">
+                <p className="mt-2 text-[11px] font-semibold text-neutral-400">
                   El stock se consumirá automáticamente de las asignaciones más
                   antiguas de cada especie.
                 </p>

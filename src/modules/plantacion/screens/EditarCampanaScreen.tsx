@@ -220,7 +220,7 @@ function EditarCampanaScreen() {
           )}
 
           {loading && (
-            <div className="rounded-3xl bg-white px-4 py-6 text-center text-sm font-semibold text-slate-600 shadow-soft ring-1 ring-black/5">
+            <div className="rounded-3xl bg-white px-4 py-6 text-center text-sm font-semibold text-neutral-600 shadow-soft ring-1 ring-black/5">
               Cargando campaña...
             </div>
           )}
@@ -269,8 +269,8 @@ function EditarCampanaScreen() {
                 disabled={!canEdit || submitting || !isDirty}
                 className={`flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-4 text-base font-extrabold text-white shadow-soft transition active:scale-[0.99] ${
                   !canEdit || submitting || !isDirty
-                    ? 'cursor-not-allowed bg-slate-400'
-                    : 'bg-emerald-600 hover:bg-emerald-700'
+                    ? 'cursor-not-allowed bg-neutral-400'
+                    : 'bg-success-600 hover:bg-success-700'
                 }`}
               >
                 <Icon name="check" className="h-5 w-5" />

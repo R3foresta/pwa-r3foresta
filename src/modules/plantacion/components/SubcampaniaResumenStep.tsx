@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { MapContainer, Polygon, TileLayer } from 'react-leaflet'
 import type { LatLngTuple } from 'leaflet'
 import Icon from '../../../components/Icon'
+import { Button } from '../../../components/ui'
 import { PlantacionService } from '../../../services/plantacion.service'
 import type {
   ActivarSubcampaniaData,
@@ -256,7 +257,7 @@ function SubcampaniaResumenStep({
         {loading && (
           <section className="space-y-3 rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-12 animate-pulse rounded-2xl bg-slate-100" />
+              <div key={i} className="h-12 animate-pulse rounded-2xl bg-neutral-100" />
             ))}
           </section>
         )}
@@ -278,7 +279,7 @@ function SubcampaniaResumenStep({
                 <p className="mt-1 text-[22px] font-extrabold tabular-nums leading-none text-brand-800">
                   {metaTotal != null ? metaTotal.toLocaleString('es-BO') : '—'}
                 </p>
-                <p className="text-[10px] font-semibold text-slate-400">árboles</p>
+                <p className="text-[10px] font-semibold text-neutral-400">árboles</p>
               </div>
               <div className="rounded-2xl bg-white px-3 py-3 shadow-soft ring-1 ring-black/5">
                 <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-brand-500">
@@ -287,7 +288,7 @@ function SubcampaniaResumenStep({
                 <p className="mt-1 text-[22px] font-extrabold tabular-nums leading-none text-brand-800">
                   {allMembers.length}
                 </p>
-                <p className="text-[10px] font-semibold text-slate-400">
+                <p className="text-[10px] font-semibold text-neutral-400">
                   {allMembers.length === 1 ? 'miembro' : 'miembros'}
                 </p>
               </div>
@@ -313,7 +314,7 @@ function SubcampaniaResumenStep({
                 Polígono
               </p>
               {polygonPositions.length > 0 ? (
-                <div className="h-40 overflow-hidden rounded-2xl bg-slate-100 ring-1 ring-slate-200">
+                <div className="h-40 overflow-hidden rounded-2xl bg-neutral-100 ring-1 ring-neutral-200">
                   <MapContainer
                     center={mapCenter}
                     zoom={14}
@@ -340,9 +341,9 @@ function SubcampaniaResumenStep({
                   </MapContainer>
                 </div>
               ) : (
-                <div className="flex items-center gap-3 rounded-2xl bg-slate-50 px-4 py-4 ring-1 ring-slate-200">
-                  <Icon name="info" className="h-5 w-5 shrink-0 text-slate-400" />
-                  <p className="text-xs font-semibold text-slate-500">
+                <div className="flex items-center gap-3 rounded-2xl bg-neutral-50 px-4 py-4 ring-1 ring-neutral-200">
+                  <Icon name="info" className="h-5 w-5 shrink-0 text-neutral-400" />
+                  <p className="text-xs font-semibold text-neutral-500">
                     Aún no se definió el polígono.
                   </p>
                 </div>
@@ -362,7 +363,7 @@ function SubcampaniaResumenStep({
                       {formatDate(fechaInicio, { fallback: '—' })}
                     </p>
                   </div>
-                  <Icon name="chevron-right" className="h-4 w-4 shrink-0 text-slate-400" />
+                  <Icon name="chevron-right" className="h-4 w-4 shrink-0 text-neutral-400" />
                   <div className="flex items-center gap-2 rounded-2xl bg-brand-50 px-3 py-2.5 ring-1 ring-brand-100">
                     <Icon name="date" className="h-4 w-4 shrink-0 text-brand-500" />
                     <p className="text-xs font-extrabold text-brand-800">
@@ -412,7 +413,7 @@ function SubcampaniaResumenStep({
                 <p className="mb-2 text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
                   Descripción
                 </p>
-                <p className="text-sm font-semibold leading-relaxed text-slate-700">
+                <p className="text-sm font-semibold leading-relaxed text-neutral-700">
                   {descripcion}
                 </p>
               </section>
@@ -427,7 +428,7 @@ function SubcampaniaResumenStep({
                 <p className="text-sm font-extrabold leading-relaxed text-brand-800">
                   {especiesLabel}
                 </p>
-                <p className="mt-1.5 text-[10.5px] font-semibold italic text-slate-400">
+                <p className="mt-1.5 text-[10.5px] font-semibold italic text-neutral-400">
                   Metas planificadas. El stock se asigna (entrega) tras activar.
                 </p>
               </section>
@@ -451,12 +452,12 @@ function SubcampaniaResumenStep({
                       />
                     ))}
                     {allMembers.length > 5 && (
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-extrabold text-slate-700 ring-2 ring-white">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-200 text-xs font-extrabold text-neutral-700 ring-2 ring-white">
                         +{allMembers.length - 5}
                       </span>
                     )}
                   </div>
-                  <p className="min-w-0 text-xs font-semibold leading-snug text-slate-600">
+                  <p className="min-w-0 text-xs font-semibold leading-snug text-neutral-600">
                     {allMembers
                       .slice(0, 3)
                       .map((m) => m.nombre_usuario ?? `Usuario ${m.usuario_id}`)
@@ -478,28 +479,24 @@ function SubcampaniaResumenStep({
             </p>
           )}
           <div className="mb-2 grid grid-cols-2 gap-2">
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              fullWidth
+              leftIcon="arrow-left"
               onClick={onBackToEquipo}
               disabled={saving || activating}
-              className="flex items-center justify-center gap-2 rounded-2xl bg-white px-3 py-3 text-sm font-extrabold text-brand-700 shadow-soft ring-1 ring-brand-100 transition hover:bg-brand-50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <Icon name="arrow-left" className="h-4 w-4" />
               Atrás
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="secondary"
+              fullWidth
+              leftIcon="file"
               onClick={() => void handleSave()}
               disabled={saving || activating || loading || loadError !== null}
-              className={`flex items-center justify-center gap-2 rounded-2xl px-3 py-3 text-sm font-extrabold shadow-soft transition active:scale-[0.99] ${
-                saving || activating || loading || loadError !== null
-                  ? 'cursor-not-allowed bg-slate-200 text-slate-400'
-                  : 'bg-white text-brand-700 ring-1 ring-brand-100 hover:bg-brand-50'
-              }`}
             >
-              <Icon name="file" className="h-4 w-4" />
               {saving ? 'Guardando…' : 'Guardar borrador'}
-            </button>
+            </Button>
           </div>
           <button
             type="button"
@@ -509,15 +506,15 @@ function SubcampaniaResumenStep({
             }
             className={`flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-4 text-base font-extrabold text-white shadow-soft transition active:scale-[0.99] ${
               activating || saving || loading || loadError !== null || !canActivate
-                ? 'cursor-not-allowed bg-slate-400/70'
-                : 'bg-emerald-600 hover:bg-emerald-700'
+                ? 'cursor-not-allowed bg-neutral-400/70'
+                : 'bg-success-600 hover:bg-success-700'
             }`}
           >
             <Icon name="check" className="h-5 w-5" />
             {activating ? 'Activando…' : 'Activar subcampaña'}
           </button>
           {!canActivate && !loading && !loadError && subcampania && (
-            <p className="mt-2 text-center text-[11px] font-semibold text-slate-500">
+            <p className="mt-2 text-center text-[11px] font-semibold text-neutral-500">
               {activationBlockedReason}
             </p>
           )}

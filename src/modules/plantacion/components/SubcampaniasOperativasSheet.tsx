@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import Icon from '../../../components/Icon'
+import { Button } from '../../../components/ui'
 import { useAuth } from '../../../contexts/AuthContext'
 import { PlantacionService } from '../../../services/plantacion.service'
 import type { Subcampania } from '../types/contracts'
@@ -70,9 +71,9 @@ function SubcampaniasOperativasSheet({ onVer, onRegistrar, onBack }: Props) {
       {state === 'loading' && (
         <div className="space-y-2 px-2 py-1">
           {[0, 1].map((key) => (
-            <div key={key} className="animate-pulse rounded-2xl bg-slate-100 p-4">
-              <div className="h-3 w-2/3 rounded bg-slate-200" />
-              <div className="mt-2 h-3 w-1/3 rounded bg-slate-200" />
+            <div key={key} className="animate-pulse rounded-2xl bg-neutral-100 p-4">
+              <div className="h-3 w-2/3 rounded bg-neutral-200" />
+              <div className="mt-2 h-3 w-1/3 rounded bg-neutral-200" />
             </div>
           ))}
         </div>
@@ -81,13 +82,9 @@ function SubcampaniasOperativasSheet({ onVer, onRegistrar, onBack }: Props) {
       {state === 'error' && (
         <div className="space-y-3 rounded-2xl bg-red-50 p-4 text-center">
           <p className="text-sm font-semibold text-red-600">{error}</p>
-          <button
-            type="button"
-            onClick={() => setAttempt((prev) => prev + 1)}
-            className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
-          >
+          <Button variant="danger" size="sm" onClick={() => setAttempt((prev) => prev + 1)}>
             Reintentar
-          </button>
+          </Button>
         </div>
       )}
 
@@ -110,7 +107,7 @@ function SubcampaniasOperativasSheet({ onVer, onRegistrar, onBack }: Props) {
           return (
             <div
               key={sub.id}
-              className="mb-2 rounded-2xl border border-slate-100 bg-white p-4 shadow-soft"
+              className="mb-2 rounded-2xl border border-neutral-100 bg-white p-4 shadow-soft"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
@@ -131,39 +128,26 @@ function SubcampaniasOperativasSheet({ onVer, onRegistrar, onBack }: Props) {
               </div>
 
               {typeof sub.plantados === 'number' && (
-                <p className="mt-1 text-[11px] font-semibold text-slate-500">
+                <p className="mt-1 text-[11px] font-semibold text-neutral-500">
                   {sub.plantados} / {sub.meta_total_arboles} árboles plantados
                 </p>
               )}
 
               <div className="mt-3 flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => onVer(sub.id)}
-                  className="flex-1 rounded-xl border border-brand-200 bg-white px-3 py-2.5 text-xs font-extrabold text-brand-600 transition hover:bg-brand-50"
-                >
+                <Button variant="secondary" size="sm" className="flex-1" onClick={() => onVer(sub.id)}>
                   Ver subcampaña
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onRegistrar(sub.id)}
-                  className="flex-1 rounded-xl bg-brand-500 px-3 py-2.5 text-xs font-extrabold text-white transition hover:bg-brand-600"
-                >
+                </Button>
+                <Button variant="primary" size="sm" className="flex-1" onClick={() => onRegistrar(sub.id)}>
                   Registrar plantación
-                </button>
+                </Button>
               </div>
             </div>
           )
         })}
 
-      <button
-        type="button"
-        onClick={onBack}
-        className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-extrabold text-brand-500 transition hover:bg-slate-50"
-      >
-        <Icon name="arrow-left" className="h-4 w-4" />
+      <Button variant="ghost" size="sm" fullWidth leftIcon="arrow-left" onClick={onBack} className="mt-1">
         Volver a acciones rápidas
-      </button>
+      </Button>
     </div>
   )
 }

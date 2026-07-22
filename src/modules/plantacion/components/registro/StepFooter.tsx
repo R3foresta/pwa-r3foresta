@@ -13,11 +13,13 @@ type Props = {
 function StepFooter({ label, onClick, disabled = false, hint, tone = 'brand' }: Props) {
   const toneClass =
     tone === 'success'
-      ? 'bg-emerald-600 hover:bg-emerald-700'
+      ? 'bg-success-600 hover:bg-success-700'
       : 'bg-brand-500 hover:bg-brand-600'
 
   return (
     <div className="sticky bottom-24 z-30 -mx-5 bg-gradient-to-t from-[#eef1eb] via-[#eef1eb]/95 to-transparent px-5 pb-1 pt-5">
+      {/* CTA de paso themeable (brand|success). `success` no es variante de <Button>
+          y el verde de acción se preserva por paridad → se mantiene nativo. (gotcha §6.6) */}
       <button
         type="button"
         onClick={onClick}
@@ -27,7 +29,7 @@ function StepFooter({ label, onClick, disabled = false, hint, tone = 'brand' }: 
         {label}
       </button>
       {hint && (
-        <p className="mt-2 text-center text-[11px] font-semibold text-slate-400">
+        <p className="mt-2 text-center text-[11px] font-semibold text-neutral-400">
           {hint}
         </p>
       )}

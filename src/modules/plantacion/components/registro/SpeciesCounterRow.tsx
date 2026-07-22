@@ -58,14 +58,14 @@ function SpeciesCounterRow({
         <div className="min-w-0">
           <p className="text-sm font-extrabold leading-tight text-brand-800">{nombre}</p>
           {nombreCientifico && (
-            <p className="truncate text-[11px] font-semibold italic text-slate-400">
+            <p className="truncate text-[11px] font-semibold italic text-neutral-400">
               {nombreCientifico}
             </p>
           )}
         </div>
         <span
           className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold ${
-            disabled ? 'bg-slate-100 text-slate-400' : 'bg-brand-50 text-brand-700'
+            disabled ? 'bg-neutral-100 text-neutral-400' : 'bg-brand-50 text-brand-700'
           }`}
         >
           hasta {maxRegistrable}
@@ -95,7 +95,7 @@ function SpeciesCounterRow({
             disabled={disabled}
             placeholder="0"
             aria-label={`Cantidad de ${nombre}`}
-            className={`w-full bg-transparent text-center text-[28px] font-extrabold leading-none tracking-tight tabular-nums outline-none [appearance:textfield] placeholder:text-slate-300 disabled:text-slate-300 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none ${
+            className={`w-full bg-transparent text-center text-[28px] font-extrabold leading-none tracking-tight tabular-nums outline-none [appearance:textfield] placeholder:text-neutral-300 disabled:text-neutral-300 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none ${
               inputError ? 'text-red-500' : 'text-brand-800'
             }`}
           />
@@ -117,22 +117,22 @@ function SpeciesCounterRow({
 
       <div className="mt-3">
         <div className="flex items-baseline justify-between">
-          <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-slate-500">
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-neutral-500">
             Avance de meta
           </p>
           <p className="text-[11px] font-extrabold tabular-nums text-brand-700">
             {plantado + cantidad}
-            <span className="text-slate-400"> / {objetivo}</span>
+            <span className="text-neutral-400"> / {objetivo}</span>
           </p>
         </div>
-        <div className="mt-1 flex h-2 w-full overflow-hidden rounded-full bg-slate-100">
+        <div className="mt-1 flex h-2 w-full overflow-hidden rounded-full bg-neutral-100">
           <div className="h-full bg-brand-300" style={{ width: `${pctPlantado}%` }} />
-          <div className="h-full bg-emerald-500" style={{ width: `${pctNuevo}%` }} />
+          <div className="h-full bg-success-500" style={{ width: `${pctNuevo}%` }} />
         </div>
-        <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] font-bold text-slate-400">
+        <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] font-bold text-neutral-400">
           <span>Plantado {plantado}</span>
           <span className="text-brand-600">Pendiente {pendiente}</span>
-          <span className={stock > 0 ? 'text-emerald-600' : 'text-red-500'}>
+          <span className={stock > 0 ? 'text-success-600' : 'text-red-500'}>
             Stock {stock}
           </span>
         </div>
@@ -142,7 +142,7 @@ function SpeciesCounterRow({
         <p className="mt-2 text-xs font-semibold text-red-500">{inputError}</p>
       )}
       {disabled && !inputError && (
-        <p className="mt-2 text-xs font-semibold text-slate-400">
+        <p className="mt-2 text-xs font-semibold text-neutral-400">
           {stock === 0
             ? 'Sin stock asignado disponible para esta especie.'
             : 'La meta de esta especie ya está cubierta.'}

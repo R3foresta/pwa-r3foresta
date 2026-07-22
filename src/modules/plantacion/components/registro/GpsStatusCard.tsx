@@ -75,8 +75,8 @@ function GpsStatusCard({
       detail: 'Mantente en un punto con cielo abierto.',
     },
     capturado: {
-      tone: 'bg-emerald-50 ring-emerald-200 text-emerald-800',
-      iconTone: 'bg-white/70 text-emerald-600',
+      tone: 'bg-success-50 ring-success-200 text-success-800',
+      iconTone: 'bg-white/70 text-success-600',
       icon: 'check-circle',
       label: 'GPS capturado',
       detail:
@@ -99,8 +99,8 @@ function GpsStatusCard({
       detail: error ?? 'No se pudo obtener tu ubicación.',
     },
     pendiente: {
-      tone: 'bg-slate-50 ring-slate-200 text-slate-600',
-      iconTone: 'bg-white text-slate-400',
+      tone: 'bg-neutral-50 ring-neutral-200 text-neutral-600',
+      iconTone: 'bg-white text-neutral-400',
       icon: 'pin',
       label: 'Sin ubicación todavía',
       detail: 'Captura tu posición para registrar el punto de plantación.',
@@ -193,10 +193,10 @@ function GpsStatusCard({
                 value={field.value}
                 onChange={(event) => field.onChange(event.target.value)}
                 placeholder={field.placeholder}
-                className={`w-full rounded-2xl border px-3 py-2.5 text-sm font-semibold tabular-nums text-slate-700 shadow-soft outline-none transition focus:ring-2 ${
+                className={`w-full rounded-2xl border px-3 py-2.5 text-sm font-semibold tabular-nums text-neutral-700 shadow-soft outline-none transition focus:ring-2 ${
                   showValidation && !coordsInRange
                     ? 'border-red-400 bg-red-50 focus:border-red-400 focus:ring-red-200'
-                    : 'border-slate-200 bg-white focus:border-brand-400 focus:ring-brand-200'
+                    : 'border-neutral-200 bg-white focus:border-brand-400 focus:ring-brand-200'
                 }`}
               />
             </div>

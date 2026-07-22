@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Building2, Leaf, Trees } from 'lucide-react'
 import Icon from '../../../components/Icon'
+import { Button } from '../../../components/ui'
 import {
   TIPO_CAMPANIA_DESCRIPTION,
   TIPO_CAMPANIA_LABEL,
@@ -62,7 +63,7 @@ function OrganizationLogoPile({ organizations }: { organizations: Organizacion[]
         </span>
       ))}
       {organizations.length > 4 && (
-        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-[9px] font-extrabold text-slate-500 ring-2 ring-white">
+        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-neutral-100 text-[9px] font-extrabold text-neutral-500 ring-2 ring-white">
           +{organizations.length - 4}
         </span>
       )}
@@ -111,7 +112,7 @@ export function CrearCampaniaFormFields({
                   selected
                     ? 'bg-brand-600 text-white ring-brand-700'
                     : disabled
-                      ? 'cursor-not-allowed bg-slate-50 text-slate-400 ring-black/5'
+                      ? 'cursor-not-allowed bg-neutral-50 text-neutral-400 ring-black/5'
                       : 'bg-white text-brand-800 ring-black/5 hover:ring-brand-300'
                 }`}
               >
@@ -120,7 +121,7 @@ export function CrearCampaniaFormFields({
                     selected
                       ? 'bg-white/20 text-white'
                       : disabled
-                        ? 'bg-slate-100 text-slate-400'
+                        ? 'bg-neutral-100 text-neutral-400'
                         : 'bg-brand-50 text-brand-700'
                   }`}
                 >
@@ -131,7 +132,7 @@ export function CrearCampaniaFormFields({
                 </span>
                 <span
                   className={`text-[10.5px] font-semibold leading-snug ${
-                    selected ? 'text-white/85' : 'text-slate-500'
+                    selected ? 'text-white/85' : 'text-neutral-500'
                   }`}
                 >
                   {TIPO_CAMPANIA_DESCRIPTION[tipo]}
@@ -141,7 +142,7 @@ export function CrearCampaniaFormFields({
           })}
         </div>
         {tipoLocked && tipoLockedReason && (
-          <p className="mt-2 text-[11px] font-semibold text-slate-500">
+          <p className="mt-2 text-[11px] font-semibold text-neutral-500">
             {tipoLockedReason}
           </p>
         )}
@@ -158,7 +159,7 @@ export function CrearCampaniaFormFields({
             onChange={(event) => onChange('nombre', event.target.value)}
             placeholder="Ej. Reforestación Norte 2026"
             maxLength={200}
-            className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm font-extrabold text-brand-800 outline-none placeholder:font-medium placeholder:text-slate-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+            className="w-full rounded-2xl border border-neutral-200 bg-white px-3 py-3 text-sm font-extrabold text-brand-800 outline-none placeholder:font-medium placeholder:text-neutral-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
           />
         </div>
 
@@ -174,9 +175,9 @@ export function CrearCampaniaFormFields({
             rows={4}
             maxLength={1000}
             placeholder="Objetivo general, zona estratégica o alcance institucional"
-            className="w-full resize-none rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm font-semibold text-brand-800 outline-none placeholder:font-medium placeholder:text-slate-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+            className="w-full resize-none rounded-2xl border border-neutral-200 bg-white px-3 py-3 text-sm font-semibold text-brand-800 outline-none placeholder:font-medium placeholder:text-neutral-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
           />
-          <p className="mt-1 text-right text-[10px] font-semibold text-slate-400">
+          <p className="mt-1 text-right text-[10px] font-semibold text-neutral-400">
             {values.descripcion.length}/1000
           </p>
         </div>
@@ -190,7 +191,7 @@ export function CrearCampaniaFormFields({
               type="date"
               value={values.fecha_estimada_inicio}
               onChange={(event) => onChange('fecha_estimada_inicio', event.target.value)}
-              className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm font-extrabold text-brand-800 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+              className="w-full rounded-2xl border border-neutral-200 bg-white px-3 py-3 text-sm font-extrabold text-brand-800 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
             />
           </div>
           <div>
@@ -202,7 +203,7 @@ export function CrearCampaniaFormFields({
               value={values.fecha_estimada_fin}
               min={values.fecha_estimada_inicio || undefined}
               onChange={(event) => onChange('fecha_estimada_fin', event.target.value)}
-              className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm font-extrabold text-brand-800 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+              className="w-full rounded-2xl border border-neutral-200 bg-white px-3 py-3 text-sm font-extrabold text-brand-800 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
             />
           </div>
         </div>
@@ -260,10 +261,10 @@ export function OrganizacionSelector({
           <button
             type="button"
             onClick={onOpen}
-            className="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-3 text-left transition hover:ring-1 hover:ring-brand-300"
+            className="flex w-full items-center justify-between gap-3 rounded-2xl border border-neutral-200 bg-white px-3 py-3 text-left transition hover:ring-1 hover:ring-brand-300"
           >
             {selectedOrganizations.length === 0 ? (
-              <span className="text-sm font-medium text-slate-400">
+              <span className="text-sm font-medium text-neutral-400">
                 Seleccionar organizaciones
               </span>
             ) : (
@@ -275,7 +276,7 @@ export function OrganizacionSelector({
                 </span>
               </span>
             )}
-            <Icon name="chevron-right" className="h-4 w-4 shrink-0 text-slate-400" />
+            <Icon name="chevron-right" className="h-4 w-4 shrink-0 text-neutral-400" />
           </button>
         </div>
 
@@ -298,7 +299,7 @@ export function OrganizacionSelector({
           />
           <div className="relative flex max-h-[88vh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl">
             <div className="flex shrink-0 justify-center pb-1 pt-3">
-              <div className="h-1 w-10 rounded-full bg-slate-200" />
+              <div className="h-1 w-10 rounded-full bg-neutral-200" />
             </div>
 
             <div className="flex shrink-0 items-start justify-between gap-3 px-5 pb-3 pt-2">
@@ -315,7 +316,7 @@ export function OrganizacionSelector({
               <button
                 type="button"
                 onClick={onClose}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 text-neutral-500 transition hover:bg-neutral-200"
                 aria-label="Cerrar"
               >
                 <Icon name="x" className="h-4 w-4" />
@@ -329,20 +330,20 @@ export function OrganizacionSelector({
             </div>
 
             <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-5 pb-4">
-              <label className="mb-1 flex items-center gap-2 rounded-2xl border border-slate-200 bg-[#f8fbf7] px-3 py-2.5">
-                <Icon name="search" className="h-4 w-4 shrink-0 text-slate-400" />
+              <label className="mb-1 flex items-center gap-2 rounded-2xl border border-neutral-200 bg-[#f8fbf7] px-3 py-2.5">
+                <Icon name="search" className="h-4 w-4 shrink-0 text-neutral-400" />
                 <input
                   type="search"
                   value={query}
                   onChange={(event) => onQueryChange(event.target.value)}
                   placeholder="Buscar por nombre o tipo"
-                  className="w-full bg-transparent text-sm font-semibold text-brand-800 outline-none placeholder:text-slate-400"
+                  className="w-full bg-transparent text-sm font-semibold text-brand-800 outline-none placeholder:text-neutral-400"
                 />
                 {query && (
                   <button
                     type="button"
                     onClick={() => onQueryChange('')}
-                    className="shrink-0 text-slate-400 transition hover:text-slate-600"
+                    className="shrink-0 text-neutral-400 transition hover:text-neutral-600"
                     aria-label="Limpiar búsqueda"
                   >
                     <Icon name="x" className="h-3.5 w-3.5" />
@@ -351,7 +352,7 @@ export function OrganizacionSelector({
               </label>
 
               {loading && (
-                <div className="rounded-2xl bg-slate-50 px-4 py-6 text-center text-sm font-semibold text-slate-600">
+                <div className="rounded-2xl bg-neutral-50 px-4 py-6 text-center text-sm font-semibold text-neutral-600">
                   Cargando organizaciones...
                 </div>
               )}
@@ -370,9 +371,9 @@ export function OrganizacionSelector({
               )}
 
               {!loading && !error && filteredOrganizations.length === 0 && (
-                <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center">
+                <div className="rounded-2xl border border-dashed border-neutral-200 bg-neutral-50 px-4 py-6 text-center">
                   <p className="text-sm font-extrabold text-brand-800">Sin resultados</p>
-                  <p className="mt-0.5 text-[11px] font-semibold text-slate-500">
+                  <p className="mt-0.5 text-[11px] font-semibold text-neutral-500">
                     Prueba con otro nombre o revisa el CRUD de organizaciones.
                   </p>
                 </div>
@@ -402,7 +403,7 @@ export function OrganizacionSelector({
                           className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[9.5px] font-extrabold uppercase tracking-[0.14em] ring-1 ${
                             selected
                               ? 'bg-white/15 text-white ring-white/20'
-                              : 'bg-white text-slate-600 ring-slate-200'
+                              : 'bg-white text-neutral-600 ring-neutral-200'
                           }`}
                         >
                           {TIPO_ORGANIZACION_LABEL[organization.tipo] ?? organization.tipo}
@@ -412,7 +413,7 @@ export function OrganizacionSelector({
                         className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
                           selected
                             ? 'bg-white text-brand-700'
-                            : 'bg-white text-slate-400 ring-1 ring-slate-200'
+                            : 'bg-white text-neutral-400 ring-1 ring-neutral-200'
                         }`}
                       >
                         <Icon name={selected ? 'check' : 'plus'} className="h-4 w-4" />
@@ -422,18 +423,14 @@ export function OrganizacionSelector({
                 })}
             </div>
 
-            <div className="shrink-0 border-t border-slate-100 px-5 pb-6 pt-3">
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-600 px-4 py-4 text-base font-extrabold text-white shadow-soft transition hover:bg-brand-700"
-              >
+            <div className="shrink-0 border-t border-neutral-100 px-5 pb-6 pt-3">
+              <Button variant="primary" size="lg" fullWidth onClick={onClose}>
                 {selectedOrganizations.length > 0
                   ? `Confirmar · ${selectedOrganizations.length} seleccionada${
                       selectedOrganizations.length !== 1 ? 's' : ''
                     }`
                   : 'Cerrar'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Icon from '../../../components/Icon'
+import { Button } from '../../../components/ui'
 
 type Props = {
   open: boolean
@@ -44,7 +45,7 @@ function CancelarSubcampaniaModal({
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/55 sm:items-center sm:px-4"
     >
       <div className="flex w-full max-w-md flex-col rounded-t-3xl bg-white shadow-2xl ring-1 ring-black/5 sm:rounded-3xl">
-        <header className="flex items-start justify-between gap-3 border-b border-slate-100 px-5 pb-3 pt-5">
+        <header className="flex items-start justify-between gap-3 border-b border-neutral-100 px-5 pb-3 pt-5">
           <div className="min-w-0">
             <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-red-500">
               Cancelar subcampaña
@@ -61,7 +62,7 @@ function CancelarSubcampaniaModal({
             onClick={onClose}
             disabled={submitting}
             aria-label="Cerrar"
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 text-neutral-600 transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Icon name="x" className="h-4 w-4" />
           </button>
@@ -87,9 +88,9 @@ function CancelarSubcampaniaModal({
               placeholder="Ej. Cambio de prioridad institucional."
               maxLength={MAX_MOTIVO}
               rows={4}
-              className="w-full resize-none rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 outline-none placeholder:font-medium placeholder:text-slate-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+              className="w-full resize-none rounded-2xl border border-neutral-200 bg-white px-3 py-2.5 text-sm font-semibold text-neutral-700 outline-none placeholder:font-medium placeholder:text-neutral-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
             />
-            <p className="mt-1 flex items-center justify-between text-[10.5px] font-bold text-slate-400">
+            <p className="mt-1 flex items-center justify-between text-[10.5px] font-bold text-neutral-400">
               <span>Mínimo {MIN_MOTIVO} caracteres.</span>
               <span className="tabular-nums">
                 {motivoLen}/{MAX_MOTIVO}
@@ -105,24 +106,12 @@ function CancelarSubcampaniaModal({
         </div>
 
         <footer className="grid grid-cols-2 gap-2 px-5 pb-5 pt-4">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={submitting}
-            className="flex items-center justify-center gap-2 rounded-2xl bg-white px-3 py-3 text-sm font-extrabold text-brand-700 shadow-soft ring-1 ring-brand-100 transition hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-60"
-          >
+          <Button variant="secondary" fullWidth onClick={onClose} disabled={submitting}>
             No, volver
-          </button>
-          <button
-            type="button"
-            onClick={handleConfirm}
-            disabled={!canConfirm}
-            className={`flex items-center justify-center gap-2 rounded-2xl px-3 py-3 text-sm font-extrabold text-white shadow-soft transition active:scale-[0.99] ${
-              !canConfirm ? 'cursor-not-allowed bg-slate-400/70' : 'bg-red-600 hover:bg-red-700'
-            }`}
-          >
+          </Button>
+          <Button variant="danger" fullWidth onClick={handleConfirm} disabled={!canConfirm}>
             {submitting ? 'Cancelando…' : 'Sí, cancelar'}
-          </button>
+          </Button>
         </footer>
       </div>
     </div>

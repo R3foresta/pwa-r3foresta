@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Icon from '../../../components/Icon'
+import { Button } from '../../../components/ui'
 import { PlantacionService } from '../../../services/plantacion.service'
 import type { Campania, PlanEspecieMeta, PlanEspecieMetaInput } from '../types/contracts'
 import {
@@ -406,13 +407,9 @@ function SubcampaniaEspeciesStep({
         </main>
         <div className="px-5">
           <div className="sticky bottom-0 -mx-5 bg-gradient-to-t from-[#eef2ed] via-[#eef2ed]/95 to-transparent px-5 pb-5 pt-3">
-            <button
-              type="button"
-              onClick={onBackToBase}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-600 px-4 py-4 text-base font-extrabold text-white shadow-soft transition hover:bg-brand-700 active:scale-[0.99]"
-            >
+            <Button variant="primary" size="lg" fullWidth onClick={onBackToBase}>
               Volver al paso anterior
-            </button>
+            </Button>
           </div>
         </div>
       </>
@@ -491,7 +488,7 @@ function SubcampaniaEspeciesStep({
             </p>
             <p
               className={`text-[11px] font-extrabold tabular-nums ${
-                balanced ? 'text-emerald-700' : 'text-amber-700'
+                balanced ? 'text-success-700' : 'text-amber-700'
               }`}
             >
               {total}% asignado
@@ -504,7 +501,7 @@ function SubcampaniaEspeciesStep({
               <p className="text-sm font-extrabold text-brand-800">
                 Aún no hay especies en el mix
               </p>
-              <p className="mt-1 text-xs font-semibold text-slate-500">
+              <p className="mt-1 text-xs font-semibold text-neutral-500">
                 Agrega especies desde el catálogo para asignarles porcentaje.
               </p>
             </div>
@@ -527,12 +524,12 @@ function SubcampaniaEspeciesStep({
                       <p className="text-sm font-extrabold leading-tight text-brand-800">
                         {nombreMostrado}
                       </p>
-                      <p className="text-[11px] italic text-slate-500">
+                      <p className="text-[11px] italic text-neutral-500">
                         {especie.nombre_cientifico}
                       </p>
                       <p
                         className={`mt-1 text-[10px] font-bold uppercase tracking-wider ${
-                          especie.saldo_disponible <= 0 ? 'text-amber-700' : 'text-slate-400'
+                          especie.saldo_disponible <= 0 ? 'text-amber-700' : 'text-neutral-400'
                         }`}
                       >
                         Vivero:{' '}
@@ -570,7 +567,7 @@ function SubcampaniaEspeciesStep({
                       </button>
                     </div>
                   </div>
-                  <div className="mt-2 flex items-center justify-between gap-2 text-[10.5px] font-extrabold text-slate-500">
+                  <div className="mt-2 flex items-center justify-between gap-2 text-[10.5px] font-extrabold text-neutral-500">
                     <span>
                       Equivale a{' '}
                       <span className="tabular-nums text-brand-800">
@@ -621,41 +618,30 @@ function SubcampaniaEspeciesStep({
             </p>
           )}
           <div className="mb-2 grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={onBackToBase}
-              className="flex items-center justify-center gap-2 rounded-2xl bg-white px-3 py-3 text-sm font-extrabold text-brand-700 shadow-soft ring-1 ring-brand-100 transition hover:bg-brand-50 active:scale-[0.99]"
-            >
-              <Icon name="arrow-left" className="h-4 w-4" />
+            <Button variant="secondary" fullWidth leftIcon="arrow-left" onClick={onBackToBase}>
               Atrás
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="secondary"
+              fullWidth
+              leftIcon="file"
               onClick={() => void handleSaveStep('draft')}
               disabled={submitting || !canSaveDraft}
-              className={`flex items-center justify-center gap-2 rounded-2xl px-3 py-3 text-sm font-extrabold shadow-soft transition active:scale-[0.99] ${
-                submitting || !canSaveDraft
-                  ? 'cursor-not-allowed bg-slate-200 text-slate-400'
-                  : 'bg-white text-brand-700 ring-1 ring-brand-100 hover:bg-brand-50'
-              }`}
             >
-              <Icon name="file" className="h-4 w-4" />
               Guardar borrador
-            </button>
+            </Button>
           </div>
-          <button
-            type="button"
+          <Button
+            variant="primary"
+            size="lg"
+            fullWidth
+            loading={submitting}
+            rightIcon="chevron-right"
             onClick={() => void handleSaveStep('next')}
             disabled={submitting || !canSave}
-            className={`flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-4 text-base font-extrabold text-white shadow-soft transition active:scale-[0.99] ${
-              submitting || !canSave
-                ? 'cursor-not-allowed bg-slate-400/70'
-                : 'bg-brand-600 hover:bg-brand-700'
-            }`}
           >
             {submitting ? 'Guardando…' : 'Siguiente'}
-            {!submitting && <Icon name="chevron-right" className="h-5 w-5" />}
-          </button>
+          </Button>
         </div>
       </div>
 

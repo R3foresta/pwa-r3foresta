@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import Icon from '../../../components/Icon'
+import { Button } from '../../../components/ui'
 import { PlantasService } from '../../../services/plantas.service'
 import {
   LotesViveroService,
@@ -157,7 +158,7 @@ function CatalogoEspeciesPicker({ open, excludedPlantaIds, onClose, onConfirm }:
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/55 sm:items-center sm:px-4"
     >
       <div className="flex max-h-[88vh] w-full max-w-md flex-col rounded-t-3xl bg-white shadow-2xl ring-1 ring-black/5 sm:rounded-3xl">
-        <header className="flex items-start justify-between gap-3 border-b border-slate-100 px-5 pb-3 pt-5">
+        <header className="flex items-start justify-between gap-3 border-b border-neutral-100 px-5 pb-3 pt-5">
           <div>
             <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
               Catálogo de especies
@@ -165,7 +166,7 @@ function CatalogoEspeciesPicker({ open, excludedPlantaIds, onClose, onConfirm }:
             <h2 id="especies-picker-title" className="mt-1 text-lg font-extrabold text-brand-800">
               Agregar al mix
             </h2>
-            <p className="mt-0.5 text-[11px] font-bold text-slate-500">
+            <p className="mt-0.5 text-[11px] font-bold text-neutral-500">
               {selectionCount > 0
                 ? `${selectionCount} ${selectionCount === 1 ? 'especie seleccionada' : 'especies seleccionadas'}`
                 : 'Toca para seleccionar varias'}
@@ -175,28 +176,28 @@ function CatalogoEspeciesPicker({ open, excludedPlantaIds, onClose, onConfirm }:
             type="button"
             onClick={handleClose}
             aria-label="Cerrar"
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 text-neutral-600 transition hover:bg-neutral-200"
           >
             <Icon name="x" className="h-4 w-4" />
           </button>
         </header>
 
         <div className="px-5 pt-3">
-          <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2.5">
-            <Icon name="search" className="h-4 w-4 text-slate-400" />
+          <div className="flex items-center gap-2 rounded-2xl border border-neutral-200 bg-white px-3 py-2.5">
+            <Icon name="search" className="h-4 w-4 text-neutral-400" />
             <input
               type="text"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Buscar por especie o nombre científico..."
-              className="w-full border-none bg-transparent text-sm font-semibold text-slate-700 outline-none placeholder:font-medium placeholder:text-slate-400"
+              className="w-full border-none bg-transparent text-sm font-semibold text-neutral-700 outline-none placeholder:font-medium placeholder:text-neutral-400"
             />
           </div>
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-3">
           {loading && (
-            <p className="rounded-2xl bg-slate-50 px-4 py-6 text-center text-sm font-semibold text-slate-500">
+            <p className="rounded-2xl bg-neutral-50 px-4 py-6 text-center text-sm font-semibold text-neutral-500">
               Cargando catálogo...
             </p>
           )}
@@ -208,7 +209,7 @@ function CatalogoEspeciesPicker({ open, excludedPlantaIds, onClose, onConfirm }:
           )}
 
           {!loading && !error && items.length === 0 && (
-            <p className="rounded-2xl bg-slate-50 px-4 py-6 text-center text-sm font-semibold text-slate-500">
+            <p className="rounded-2xl bg-neutral-50 px-4 py-6 text-center text-sm font-semibold text-neutral-500">
               {query.trim()
                 ? 'Ninguna especie coincide con la búsqueda.'
                 : 'No hay más especies disponibles en el catálogo.'}
@@ -238,7 +239,7 @@ function CatalogoEspeciesPicker({ open, excludedPlantaIds, onClose, onConfirm }:
                           className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-2 transition ${
                             isSelected
                               ? 'border-brand-600 bg-brand-600 text-white'
-                              : 'border-slate-300 bg-white text-transparent'
+                              : 'border-neutral-300 bg-white text-transparent'
                           }`}
                         >
                           <Icon name="check" className="h-4 w-4" />
@@ -247,7 +248,7 @@ function CatalogoEspeciesPicker({ open, excludedPlantaIds, onClose, onConfirm }:
                           <p className="text-sm font-extrabold leading-tight text-brand-800">
                             {item.nombre_comun_principal || item.especie}
                           </p>
-                          <p className="text-[11px] italic text-slate-500">
+                          <p className="text-[11px] italic text-neutral-500">
                             {item.nombre_cientifico}
                           </p>
                         </div>
@@ -271,27 +272,19 @@ function CatalogoEspeciesPicker({ open, excludedPlantaIds, onClose, onConfirm }:
           )}
         </div>
 
-        <footer className="grid grid-cols-2 gap-2 border-t border-slate-100 px-5 pb-5 pt-3">
-          <button
-            type="button"
-            onClick={handleClose}
-            className="flex items-center justify-center gap-2 rounded-2xl bg-white px-3 py-3 text-sm font-extrabold text-brand-700 shadow-soft ring-1 ring-brand-100 transition hover:bg-brand-50 active:scale-[0.99]"
-          >
+        <footer className="grid grid-cols-2 gap-2 border-t border-neutral-100 px-5 pb-5 pt-3">
+          <Button variant="secondary" fullWidth onClick={handleClose}>
             Cancelar
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="primary"
+            fullWidth
+            leftIcon="check"
             onClick={handleConfirm}
             disabled={selectionCount === 0}
-            className={`flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-extrabold text-white shadow-soft transition active:scale-[0.99] ${
-              selectionCount === 0
-                ? 'cursor-not-allowed bg-slate-400/70'
-                : 'bg-brand-600 hover:bg-brand-700'
-            }`}
           >
-            <Icon name="check" className="h-4 w-4" />
             Aceptar{selectionCount > 0 ? ` (${selectionCount})` : ''}
-          </button>
+          </Button>
         </footer>
       </div>
     </div>

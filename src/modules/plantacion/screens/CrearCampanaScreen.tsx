@@ -197,14 +197,17 @@ function CrearCampanaScreen() {
 
         <div className="px-5">
           <div className="sticky bottom-0 -mx-5 bg-gradient-to-t from-[#eef2ed] via-[#eef2ed]/95 to-transparent px-5 pb-5 pt-3">
+            {/* CTA de confirmación en verde success: `success` no es variante de
+                <Button> (que usa el verde brand); se mantiene a medida con tokens
+                migrados para preservar el verde de acción. (gotcha §6.6) */}
             <button
               type="button"
               onClick={() => void handleSubmit()}
               disabled={!canCreate || submitting}
               className={`flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-4 text-base font-extrabold text-white shadow-soft transition active:scale-[0.99] ${
                 !canCreate || submitting
-                  ? 'cursor-not-allowed bg-slate-400'
-                  : 'bg-emerald-600 hover:bg-emerald-700'
+                  ? 'cursor-not-allowed bg-neutral-400'
+                  : 'bg-success-600 hover:bg-success-700'
               }`}
             >
               <Icon name="check" className="h-5 w-5" />

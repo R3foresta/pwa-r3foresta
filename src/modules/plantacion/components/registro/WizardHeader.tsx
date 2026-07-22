@@ -69,7 +69,7 @@ function WizardHeader({
               key={i}
               className={`h-1.5 flex-1 rounded-full transition-colors ${
                 i + 1 < paso
-                  ? 'bg-emerald-300'
+                  ? 'bg-success-300'
                   : i + 1 === paso
                     ? 'bg-white'
                     : 'bg-white/20'

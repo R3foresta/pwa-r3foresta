@@ -44,8 +44,8 @@ function SubcampaniaSuccessOverlay({ phase, nombre, onContinue }: Props) {
         </>
       ) : (
         <>
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-emerald-400/20 ring-2 ring-emerald-300/40">
-            <Icon name="check" className="h-10 w-10 text-emerald-300" />
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-success-400/20 ring-2 ring-success-300/40">
+            <Icon name="check" className="h-10 w-10 text-success-300" />
           </div>
           <p className="mt-6 text-[10.5px] font-extrabold uppercase tracking-[0.22em] text-white/70">
             Subcampaña en borrador

@@ -17,59 +17,56 @@ export type EstadoCampaniaKey =
 export type EstadoCampaniaMeta = {
   label: string
   short: string
-  tone: string
   dot: string
   /** Color plano para segmentos del donut. */
   color: string
 }
 
+// Nota (Fase 4): se removió el campo `tone` (píldora de estado). Los badges de
+// estado de campaña ahora derivan de `src/components/ui/status.ts` vía
+// <Badge variant={statusVariant(estado)}>. Se conservan `dot`/`color` como dato de
+// visualización del donut y su leyenda; unificar la paleta del chart con los tokens
+// queda fuera de alcance de esta fase.
 export const ESTADO_CAMPANIA_META: Record<EstadoCampaniaKey, EstadoCampaniaMeta> = {
   ACTIVA: {
     label: 'ACTIVA',
     short: 'ACTIVA',
-    tone: 'bg-emerald-50 text-emerald-800 ring-emerald-100',
     dot: 'bg-emerald-500',
     color: '#10b981',
   },
   BORRADOR: {
     label: 'BORRADOR',
     short: 'BORRADOR',
-    tone: 'bg-slate-100 text-slate-700 ring-slate-200',
     dot: 'bg-slate-400',
     color: '#94a3b8',
   },
   CREADA: {
     label: 'CREADA',
     short: 'CREADA',
-    tone: 'bg-slate-100 text-slate-700 ring-slate-200',
     dot: 'bg-slate-400',
     color: '#cbd5e1',
   },
   EN_MANTENIMIENTO: {
     label: 'EN MANTENIMIENTO',
     short: 'MANTEN.',
-    tone: 'bg-cyan-50 text-cyan-800 ring-cyan-100',
     dot: 'bg-cyan-500',
     color: '#06b6d4',
   },
   MONITOREO_HISTORICO: {
     label: 'MONITOREO HISTÓRICO',
     short: 'HISTÓRICO',
-    tone: 'bg-slate-100 text-slate-700 ring-slate-200',
     dot: 'bg-slate-500',
     color: '#64748b',
   },
   COMPLETADA: {
     label: 'META ALCANZADA',
     short: 'COMPLETADA',
-    tone: 'bg-blue-50 text-blue-800 ring-blue-100',
     dot: 'bg-blue-500',
     color: '#3b82f6',
   },
   FINALIZADA_PARCIAL: {
     label: 'CERRADA PARCIALMENTE',
     short: 'PARCIAL',
-    tone: 'bg-amber-50 text-amber-800 ring-amber-100',
     dot: 'bg-amber-500',
     color: '#f59e0b',
   },
@@ -78,7 +75,6 @@ export const ESTADO_CAMPANIA_META: Record<EstadoCampaniaKey, EstadoCampaniaMeta>
 export const ESTADO_CAMPANIA_DEFAULT_META: EstadoCampaniaMeta = {
   label: 'SIN ESTADO',
   short: 'SIN ESTADO',
-  tone: 'bg-slate-100 text-slate-700 ring-slate-200',
   dot: 'bg-slate-400',
   color: '#e2e8f0',
 }

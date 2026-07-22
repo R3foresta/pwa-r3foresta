@@ -5,6 +5,7 @@ import { MapContainer, Polygon, TileLayer, useMap } from 'react-leaflet'
 import { useNavigate, useParams } from 'react-router-dom'
 import plantacionHero from '../../../assets/home/plantacion.jpg'
 import Icon from '../../../components/Icon'
+import { Button } from '../../../components/ui'
 import { useAuth } from '../../../contexts/AuthContext'
 import { PlantacionService } from '../../../services/plantacion.service'
 import {
@@ -88,7 +89,7 @@ function clampPct(pct: number): number {
 function StateBadgeLight({ estado }: { estado: EstadoSubcampania }) {
   const map: Record<EstadoSubcampania, string> = {
     BORRADOR: 'bg-amber-400/20 text-amber-100 ring-amber-300/40',
-    ACTIVA: 'bg-emerald-400/20 text-emerald-100 ring-emerald-300/40',
+    ACTIVA: 'bg-success-400/20 text-success-100 ring-success-300/40',
     COMPLETADA: 'bg-white/15 text-white ring-white/20',
     FINALIZADA_PARCIAL: 'bg-white/15 text-white ring-white/20',
     PAUSADA: 'bg-orange-400/20 text-orange-100 ring-orange-300/40',
@@ -214,7 +215,7 @@ function SubcampanaHeader({
         </div>
         <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/15">
           <div
-            className="h-full rounded-full bg-emerald-300"
+            className="h-full rounded-full bg-success-300"
             style={{ width: `${clampPct(pct)}%` }}
           />
         </div>
@@ -348,7 +349,7 @@ function MiniMapPreview({
       type="button"
       onClick={onClick}
       aria-label="Ver mapa completo"
-      className="relative isolate z-0 block h-[150px] w-full overflow-hidden rounded-3xl bg-slate-100 text-left shadow-soft ring-1 ring-black/5 transition hover:ring-brand-300"
+      className="relative isolate z-0 block h-[150px] w-full overflow-hidden rounded-3xl bg-neutral-100 text-left shadow-soft ring-1 ring-black/5 transition hover:ring-brand-300"
     >
       <div className="pointer-events-none absolute inset-0">
         <MapContainer
@@ -377,7 +378,7 @@ function MiniMapPreview({
         </MapContainer>
       </div>
       <span className="absolute bottom-2.5 left-2.5 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-[10.5px] font-extrabold text-brand-800 shadow-soft backdrop-blur">
-        <Icon name="pin" className="h-3.5 w-3.5 text-emerald-600" />
+        <Icon name="pin" className="h-3.5 w-3.5 text-success-600" />
         {label}
       </span>
       <span className="absolute right-2.5 top-2.5 inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-brand-700 shadow-soft backdrop-blur">
@@ -458,7 +459,7 @@ function ActivacionCard({
   return (
     <div className="rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
       <div className="flex items-start gap-3">
-        <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700">
+        <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-success-50 text-success-700">
           <Icon name="leaf" className="h-5 w-5" />
         </div>
         <div className="min-w-0 flex-1">
@@ -468,7 +469,7 @@ function ActivacionCard({
           <p className="mt-0.5 text-[15px] font-extrabold leading-tight text-brand-800">
             Activar la subcampaña
           </p>
-          <p className="mt-0.5 text-[11px] font-semibold leading-snug text-slate-500">
+          <p className="mt-0.5 text-[11px] font-semibold leading-snug text-neutral-500">
             Pasa de borrador a activa para que el equipo pueda registrar plantaciones.
           </p>
         </div>
@@ -499,8 +500,8 @@ function ActivacionCard({
           disabled={!canActivate || activating}
           className={`flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-extrabold text-white shadow-soft transition active:scale-[0.99] ${
             !canActivate || activating
-              ? 'cursor-not-allowed bg-slate-300'
-              : 'bg-emerald-600 hover:bg-emerald-700'
+              ? 'cursor-not-allowed bg-neutral-300'
+              : 'bg-success-600 hover:bg-success-700'
           }`}
         >
           <Icon name="check" className="h-4 w-4" />
@@ -564,14 +565,9 @@ function ResumenTab({
       {/* Acción principal con la subcampaña ACTIVA. La pantalla de registro
           valida `puede_registrar` y muestra el motivo de bloqueo si aplica. */}
       {sub.estado === 'ACTIVA' && (
-        <button
-          type="button"
-          onClick={onRegistrarPlantacion}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-600 px-4 py-3.5 text-sm font-extrabold text-white shadow-soft transition hover:bg-brand-700 active:scale-[0.99]"
-        >
-          <Icon name="leaf" className="h-4 w-4" />
+        <Button variant="primary" fullWidth leftIcon="leaf" onClick={onRegistrarPlantacion}>
           Registrar plantación
-        </button>
+        </Button>
       )}
 
       {/* Stats grid 2x2 */}
@@ -584,14 +580,14 @@ function ResumenTab({
             {supervivencia != null ? `${supervivencia}%` : '—'}
           </p>
           {supervivencia != null ? (
-            <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+            <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-neutral-100">
               <div
-                className="h-full rounded-full bg-emerald-500"
+                className="h-full rounded-full bg-success-500"
                 style={{ width: `${supervivencia}%` }}
               />
             </div>
           ) : (
-            <p className="mt-1 text-[10px] font-bold text-slate-500">sin datos aún</p>
+            <p className="mt-1 text-[10px] font-bold text-neutral-500">sin datos aún</p>
           )}
         </div>
 
@@ -604,7 +600,7 @@ function ResumenTab({
               ? sub.saldo_vivo_actual.toLocaleString('es-BO')
               : '—'}
           </p>
-          <p className="mt-1 text-[10px] font-bold text-slate-500">plantas</p>
+          <p className="mt-1 text-[10px] font-bold text-neutral-500">plantas</p>
         </div>
 
         <div className="rounded-3xl bg-white p-3.5 shadow-soft ring-1 ring-black/5">
@@ -613,9 +609,9 @@ function ResumenTab({
           </p>
           <p className="mt-1 text-2xl font-extrabold tabular-nums text-brand-800">
             {hectareas ?? '—'}{' '}
-            {hectareas && <span className="text-sm font-extrabold text-slate-400">ha</span>}
+            {hectareas && <span className="text-sm font-extrabold text-neutral-400">ha</span>}
           </p>
-          <p className="mt-1 text-[10px] font-bold text-slate-500">
+          <p className="mt-1 text-[10px] font-bold text-neutral-500">
             {displayPoligono ? 'zona delimitada' : 'pendiente de definir'}
           </p>
         </div>
@@ -627,7 +623,7 @@ function ResumenTab({
           <p className="mt-1 text-2xl font-extrabold tabular-nums text-brand-800">
             {sub.eventos_count != null ? sub.eventos_count.toLocaleString('es-BO') : '—'}
           </p>
-          <p className="mt-1 text-[10px] font-bold text-slate-500">registros de actividad</p>
+          <p className="mt-1 text-[10px] font-bold text-neutral-500">registros de actividad</p>
         </div>
       </div>
 
@@ -640,7 +636,7 @@ function ResumenTab({
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-100 text-sm font-extrabold text-brand-700"
           />
         ) : (
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-extrabold text-slate-400">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-sm font-extrabold text-neutral-400">
             —
           </div>
         )}
@@ -653,7 +649,7 @@ function ResumenTab({
               ? coordinador.nombre_usuario ?? `Usuario #${coordinador.usuario_id}`
               : 'Pendiente'}
           </p>
-          <p className="mt-0.5 truncate text-[10.5px] font-semibold text-slate-500">
+          <p className="mt-0.5 truncate text-[10.5px] font-semibold text-neutral-500">
             {coordinador?.agregado_at
               ? `Desde ${formatDate(coordinador.agregado_at.slice(0, 10))}`
               : sub.zona_nombre ?? ''}
@@ -691,13 +687,13 @@ function ResumenTab({
                 />
               ))}
               {equipo.length > 5 && (
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-[10px] font-extrabold text-slate-600 ring-2 ring-white">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-neutral-100 text-[10px] font-extrabold text-neutral-600 ring-2 ring-white">
                   +{equipo.length - 5}
                 </span>
               )}
             </div>
           ) : (
-            <p className="mt-1 text-[10px] font-bold text-slate-500">sin miembros</p>
+            <p className="mt-1 text-[10px] font-bold text-neutral-500">sin miembros</p>
           )}
         </div>
 
@@ -708,7 +704,7 @@ function ResumenTab({
           <p className="mt-1 text-2xl font-extrabold tabular-nums text-brand-800">
             {sub.lotes_count != null ? sub.lotes_count : '—'}
           </p>
-          <p className="mt-1 text-[10px] font-bold text-slate-500">asignados del vivero</p>
+          <p className="mt-1 text-[10px] font-bold text-neutral-500">asignados del vivero</p>
         </div>
       </div>
 
@@ -726,7 +722,7 @@ function ResumenTab({
                 <div key={meta.planta_id}>
                   <div className="flex items-baseline justify-between gap-2">
                     <p className="text-sm font-extrabold text-brand-800">{nombre}</p>
-                    <p className="text-[11px] font-extrabold tabular-nums text-slate-500">
+                    <p className="text-[11px] font-extrabold tabular-nums text-neutral-500">
                       <span className="text-brand-800">
                         {meta.cantidad_objetivo.toLocaleString('es-BO')}
                       </span>{' '}
@@ -734,11 +730,11 @@ function ResumenTab({
                     </p>
                   </div>
                   {meta.planta?.nombre_cientifico && (
-                    <p className="mb-1 text-[10.5px] italic text-slate-500">
+                    <p className="mb-1 text-[10.5px] italic text-neutral-500">
                       {meta.planta.nombre_cientifico}
                     </p>
                   )}
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-100">
                     <div
                       className="h-full rounded-full bg-brand-600"
                       style={{ width: `${pctObjetivo}%` }}
@@ -757,7 +753,7 @@ function ResumenTab({
           <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
             Descripción
           </p>
-          <p className="mt-1.5 text-[12.5px] font-semibold leading-relaxed text-slate-700">
+          <p className="mt-1.5 text-[12.5px] font-semibold leading-relaxed text-neutral-700">
             {sub.descripcion}
           </p>
         </section>
@@ -831,11 +827,11 @@ function MapaTab({
   if (!displayPoligono || polygonPositions.length === 0) {
     return (
       <section className="rounded-3xl bg-white p-6 text-center shadow-soft ring-1 ring-black/5">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-50 text-slate-400">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-neutral-50 text-neutral-400">
           <Icon name="map" className="h-6 w-6" />
         </div>
         <p className="mt-3 text-sm font-extrabold text-brand-800">Sin zona delimitada</p>
-        <p className="mt-1 text-[11.5px] font-semibold leading-relaxed text-slate-500">
+        <p className="mt-1 text-[11.5px] font-semibold leading-relaxed text-neutral-500">
           El polígono de la subcampaña no ha sido definido todavía.
         </p>
         {isBorrador && (
@@ -857,7 +853,7 @@ function MapaTab({
       {/* `isolate z-0` crea un stacking context propio: los panes internos de
           Leaflet (z-index 400+) dejan de competir con el BottomNav (z-40). */}
       <div
-        className="relative isolate z-0 overflow-hidden rounded-3xl bg-slate-100 shadow-soft ring-1 ring-black/5"
+        className="relative isolate z-0 overflow-hidden rounded-3xl bg-neutral-100 shadow-soft ring-1 ring-black/5"
         style={{ height: '55vh', minHeight: 300 }}
       >
         <MapContainer
@@ -945,26 +941,26 @@ function MoreSheet({
     <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/50 backdrop-blur-sm">
       <button type="button" className="flex-1" onClick={onClose} aria-label="Cerrar" />
       <div className="mx-auto w-full max-w-md rounded-t-3xl bg-white px-5 pb-7 pt-4 shadow-2xl">
-        <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-slate-200" />
+        <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-neutral-200" />
         <h3 className="text-lg font-extrabold text-brand-800">Acciones de subcampaña</h3>
 
-        <ul className="mt-3 divide-y divide-slate-100">
+        <ul className="mt-3 divide-y divide-neutral-100">
           <li>
             <button
               type="button"
               onClick={onGestionarEquipo}
-              className="flex w-full items-center gap-3 rounded-xl px-1 py-3 text-left hover:bg-slate-50"
+              className="flex w-full items-center gap-3 rounded-xl px-1 py-3 text-left hover:bg-neutral-50"
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
                 <Icon name="users" className="h-4 w-4" />
               </div>
               <div className="flex-1">
                 <p className="text-sm font-extrabold text-brand-800">Gestionar equipo</p>
-                <p className="text-[11px] font-medium text-slate-500">
+                <p className="text-[11px] font-medium text-neutral-500">
                   Agregar o quitar operarios de esta subcampaña
                 </p>
               </div>
-              <Icon name="chevron-right" className="h-4 w-4 text-slate-400" />
+              <Icon name="chevron-right" className="h-4 w-4 text-neutral-400" />
             </button>
           </li>
 
@@ -973,18 +969,18 @@ function MoreSheet({
               <button
                 type="button"
                 onClick={onContinuarWizard}
-                className="flex w-full items-center gap-3 rounded-xl px-1 py-3 text-left hover:bg-slate-50"
+                className="flex w-full items-center gap-3 rounded-xl px-1 py-3 text-left hover:bg-neutral-50"
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-neutral-100 text-neutral-700">
                   <Icon name="layers" className="h-4 w-4" />
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-extrabold text-brand-800">Continuar configuración</p>
-                  <p className="text-[11px] font-medium text-slate-500">
+                  <p className="text-[11px] font-medium text-neutral-500">
                     Retomar el asistente de creación
                   </p>
                 </div>
-                <Icon name="chevron-right" className="h-4 w-4 text-slate-400" />
+                <Icon name="chevron-right" className="h-4 w-4 text-neutral-400" />
               </button>
             </li>
           )}
@@ -1001,13 +997,13 @@ function MoreSheet({
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-extrabold text-red-700">Cancelar subcampaña</p>
-                  <p className="text-[11px] font-medium text-slate-500">
+                  <p className="text-[11px] font-medium text-neutral-500">
                     {isBorrador
                       ? 'El registro se conserva pero deja de aparecer en los listados'
                       : 'Disponible porque aún no hay plantaciones registradas'}
                   </p>
                 </div>
-                <Icon name="chevron-right" className="h-4 w-4 text-slate-400" />
+                <Icon name="chevron-right" className="h-4 w-4 text-neutral-400" />
               </button>
             </li>
           )}
@@ -1187,7 +1183,7 @@ function DetalleSubcampanaScreen() {
 
         <main className="space-y-4 px-5 pt-2">
           {loading && (
-            <div className="rounded-3xl bg-white px-4 py-6 text-center text-sm font-semibold text-slate-600 shadow-soft ring-1 ring-black/5">
+            <div className="rounded-3xl bg-white px-4 py-6 text-center text-sm font-semibold text-neutral-600 shadow-soft ring-1 ring-black/5">
               Cargando subcampaña...
             </div>
           )}
@@ -1204,13 +1200,9 @@ function DetalleSubcampanaScreen() {
                 {error}
               </p>
               <div className="mt-4 flex justify-center gap-2">
-                <button
-                  type="button"
-                  onClick={goBack}
-                  className="rounded-xl bg-white px-4 py-2 text-xs font-bold text-slate-700 ring-1 ring-slate-200 transition hover:bg-slate-50"
-                >
+                <Button variant="secondary" size="sm" onClick={goBack}>
                   Volver
-                </button>
+                </Button>
                 {hasValidId && (
                   <button
                     type="button"
@@ -1229,18 +1221,18 @@ function DetalleSubcampanaScreen() {
               <DetailTabs active={activeTab} onChange={setActiveTab} />
 
               {activationNotice && (
-                <div className="flex items-start gap-3 rounded-3xl bg-emerald-50 p-4 shadow-soft ring-1 ring-emerald-100">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+                <div className="flex items-start gap-3 rounded-3xl bg-success-50 p-4 shadow-soft ring-1 ring-success-100">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-success-100 text-success-700">
                     <Icon name="check" className="h-5 w-5" />
                   </div>
-                  <p className="min-w-0 flex-1 text-[12px] font-bold leading-snug text-emerald-900">
+                  <p className="min-w-0 flex-1 text-[12px] font-bold leading-snug text-success-900">
                     {activationNotice}
                   </p>
                   <button
                     type="button"
                     onClick={() => setActivationNotice(null)}
                     aria-label="Cerrar aviso"
-                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 transition hover:bg-emerald-200"
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-success-100 text-success-700 transition hover:bg-success-200"
                   >
                     <Icon name="x" className="h-3 w-3" />
                   </button>

@@ -253,13 +253,13 @@ export function SubcampaniaEquipoManager({
                 <RolBadge rol="COORDINADOR" />
               </div>
               {coordinador.agregado_at && (
-                <p className="mt-0.5 text-[10.5px] font-bold text-slate-500">
+                <p className="mt-0.5 text-[10.5px] font-bold text-neutral-500">
                   Desde {formatDate(coordinador.agregado_at.slice(0, 10))}
                 </p>
               )}
             </div>
             {editing && (
-              <span className="shrink-0 rounded-full bg-slate-50 px-2 py-1 text-[9px] font-extrabold uppercase tracking-wider text-slate-400 ring-1 ring-slate-100">
+              <span className="shrink-0 rounded-full bg-neutral-50 px-2 py-1 text-[9px] font-extrabold uppercase tracking-wider text-neutral-400 ring-1 ring-neutral-100">
                 Fijo
               </span>
             )}
@@ -272,21 +272,21 @@ export function SubcampaniaEquipoManager({
         <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
           Operarios
         </p>
-        <p className="text-[11px] font-extrabold tabular-nums text-slate-500">
+        <p className="text-[11px] font-extrabold tabular-nums text-neutral-500">
           {operarios.length} asignado{operarios.length !== 1 ? 's' : ''}
         </p>
       </div>
 
       {operarios.length === 0 ? (
         <section className="rounded-2xl bg-white p-5 text-center shadow-soft ring-1 ring-black/5">
-          <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-slate-50 text-slate-400">
+          <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-neutral-50 text-neutral-400">
             <Icon name="user" className="h-5 w-5" />
           </div>
           <p className="mt-2 text-sm font-extrabold text-brand-800">
             Sin operarios asignados
           </p>
           {canManage && !editing && (
-            <p className="mt-1 text-[11.5px] font-semibold leading-relaxed text-slate-500">
+            <p className="mt-1 text-[11.5px] font-semibold leading-relaxed text-neutral-500">
               Tocá “Editar equipo” para agregar operarios.
             </p>
           )}
@@ -311,7 +311,7 @@ export function SubcampaniaEquipoManager({
                   <RolBadge rol="OPERARIO" />
                 </div>
                 {operario.agregado_at && (
-                  <p className="mt-0.5 text-[10.5px] font-bold text-slate-500">
+                  <p className="mt-0.5 text-[10.5px] font-bold text-neutral-500">
                     Desde {formatDate(operario.agregado_at.slice(0, 10))}
                   </p>
                 )}
@@ -344,21 +344,21 @@ export function SubcampaniaEquipoManager({
             Agregar operario
           </p>
 
-          <div className="mt-3 flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-3 shadow-soft focus-within:border-brand-400 focus-within:ring-2 focus-within:ring-brand-100">
-            <Icon name="search" className="h-4 w-4 shrink-0 text-slate-400" />
+          <div className="mt-3 flex items-center gap-2 rounded-2xl border border-neutral-200 bg-white px-3 py-3 shadow-soft focus-within:border-brand-400 focus-within:ring-2 focus-within:ring-brand-100">
+            <Icon name="search" className="h-4 w-4 shrink-0 text-neutral-400" />
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Buscar usuario…"
-              className="w-full border-none bg-transparent text-sm font-semibold text-slate-700 outline-none placeholder:font-medium placeholder:text-slate-400"
+              className="w-full border-none bg-transparent text-sm font-semibold text-neutral-700 outline-none placeholder:font-medium placeholder:text-neutral-400"
             />
             {query && (
               <button
                 type="button"
                 aria-label="Limpiar búsqueda"
                 onClick={() => setQuery('')}
-                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200"
+                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-500 transition hover:bg-neutral-200"
               >
                 <Icon name="x" className="h-3 w-3" />
               </button>
@@ -367,7 +367,7 @@ export function SubcampaniaEquipoManager({
 
           <div className="mt-2">
             {searchLoading && (
-              <p className="px-1 py-2 text-xs font-semibold text-slate-400">Buscando…</p>
+              <p className="px-1 py-2 text-xs font-semibold text-neutral-400">Buscando…</p>
             )}
 
             {!searchLoading && searchError && (
@@ -377,7 +377,7 @@ export function SubcampaniaEquipoManager({
             )}
 
             {!searchLoading && !searchError && visibleSearchResults.length === 0 && (
-              <p className="px-1 py-2 text-xs font-semibold text-slate-500">
+              <p className="px-1 py-2 text-xs font-semibold text-neutral-500">
                 {debouncedQuery
                   ? 'Sin resultados para la búsqueda.'
                   : 'Escribe para buscar usuarios disponibles.'}
@@ -392,7 +392,7 @@ export function SubcampaniaEquipoManager({
                     type="button"
                     onClick={() => void handleAddOperario(usuario)}
                     disabled={busy}
-                    className="flex w-full items-center gap-3 rounded-2xl border border-slate-100 bg-white px-3 py-2.5 text-left transition hover:bg-brand-50 hover:ring-1 hover:ring-brand-200 disabled:cursor-wait disabled:opacity-50"
+                    className="flex w-full items-center gap-3 rounded-2xl border border-neutral-100 bg-white px-3 py-2.5 text-left transition hover:bg-brand-50 hover:ring-1 hover:ring-brand-200 disabled:cursor-wait disabled:opacity-50"
                   >
                     <UserAvatar
                       nombre={usuario.nombre}
@@ -403,7 +403,7 @@ export function SubcampaniaEquipoManager({
                       <span className="block truncate text-sm font-extrabold text-brand-800">
                         {usuario.nombre}
                       </span>
-                      <span className="block text-[10.5px] font-semibold uppercase tracking-wide text-slate-500">
+                      <span className="block text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
                         {usuario.rol}
                       </span>
                     </span>
