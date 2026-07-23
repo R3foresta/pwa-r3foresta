@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import HeroHeader from '../components/HeroHeader'
 import SaludCard from '../components/SaludCard'
 import QuickActions from '../components/QuickActions'
@@ -22,8 +22,12 @@ import ViveroLotAsignacionesCollapsible from '../components/ViveroLotAsignacione
 import ViveroLotAsignacionesTab from '../components/ViveroLotAsignacionesTab'
 import DispatchFlowCard from '../components/DispatchFlowCard'
 
+const DETAIL_TABS = ['resumen', 'asignaciones', 'historial', 'evidencia'] as const
+type DetailTab = (typeof DETAIL_TABS)[number]
+
 export default function ViveroDetailScreen() {
   const { id } = useParams()
+  const [searchParams] = useSearchParams()
   const lotId = Number(id)
   const isInvalidId = !Number.isFinite(lotId) || lotId <= 0
 
@@ -33,7 +37,13 @@ export default function ViveroDetailScreen() {
   // ✨ NUEVO: Calculamos las estadísticas UNA SOLA VEZ aquí
   const stats = useViveroStats(detail, events)
 
-  const [activeTab, setActiveTab] = useState<'resumen' | 'historial' | 'evidencia' | 'asignaciones'>('resumen')
+  // Lectura defensiva de `?tab=`: solo aceptamos una pestaña conocida (p. ej.
+  // AsignacionForm vuelve con `?tab=asignaciones`); cualquier otro valor cae a
+  // `resumen`. Solo aplica al primer render.
+  const [activeTab, setActiveTab] = useState<DetailTab>(() => {
+    const requested = searchParams.get('tab')
+    return DETAIL_TABS.includes(requested as DetailTab) ? (requested as DetailTab) : 'resumen'
+  })
   const [filter, setFilter] = useState('TODOS')
   const [selectedPhotos, setSelectedPhotos] = useState<PhotoItem[] | null>(null)
   const [now, setNow] = useState<number>(() => Date.now())
@@ -122,7 +132,7 @@ export default function ViveroDetailScreen() {
           <div className="sticky top-0 z-20 px-5 pt-4 pb-2 bg-brand-50/95 backdrop-blur-sm">
             {/* Control segmentado de pestañas (a medida, no calza en <Button>): tokens migrados. */}
             <div className="flex rounded-full bg-white p-1 ring-1 ring-neutral-200">
-              {(['resumen', 'asignaciones', 'historial', 'evidencia'] as const).map(tab => (
+              {DETAIL_TABS.map(tab => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}

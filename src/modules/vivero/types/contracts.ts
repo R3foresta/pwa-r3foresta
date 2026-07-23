@@ -350,11 +350,21 @@ export type CausaDescartePreEmbolsado =
   | 'DANO_PRE_EMBOLSADO'
   | 'OTRO'
 
+// Destinos válidos para NUEVOS despachos manuales (MVP VIV): solo salidas fuera
+// de campaña. `DONACION` reemplaza al viejo `DONACION_COMUNIDAD`, que nunca fue
+// un valor válido del contrato backend (la comunidad es un dato aparte). La UI
+// de despacho solo debe ofrecer estas tres opciones.
+export type DestinoTipoDespachoManual = 'DONACION' | 'VENTA' | 'OTRO'
+
+// Unión amplia para LEER el destino de eventos DESPACHO ya existentes (p. ej.
+// `EventoSnapshot.destino_tipo`). Suma destinos antiguos que pueden aparecer en
+// el historial pero que ya no se ofrecen como opción nueva. No se ocultan ni
+// alteran esos eventos históricos: solo se tipan para poder leerlos.
 export type DestinoTipoVivero =
+  | DestinoTipoDespachoManual
   | 'PLANTACION_PROPIA'
-  | 'DONACION_COMUNIDAD'
-  | 'VENTA'
-  | 'OTRO'
+  | 'PLANTACION_COMUNIDAD'
+  | 'PLANTACION_CAMPANIA'
 
 export interface RegistrarAdaptabilidadRequest {
   fecha_evento: string
@@ -448,7 +458,7 @@ export interface DevolverAsignacionViveroResponse {
 export interface RegistrarDespachoRequest {
   fecha_evento: string
   cantidad_afectada: number
-  destino_tipo: DestinoTipoVivero
+  destino_tipo: DestinoTipoDespachoManual
   destino_referencia: string
   evidencia_ids: number[]
   comunidad_destino_id?: number

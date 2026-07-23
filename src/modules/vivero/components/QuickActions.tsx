@@ -44,6 +44,15 @@ export default function QuickActions({ detail, onJumpEvidencia }: QuickActionsPr
       disabled: detail.plantasVivasIniciales === null
     },
     {
+      key: 'asignacion',
+      label: 'Asignación',
+      icon: 'package' as IconName,
+      onClick: () => navigate(`/app/vivero/${detail.id}/event/asignacion`),
+      // Entrega física a una subcampaña: requiere embolsado y saldo vivo, igual
+      // que Despacho. La elegibilidad final la valida el backend.
+      disabled: (detail.saldoVivoActual ?? detail.plantasVivasIniciales ?? 0) === 0
+    },
+    {
       key: 'despacho',
       label: 'Despacho',
       icon: 'truck' as IconName,

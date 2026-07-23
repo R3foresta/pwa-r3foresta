@@ -9,6 +9,7 @@ import DescartePreEmbolsadoForm from '../components/event/forms/DescartePreEmbol
 import AdaptabilidadForm from '../components/event/forms/AdaptabilidadForm'
 import MermaForm from '../components/event/forms/MermaForm'
 import DespachoForm from '../components/event/forms/DespachoForm'
+import AsignacionForm from '../components/event/forms/AsignacionForm'
 import type { LoteViveroDetalle } from '../types/contracts'
 
 const SUBETAPA_LABEL: Record<string, string> = {
@@ -122,6 +123,18 @@ function ViveroEventScreen() {
       {
         key: 'despacho',
         label: 'Despacho',
+        available: hasEmbolsado && isActive && hasSaldo,
+        reason: !hasEmbolsado
+          ? 'Requiere embolsado primero'
+          : !isActive
+            ? 'Lote finalizado'
+            : !hasSaldo
+              ? 'Sin saldo vivo'
+              : undefined,
+      },
+      {
+        key: 'asignacion',
+        label: 'Asignación',
         available: hasEmbolsado && isActive && hasSaldo,
         reason: !hasEmbolsado
           ? 'Requiere embolsado primero'
@@ -252,6 +265,12 @@ function ViveroEventScreen() {
         )}
         {currentKey === 'despacho' && (
           <DespachoForm lote={lote} onCompleted={handleCompleted} />
+        )}
+        {currentKey === 'asignacion' && (
+          <AsignacionForm
+            lote={lote}
+            onCompleted={() => navigate(`/app/vivero/${loteId}?tab=asignaciones`)}
+          />
         )}
       </div>
     </div>

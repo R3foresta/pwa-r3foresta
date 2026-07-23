@@ -6,6 +6,7 @@ export type StageKey =
   | 'adaptabilidad'
   | 'merma'
   | 'despacho'
+  | 'asignacion'
 
 export type StageTab = {
   key: StageKey

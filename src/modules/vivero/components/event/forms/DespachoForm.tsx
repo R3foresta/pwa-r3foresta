@@ -5,7 +5,7 @@ import { LotesViveroService } from '../../../../../services/lotes-vivero.service
 import SelectorComunidad from '../../../../comunidades/SelectorComunidad'
 import type { ComunidadCard } from '../../../../../tipos/comunidades'
 import { todayLocalISO } from '../../../../../utils/validations/date'
-import type { DestinoTipoVivero, LoteViveroItem } from '../../../types/contracts'
+import type { DestinoTipoDespachoManual, LoteViveroItem } from '../../../types/contracts'
 import CantidadStepper from '../CantidadStepper'
 import EventoCTABar from '../EventoCTABar'
 import FechaCard from '../FechaCard'
@@ -18,15 +18,12 @@ type Props = {
   onCompleted: () => void
 }
 
-const DESTINOS: { key: DestinoTipoVivero; label: string; hint: string }[] = [
-  {
-    key: 'PLANTACION_PROPIA',
-    label: 'Plantacion propia',
-    hint: 'Salida manual fuera de una campania M3',
-  },
-  { key: 'DONACION_COMUNIDAD', label: 'Donacion a comunidad', hint: 'Entrega vinculada a una comunidad' },
-  { key: 'VENTA', label: 'Venta', hint: 'Salida comercial' },
-  { key: 'OTRO', label: 'Otro', hint: 'Detallar en referencia' },
+// Solo salidas fuera de campania (ver ADR-VIV-16 y tarea VIV-03). Las entregas
+// a subcampania se hacen desde Asignacion, no desde aca.
+const DESTINOS: { key: DestinoTipoDespachoManual; label: string; hint: string }[] = [
+  { key: 'DONACION', label: 'Donacion', hint: 'Entrega sin costo. Podes indicar la comunidad destino.' },
+  { key: 'VENTA', label: 'Venta', hint: 'Salida comercial. Indica el comprador.' },
+  { key: 'OTRO', label: 'Otro', hint: 'Detalla el destino en la referencia.' },
 ]
 
 const FORM_ID = 'vivero-despacho-form'
@@ -45,7 +42,7 @@ function DespachoForm({ lote, onCompleted }: Props) {
   const entregadoSubcampanias = lote.saldo_asignado_subcampanias ?? 0
 
   const [cantidad, setCantidad] = useState('')
-  const [destino, setDestino] = useState<DestinoTipoVivero | ''>('')
+  const [destino, setDestino] = useState<DestinoTipoDespachoManual | ''>('')
   const [destinoReferencia, setDestinoReferencia] = useState('')
   const [comunidad, setComunidad] = useState<ComunidadCard | null>(null)
   const [fecha, setFecha] = useState(today)
@@ -77,7 +74,7 @@ function DespachoForm({ lote, onCompleted }: Props) {
   const finalizaLote = cantidadValid && saldoDespues === 0
 
   const destinoValid = destino !== ''
-  const requiereComunidad = destino === 'DONACION_COMUNIDAD'
+  const requiereComunidad = destino === 'DONACION'
   const comunidadValid = !requiereComunidad || comunidad !== null
   // Despacho manual nunca liga a campaña/subcampaña (ver ADR-VIV-16); el dato
   // estructurado por destino es la comunidad (si aplica) o una referencia libre.
@@ -150,7 +147,7 @@ function DespachoForm({ lote, onCompleted }: Props) {
         {
           fecha_evento: fecha,
           cantidad_afectada: cantidadNum,
-          destino_tipo: destino as DestinoTipoVivero,
+          destino_tipo: destino as DestinoTipoDespachoManual,
           destino_referencia: referenciaStr,
           evidencia_ids: upload.data.evidencia_ids,
           comunidad_destino_id: requiereComunidad ? comunidad?.id : undefined,
@@ -178,8 +175,9 @@ function DespachoForm({ lote, onCompleted }: Props) {
         <div className="flex items-start gap-2 rounded-2xl bg-warning-50 px-3 py-2.5 text-xs font-semibold text-warning-800 ring-1 ring-warning-200">
           <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-warning-600" />
           <span>
-            Este es un despacho manual y sale del saldo vivo del lote. Lo ya entregado a
-            subcampanias se consume desde Plantacion, no desde aqui.
+            Despacho manual: registra una salida fuera de campanias y descuenta el saldo vivo
+            del lote. Exige foto y no selecciona campania ni subcampania. Para entregar a una
+            subcampania usa Asignacion.
           </span>
         </div>
 
@@ -295,13 +293,11 @@ function DespachoForm({ lote, onCompleted }: Props) {
             value={destinoReferencia}
             onChange={(event) => setDestinoReferencia(event.target.value.slice(0, 300))}
             placeholder={
-              destino === 'PLANTACION_PROPIA'
-                ? 'Ej. Predio propio en Cotacota'
-                : destino === 'VENTA'
-                  ? 'Ej. Nombre del comprador'
-                  : destino === 'DONACION_COMUNIDAD'
-                    ? 'Detalle adicional de la donacion (opcional)'
-                    : 'Detalla el destino'
+              destino === 'VENTA'
+                ? 'Ej. Nombre del comprador'
+                : destino === 'DONACION'
+                  ? 'Detalle adicional de la donacion (opcional)'
+                  : 'Detalla el destino'
             }
             rows={2}
             disabled={submitting}
