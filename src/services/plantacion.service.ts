@@ -8,6 +8,7 @@ import {
   deleteCampaniaOrganizacionApi,
   deleteEvidenciasPendientesPlantacionApi,
   deleteSubcampaniaEquipoMemberApi,
+  desactivarCampaniaMasivaApi,
   getCampaniaActivityApi,
   getCampaniaApi,
   getCampaniaMetricsApi,
@@ -23,6 +24,7 @@ import {
   patchSubcampaniaApi,
   postCampaniaOrganizacionesApi,
   postSubcampaniaEquipoApi,
+  previewDesactivacionCampaniaApi,
   putSubcampaniaPlanApi,
   setSubcampaniaPoligonoApi,
   uploadEvidenciasPendientesPlantacionApi,
@@ -46,6 +48,8 @@ import type {
   CreateCampaniaInput,
   CreateSubcampaniaInput,
   DeleteCampaniaData,
+  PreviewDesactivacionCampania,
+  ResultadoDesactivacionCampania,
   EquipoMember,
   EquipoMemberInput,
   GeoJsonPolygon,
@@ -67,6 +71,38 @@ import type {
 
 const TIPOS_CAMPANIA: TipoCampania[] = ['REFORESTACION', 'ARBORIZACION', 'FORESTACION']
 const ROLES_SUBCAMPANIA: RolEnSubcampania[] = ['COORDINADOR', 'OPERARIO']
+
+/**
+ * Error de la capa de servicio de Plantación. Extiende `Error` de forma
+ * compatible: los consumidores existentes pueden seguir leyendo solo
+ * `error.message`, mientras que los flujos que necesitan diferenciar por código
+ * HTTP (p. ej. la desactivación masiva) pueden leer `error.status`.
+ */
+export type PlantacionServiceError = Error & {
+  status?: number
+}
+
+function createServiceError(message: string, status?: number): PlantacionServiceError {
+  const error = new Error(message) as PlantacionServiceError
+  if (status !== undefined) {
+    error.status = status
+  }
+  return error
+}
+
+/**
+ * Lee `status` de un error desconocido sin usar `any`. Devuelve `undefined` si
+ * el error no expone un status numérico (errores locales, de red, etc.).
+ */
+export function getPlantacionErrorStatus(error: unknown): number | undefined {
+  if (error && typeof error === 'object' && 'status' in error) {
+    const status = (error as { status?: unknown }).status
+    if (typeof status === 'number' && Number.isFinite(status)) {
+      return status
+    }
+  }
+  return undefined
+}
 
 function normalizeText(value: string): string {
   return value.trim().replace(/\s+/g, ' ')
@@ -103,13 +139,31 @@ async function parseJsonResponse<T>(response: Response, fallbackError: string): 
   const parsed = raw ? tryParseJson(raw) : null
 
   if (!response.ok) {
-    throw new Error(normalizeErrorMessage(parsed, raw || fallbackError))
+    throw createServiceError(
+      normalizeErrorMessage(parsed, raw || fallbackError),
+      response.status,
+    )
   }
 
   if (!parsed) {
     throw new Error('Respuesta vacía del servidor.')
   }
 
+  return parsed as T
+}
+
+/**
+ * Desenvuelve la respuesta del backend. Los endpoints existentes usan
+ * `ApiEnvelope<T>` (`{ data }`), pero esta capa acepta también el objeto plano
+ * por si un endpoint responde el recurso en el top-level.
+ */
+function unwrapEnvelope<T>(parsed: unknown): T {
+  if (parsed && typeof parsed === 'object' && 'data' in parsed) {
+    const data = (parsed as { data?: unknown }).data
+    if (data && typeof data === 'object') {
+      return data as T
+    }
+  }
   return parsed as T
 }
 
@@ -299,6 +353,70 @@ export class PlantacionService {
       'Error al desactivar la campaña.',
     )
     return payload.data ?? { id: campaniaId }
+  }
+
+  /**
+   * Preview autoritativo de la desactivación masiva
+   * (`GET /campanias/:id/desactivacion/preview`). Una campaña no elegible
+   * también responde 200: `elegible` y `bloqueos` determinan si se puede
+   * confirmar. El frontend no recalcula contadores ni persiste el preview como
+   * autorización. Errores HTTP (401/403/404/…) se propagan con `status`.
+   */
+  static async previewDesactivacionCampania(
+    campaniaId: number,
+    authId?: string,
+  ): Promise<PreviewDesactivacionCampania> {
+    if (!Number.isFinite(campaniaId) || campaniaId <= 0) {
+      throw new Error('ID de campaña inválido.')
+    }
+    const response = await previewDesactivacionCampaniaApi(campaniaId, authId)
+    const parsed = await parseJsonResponse<unknown>(
+      response,
+      'Error al previsualizar la desactivación de la campaña.',
+    )
+    const preview = unwrapEnvelope<PreviewDesactivacionCampania>(parsed)
+    if (!preview || typeof preview.elegible !== 'boolean') {
+      throw new Error('El preview de desactivación llegó incompleto.')
+    }
+    return {
+      ...preview,
+      bloqueos: Array.isArray(preview.bloqueos) ? preview.bloqueos : [],
+    }
+  }
+
+  /**
+   * Ejecuta la desactivación atómica de la campaña
+   * (`POST /campanias/:id/desactivar`). Exactamente una llamada por campaña: el
+   * backend cancela subcampañas elegibles, devuelve stock y aplica soft-delete
+   * en una sola transacción. El frontend no dispara cancelaciones ni
+   * devoluciones individuales. Errores HTTP se propagan con `status`.
+   */
+  static async desactivarCampaniaMasiva(
+    campaniaId: number,
+    motivo: string,
+    authId?: string,
+  ): Promise<ResultadoDesactivacionCampania> {
+    if (!Number.isFinite(campaniaId) || campaniaId <= 0) {
+      throw new Error('ID de campaña inválido.')
+    }
+    const cleanMotivo = motivo.trim()
+    if (cleanMotivo.length < 3 || cleanMotivo.length > 1000) {
+      throw new Error('El motivo debe tener entre 3 y 1000 caracteres.')
+    }
+    const response = await desactivarCampaniaMasivaApi(
+      campaniaId,
+      { motivo: cleanMotivo },
+      authId,
+    )
+    const parsed = await parseJsonResponse<unknown>(
+      response,
+      'Error al desactivar la campaña.',
+    )
+    const resultado = unwrapEnvelope<ResultadoDesactivacionCampania>(parsed)
+    if (!resultado || !Number.isFinite(resultado.campania_id)) {
+      throw new Error('No se recibió confirmación de la desactivación.')
+    }
+    return resultado
   }
 
   static async addCampaniaOrganizaciones(

@@ -74,6 +74,52 @@ export type DeleteCampaniaData = {
   id: number
 }
 
+// ---------------------------------------------------------------------------
+// Desactivación atómica de campaña con cancelación masiva de subcampañas.
+// Contratos de `GET /campanias/:id/desactivacion/preview` y
+// `POST /campanias/:id/desactivar`. Backend es la autoridad sobre elegibilidad,
+// efectos e idempotencia; el frontend solo renderiza el preview y ejecuta un
+// único POST atómico (documentacion/frontend/desactivacion-campania-cancelacion-masiva.md).
+// ---------------------------------------------------------------------------
+
+export type CodigoBloqueoDesactivacion =
+  | 'SUBCAMPANIA_CON_PLANTACIONES'
+  | 'ESTADO_NO_ELEGIBLE'
+
+export type BloqueoDesactivacionCampania = {
+  subcampania_id: number
+  estado: string
+  total_plantado_inicial: number
+  codigo: CodigoBloqueoDesactivacion
+  mensaje: string
+}
+
+export type PreviewDesactivacionCampania = {
+  campania_id: number
+  elegible: boolean
+  subcampanias_vivas: number
+  subcampanias_a_cancelar: number
+  borradores: number
+  activas_sin_plantar: number
+  ya_canceladas: number
+  asignaciones_con_saldo: number
+  unidades_a_devolver: number
+  bloqueos: BloqueoDesactivacionCampania[]
+}
+
+export type DesactivarCampaniaMasivaInput = {
+  motivo: string
+}
+
+export type ResultadoDesactivacionCampania = {
+  message: string
+  campania_id: number
+  deleted_at: string
+  subcampanias_canceladas: number
+  asignaciones_devueltas: number
+  unidades_devueltas: number
+}
+
 export type SetCampaniaOrganizacionesInput = {
   organizacion_ids: number[]
 }

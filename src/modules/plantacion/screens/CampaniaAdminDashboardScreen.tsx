@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import plantacionHero from '../../../assets/home/plantacion.jpg'
-import ConfirmDialog from '../../../components/ConfirmDialog'
 import Icon from '../../../components/Icon'
 import { useAuth } from '../../../contexts/AuthContext'
 import { PlantacionService } from '../../../services/plantacion.service'
+import DesactivarCampaniaModal from '../components/DesactivarCampaniaModal'
 import { formatRelativeTime } from '../../../utils/datetime'
 import {
   TIPO_CAMPANIA_LABEL,
@@ -1422,9 +1422,7 @@ function CampaniaAdminDashboardScreen() {
   const [localDrafts] = useState<SubcampaniaBaseDraft[]>(() =>
     hasValidCampaniaId ? loadSubcampaniaBaseDrafts(numericCampaniaId) : [],
   )
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [deletingCampania, setDeletingCampania] = useState(false)
-  const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [desactivarModalOpen, setDesactivarModalOpen] = useState(false)
 
   const visibleLocalDrafts = localDrafts.filter((draft) => !draft.subcampania_id)
   const canCreateSubcampania = (user?.rol ?? '').toUpperCase() === 'ADMIN'
@@ -1507,25 +1505,7 @@ function CampaniaAdminDashboardScreen() {
   }
 
   const onDesactivarCampania = () => {
-    setDeleteError(null)
-    setDeleteDialogOpen(true)
-  }
-
-  const confirmDesactivarCampania = async () => {
-    if (!campania) return
-    try {
-      setDeletingCampania(true)
-      setDeleteError(null)
-      await PlantacionService.deleteCampania(campania.id, user?.auth_id)
-      setDeleteDialogOpen(false)
-      navigate('/app/planting', { replace: true })
-    } catch (error) {
-      setDeleteError(
-        error instanceof Error ? error.message : 'No se pudo desactivar la campaña.',
-      )
-    } finally {
-      setDeletingCampania(false)
-    }
+    setDesactivarModalOpen(true)
   }
 
   const allItems: SubcampaniaItem[] = useMemo(() => {
@@ -1567,12 +1547,6 @@ function CampaniaAdminDashboardScreen() {
     }).length
   }, [subcampanias])
 
-  // Pre-check UX: el listado del backend excluye CANCELADA (ver plantacion.api),
-  // así que si vemos cualquier subcampaña, hay un bloqueo. El 422 del DELETE cubre
-  // el resto de reglas (COMPLETADA/PAUSADA/FINALIZADA_PARCIAL) si el cliente se
-  // desincroniza.
-  const canDeactivateCampania = subcampanias.length === 0
-
   const activeSubCount = countByEstado(subcampanias, 'ACTIVA')
   const draftBackendCount = countByEstado(subcampanias, 'BORRADOR')
 
@@ -1586,12 +1560,7 @@ function CampaniaAdminDashboardScreen() {
             onBack={goBack}
             onEditar={onEditarCampania}
             onDesactivar={onDesactivarCampania}
-            desactivarDisabled={!canDeactivateCampania}
-            desactivarDisabledReason={
-              canDeactivateCampania
-                ? undefined
-                : 'Cancela primero las sub-campañas activas para poder desactivar.'
-            }
+            desactivarDisabled={false}
             canManage={isAdmin}
           />
         ) : (
@@ -1662,23 +1631,16 @@ function CampaniaAdminDashboardScreen() {
         />
       )}
 
-      <ConfirmDialog
-        open={deleteDialogOpen}
-        title="Desactivar campaña"
-        description="Esta acción se puede revertir contactando al administrador. La campaña dejará de estar visible en el listado."
-        confirmLabel={deleteError ? 'Reintentar' : 'Desactivar campaña'}
-        cancelLabel="Cancelar"
-        variant="danger"
-        iconName="trash"
-        loading={deletingCampania}
-        errorMessage={deleteError}
-        onConfirm={() => void confirmDesactivarCampania()}
-        onCancel={() => {
-          if (deletingCampania) return
-          setDeleteDialogOpen(false)
-          setDeleteError(null)
-        }}
-      />
+      {desactivarModalOpen && campania && (
+        <DesactivarCampaniaModal
+          campaniaId={campania.id}
+          campaniaNombre={campania.nombre}
+          campaniaCodigo={campania.codigo_trazabilidad}
+          authId={user?.auth_id}
+          onClose={() => setDesactivarModalOpen(false)}
+          onFinished={() => navigate('/app/planting', { replace: true })}
+        />
+      )}
     </div>
   )
 }

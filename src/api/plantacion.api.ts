@@ -3,6 +3,7 @@ import type {
   CreateCampaniaInput,
   CreateRegistroPlantacionInput,
   CreateSubcampaniaInput,
+  DesactivarCampaniaMasivaInput,
   EquipoMemberInput,
   EstadoSubcampania,
   PutPlanInput,
@@ -113,6 +114,33 @@ export async function deleteCampaniaApi(
   return fetch(`${API_BASE_URL}/campanias/${campaniaId}`, {
     method: 'DELETE',
     headers: getAuthHeaders({ authId, includeContentType: false }),
+  })
+}
+
+// Previsualiza elegibilidad y efectos de la desactivación masiva. Una campaña
+// no elegible también responde 200 (ver contrato). Solo ADMIN.
+export async function previewDesactivacionCampaniaApi(
+  campaniaId: number,
+  authId?: string,
+): Promise<Response> {
+  return fetch(`${API_BASE_URL}/campanias/${campaniaId}/desactivacion/preview`, {
+    method: 'GET',
+    headers: getAuthHeaders({ authId, includeContentType: false }),
+  })
+}
+
+// Ejecuta la desactivación atómica: cancela subcampañas elegibles, devuelve
+// stock asignado disponible al vivero y aplica soft-delete a la campaña en una
+// única transacción del backend. Exactamente una llamada por campaña. Solo ADMIN.
+export async function desactivarCampaniaMasivaApi(
+  campaniaId: number,
+  input: DesactivarCampaniaMasivaInput,
+  authId?: string,
+): Promise<Response> {
+  return fetch(`${API_BASE_URL}/campanias/${campaniaId}/desactivar`, {
+    method: 'POST',
+    headers: getAuthHeaders({ authId, includeContentType: true }),
+    body: JSON.stringify(input),
   })
 }
 
