@@ -36,3 +36,26 @@ body {
 #root {
   min-height: 100vh;
 }
+
+@keyframes app-initialization-progress {
+  0% {
+    transform: translateX(-120%);
+  }
+
+  100% {
+    transform: translateX(280%);
+  }
+}
+
+.app-initialization-progress {
+  width: 38%;
+  animation: app-initialization-progress 1.25s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-initialization-progress {
+    width: 100%;
+    animation: none;
+    opacity: 0.75;
+  }
+}

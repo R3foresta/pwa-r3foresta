@@ -1,15 +1,16 @@
 import { registerSW } from 'virtual:pwa-register'
+import { setPwaInitializationStatus } from './pwaStatus'
 
 const UPDATE_CHECK_INTERVAL_MS = 60 * 60 * 1000
+const INITIAL_CHECK_TIMEOUT_MS = 5000
+const UPDATE_MESSAGE_DELAY_MS = 500
 const LEGACY_CACHE_PREFIX = 'r3foresta-'
 const WORKBOX_PRECACHE_PREFIX = 'workbox-precache'
 
-function requestServiceWorkerUpdate(registration: ServiceWorkerRegistration | undefined) {
+async function requestServiceWorkerUpdate(registration: ServiceWorkerRegistration | undefined) {
   if (!registration || !navigator.onLine || document.visibilityState !== 'visible') return
 
-  void registration.update().catch((error: unknown) => {
-    console.error('No se pudo comprobar una actualización de la aplicación:', error)
-  })
+  await registration.update()
 }
 
 async function cleanupLegacyCaches() {
@@ -31,31 +32,58 @@ async function cleanupLegacyCaches() {
 }
 
 export function registerPwa() {
-  if (!('serviceWorker' in navigator)) return
+  if (!('serviceWorker' in navigator) || import.meta.env.DEV) {
+    setPwaInitializationStatus('ready')
+    return
+  }
+
+  let initialCheckCompleted = false
+  const finishInitialCheck = () => {
+    if (initialCheckCompleted) return
+    initialCheckCompleted = true
+    window.clearTimeout(initialCheckTimeout)
+    setPwaInitializationStatus('ready')
+  }
+  const initialCheckTimeout = window.setTimeout(finishInitialCheck, INITIAL_CHECK_TIMEOUT_MS)
 
   registerSW({
     immediate: true,
+    onNeedReload: () => {
+      setPwaInitializationStatus('updating')
+      window.setTimeout(() => window.location.reload(), UPDATE_MESSAGE_DELAY_MS)
+    },
     onRegisteredSW: (_serviceWorkerUrl, registration) => {
       void cleanupLegacyCaches().catch((error: unknown) => {
         console.error('No se pudieron limpiar los cachés antiguos:', error)
       })
 
-      requestServiceWorkerUpdate(registration)
+      void requestServiceWorkerUpdate(registration)
+        .catch((error: unknown) => {
+          console.error('No se pudo comprobar una actualización de la aplicación:', error)
+        })
+        .finally(finishInitialCheck)
 
       window.setInterval(() => {
-        requestServiceWorkerUpdate(registration)
+        void requestServiceWorkerUpdate(registration).catch((error: unknown) => {
+          console.error('No se pudo comprobar una actualización de la aplicación:', error)
+        })
       }, UPDATE_CHECK_INTERVAL_MS)
 
       window.addEventListener('online', () => {
-        requestServiceWorkerUpdate(registration)
+        void requestServiceWorkerUpdate(registration).catch((error: unknown) => {
+          console.error('No se pudo comprobar una actualización de la aplicación:', error)
+        })
       })
 
       document.addEventListener('visibilitychange', () => {
-        requestServiceWorkerUpdate(registration)
+        void requestServiceWorkerUpdate(registration).catch((error: unknown) => {
+          console.error('No se pudo comprobar una actualización de la aplicación:', error)
+        })
       })
     },
     onRegisterError: (error) => {
       console.error('Falló el registro del service worker:', error)
+      finishInitialCheck()
     },
   })
 }
