@@ -56,20 +56,24 @@ import {
   subscribeToPwaInitializationStatus,
   type PwaInitializationStatus,
 } from './pwa/pwaStatus'
+import { useBackendHealth, type BackendHealthStatus } from './hooks/useBackendHealth'
 
 const MINIMUM_INITIALIZATION_TIME_MS = 700
 
 function getInitializationMessage({
+  backendHealthStatus,
   hydrated,
   isOnline,
   pwaStatus,
 }: {
+  backendHealthStatus: BackendHealthStatus
   hydrated: boolean
   isOnline: boolean
   pwaStatus: PwaInitializationStatus
 }) {
   if (pwaStatus === 'updating') return 'Aplicando una nueva versión'
   if (!isOnline) return 'Preparando el acceso sin conexión'
+  if (backendHealthStatus === 'checking') return 'Conectando con el servidor'
   if (!hydrated) return 'Conectando con R3foresta'
   if (pwaStatus === 'checking') return 'Comprobando la aplicación'
   return 'Inicializando R3foresta'
@@ -114,6 +118,7 @@ function App() {
   )
   const [minimumTimeElapsed, setMinimumTimeElapsed] = useState(false)
   const [isOnline, setIsOnline] = useState(() => navigator.onLine)
+  const backendHealthStatus = useBackendHealth(isOnline)
 
   useEffect(() => {
     const timer = window.setTimeout(
@@ -132,12 +137,21 @@ function App() {
     }
   }, [])
 
-  const isInitializing = !minimumTimeElapsed || !hydrated || pwaStatus !== 'ready'
+  const isInitializing =
+    !minimumTimeElapsed ||
+    !hydrated ||
+    pwaStatus !== 'ready' ||
+    backendHealthStatus === 'checking'
 
   if (isInitializing) {
     return (
       <AppInitializationScreen
-        message={getInitializationMessage({ hydrated, isOnline, pwaStatus })}
+        message={getInitializationMessage({
+          backendHealthStatus,
+          hydrated,
+          isOnline,
+          pwaStatus,
+        })}
       />
     )
   }
