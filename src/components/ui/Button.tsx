@@ -51,15 +51,20 @@ function Button({
   type = 'button',
   className,
   disabled,
+  'aria-busy': ariaBusy,
   children,
   ...rest
 }: ButtonProps) {
+  const isDisabled = disabled || loading
+
   return (
     <button
       type={type}
-      disabled={disabled || loading}
+      disabled={isDisabled}
+      aria-busy={loading ? true : ariaBusy}
       className={cn(
         'inline-flex items-center justify-center gap-2 rounded-2xl transition',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2',
         'disabled:cursor-not-allowed disabled:opacity-60',
         VARIANTS[variant],
         SIZES[size],

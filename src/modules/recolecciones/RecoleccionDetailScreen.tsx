@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Icon from '../../components/Icon'
-import { Badge, statusVariant } from '../../components/ui'
+import { Badge, Button, statusVariant } from '../../components/ui'
 import {
   RecoleccionesService,
   type EvidenciaTrazabilidad,
@@ -137,13 +137,14 @@ function RecoleccionDetailScreen() {
         <div className="rounded-3xl bg-white p-6 text-center shadow-soft ring-1 ring-black/5">
           <p className="text-lg font-bold text-neutral-800">No se pudo cargar la recolección</p>
           <p className="mt-1 text-sm text-neutral-600">{error || 'Registro no encontrado.'}</p>
-          <button
+          <Button
             type="button"
+            variant="primary"
             onClick={() => navigate('/app/collections')}
-            className="mt-4 rounded-xl bg-brand-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-brand-600"
+            className="mt-4"
           >
             Volver al listado
-          </button>
+          </Button>
         </div>
       </div>
     )
@@ -297,21 +298,22 @@ function RecoleccionDetailScreen() {
             {isBorrador && (
               <div className="mt-4 space-y-3 border-t border-neutral-100 pt-4">
                 <div className="grid grid-cols-2 gap-2">
-                  <button
+                  <Button
                     type="button"
+                    variant="secondary"
                     onClick={() => navigate(`/app/collections/new?editId=${recoleccion.id}`)}
-                    className="rounded-xl border border-brand-200 bg-brand-50 py-2.5 text-sm font-bold text-brand-700 transition hover:bg-brand-100"
                   >
                     Editar
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
+                    variant="primary"
                     onClick={() => void handleSubmitForValidation()}
                     disabled={submittingToValidation}
-                    className="rounded-xl bg-brand-500 py-2.5 text-sm font-bold text-white transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
+                    loading={submittingToValidation}
                   >
                     {submittingToValidation ? 'Enviando...' : 'Validar'}
-                  </button>
+                  </Button>
                 </div>
 
                 {actionMessage && (
@@ -339,13 +341,15 @@ function RecoleccionDetailScreen() {
             <p className="mt-1 text-sm font-semibold text-neutral-600">
               La recolección se envió a validar correctamente.
             </p>
-            <button
+            <Button
               type="button"
+              variant="primary"
+              fullWidth
               onClick={() => setShowValidationPopup(false)}
-              className="mt-4 w-full rounded-xl bg-brand-500 py-2.5 text-sm font-bold text-white transition hover:bg-brand-600"
+              className="mt-4"
             >
               Entendido
-            </button>
+            </Button>
           </div>
         </div>
       )}
