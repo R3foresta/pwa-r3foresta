@@ -1,6 +1,6 @@
-export type PwaInitializationStatus = 'checking' | 'updating' | 'ready'
+export type PwaInitializationStatus = 'updating' | 'ready'
 
-let currentStatus: PwaInitializationStatus = 'checking'
+let currentStatus: PwaInitializationStatus = 'ready'
 const listeners = new Set<() => void>()
 
 export function getPwaInitializationStatus() {
@@ -16,8 +16,6 @@ export function subscribeToPwaInitializationStatus(listener: () => void) {
 
 export function setPwaInitializationStatus(status: PwaInitializationStatus) {
   if (status === currentStatus) return
-  // Una actualización activada solo puede salir de este estado mediante la recarga.
-  if (currentStatus === 'updating' && status === 'ready') return
 
   currentStatus = status
   listeners.forEach((listener) => listener())

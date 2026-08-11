@@ -1,4 +1,4 @@
-import { useEffect, useState, useSyncExternalStore } from 'react'
+import { useSyncExternalStore } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import AuthLayout from './layouts/AuthLayout'
 import AppLayout from './layouts/AppLayout'
@@ -54,30 +54,7 @@ import AppInitializationScreen from './components/AppInitializationScreen'
 import {
   getPwaInitializationStatus,
   subscribeToPwaInitializationStatus,
-  type PwaInitializationStatus,
 } from './pwa/pwaStatus'
-import { useBackendHealth, type BackendHealthStatus } from './hooks/useBackendHealth'
-
-const MINIMUM_INITIALIZATION_TIME_MS = 700
-
-function getInitializationMessage({
-  backendHealthStatus,
-  hydrated,
-  isOnline,
-  pwaStatus,
-}: {
-  backendHealthStatus: BackendHealthStatus
-  hydrated: boolean
-  isOnline: boolean
-  pwaStatus: PwaInitializationStatus
-}) {
-  if (pwaStatus === 'updating') return 'Aplicando una nueva versión'
-  if (!isOnline) return 'Preparando el acceso sin conexión'
-  if (backendHealthStatus === 'checking') return 'Conectando con el servidor'
-  if (!hydrated) return 'Conectando con R3foresta'
-  if (pwaStatus === 'checking') return 'Comprobando la aplicación'
-  return 'Inicializando R3foresta'
-}
 
 function RootRedirect() {
   const { isAuthenticated, hydrated } = useAuth()
@@ -110,50 +87,14 @@ function CompleteProfileRoute() {
 
 function App() {
   const { pathname } = useLocation()
-  const { hydrated } = useAuth()
   const pwaStatus = useSyncExternalStore(
     subscribeToPwaInitializationStatus,
     getPwaInitializationStatus,
     getPwaInitializationStatus,
   )
-  const [minimumTimeElapsed, setMinimumTimeElapsed] = useState(false)
-  const [isOnline, setIsOnline] = useState(() => navigator.onLine)
-  const backendHealthStatus = useBackendHealth(isOnline)
 
-  useEffect(() => {
-    const timer = window.setTimeout(
-      () => setMinimumTimeElapsed(true),
-      MINIMUM_INITIALIZATION_TIME_MS,
-    )
-    const updateConnectionStatus = () => setIsOnline(navigator.onLine)
-
-    window.addEventListener('online', updateConnectionStatus)
-    window.addEventListener('offline', updateConnectionStatus)
-
-    return () => {
-      window.clearTimeout(timer)
-      window.removeEventListener('online', updateConnectionStatus)
-      window.removeEventListener('offline', updateConnectionStatus)
-    }
-  }, [])
-
-  const isInitializing =
-    !minimumTimeElapsed ||
-    !hydrated ||
-    pwaStatus !== 'ready' ||
-    backendHealthStatus === 'checking'
-
-  if (isInitializing) {
-    return (
-      <AppInitializationScreen
-        message={getInitializationMessage({
-          backendHealthStatus,
-          hydrated,
-          isOnline,
-          pwaStatus,
-        })}
-      />
-    )
+  if (pwaStatus === 'updating') {
+    return <AppInitializationScreen message="Aplicando una nueva versión" />
   }
 
   const installPromptPosition = pathname.startsWith('/app') ? 'bottom-28' : 'bottom-4'

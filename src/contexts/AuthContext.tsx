@@ -16,8 +16,6 @@ type AuthContextValue = {
 
 const STORAGE_KEY = 'r3foresta:user'
 const AUTH_ID_KEY = 'auth_id'
-const AUTH_HYDRATION_TIMEOUT_MS = 15000
-
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
 export function useAuth() {
@@ -29,7 +27,6 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [hydrated, setHydrated] = useState(false)
   const [user, setUser] = useState<User | null>(() => {
     // Verificar si hay authId y datos de usuario guardados
     const authId = localStorage.getItem(AUTH_ID_KEY)
@@ -63,12 +60,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Efecto para verificar datos frescos del backend cuando se carga la app
   React.useEffect(() => {
-    let active = true
-    const hydrationTimeout = window.setTimeout(() => {
-      // La sesión local permite continuar si el backend está despertando o no hay red.
-      if (active) setHydrated(true)
-    }, AUTH_HYDRATION_TIMEOUT_MS)
-
     const verifyUserData = async () => {
       const authId = localStorage.getItem(AUTH_ID_KEY)
       if (authId && user) {
@@ -102,16 +93,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    void verifyUserData().finally(() => {
-      window.clearTimeout(hydrationTimeout)
-      if (active) setHydrated(true)
-    })
-
-    return () => {
-      active = false
-      window.clearTimeout(hydrationTimeout)
-    }
-    // La verificación usa deliberadamente la sesión hidratada al montar.
+    void verifyUserData()
+    // La sesión local se usa de inmediato y este refresco continúa en segundo plano.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -185,7 +168,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       isAuthenticated: Boolean(user),
       isProfileComplete: ProfileService.isProfileComplete(user),
-      hydrated,
+      hydrated: true,
       setUser: (newUser: User | null) => {
         console.log('🔄 AuthContext - Actualizando usuario:', {
           de: user ? { id: user.id, perfil_completo: ProfileService.isProfileComplete(user) } : 'null',
@@ -207,7 +190,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       updateUserFromBackend,
     }),
-    [hydrated, user],
+    [user],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
