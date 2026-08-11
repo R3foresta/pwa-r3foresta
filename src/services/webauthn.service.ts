@@ -27,9 +27,6 @@ export class WebAuthnService {
       console.log('📡 Solicitando challenge al servidor...');
       const response = await fetch(`${API_URL}/api/auth/challenge`, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
       });
 
       if (!response.ok) {

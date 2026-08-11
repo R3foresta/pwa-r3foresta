@@ -20,13 +20,20 @@ self.addEventListener('fetch', (event) => {
   const { request } = event
   if (request.method !== 'GET') return
 
+  const requestUrl = new URL(request.url)
+
+  // Las llamadas a APIs externas deben conservar sus errores de red/CORS.
+  if (requestUrl.origin !== self.location.origin) return
+
+  // Solo las navegaciones pueden usar la portada como fallback offline.
+  if (request.mode === 'navigate') {
+    event.respondWith(fetch(request).catch(() => caches.match('/')))
+    return
+  }
+
   event.respondWith(
     caches.match(request).then(
-      (cached) =>
-        cached ||
-        fetch(request).catch(() =>
-          caches.match('/'),
-        ),
+      (cached) => cached || fetch(request),
     ),
   )
 })
