@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Icon from '../../components/Icon'
+import { Button } from '../../components/ui'
 import {
   RecoleccionesService,
   type Recoleccion,
@@ -83,14 +84,15 @@ function RecoleccionesScreen() {
             <p className="text-sm font-medium text-white/90">{subtitle}</p>
           </div>
           {canValidate && (
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              size="sm"
+              leftIcon="check"
               onClick={() => navigate('/app/collections/validate')}
-              className="my-auto ml-2 flex items-center gap-1.5 rounded-full bg-warning-400 px-4 py-2 text-sm font-extrabold text-warning-900 transition hover:bg-warning-300 active:scale-[0.97]"
+              className="my-auto ml-2 shrink-0 rounded-full"
             >
-              <Icon name="check" className="h-4 w-4" />
               Validar
-            </button>
+            </Button>
           )}
         </header>
 
@@ -151,13 +153,14 @@ function RecoleccionesScreen() {
           {error && (
             <div className="rounded-3xl bg-danger-50 px-4 py-6 text-center text-sm font-semibold text-danger-700 shadow-soft ring-1 ring-danger-200">
               <p>{error}</p>
-              <button
-                type="button"
+              <Button
+                variant="danger"
+                size="sm"
                 onClick={() => void loadRecolecciones(query, filter)}
-                className="mt-3 rounded-xl bg-danger-100 px-4 py-2 text-xs font-bold text-danger-700 transition hover:bg-danger-200"
+                className="mt-3 rounded-xl"
               >
                 Reintentar
-              </button>
+              </Button>
             </div>
           )}
 

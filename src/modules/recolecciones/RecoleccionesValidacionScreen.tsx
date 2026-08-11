@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Icon from '../../components/Icon'
-import { Badge, statusVariant } from '../../components/ui'
+import { Badge, Button, statusVariant } from '../../components/ui'
 import { useAuth } from '../../contexts/AuthContext'
 import { RecoleccionesService, type Recoleccion } from '../../services/recolecciones.service'
 import { formatUnidadCanonicaDisplay } from '../../utils/recoleccionUnidad'
@@ -53,22 +53,23 @@ function RejectModal({ recoleccion, onConfirm, onCancel, loading }: RejectModalP
         <p className="mt-1 text-right text-xs text-neutral-400">{motivo.length}/500</p>
 
         <div className="mt-4 flex gap-3">
-          <button
-            type="button"
+          <Button
+            variant="secondary"
             onClick={onCancel}
             disabled={loading}
-            className="flex-1 rounded-2xl border border-neutral-200 bg-white py-3 text-sm font-bold text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-50"
+            className="flex-1"
           >
             Cancelar
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="danger"
             onClick={() => onConfirm(motivo.trim())}
-            disabled={!isValid || loading}
-            className="flex-1 rounded-2xl bg-danger-600 py-3 text-sm font-bold text-white transition hover:bg-danger-700 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={!isValid}
+            loading={loading}
+            className="flex-1"
           >
             {loading ? 'Rechazando...' : 'Rechazar'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -328,44 +329,23 @@ function PendingCard({ item, onApprove, onReject, isActioning }: PendingCardProp
 
       {/* ── Acciones ─────────────────────────────────────────────── */}
       <div className="flex gap-2 border-t border-neutral-100 px-4 py-3">
-        <button
-          type="button"
+        <Button
+          variant="danger"
+          size="sm"
           onClick={onReject}
           disabled={isActioning}
-          className="flex-1 rounded-xl border border-danger-200 bg-danger-50 py-2.5 text-sm font-bold text-danger-700 transition hover:bg-danger-100 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex-1 rounded-xl"
         >
           Rechazar
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          size="sm"
           onClick={onApprove}
-          disabled={isActioning}
-          className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-success-600 py-2.5 text-sm font-bold text-white transition hover:bg-success-700 disabled:cursor-not-allowed disabled:opacity-50"
+          loading={isActioning}
+          className="flex-1 rounded-xl"
         >
-          {isActioning ? (
-            <>
-              <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                  fill="none"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                />
-              </svg>
-              <span>Validando...</span>
-            </>
-          ) : (
-            'Aprobar'
-          )}
-        </button>
+          {isActioning ? 'Validando...' : 'Aprobar'}
+        </Button>
       </div>
     </article>
   )
@@ -494,13 +474,14 @@ function RecoleccionesValidacionScreen() {
           {error && !loading && (
             <div className="rounded-3xl bg-danger-50 px-4 py-6 text-center text-sm font-semibold text-danger-700 shadow-soft ring-1 ring-danger-200">
               <p>{error}</p>
-              <button
-                type="button"
+              <Button
+                variant="danger"
+                size="sm"
                 onClick={() => void load()}
-                className="mt-3 rounded-xl bg-danger-100 px-4 py-2 text-xs font-bold text-danger-700 transition hover:bg-danger-200"
+                className="mt-3 rounded-xl"
               >
                 Reintentar
-              </button>
+              </Button>
             </div>
           )}
 
