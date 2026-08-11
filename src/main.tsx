@@ -5,6 +5,7 @@ import './index.css'
 import 'leaflet/dist/leaflet.css'
 import App from './App.tsx'
 import { AuthProvider } from './contexts/AuthContext'
+import { registerPwa } from './pwa/registerPwa'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -16,10 +17,4 @@ createRoot(document.getElementById('root')!).render(
   </StrictMode>,
 )
 
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch((error) => {
-      console.error('Service worker registration failed:', error)
-    })
-  })
-}
+registerPwa()

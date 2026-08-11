@@ -693,6 +693,15 @@ Si un comando no existe, reportarlo. No decir que pasó si no se ejecutó.
 - Solo `VALIDADO + ABIERTO` aparece como elegible para Vivero.
 - No existe consumo manual suelto desde Recolección si el flujo oficial parte desde Vivero.
 
+### 16.4 PWA y actualizaciones
+
+- El service worker se genera en cada `npm run build` con `vite-plugin-pwa` y Workbox.
+- No crear ni versionar manualmente `public/sw.js`.
+- Los cambios en los assets producen revisiones de precaché nuevas de forma automática.
+- El registro global vive en `src/pwa/registerPwa.ts` y comprueba actualizaciones al abrir, recuperar conexión, volver a la app y cada hora.
+- No agregar caché de API ni sincronización en segundo plano sin definir antes el contrato de offline/outbox.
+- En Vercel, `sw.js`, `index.html` y el manifest deben revalidarse; solo los assets con hash pueden usar caché inmutable.
+
 ---
 
 ## 17. Antipatrones a evitar

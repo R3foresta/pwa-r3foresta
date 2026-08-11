@@ -470,7 +470,7 @@ Mantener esta tabla actualizada.
 | AUD-009 | `ALTA` | `PENDIENTE` | `recoleccion` | `flujo` | Los registros `RECHAZADO` no se pueden corregir y reenviar desde el detalle. | `src/modules/recolecciones/RecoleccionDetailScreen.tsx` |
 | AUD-010 | `MEDIA` | `RESUELTO` | `vivero` | `deuda` | Comentarios de contratos y README describían como pendientes funciones ya conectadas. | `src/api/lotes-vivero.api.ts`, `src/modules/vivero/types/contracts.ts`, `src/modules/vivero/README.md` |
 | AUD-011 | `CRITICA` | `PENDIENTE` | `auth` | `seguridad` | Registro mock accesible y logout incompleto para tokens persistidos. | `src/modules/auth/RegisterScreen.tsx`, `src/contexts/AuthContext.tsx` |
-| AUD-012 | `ALTA` | `PENDIENTE` | `shared` | `pwa` | La UI promete sync offline, pero el service worker no precachea el bundle ni implementa outbox/API offline. | `public/sw.js`, `src/layouts/AuthLayout.tsx` |
+| AUD-012 | `ALTA` | `PENDIENTE` | `shared` | `pwa` | El app shell ya se precachea y actualiza automáticamente, pero la UI todavía promete sync offline sin implementar outbox/API offline. | `vite.config.ts`, `src/pwa/registerPwa.ts`, `src/layouts/AuthLayout.tsx` |
 
 ---
 
@@ -718,18 +718,18 @@ Eliminar el flujo mock, usar una sola fuente de sesión y limpiar/invalidatear t
 - Estado: `PENDIENTE`
 - Severidad: `ALTA`
 - Módulo: `shared`
-- Ubicación: `public/sw.js`, `src/layouts/AuthLayout.tsx`
+- Ubicación: `vite.config.ts`, `src/pwa/registerPwa.ts`, `src/layouts/AuthLayout.tsx`
 - Tipo: `pwa`
 - Detectado por: `Codex`
 - Fecha: `2026-07-21`
 
 #### Problema
 
-La interfaz anuncia sync offline, pero el service worker solo precachea `/` y el manifest; ante un fallo de red puede responder HTML para solicitudes que esperaban JSON.
+La interfaz anuncia sync offline. El app shell ya se precachea mediante Workbox, se excluyen las llamadas API del fallback de navegación y las nuevas versiones se activan automáticamente, pero todavía no existe una cola outbox ni sincronización real de operaciones con el backend.
 
 #### Acción sugerida
 
-O retirar la promesa hasta implementar offline real, o añadir precache de assets, fallback solo para navegación y una estrategia explícita de API/outbox.
+Retirar la promesa de sincronización hasta implementar offline real o definir e implementar una estrategia explícita de API/outbox. No convertir errores de red del backend en respuestas cacheadas.
 
 ---
 
