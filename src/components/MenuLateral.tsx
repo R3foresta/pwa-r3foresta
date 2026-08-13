@@ -1,5 +1,8 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Icon, { type IconName } from './Icon'
+import { Button } from './ui'
+import { usePwaInstall } from '../contexts/PwaInstallContext'
 
 type DrawerItem = {
   label: string
@@ -20,10 +23,30 @@ const ITEMS: DrawerItem[] = [
 
 function MenuLateral({ isOpen, onClose }: Props) {
   const navigate = useNavigate()
+  const {
+    canInstall,
+    install,
+    isPrompting,
+    platform,
+    shouldShowMenuInstall,
+  } = usePwaInstall()
+  const [showInstallHelp, setShowInstallHelp] = useState(false)
 
   const handleNavigate = (path: string) => {
     onClose()
     navigate(path)
+  }
+
+  const handleInstall = async () => {
+    if (!canInstall) {
+      setShowInstallHelp((currentValue) => !currentValue)
+      return
+    }
+
+    const outcome = await install()
+    if (outcome !== 'accepted') {
+      setShowInstallHelp(true)
+    }
   }
 
   return (
@@ -41,7 +64,7 @@ function MenuLateral({ isOpen, onClose }: Props) {
       />
 
       <aside
-        className={`absolute left-0 top-0 h-full w-[82%] max-w-[320px] bg-white px-4 py-5 shadow-2xl transition-transform ${
+        className={`absolute left-0 top-0 flex h-full w-[82%] max-w-[320px] flex-col overflow-y-auto bg-white px-4 py-5 shadow-2xl transition-transform ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -75,6 +98,45 @@ function MenuLateral({ isOpen, onClose }: Props) {
             </button>
           ))}
         </nav>
+
+        {shouldShowMenuInstall && (
+          <footer className="mt-auto border-t border-neutral-100 pt-5">
+            <div className="rounded-2xl bg-brand-50 p-3 ring-1 ring-brand-100">
+              <div className="mb-3 flex items-center gap-3">
+                <img
+                  src="/icon-192.png"
+                  alt=""
+                  className="h-11 w-11 shrink-0 rounded-xl"
+                  loading="lazy"
+                />
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-brand-700">Instala R3foresta</p>
+                  <p className="text-xs font-medium leading-5 text-neutral-600">
+                    Accede desde la pantalla principal de tu celular.
+                  </p>
+                </div>
+              </div>
+
+              <Button
+                size="sm"
+                fullWidth
+                loading={isPrompting}
+                aria-expanded={showInstallHelp}
+                onClick={() => void handleInstall()}
+              >
+                {canInstall ? 'Instalar' : 'Cómo instalar'}
+              </Button>
+
+              {showInstallHelp && (
+                <p className="mt-3 rounded-xl bg-white px-3 py-2 text-xs font-medium leading-5 text-neutral-600">
+                  {platform === 'ios'
+                    ? 'En Safari, toca Compartir y luego “Agregar a inicio”.'
+                    : 'Abre el menú del navegador (⋮) y elige “Instalar aplicación” o “Agregar a pantalla principal”.'}
+                </p>
+              )}
+            </div>
+          </footer>
+        )}
       </aside>
     </div>
   )

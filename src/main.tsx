@@ -5,14 +5,17 @@ import './index.css'
 import 'leaflet/dist/leaflet.css'
 import App from './App.tsx'
 import { AuthProvider } from './contexts/AuthContext'
+import { PwaInstallProvider } from './contexts/PwaInstallContext'
 import { registerPwa } from './pwa/registerPwa'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
-      <AuthProvider>
-        <App />
-      </AuthProvider>
+      <PwaInstallProvider>
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      </PwaInstallProvider>
     </BrowserRouter>
   </StrictMode>,
 )

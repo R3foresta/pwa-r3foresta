@@ -699,6 +699,8 @@ Si un comando no existe, reportarlo. No decir que pasó si no se ejecutó.
 - No crear ni versionar manualmente `public/sw.js`.
 - Los cambios en los assets producen revisiones de precaché nuevas de forma automática.
 - El registro global vive en `src/pwa/registerPwa.ts` y comprueba actualizaciones al abrir, recuperar conexión, volver a la app y cada hora.
+- El estado del diálogo de instalación vive en `src/contexts/PwaInstallContext.tsx`; cualquier sugerencia o acceso alternativo debe consumir ese contexto para no registrar listeners duplicados de `beforeinstallprompt`.
+- Cerrar una sugerencia visual de instalación no debe descartar el evento disponible: el acceso permanente del menú puede seguir utilizándolo.
 - La comprobación del service worker, la disponibilidad del backend y el refresco del perfil deben ejecutarse en segundo plano; no deben bloquear el render global ni un refresh de ruta.
 - No agregar caché de API ni sincronización en segundo plano sin definir antes el contrato de offline/outbox.
 - En Vercel, `sw.js`, `index.html` y el manifest deben revalidarse; solo los assets con hash pueden usar caché inmutable.
