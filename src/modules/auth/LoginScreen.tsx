@@ -3,7 +3,7 @@ import { useWebAuthn } from '../../hooks/useWebAuthn'
 import { useAuth } from '../../contexts/AuthContext'
 import Icon from '../../components/Icon'
 import { Button } from '../../components/ui'
-import heroCanopy from '../../assets/home/hero-canopy.jpg'
+import heroCanopy from '../../assets/home/hero-canopy.webp'
 
 function LoginScreen() {
   const { login: loginWebAuthn, register: registerWebAuthn, loading, error } = useWebAuthn()

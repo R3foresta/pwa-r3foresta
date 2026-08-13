@@ -1,60 +1,106 @@
-import { useSyncExternalStore } from 'react'
+import { lazy, Suspense, useSyncExternalStore } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import AuthLayout from './layouts/AuthLayout'
 import AppLayout from './layouts/AppLayout'
 import ProtectedRoute from './routes/ProtectedRoute'
 import GuestRoute from './routes/GuestRoute'
-import HomeScreen from './modules/home/HomeScreen'
 import PwaInstallPrompt from './components/PwaInstallPrompt'
-import {
-  RecoleccionDetailScreen,
-  RecoleccionNuevaEvidenciaScreen,
-  RecoleccionesScreen,
-  RecoleccionesValidacionScreen,
-} from './modules/recolecciones'
 import PlaceholderScreen from './modules/PlaceholderScreen'
-import RecoleccionFormDatosScreen from './modules/recolecciones/RecoleccionFormDatosScreen'
-import RecoleccionFormLayout from './modules/recolecciones/RecoleccionFormLayout'
-import RecoleccionFormResumenScreen from './modules/recolecciones/RecoleccionFormResumenScreen'
-import RecoleccionFormUbicacionScreen from './modules/recolecciones/RecoleccionFormUbicacionScreen'
-import LoginScreen from './modules/auth/LoginScreen'
-import RegisterScreen from './modules/auth/RegisterScreen'
-import RecoverScreen from './modules/auth/RecoverScreen'
 import { useAuth } from './contexts/AuthContext'
-import {
-  ViveroDetailScreen,
-  ViveroEmbolsadoScreen,
-  ViveroEventScreen,
-  ViveroNewScreen,
-  ViveroScreen,
-} from './modules/vivero'
-import {
-  CampaniaAdminDashboardScreen,
-  CrearCampanaScreen,
-  CrearSubcampanaScreen,
-  DetalleSubcampanaScreen,
-  EditarCampanaScreen,
-  PlantacionDashboardScreen,
-  RegistrarPlantacionScreen,
-} from './modules/plantacion'
-import MapScreen from './modules/map/MapScreen'
-import { CompleteProfileScreen, PerfilScreen } from './modules/user_profile'
-import ComunidadesScreen from './modules/comunidades/ComunidadesScreen'
-import PlantasScreen from './modules/plantas/PlantasScreen'
-import NuevaPlantaScreen from './modules/plantas/NuevaPlantaScreen'
-import EditarPlantaScreen from './modules/plantas/EditarPlantaScreen'
-import NuevaComunidadScreen from './modules/comunidades/NuevaComunidadScreen'
-import EditarComunidadScreen from './modules/comunidades/EditarComunidadScreen'
-import {
-  EditarOrganizacionScreen,
-  NuevaOrganizacionScreen,
-  OrganizacionesScreen,
-} from './modules/organizaciones'
 import AppInitializationScreen from './components/AppInitializationScreen'
 import {
   getPwaInitializationStatus,
   subscribeToPwaInitializationStatus,
 } from './pwa/pwaStatus'
+
+const HomeScreen = lazy(() => import('./modules/home/HomeScreen'))
+const LoginScreen = lazy(() => import('./modules/auth/LoginScreen'))
+const RegisterScreen = lazy(() => import('./modules/auth/RegisterScreen'))
+const RecoverScreen = lazy(() => import('./modules/auth/RecoverScreen'))
+const RecoleccionesScreen = lazy(
+  () => import('./modules/recolecciones/RecoleccionesScreen'),
+)
+const RecoleccionDetailScreen = lazy(
+  () => import('./modules/recolecciones/RecoleccionDetailScreen'),
+)
+const RecoleccionNuevaEvidenciaScreen = lazy(
+  () => import('./modules/recolecciones/RecoleccionNuevaEvidenciaScreen'),
+)
+const RecoleccionesValidacionScreen = lazy(
+  () => import('./modules/recolecciones/RecoleccionesValidacionScreen'),
+)
+const RecoleccionFormLayout = lazy(
+  () => import('./modules/recolecciones/RecoleccionFormLayout'),
+)
+const RecoleccionFormDatosScreen = lazy(
+  () => import('./modules/recolecciones/RecoleccionFormDatosScreen'),
+)
+const RecoleccionFormUbicacionScreen = lazy(
+  () => import('./modules/recolecciones/RecoleccionFormUbicacionScreen'),
+)
+const RecoleccionFormResumenScreen = lazy(
+  () => import('./modules/recolecciones/RecoleccionFormResumenScreen'),
+)
+const ViveroScreen = lazy(() => import('./modules/vivero/screens/ViveroScreen'))
+const ViveroDetailScreen = lazy(
+  () => import('./modules/vivero/screens/ViveroDetailScreen'),
+)
+const ViveroNewScreen = lazy(() => import('./modules/vivero/screens/ViveroNewScreen'))
+const ViveroEmbolsadoScreen = lazy(
+  () => import('./modules/vivero/screens/ViveroEmbolsadoScreen'),
+)
+const ViveroEventScreen = lazy(
+  () => import('./modules/vivero/screens/ViveroEventScreen'),
+)
+const PlantacionDashboardScreen = lazy(
+  () => import('./modules/plantacion/screens/PlantacionDashboardScreen'),
+)
+const CrearCampanaScreen = lazy(
+  () => import('./modules/plantacion/screens/CrearCampanaScreen'),
+)
+const CampaniaAdminDashboardScreen = lazy(
+  () => import('./modules/plantacion/screens/CampaniaAdminDashboardScreen'),
+)
+const EditarCampanaScreen = lazy(
+  () => import('./modules/plantacion/screens/EditarCampanaScreen'),
+)
+const CrearSubcampanaScreen = lazy(
+  () => import('./modules/plantacion/screens/CrearSubcampanaScreen'),
+)
+const DetalleSubcampanaScreen = lazy(
+  () => import('./modules/plantacion/screens/DetalleSubcampanaScreen'),
+)
+const RegistrarPlantacionScreen = lazy(
+  () => import('./modules/plantacion/screens/RegistrarPlantacionScreen'),
+)
+const MapScreen = lazy(() => import('./modules/map/MapScreen'))
+const PerfilScreen = lazy(() => import('./modules/user_profile/perfil'))
+const CompleteProfileScreen = lazy(() =>
+  import('./modules/user_profile/CompleteProfileScreen').then((module) => ({
+    default: module.CompleteProfileScreen,
+  })),
+)
+const ComunidadesScreen = lazy(
+  () => import('./modules/comunidades/ComunidadesScreen'),
+)
+const NuevaComunidadScreen = lazy(
+  () => import('./modules/comunidades/NuevaComunidadScreen'),
+)
+const EditarComunidadScreen = lazy(
+  () => import('./modules/comunidades/EditarComunidadScreen'),
+)
+const OrganizacionesScreen = lazy(
+  () => import('./modules/organizaciones/OrganizacionesScreen'),
+)
+const NuevaOrganizacionScreen = lazy(
+  () => import('./modules/organizaciones/NuevaOrganizacionScreen'),
+)
+const EditarOrganizacionScreen = lazy(
+  () => import('./modules/organizaciones/EditarOrganizacionScreen'),
+)
+const PlantasScreen = lazy(() => import('./modules/plantas/PlantasScreen'))
+const NuevaPlantaScreen = lazy(() => import('./modules/plantas/NuevaPlantaScreen'))
+const EditarPlantaScreen = lazy(() => import('./modules/plantas/EditarPlantaScreen'))
 
 function RootRedirect() {
   const { isAuthenticated, hydrated } = useAuth()
@@ -101,8 +147,9 @@ function App() {
 
   return (
     <>
-      <Routes>
-        <Route path="/" element={<RootRedirect />} />
+      <Suspense fallback={<AppInitializationScreen message="Cargando la aplicación" />}>
+        <Routes>
+          <Route path="/" element={<RootRedirect />} />
 
         <Route element={<GuestRoute />}>
           <Route path="/auth" element={<AuthLayout />}>
@@ -184,8 +231,9 @@ function App() {
           </Route>
         </Route>
 
-        <Route path="*" element={<PlaceholderScreen title="Página no encontrada" />} />
-      </Routes>
+          <Route path="*" element={<PlaceholderScreen title="Página no encontrada" />} />
+        </Routes>
+      </Suspense>
 
       <PwaInstallPrompt className={installPromptPosition} />
     </>

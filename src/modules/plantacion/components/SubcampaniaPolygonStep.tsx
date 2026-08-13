@@ -10,6 +10,7 @@ import {
   useMap,
   useMapEvents,
 } from 'react-leaflet'
+import 'leaflet/dist/leaflet.css'
 import Icon from '../../../components/Icon'
 import { Button } from '../../../components/ui'
 import { PlantacionService } from '../../../services/plantacion.service'

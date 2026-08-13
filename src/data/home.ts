@@ -1,8 +1,8 @@
-import heroCanopy from '../assets/home/hero-canopy.jpg'
-import recoleccionImg from '../assets/home/recoleccion.jpg'
-import germinacionImg from '../assets/home/germinacion.jpg'
-import plantacionImg from '../assets/home/plantacion.jpg'
-import co2Img from '../assets/home/co2.jpg'
+import heroCanopy from '../assets/home/hero-canopy.webp'
+import recoleccionImg from '../assets/home/recoleccion.webp'
+import germinacionImg from '../assets/home/germinacion.webp'
+import plantacionImg from '../assets/home/plantacion.webp'
+import co2Img from '../assets/home/co2.webp'
 import type { Screen } from '../types/navigation'
 
 export const hero = {

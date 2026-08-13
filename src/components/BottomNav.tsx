@@ -1,11 +1,14 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import Icon, { type IconName } from './Icon'
 import { Button } from './ui'
 import { NAV_ITEMS } from '../data/navigation'
 import { useAuth } from '../contexts/AuthContext'
-import { ProfileService } from '../modules/user_profile'
-import SubcampaniasOperativasSheet from '../modules/plantacion/components/SubcampaniasOperativasSheet'
+import { ProfileService } from '../modules/user_profile/profile.service'
+
+const SubcampaniasOperativasSheet = lazy(
+  () => import('../modules/plantacion/components/SubcampaniasOperativasSheet'),
+)
 
 type QuickAction = {
   label: string
@@ -151,19 +154,30 @@ function BottomNav() {
               </button>
             </div>
             {sheetView === 'plantacion' ? (
-              <SubcampaniasOperativasSheet
-                onBack={() => setSheetView('actions')}
-                onVer={(subcampaniaId) => {
-                  closeSheet()
-                  navigate(`/app/planting/subcampanias/${subcampaniaId}`)
-                }}
-                onRegistrar={(subcampaniaId) => {
-                  closeSheet()
-                  navigate(
-                    `/app/planting/subcampanias/${subcampaniaId}/plantaciones/new`,
-                  )
-                }}
-              />
+              <Suspense
+                fallback={(
+                  <div
+                    className="px-5 py-8 text-center text-sm font-semibold text-brand-600"
+                    aria-live="polite"
+                  >
+                    Cargando subcampañas…
+                  </div>
+                )}
+              >
+                <SubcampaniasOperativasSheet
+                  onBack={() => setSheetView('actions')}
+                  onVer={(subcampaniaId) => {
+                    closeSheet()
+                    navigate(`/app/planting/subcampanias/${subcampaniaId}`)
+                  }}
+                  onRegistrar={(subcampaniaId) => {
+                    closeSheet()
+                    navigate(
+                      `/app/planting/subcampanias/${subcampaniaId}/plantaciones/new`,
+                    )
+                  }}
+                />
+              </Suspense>
             ) : (
               <div className="divide-y divide-neutral-100 px-2 pb-2 pt-2">
                 {quickActions.map((action) => (

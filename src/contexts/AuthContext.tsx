@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components -- Contexto y hook se exportan juntos por contrato público. */
 import React, { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
 import type { User } from '../types/auth.types'
-import { ProfileService } from '../modules/user_profile'
+import { ProfileService } from '../modules/user_profile/profile.service'
 
 type AuthContextValue = {
   user: User | null

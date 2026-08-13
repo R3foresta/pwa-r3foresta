@@ -4,7 +4,7 @@ import Icon, { type IconName } from '../../../components/Icon'
 import { Badge, statusVariant } from '../../../components/ui'
 import { useAuth } from '../../../contexts/AuthContext'
 import { PlantacionService } from '../../../services/plantacion.service'
-import heroCanopy from '../../../assets/home/hero-canopy.jpg'
+import heroCanopy from '../../../assets/home/hero-canopy.webp'
 import {
   TIPO_CAMPANIA_LABEL,
   type Campania,

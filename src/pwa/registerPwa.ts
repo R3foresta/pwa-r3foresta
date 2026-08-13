@@ -34,7 +34,9 @@ export function registerPwa() {
   if (!('serviceWorker' in navigator) || import.meta.env.DEV) return
 
   registerSW({
-    immediate: true,
+    // Esperar al evento load evita que el registro y el precache compitan con
+    // la primera pantalla en conexiones o dispositivos lentos.
+    immediate: false,
     onNeedReload: () => {
       setPwaInitializationStatus('updating')
       window.setTimeout(() => window.location.reload(), UPDATE_MESSAGE_DELAY_MS)

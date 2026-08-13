@@ -102,6 +102,8 @@ El router principal vive en `src/App.tsx`; los providers globales viven en `src/
 
 No debe contener lógica específica de Recolección, Vivero o Evidencias.
 
+Las pantallas registradas en el router se cargan bajo demanda con `React.lazy` y rutas de importación directas. `Suspense` debe ofrecer feedback visible mientras llega un chunk. El entrypoint global no debe importar librerías pesadas de una feature, como Leaflet; sus scripts y estilos pertenecen a las pantallas que realmente los usan.
+
 ### 4.2 Capas compartidas
 
 `src/components/`, `src/hooks/`, `src/utils/`, `src/api/` y `src/services/` contienen componentes reutilizables, utilidades, tipos transversales, llamadas HTTP y casos de uso compartidos.

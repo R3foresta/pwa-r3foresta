@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import plantacionHero from '../../../assets/home/plantacion.jpg'
+import plantacionHero from '../../../assets/home/plantacion.webp'
 import Icon from '../../../components/Icon'
 import { useAuth } from '../../../contexts/AuthContext'
 import { PlantacionService } from '../../../services/plantacion.service'

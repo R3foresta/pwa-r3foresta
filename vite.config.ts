@@ -24,8 +24,8 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          // Separar librerías grandes en chunks independientes
-          'leaflet-vendor': ['leaflet', 'react-leaflet'],
+          // React forma parte del shell; las librerías de cada feature se
+          // descubren desde sus rutas lazy para no volverlas dependencias iniciales.
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
         },
       },

@@ -1,5 +1,5 @@
 import { Outlet } from 'react-router-dom'
-import heroCanopy from '../assets/home/hero-canopy.jpg'
+import heroCanopy from '../assets/home/hero-canopy.webp'
 
 function AuthLayout() {
   return (

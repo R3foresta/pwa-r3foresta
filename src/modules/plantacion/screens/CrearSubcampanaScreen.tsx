@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import plantacionHero from '../../../assets/home/plantacion.jpg'
+import plantacionHero from '../../../assets/home/plantacion.webp'
 import Icon from '../../../components/Icon'
 import { Button } from '../../../components/ui'
 import SelectorComunidad from '../../comunidades/SelectorComunidad'

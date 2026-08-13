@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { Button } from '../../components/ui'
-import plantacionImg from '../../assets/home/plantacion.jpg'
+import plantacionImg from '../../assets/home/plantacion.webp'
 
 function RegisterScreen() {
   const navigate = useNavigate()

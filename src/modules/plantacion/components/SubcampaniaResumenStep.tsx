@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { MapContainer, Polygon, TileLayer } from 'react-leaflet'
 import type { LatLngTuple } from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 import Icon from '../../../components/Icon'
 import { Button } from '../../../components/ui'
 import { PlantacionService } from '../../../services/plantacion.service'

@@ -351,6 +351,7 @@ Revisar:
 Hallazgos:
 
 - Router operativo y rutas de Recolección, Vivero y Plantación conectadas.
+- Optimización de arranque aplicada el `2026-08-13`: splash nativo y boot shell anterior a React con fondo consistente, pantallas cargadas bajo demanda, Leaflet fuera del entrypoint, registro del service worker después de la carga inicial y recursos principales convertidos a WebP. El JS/CSS obligatorio comprimido bajó aproximadamente de `313 kB` a `94 kB` en el build local.
 - La ruta `/auth/register` todavía expone un flujo mock; ver `AUD-011`.
 - Existe una ruta legacy `/app/vivero/:id/event/new`; ver `AUD-006`.
 
@@ -751,7 +752,7 @@ Registrar deuda que se permite por ahora, con límite claro.
 
 | Deuda | Motivo | Límite | Responsable | Estado |
 |---|---|---|---|---|
-| Bundle principal grande y pantallas monolíticas | No bloquea el MVP; priorizar claridad operativa | Extraer por caso de uso y cargar rutas bajo demanda | Frontend | `PENDIENTE` |
+| Pantallas monolíticas en flujos complejos | No bloquea el MVP; priorizar claridad operativa | Extraer gradualmente por caso de uso; la carga de rutas bajo demanda quedó resuelta el 2026-08-13 | Frontend | `PENDIENTE` |
 | Ausencia de pruebas automatizadas | No hay runner configurado actualmente | Añadir unitarias de dominio y E2E de flujos críticos | Frontend | `PENDIENTE` |
 
 Regla:

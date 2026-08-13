@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import heroCanopy from '../../../assets/home/hero-canopy.jpg'
+import heroCanopy from '../../../assets/home/hero-canopy.webp'
 import Icon from '../../../components/Icon'
 import { useAuth } from '../../../contexts/AuthContext'
 import { PlantacionService } from '../../../services/plantacion.service'
