@@ -21,7 +21,14 @@ type BeforeInstallPromptEvent = Event & {
   }>
 }
 
-type NavigatorWithStandalone = Navigator & {
+type RelatedApplication = {
+  id?: string
+  platform: string
+  url?: string
+}
+
+type NavigatorWithPwaCapabilities = Navigator & {
+  getInstalledRelatedApps?: () => Promise<RelatedApplication[]>
   standalone?: boolean
 }
 
@@ -57,6 +64,14 @@ function setStoredValue(key: string, value: string) {
   }
 }
 
+function removeStoredValue(key: string) {
+  try {
+    window.localStorage.removeItem(key)
+  } catch {
+    // Si el navegador bloquea storage, la instalación sigue funcionando.
+  }
+}
+
 function getStoredNumber(key: string) {
   const rawValue = getStoredValue(key)
   if (!rawValue) return 0
@@ -80,7 +95,7 @@ function getPlatform(): PwaInstallPlatform {
 function isStandaloneDisplay() {
   const isDisplayModeStandalone = window.matchMedia('(display-mode: standalone)').matches
   const isNavigatorStandalone = Boolean(
-    (window.navigator as NavigatorWithStandalone).standalone,
+    (window.navigator as NavigatorWithPwaCapabilities).standalone,
   )
 
   return isDisplayModeStandalone || isNavigatorStandalone
@@ -92,6 +107,23 @@ function isDismissed() {
 
 function isStoredAsInstalled() {
   return getStoredValue(INSTALLED_KEY) === 'true'
+}
+
+async function detectRelatedPwaInstallation() {
+  if (isStandaloneDisplay()) return true
+
+  const navigatorWithPwaCapabilities = window.navigator as NavigatorWithPwaCapabilities
+  const getInstalledRelatedApps = navigatorWithPwaCapabilities.getInstalledRelatedApps
+
+  if (!getInstalledRelatedApps) return null
+
+  try {
+    const relatedApplications = await getInstalledRelatedApps.call(window.navigator)
+    return relatedApplications.some((application) => application.platform === 'webapp')
+  } catch {
+    // La API es complementaria; beforeinstallprompt sigue siendo el fallback.
+    return null
+  }
 }
 
 export function usePwaInstall() {
@@ -114,10 +146,15 @@ export function PwaInstallProvider({ children }: { children: ReactNode }) {
   const [isPrompting, setIsPrompting] = useState(false)
 
   useEffect(() => {
-    if (platform !== 'android' || isInstalled) return undefined
+    if (platform !== 'android') return undefined
 
     const handleBeforeInstallPrompt = (event: Event) => {
       event.preventDefault()
+
+      // Este evento no se emite si la PWA sigue instalada. Si reaparece,
+      // cualquier marcador anterior quedó obsoleto tras una desinstalación.
+      removeStoredValue(INSTALLED_KEY)
+      setIsInstalled(false)
       setInstallPrompt(event as BeforeInstallPromptEvent)
 
       if (!isDismissed()) {
@@ -139,7 +176,41 @@ export function PwaInstallProvider({ children }: { children: ReactNode }) {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
       window.removeEventListener('appinstalled', handleAppInstalled)
     }
-  }, [isInstalled, platform])
+  }, [platform])
+
+  useEffect(() => {
+    if (platform !== 'android') return undefined
+
+    let isActive = true
+
+    const reconcileInstalledState = async () => {
+      const detectedInstallation = await detectRelatedPwaInstallation()
+      if (!isActive || detectedInstallation === null) return
+
+      if (detectedInstallation) {
+        setStoredValue(INSTALLED_KEY, 'true')
+        setIsInstalled(true)
+        return
+      }
+
+      removeStoredValue(INSTALLED_KEY)
+      setIsInstalled(false)
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        void reconcileInstalledState()
+      }
+    }
+
+    void reconcileInstalledState()
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      isActive = false
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [platform])
 
   const dismissBanner = useCallback(() => {
     setStoredValue(DISMISSED_UNTIL_KEY, String(Date.now() + DISMISS_DURATION_MS))

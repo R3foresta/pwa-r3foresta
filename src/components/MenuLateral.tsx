@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Icon, { type IconName } from './Icon'
 import { Button } from './ui'
@@ -21,6 +21,15 @@ const ITEMS: DrawerItem[] = [
   { label: 'Plantas', path: '/app/plantas', icon: 'leaf' },
 ]
 
+const FOCUSABLE_ELEMENT_SELECTOR = [
+  'a[href]',
+  'button:not([disabled])',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(',')
+
 function MenuLateral({ isOpen, onClose }: Props) {
   const navigate = useNavigate()
   const {
@@ -31,6 +40,62 @@ function MenuLateral({ isOpen, onClose }: Props) {
     shouldShowMenuInstall,
   } = usePwaInstall()
   const [showInstallHelp, setShowInstallHelp] = useState(false)
+  const menuRef = useRef<HTMLElement>(null)
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
+  const previousFocusRef = useRef<HTMLElement | null>(null)
+
+  useEffect(() => {
+    if (!isOpen) return undefined
+
+    previousFocusRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null
+    closeButtonRef.current?.focus()
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        onClose()
+        return
+      }
+
+      if (event.key !== 'Tab' || !menuRef.current) return
+
+      const focusableElements = Array.from(
+        menuRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_ELEMENT_SELECTOR),
+      ).filter((element) => element.getClientRects().length > 0)
+
+      if (focusableElements.length === 0) {
+        event.preventDefault()
+        return
+      }
+
+      const firstElement = focusableElements[0]
+      const lastElement = focusableElements[focusableElements.length - 1]
+      const activeElementIsInsideMenu = menuRef.current.contains(document.activeElement)
+
+      if (event.shiftKey && (document.activeElement === firstElement || !activeElementIsInsideMenu)) {
+        event.preventDefault()
+        lastElement.focus()
+      } else if (
+        !event.shiftKey &&
+        (document.activeElement === lastElement || !activeElementIsInsideMenu)
+      ) {
+        event.preventDefault()
+        firstElement.focus()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+
+      if (previousFocusRef.current?.isConnected) {
+        previousFocusRef.current.focus()
+      }
+      previousFocusRef.current = null
+    }
+  }, [isOpen, onClose])
 
   const handleNavigate = (path: string) => {
     onClose()
@@ -53,10 +118,10 @@ function MenuLateral({ isOpen, onClose }: Props) {
     <div
       className={`fixed inset-0 z-[60] transition ${isOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
       aria-hidden={!isOpen}
+      inert={!isOpen}
     >
-      <button
-        type="button"
-        aria-label="Cerrar menú lateral"
+      <div
+        aria-hidden="true"
         onClick={onClose}
         className={`absolute inset-0 bg-black/40 transition-opacity ${
           isOpen ? 'opacity-100' : 'opacity-0'
@@ -64,6 +129,11 @@ function MenuLateral({ isOpen, onClose }: Props) {
       />
 
       <aside
+        ref={menuRef}
+        id="menu-lateral"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="menu-lateral-title"
         className={`absolute left-0 top-0 flex h-full w-[82%] max-w-[320px] flex-col overflow-y-auto bg-white px-4 py-5 shadow-2xl transition-transform ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
@@ -71,9 +141,12 @@ function MenuLateral({ isOpen, onClose }: Props) {
         <div className="mb-5 flex items-center justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.2em] text-brand-500">Menú</p>
-            <h2 className="text-xl font-extrabold text-brand-700">Navegación</h2>
+            <h2 id="menu-lateral-title" className="text-xl font-extrabold text-brand-700">
+              Navegación
+            </h2>
           </div>
           <button
+            ref={closeButtonRef}
             type="button"
             onClick={onClose}
             aria-label="Cerrar menú"
@@ -122,13 +195,18 @@ function MenuLateral({ isOpen, onClose }: Props) {
                 fullWidth
                 loading={isPrompting}
                 aria-expanded={showInstallHelp}
+                aria-controls="pwa-install-help"
                 onClick={() => void handleInstall()}
               >
                 {canInstall ? 'Instalar' : 'Cómo instalar'}
               </Button>
 
               {showInstallHelp && (
-                <p className="mt-3 rounded-xl bg-white px-3 py-2 text-xs font-medium leading-5 text-neutral-600">
+                <p
+                  id="pwa-install-help"
+                  role="status"
+                  className="mt-3 rounded-xl bg-white px-3 py-2 text-xs font-medium leading-5 text-neutral-600"
+                >
                   {platform === 'ios'
                     ? 'En Safari, toca Compartir y luego “Agregar a inicio”.'
                     : 'Abre el menú del navegador (⋮) y elige “Instalar aplicación” o “Agregar a pantalla principal”.'}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import Icon from '../../components/Icon'
@@ -10,6 +10,7 @@ function HomeScreen() {
   const navigate = useNavigate()
   const { user, isProfileComplete } = useAuth()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const closeMenu = useCallback(() => setIsMenuOpen(false), [])
   const targetPath: Record<Screen, string> = {
     home: '/app/home',
     collections: '/app/collections',
@@ -36,13 +37,15 @@ function HomeScreen() {
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-32 pt-6">
-      <MenuLateral isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+      <MenuLateral isOpen={isMenuOpen} onClose={closeMenu} />
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
             type="button"
             className="rounded-full bg-white/90 p-2 shadow-sm transition hover:shadow-soft"
             aria-label="Abrir menú lateral"
+            aria-controls="menu-lateral"
+            aria-expanded={isMenuOpen}
             onClick={() => setIsMenuOpen(true)}
           >
             <svg
