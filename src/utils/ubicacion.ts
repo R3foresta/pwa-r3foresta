@@ -10,6 +10,18 @@ export function getUbicacionDivision(ubicacion?: UbicacionApi | null): string {
   return ubicacion.division.ruta.map((item) => item.nombre).join(', ')
 }
 
+export function getUbicacionComunidadDisplay(ubicacion?: UbicacionApi | null): string {
+  const ruta = ubicacion?.division?.ruta?.map((item) => item.nombre).filter(Boolean) ?? []
+  if (!ruta.length) return 'Sin ubicación'
+
+  // La ruta llega desde el nivel superior hasta la comunidad seleccionada.
+  const departamento = ruta[0]
+  const comunidad = ruta[ruta.length - 1]
+
+  if (departamento === comunidad) return comunidad
+  return `${comunidad}, ${departamento}`
+}
+
 export function getUbicacionCoords(
   ubicacion?: UbicacionApi | null,
   digits = 6,

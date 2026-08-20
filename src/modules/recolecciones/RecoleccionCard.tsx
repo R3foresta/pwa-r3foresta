@@ -2,7 +2,7 @@ import Icon from '../../components/Icon'
 import { Badge, statusVariant } from '../../components/ui'
 import type { Recoleccion } from '../../services/recolecciones.service'
 import { formatUnidadCanonicaDisplay } from '../../utils/recoleccionUnidad'
-import { getUbicacionDisplay } from '../../utils/ubicacion'
+import { getUbicacionComunidadDisplay } from '../../utils/ubicacion'
 import { resolveEstadoOperativo, resolveEstadoRegistro } from './recoleccionStatus'
 
 type Props = {
@@ -67,7 +67,7 @@ function RecoleccionCard({ recoleccion }: Props) {
             </p>
             <p className="flex items-center gap-2">
               <Icon name="pin" className="h-4 w-4 text-brand-500" />
-              {getUbicacionDisplay(recoleccion.ubicacion)}
+              {getUbicacionComunidadDisplay(recoleccion.ubicacion)}
             </p>
           </div>
         </div>
