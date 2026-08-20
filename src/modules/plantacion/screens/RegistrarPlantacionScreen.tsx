@@ -4,7 +4,7 @@ import Icon from '../../../components/Icon'
 import { Button } from '../../../components/ui'
 import { useAuth } from '../../../contexts/AuthContext'
 import { PlantacionService } from '../../../services/plantacion.service'
-import FotosUploader, { type Photo } from '../../vivero/components/event/FotosUploader'
+import PhotoUploader, { type Photo } from '../../../components/evidence/PhotoUploader'
 import { usePlantacionContext } from '../hooks/usePlantacionContext'
 import { isPointInPolygon } from '../utils/geo'
 import {
@@ -546,7 +546,7 @@ function RegistrarPlantacionScreen() {
           {step === 1 && (
             <>
               <section className="rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
-                <FotosUploader
+                <PhotoUploader
                   photos={photos}
                   onAdd={handleAddPhotos}
                   onRemove={handleRemovePhoto}

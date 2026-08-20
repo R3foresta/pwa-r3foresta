@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Icon from '../../components/Icon'
+import PhotoUploader from '../../components/evidence/PhotoUploader'
+import { createPhotoAsset } from '../../components/evidence/photoAssets'
 import { RecoleccionesService } from '../../services/recolecciones.service'
 import { MAX_FOTOS_POR_TIPO as MAX_FOTOS_FORM } from './validators/recoleccionForm'
-import PhotoPicker from './components/PhotoPicker'
 import type { RecoleccionPhoto } from './recoleccionFormTypes'
 import { revokePhotoPreviewUrls } from './utils/photoPreviewUrls'
 
@@ -36,6 +37,25 @@ function RecoleccionNuevaEvidenciaScreen() {
 
   const removeFoto = (index: number) => {
     setFotos((prev) => prev.filter((_, i) => i !== index))
+    setPhotoPreviews((prev) => {
+      const removed = prev[index]
+      if (removed?.previewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(removed.previewUrl)
+      }
+      return prev.filter((_, i) => i !== index)
+    })
+  }
+
+  const addFotos = (files: File[]) => {
+    const remaining = Math.max(0, MAX_FOTOS - fotos.length)
+    const accepted = files.slice(0, remaining)
+    if (accepted.length === 0) return
+
+    setFotos((prev) => [...prev, ...accepted].slice(0, MAX_FOTOS))
+    setPhotoPreviews((prev) =>
+      [...prev, ...accepted.map(createPhotoAsset)].slice(0, MAX_FOTOS),
+    )
+    setError(null)
   }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -152,18 +172,11 @@ function RecoleccionNuevaEvidenciaScreen() {
               <span className="text-xs font-semibold text-neutral-500">{fotos.length}/{MAX_FOTOS}</span>
             </div>
 
-            <PhotoPicker
+            <PhotoUploader
               label="Evidencias"
               photos={photoPreviews}
-              maxPhotos={MAX_FOTOS}
-              onChange={(next) => setPhotoPreviews(next)}
-              onFilesAccepted={(accepted) => {
-                const remaining = Math.max(0, MAX_FOTOS - fotos.length)
-                const trimmed = accepted.slice(0, remaining)
-                if (trimmed.length === 0) return
-                setFotos((prev) => [...prev, ...trimmed].slice(0, MAX_FOTOS))
-                setError(null)
-              }}
+              max={MAX_FOTOS}
+              onAdd={addFotos}
               onRemove={(index) => removeFoto(index)}
             />
 

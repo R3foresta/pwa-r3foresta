@@ -18,8 +18,8 @@ import {
 } from '../../../utils/validations/date'
 import CantidadInputCard from '../components/event/CantidadInputCard'
 import FechaCard from '../components/event/FechaCard'
-import FotosUploader from '../components/event/FotosUploader'
-import type { Photo } from '../components/event/FotosUploader'
+import PhotoUploader from '../../../components/evidence/PhotoUploader'
+import type { Photo } from '../../../components/evidence/PhotoUploader'
 import ObservacionesCard from '../components/event/ObservacionesCard'
 import ProgressHeader from '../components/event/ProgressHeader'
 import QuickPercentages from '../components/event/QuickPercentages'
@@ -706,7 +706,7 @@ function ViveroNewScreen() {
             ) : undefined
           }
         >
-          <FotosUploader
+          <PhotoUploader
             headerless
             photos={photos}
             onAdd={addPhotos}

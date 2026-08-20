@@ -5,7 +5,7 @@ import { Button } from '../../../components/ui'
 import { formatUnidadCanonicaDisplay } from '../../../utils/recoleccionUnidad'
 import { todayLocalISO } from '../../../utils/validations/date'
 import CantidadInputCard from '../components/event/CantidadInputCard'
-import FotosUploader from '../components/event/FotosUploader'
+import PhotoUploader from '../../../components/evidence/PhotoUploader'
 import QuickPercentages from '../components/event/QuickPercentages'
 import SaldoMeter from '../components/event/SaldoMeter'
 import { useEmbolsado } from '../hooks/useEmbolsado'
@@ -346,7 +346,7 @@ function ViveroEmbolsadoScreen() {
 
           {/* Photos */}
           <div className="rounded-2xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
-            <FotosUploader
+            <PhotoUploader
               photos={photos}
               onAdd={addPhotos}
               onRemove={removePhoto}

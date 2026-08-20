@@ -32,7 +32,7 @@ filtros de etapa en `utils/stageFilters.ts`). Paridad visual.
 | Detalle + secciones | `screens/ViveroDetailScreen.tsx`, `HeroHeader`, `IndicadoresRapidos`, `OrigenCard`, `SaludCard`, `CierreLoteCard`, `QuickActions`, `AuditoriaSection`, `CollapsibleSection`, `GalleryModal` | `HeroHeader` tenía hex fijo → token `brand-950` |
 | Timelines + barras | `StageTimeline`, `AdaptabilidadTimeline`, `Timeline`, `UltimosEventos`, `EventCard`, `SubetapasBar`, `SurvivalBar`, `DispatchFlowCard` | **color data-driven**, ver §6 |
 | Asignaciones | `ViveroLotAsignacionesTab` (988), `ViveroLotAsignacionesCollapsible`, `EvidenciaTab` | archivo grande → considerar PR propio |
-| Flujo de evento | `screens/ViveroEventScreen.tsx`, `ViveroEmbolsadoScreen.tsx`, y `components/event/*` (`SectionCard`, `CantidadStepper`, `CantidadInputCard`, `FechaCard`, `ObservacionesCard`, `FotosUploader`, `SaldoMeter`, `ProgressHeader`, `QuickPercentages`, `EventoCTABar`, `StageTabs`) | steppers y medidores a medida |
+| Flujo de evento | `screens/ViveroEventScreen.tsx`, `ViveroEmbolsadoScreen.tsx`, y `components/event/*` (`SectionCard`, `CantidadStepper`, `CantidadInputCard`, `FechaCard`, `ObservacionesCard`, `PhotoUploader`, `SaldoMeter`, `ProgressHeader`, `QuickPercentages`, `EventoCTABar`, `StageTabs`) | steppers y medidores a medida |
 | Formularios de evento | `event/forms/` (`EmbolsadoForm`, `AdaptabilidadForm`, `MermaForm` 615, `DespachoForm`, `DescartePreEmbolsadoForm`) | `<Field>`/`<Input>`/`<Select>`/`<Textarea>` + `<Button>` |
 | Alta | `screens/ViveroNewScreen.tsx` (791) | form grande |
 
@@ -92,7 +92,7 @@ inputs/selects/textareas → primitivas de `Field`, buscador → `SearchBar`, `<
 4. **`HeroHeader`** tenía un hex fijo ya absorbido por `brand-950` en `tailwind.config.js`: usar el token.
 5. **Controles a medida** (`CantidadStepper`, `CantidadInputCard`, `StageTabs`, `FiltersRow`): migrar tokens
    y, si calzan, expresarlos con `<Button variant="ghost">` / `<Chip>`; si el layout se rompe, documentar por qué quedan a medida.
-6. **`FotosUploader` / `GalleryModal`**: solo el *chrome* (botones, contenedores). La lógica de subida/preview intacta.
+6. **`PhotoUploader` / `GalleryModal`**: solo el *chrome* (botones, contenedores). La lógica de subida/preview intacta.
 7. **`StatusBadge`:** estados/etapas nuevos → agregarlos a `status.ts` (una sola fuente), nunca un mapa nuevo en el módulo.
 
 ## 7. Criterios de aceptación (DoD)

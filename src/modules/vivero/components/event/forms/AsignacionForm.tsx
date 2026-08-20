@@ -10,7 +10,7 @@ import type { LoteViveroItem, PropositoAsignacionVivero } from '../../../types/c
 import CantidadStepper from '../CantidadStepper'
 import EventoCTABar from '../EventoCTABar'
 import FechaCard from '../FechaCard'
-import FotosUploader, { type Photo } from '../FotosUploader'
+import PhotoUploader, { type Photo } from '../../../../../components/evidence/PhotoUploader'
 
 type Props = {
   lote: LoteViveroItem
@@ -477,7 +477,7 @@ function AsignacionForm({ lote, onCompleted }: Props) {
         </section>
 
         <section className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
-          <FotosUploader
+          <PhotoUploader
             photos={photos}
             onAdd={addPhotos}
             onRemove={removePhoto}

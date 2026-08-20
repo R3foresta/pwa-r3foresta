@@ -6,10 +6,11 @@ import { useRecoleccionForm } from "./useRecoleccionForm";
 import { RecoleccionesService } from "../../services/recolecciones.service";
 import { buildPastRange, clampDateToRange } from "../../utils/validations/date";
 import { MAX_DIAS_RECOLECCION } from "../../config/recoleccion";
-import { validateRecoleccionForm } from "./validators/recoleccionForm";
+import { MAX_FOTOS_POR_TIPO, validateRecoleccionForm } from "./validators/recoleccionForm";
 import TipoMaterialSwitcher from "./components/TipoMaterialSwitcher";
 import CantidadInput from "./components/CantidadInput";
-import PhotoPicker from "./components/PhotoPicker";
+import PhotoUploader from "../../components/evidence/PhotoUploader";
+import { createPhotoAsset } from "../../components/evidence/photoAssets";
 import PlantSelector from "../plantas/components/PlantSelector";
 import { usePlantasCatalog } from "../plantas/hooks/usePlantasCatalog";
 import { useCatalogosRecoleccion } from "./hooks/useCatalogosRecoleccion";
@@ -240,6 +241,35 @@ function RecoleccionFormDatosScreen() {
   const hasMinimumPhotos =
     (formData.placePhotos?.length || 0) >= 1 && (formData.totalPhotos?.length || 0) >= 1;
 
+  const addPhotos = (field: 'placePhotos' | 'totalPhotos', files: File[]) => {
+    const currentPhotos = formData[field] ?? [];
+    const availableSlots = Math.max(0, MAX_FOTOS_POR_TIPO - currentPhotos.length);
+    const nextPhotos = files
+      .slice(0, availableSlots)
+      .map(createPhotoAsset);
+
+    if (nextPhotos.length === 0) return;
+
+    if (field === 'placePhotos') {
+      updateForm({ placePhotos: [...currentPhotos, ...nextPhotos] });
+    } else {
+      updateForm({ totalPhotos: [...currentPhotos, ...nextPhotos] });
+    }
+    setErrors((prev) => ({ ...prev, photos: false }));
+  };
+
+  const removePhoto = (field: 'placePhotos' | 'totalPhotos', index: number) => {
+    const currentPhotos = formData[field] ?? [];
+    const nextPhotos = currentPhotos.filter((_, photoIndex) => photoIndex !== index);
+
+    if (field === 'placePhotos') {
+      updateForm({ placePhotos: nextPhotos });
+    } else {
+      updateForm({ totalPhotos: nextPhotos });
+    }
+    setErrors((prev) => ({ ...prev, photos: false }));
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-brand-50 to-brand-50 text-brand-700">
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-32">
@@ -461,24 +491,22 @@ function RecoleccionFormDatosScreen() {
               </div>
             )}
 
-            <PhotoPicker
+            <PhotoUploader
               label="Lugar"
-              badgeLabel="Lugar"
+              photoLabel="Lugar"
               photos={formData.placePhotos || []} //  Usa formData
-              onChange={(next) => {
-                updateForm({ placePhotos: next }); // Actualiza el contexto directamente
-                setErrors((prev) => ({ ...prev, photos: false }));
-              }}
+              max={MAX_FOTOS_POR_TIPO}
+              onAdd={(files) => addPhotos('placePhotos', files)}
+              onRemove={(index) => removePhoto('placePhotos', index)}
             />
 
-            <PhotoPicker
+            <PhotoUploader
               label="Total recolectado"
-              badgeLabel="Total"
+              photoLabel="Total"
               photos={formData.totalPhotos || []} // Usa formData
-              onChange={(next) => {
-                updateForm({ totalPhotos: next }); // Actualiza el contexto directamente
-                setErrors((prev) => ({ ...prev, photos: false }));
-              }}
+              max={MAX_FOTOS_POR_TIPO}
+              onAdd={(files) => addPhotos('totalPhotos', files)}
+              onRemove={(index) => removePhoto('totalPhotos', index)}
             />
 
             <div className="flex items-center gap-2 text-xs font-semibold text-neutral-600">

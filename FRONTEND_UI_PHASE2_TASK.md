@@ -12,7 +12,7 @@
 complejo que los CRUD de la Fase 1: lista + tarjeta, pantalla de detalle, un
 **wizard de 3 pasos** (datos → ubicación → resumen) que comparte estado vía
 `RecoleccionFormContext`, una pantalla de **validación** (aprobar/rechazar), carga
-de fotos y controles a medida (`CantidadInput`, `TipoMaterialSwitcher`, `PhotoPicker`).
+de fotos y controles a medida (`CantidadInput`, `TipoMaterialSwitcher`, `PhotoUploader`).
 
 Hoy el módulo es **100% a medida**: no importa nada de `components/crud/` ni de
 `components/ui/`. Usa Tailwind crudo con **~177 `slate-*`**, **5 `emerald-*`** y un
@@ -35,7 +35,7 @@ pasa de cyan a sky (`info`) al consolidarse en el registro único — es un camb
 | Validación | `RecoleccionesValidacionScreen.tsx` | 7 |
 | Evidencia | `RecoleccionNuevaEvidenciaScreen.tsx` | 2 |
 | Modal | `RecoleccionSuccessModal.tsx` | 2 |
-| Controles a medida | `components/CantidadInput.tsx`, `components/PhotoPicker.tsx`, `components/TipoMaterialSwitcher.tsx` | 4 |
+| Controles a medida | `components/CantidadInput.tsx`, `src/components/evidence/PhotoUploader.tsx`, `components/TipoMaterialSwitcher.tsx` | 4 |
 
 **Total: 13 archivos `.tsx`, ~41 botones.** Más una edición parcial de
 `recoleccionStatus.ts` (ver §4, solo se quitan las 2 funciones de color).
@@ -109,7 +109,7 @@ En `tailwind.config.js`: `neutral = colors.slate`, `success = colors.emerald`,
 - **Interior del mapa Leaflet** en `RecoleccionFormUbicacionScreen` (marcadores `divIcon`,
   capas, lógica de geo): solo se migra el *chrome* alrededor (botones, headers, campos), no el mapa.
 - **Lógica de carga de fotos** (`usePhotoUpload`, validación 2–5 archivos/≤5 MB/JPG-PNG,
-  `FormData` con campo `fotos`): intacta. Solo el disparador visual de `PhotoPicker`.
+  `FormData` con campo `fotos`): intacta. Solo el disparador visual de `PhotoUploader`.
 - Handlers (`onClick`, `onSubmit`, `onChange`), condiciones de render por dominio,
   textos, labels, enums y unidades: se mueven **sin modificarse**.
 
@@ -128,7 +128,7 @@ En `tailwind.config.js`: `neutral = colors.slate`, `success = colors.emerald`,
      si el estilo "activo" del `Chip` calza. Mantener comportamiento idéntico.
    - `CantidadInput` (stepper +/−): los botones de ícono pueden ir a `<Button variant="ghost">`;
      si el layout del stepper se rompe, documentar por qué quedan a medida.
-   - `PhotoPicker`: el disparador de archivo → `<Button>`; el `<input type="file">` oculto no cambia.
+   - `PhotoUploader`: el disparador de archivo → `<Button>`; el `<input type="file">` oculto no cambia.
 5. **Modal (`RecoleccionSuccessModal`):** botones de acción → `<Button>`; no tocar el
    montaje/estado del modal.
 6. **`StatusBadge`:** si aparece un estado no presente en `status.ts`, agregarlo **ahí**

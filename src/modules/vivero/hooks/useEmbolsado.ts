@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAuth } from '../../../contexts/AuthContext'
 import { LotesViveroService } from '../../../services/lotes-vivero.service'
 import { todayLocalISO } from '../../../utils/validations/date'
-import type { Photo } from '../components/event/FotosUploader'
+import type { Photo } from '../../../components/evidence/PhotoUploader'
 import type { EmbolsadoContextData, RegistrarEmbolsadoResult } from '../types/contracts'
 import { computeMaxPlantasEmbolsado } from '../utils/validators'
 

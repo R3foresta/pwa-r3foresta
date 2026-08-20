@@ -6,8 +6,8 @@ import { todayLocalISO } from '../../../../../utils/validations/date'
 import type { LoteViveroItem, SubetapaAdaptabilidad } from '../../../types/contracts'
 import EventoCTABar from '../EventoCTABar'
 import FechaCard from '../FechaCard'
-import FotosUploader from '../FotosUploader'
-import type { Photo } from '../FotosUploader'
+import PhotoUploader from '../../../../../components/evidence/PhotoUploader'
+import type { Photo } from '../../../../../components/evidence/PhotoUploader'
 import ObservacionesCard from '../ObservacionesCard'
 
 type Props = {
@@ -220,7 +220,7 @@ function AdaptabilidadForm({ lote, fechaEmbolsado, onCompleted }: Props) {
 
         {/* Fotos opcionales */}
         <section className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
-          <FotosUploader
+          <PhotoUploader
             photos={photos}
             onAdd={addPhotos}
             onRemove={removePhoto}
