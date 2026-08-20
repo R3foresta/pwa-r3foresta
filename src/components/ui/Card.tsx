@@ -1,7 +1,8 @@
-import type { ElementType, HTMLAttributes } from 'react'
+import type { ComponentPropsWithoutRef } from 'react'
 import { cn } from './cn'
 
 export type CardPadding = 'none' | 'sm' | 'md' | 'lg'
+type CardElement = 'div' | 'article' | 'section'
 
 const PADDING: Record<CardPadding, string> = {
   none: '',
@@ -10,16 +11,24 @@ const PADDING: Record<CardPadding, string> = {
   lg: 'p-6',
 }
 
-type CardProps = {
+type CardProps<T extends CardElement = 'div'> = {
   padding?: CardPadding
-  as?: ElementType
-} & HTMLAttributes<HTMLElement>
+  as?: T
+} & Omit<ComponentPropsWithoutRef<T>, 'as' | 'padding'>
 
 /**
  * Shell de tarjeta unificado. Reemplaza el `rounded-3xl bg-white shadow-soft ...`
  * repetido en los 13 componentes `*Card` del proyecto. Ver FRONTEND_UI_STANDARD.md §4.2.
  */
-function Card({ padding = 'md', as: Tag = 'div', className, children, ...rest }: CardProps) {
+function Card<T extends CardElement = 'div'>({
+  padding = 'md',
+  as,
+  className,
+  children,
+  ...rest
+}: CardProps<T>) {
+  const Tag = as ?? 'div'
+
   return (
     <Tag
       className={cn('rounded-3xl bg-white shadow-soft ring-1 ring-black/5', PADDING[padding], className)}

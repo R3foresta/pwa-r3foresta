@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Icon from '../../components/Icon'
-import { Badge, Button, statusVariant } from '../../components/ui'
+import { Badge, Button, Card, statusVariant } from '../../components/ui'
 import {
   RecoleccionesService,
   type EvidenciaTrazabilidad,
@@ -189,7 +189,7 @@ function RecoleccionDetailScreen() {
         </header>
 
         <div className="space-y-4 px-5 pb-8">
-          <section className="rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
+          <Card as="section">
             <h2 className="text-lg font-extrabold text-brand-700">Material</h2>
             <div className="mt-3 space-y-2 text-sm font-semibold text-neutral-700">
               <p className="flex items-center justify-between gap-4">
@@ -227,18 +227,18 @@ function RecoleccionDetailScreen() {
                 <span className="text-right">{recoleccion.vivero?.nombre || 'No disponible'}</span>
               </p>
             </div>
-          </section>
+          </Card>
 
-          <section className="rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
+          <Card as="section">
             <h2 className="text-lg font-extrabold text-brand-700">Ubicación</h2>
             <div className="mt-3 space-y-2 text-sm font-semibold text-neutral-700">
               <p>{ubicacionDisplay}</p>
               {ubicacionDivision && <p className="text-neutral-600">{ubicacionDivision}</p>}
               {ubicacionCoords && <p className="text-xs text-neutral-500">{ubicacionCoords}</p>}
             </div>
-          </section>
+          </Card>
 
-          <section className="rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
+          <Card as="section">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-extrabold text-brand-700">Evidencias ({evidencias.length})</h2>
             </div>
@@ -272,9 +272,9 @@ function RecoleccionDetailScreen() {
             ) : (
               <p className="mt-3 text-sm font-semibold text-neutral-500">No hay evidencias registradas.</p>
             )}
-          </section>
+          </Card>
 
-          <section className="rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
+          <Card as="section">
             <h2 className="text-lg font-extrabold text-brand-700">Auditoría</h2>
             <div className="mt-3 space-y-2 text-sm font-semibold text-neutral-700">
               <p className="flex items-center justify-between gap-4">
@@ -327,7 +327,7 @@ function RecoleccionDetailScreen() {
                 )}
               </div>
             )}
-          </section>
+          </Card>
         </div>
       </div>
 
