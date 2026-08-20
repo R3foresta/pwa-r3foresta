@@ -7,6 +7,7 @@ import { resolveEstadoOperativo, resolveEstadoRegistro } from './recoleccionStat
 
 type Props = {
   recoleccion: Recoleccion
+  compact?: boolean
 }
 
 type RecoleccionCompat = Recoleccion & {
@@ -22,10 +23,37 @@ function formatDate(value: string) {
   })
 }
 
-function RecoleccionCard({ recoleccion }: Props) {
-  const recoleccionCompat = recoleccion as RecoleccionCompat
+function RecoleccionCard({ recoleccion, compact = false }: Props) {
   const nombreComercial = recoleccion.nombre_comercial || 'Sin nombre comercial'
 
+  if (compact) {
+    return (
+      <Card as="article" padding="sm" className="transition hover:shadow-md">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="truncate text-sm font-extrabold text-neutral-800">{nombreComercial}</h3>
+            <p className="truncate text-xs font-semibold text-brand-600">
+              {recoleccion.codigo_trazabilidad}
+            </p>
+            <p className="mt-1 truncate text-xs font-medium text-neutral-500">
+              {formatDate(recoleccion.fecha)} · {getUbicacionComunidadDisplay(recoleccion.ubicacion)}
+            </p>
+          </div>
+          <Badge
+            variant={recoleccion.tipo_material === 'SEMILLA' ? 'success' : recoleccion.tipo_material === 'ESQUEJE' ? 'warning' : 'neutral'}
+            size="sm"
+            className="shrink-0"
+          >
+            {recoleccion.tipo_material}
+          </Badge>
+        </div>
+      </Card>
+    )
+  }
+
+  const recoleccionCompat = recoleccion as RecoleccionCompat
+  const estadoRegistro = resolveEstadoRegistro(recoleccionCompat)
+  const estadoOperativo = resolveEstadoOperativo(recoleccion)
   const evidenciaPrincipal = recoleccion.evidencias?.find((item) => item.es_principal)
   const fallbackEvidencia = recoleccion.evidencias?.[0]
   const fotoPrincipal = recoleccion.fotos?.find((item) => item.es_principal)
@@ -33,8 +61,6 @@ function RecoleccionCard({ recoleccion }: Props) {
   const evidencia = evidenciaPrincipal || fallbackEvidencia
   const foto = fotoPrincipal || fallbackFoto
   const imageUrl = evidencia?.public_url ?? foto?.url ?? null
-  const estadoRegistro = resolveEstadoRegistro(recoleccionCompat)
-  const estadoOperativo = resolveEstadoOperativo(recoleccion)
   const cantidadActual = recoleccion.saldo_actual ?? 0
   const unidadDisplay = formatUnidadCanonicaDisplay(recoleccion.unidad_canonica, cantidadActual)
 

@@ -9,6 +9,7 @@ import {
 } from '../../services/recolecciones.service'
 import { useAuth } from '../../contexts/AuthContext'
 import RecoleccionCard from './RecoleccionCard'
+import { resolveEstadoOperativo } from './recoleccionStatus'
 
 type MaterialFilter = 'all' | TipoMaterialCanonico
 
@@ -18,6 +19,7 @@ function RecoleccionesScreen() {
   const [items, setItems] = useState<Recoleccion[]>([])
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<MaterialFilter>('all')
+  const [showClosed, setShowClosed] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -55,7 +57,15 @@ function RecoleccionesScreen() {
     }
   }, [query, filter])
 
-  const hasResults = items.length > 0
+  const openItems = useMemo(
+    () => items.filter((item) => resolveEstadoOperativo(item) === 'ABIERTO'),
+    [items],
+  )
+  const closedItems = useMemo(
+    () => items.filter((item) => resolveEstadoOperativo(item) === 'CERRADO'),
+    [items],
+  )
+  const hasResults = openItems.length > 0 || closedItems.length > 0
 
   const subtitle = useMemo(() => {
     if (loading) {
@@ -64,8 +74,8 @@ function RecoleccionesScreen() {
     if (error) {
       return 'Error al cargar registros'
     }
-    return `${items.length} registros encontrados`
-  }, [error, items.length, loading])
+    return `${openItems.length} abiertas${closedItems.length > 0 ? ` · ${closedItems.length} archivadas` : ''}`
+  }, [closedItems.length, error, loading, openItems.length])
 
   return (
     <div className="relative min-h-screen bg-brand-50 text-brand-700">
@@ -144,17 +154,62 @@ function RecoleccionesScreen() {
           )}
 
           {!loading && !error && hasResults && (
-            <div className="space-y-3">
-              {items.map((item) => (
-                <Link
-                  key={item.id}
-                  to={`/app/collections/${item.id}`}
-                  className="block rounded-3xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2"
-                >
-                  <RecoleccionCard recoleccion={item} />
-                </Link>
-              ))}
-            </div>
+            <>
+              {openItems.length > 0 ? (
+                <div className="space-y-3">
+                  {openItems.map((item) => (
+                    <Link
+                      key={item.id}
+                      to={`/app/collections/${item.id}`}
+                      className="block rounded-3xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2"
+                    >
+                      <RecoleccionCard recoleccion={item} />
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <Card padding="lg" className="text-center">
+                  <p className="text-base font-bold text-neutral-700">No hay recolecciones abiertas</p>
+                  <p className="mt-1 text-sm font-medium text-neutral-500">
+                    Usa el botón de archivadas para consultar las recolecciones cerradas.
+                  </p>
+                </Card>
+              )}
+
+              {closedItems.length > 0 && (
+                <section className="space-y-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowClosed((previous) => !previous)}
+                    aria-expanded={showClosed}
+                    aria-controls="recolecciones-cerradas"
+                    className="flex w-full items-center justify-between rounded-3xl bg-white px-4 py-4 text-left shadow-soft ring-1 ring-black/5 transition hover:bg-neutral-50"
+                  >
+                    <span className="text-sm font-extrabold text-brand-700">
+                      Archivadas ({closedItems.length})
+                    </span>
+                    <Icon
+                      name="chevron-down"
+                      className={`h-4 w-4 text-brand-500 transition-transform duration-200 ${showClosed ? 'rotate-180' : ''}`}
+                    />
+                  </button>
+
+                  {showClosed && (
+                    <div id="recolecciones-cerradas" className="space-y-3">
+                      {closedItems.map((item) => (
+                        <Link
+                          key={item.id}
+                          to={`/app/collections/${item.id}`}
+                          className="block rounded-3xl opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2"
+                        >
+                          <RecoleccionCard recoleccion={item} compact />
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              )}
+            </>
           )}
 
           {!loading && !error && !hasResults && (
