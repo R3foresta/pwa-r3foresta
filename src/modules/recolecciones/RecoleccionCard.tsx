@@ -1,5 +1,5 @@
 import Icon from '../../components/Icon'
-import { Badge, statusVariant } from '../../components/ui'
+import { Badge, Card, statusVariant } from '../../components/ui'
 import type { Recoleccion } from '../../services/recolecciones.service'
 import { formatUnidadCanonicaDisplay } from '../../utils/recoleccionUnidad'
 import { getUbicacionComunidadDisplay } from '../../utils/ubicacion'
@@ -47,7 +47,7 @@ function RecoleccionCard({ recoleccion }: Props) {
   const evidenciasCount = recoleccion.evidencias?.length ?? recoleccion.fotos?.length ?? 0
 
   return (
-    <article className="rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5 transition hover:shadow-md">
+    <Card as="article" className="transition hover:shadow-md">
       <div className="flex gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-xs font-semibold uppercase tracking-wide text-brand-600">
@@ -91,7 +91,7 @@ function RecoleccionCard({ recoleccion }: Props) {
         <Badge variant={statusVariant(estadoOperativo)}>{estadoOperativo}</Badge>
         <Badge variant="neutral">Evidencias: {evidenciasCount}</Badge>
       </div>
-    </article>
+    </Card>
   )
 }
 

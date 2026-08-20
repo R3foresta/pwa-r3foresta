@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import Icon from '../../components/Icon'
-import { Button } from '../../components/ui'
+import { Button, Card, Chip, SearchBar } from '../../components/ui'
 import {
   RecoleccionesService,
   type Recoleccion,
@@ -97,61 +97,40 @@ function RecoleccionesScreen() {
         </header>
 
         <div className="-mt-10 space-y-4 px-5">
-          <label className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-neutral-500 shadow-soft ring-1 ring-black/5">
-            <Icon name="search" className="h-5 w-5 text-neutral-400" />
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Buscar por código, especie o ubicación"
-              className="w-full border-none bg-transparent text-base font-semibold text-neutral-700 outline-none placeholder:font-medium placeholder:text-neutral-400"
-              type="search"
-            />
-          </label>
+          <SearchBar
+            value={query}
+            onChange={setQuery}
+            placeholder="Buscar por código, especie o ubicación"
+            ariaLabel="Buscar recolecciones por código, especie o ubicación"
+          />
 
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={() => setFilter('all')}
-              className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
-                filter === 'all'
-                  ? 'border-brand-500 bg-brand-500 text-white shadow-soft'
-                  : 'border-brand-100 bg-white text-brand-600 hover:border-brand-300'
-              }`}
-            >
+          <div
+            role="group"
+            aria-label="Filtrar recolecciones por tipo de material"
+            className="flex flex-wrap gap-3"
+          >
+            <Chip selected={filter === 'all'} onClick={() => setFilter('all')}>
               Todos
-            </button>
-            <button
-              type="button"
-              onClick={() => setFilter('SEMILLA')}
-              className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
-                filter === 'SEMILLA'
-                  ? 'border-brand-500 bg-brand-500 text-white shadow-soft'
-                  : 'border-brand-100 bg-white text-brand-600 hover:border-brand-300'
-              }`}
-            >
+            </Chip>
+            <Chip selected={filter === 'SEMILLA'} onClick={() => setFilter('SEMILLA')}>
               Semilla
-            </button>
-            <button
-              type="button"
-              onClick={() => setFilter('ESQUEJE')}
-              className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
-                filter === 'ESQUEJE'
-                  ? 'border-brand-500 bg-brand-500 text-white shadow-soft'
-                  : 'border-brand-100 bg-white text-brand-600 hover:border-brand-300'
-              }`}
-            >
+            </Chip>
+            <Chip selected={filter === 'ESQUEJE'} onClick={() => setFilter('ESQUEJE')}>
               Esqueje
-            </button>
+            </Chip>
           </div>
 
           {loading && (
-            <div className="rounded-3xl bg-white px-4 py-6 text-center text-sm font-semibold text-neutral-600 shadow-soft ring-1 ring-black/5">
+            <Card role="status" aria-live="polite" className="text-center text-sm font-semibold text-neutral-600">
               Cargando recolecciones...
-            </div>
+            </Card>
           )}
 
           {error && (
-            <div className="rounded-3xl bg-danger-50 px-4 py-6 text-center text-sm font-semibold text-danger-700 shadow-soft ring-1 ring-danger-200">
+            <div
+              role="alert"
+              className="rounded-3xl bg-danger-50 px-4 py-6 text-center text-sm font-semibold text-danger-700 shadow-soft ring-1 ring-danger-200"
+            >
               <p>{error}</p>
               <Button
                 variant="danger"
@@ -167,20 +146,19 @@ function RecoleccionesScreen() {
           {!loading && !error && hasResults && (
             <div className="space-y-3">
               {items.map((item) => (
-                <button
+                <Link
                   key={item.id}
-                  type="button"
-                  onClick={() => navigate(`/app/collections/${item.id}`)}
-                  className="w-full text-left"
+                  to={`/app/collections/${item.id}`}
+                  className="block rounded-3xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2"
                 >
                   <RecoleccionCard recoleccion={item} />
-                </button>
+                </Link>
               ))}
             </div>
           )}
 
           {!loading && !error && !hasResults && (
-            <div className="rounded-3xl bg-white px-4 py-8 text-center shadow-soft ring-1 ring-black/5">
+            <Card padding="lg" className="text-center">
               <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100">
                 <Icon name="package" className="h-8 w-8 text-neutral-400" />
               </div>
@@ -188,7 +166,7 @@ function RecoleccionesScreen() {
               <p className="mt-1 text-sm font-medium text-neutral-500">
                 {query.trim() ? 'No hay coincidencias con la búsqueda.' : 'Aún no existen registros.'}
               </p>
-            </div>
+            </Card>
           )}
         </div>
       </div>
