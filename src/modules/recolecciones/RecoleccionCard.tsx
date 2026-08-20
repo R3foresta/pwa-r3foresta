@@ -24,14 +24,7 @@ function formatDate(value: string) {
 
 function RecoleccionCard({ recoleccion }: Props) {
   const recoleccionCompat = recoleccion as RecoleccionCompat
-  const nombreComercial =
-    recoleccion.planta?.nombre_comun_principal ||
-    recoleccion.nombre_comun_principal ||
-    recoleccion.planta?.especie ||
-    recoleccion.nombre_comercial ||
-    'Sin nombre comercial'
-
-  const nombreCientifico = recoleccion.planta?.nombre_cientifico || recoleccion.nombre_cientifico
+  const nombreComercial = recoleccion.nombre_comercial || 'Sin nombre comercial'
 
   const evidenciaPrincipal = recoleccion.evidencias?.find((item) => item.es_principal)
   const fallbackEvidencia = recoleccion.evidencias?.[0]
@@ -44,7 +37,6 @@ function RecoleccionCard({ recoleccion }: Props) {
   const estadoOperativo = resolveEstadoOperativo(recoleccion)
   const cantidadActual = recoleccion.saldo_actual ?? 0
   const unidadDisplay = formatUnidadCanonicaDisplay(recoleccion.unidad_canonica, cantidadActual)
-  const evidenciasCount = recoleccion.evidencias?.length ?? recoleccion.fotos?.length ?? 0
 
   return (
     <Card as="article" className="transition hover:shadow-md">
@@ -54,7 +46,6 @@ function RecoleccionCard({ recoleccion }: Props) {
             {recoleccion.codigo_trazabilidad}
           </p>
           <h3 className="truncate text-lg font-extrabold text-neutral-800">{nombreComercial}</h3>
-          <p className="truncate text-sm italic text-neutral-500">{nombreCientifico || 'Sin nombre científico'}</p>
 
           <div className="mt-3 space-y-1 text-sm font-semibold text-neutral-600">
             <p className="flex items-center gap-2">
@@ -89,7 +80,6 @@ function RecoleccionCard({ recoleccion }: Props) {
         </Badge>
         <Badge variant={statusVariant(estadoRegistro)}>{estadoRegistro}</Badge>
         <Badge variant={statusVariant(estadoOperativo)}>{estadoOperativo}</Badge>
-        <Badge variant="neutral">Evidencias: {evidenciasCount}</Badge>
       </div>
     </Card>
   )
