@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Icon from '../../components/Icon'
-import { Badge, Button, Card, statusVariant } from '../../components/ui'
+import ConfirmDialog from '../../components/ConfirmDialog'
+import { Badge, Button, Card, Field, Input, statusVariant } from '../../components/ui'
+import { useAuth } from '../../contexts/AuthContext'
 import {
   RecoleccionesService,
   type EvidenciaTrazabilidad,
@@ -33,6 +35,7 @@ function formatDateTime(value: string | null | undefined) {
 function RecoleccionDetailScreen() {
   const navigate = useNavigate()
   const { id } = useParams()
+  const { user } = useAuth()
 
   const [recoleccion, setRecoleccion] = useState<Recoleccion | null>(null)
   const [evidenciasFallback, setEvidenciasFallback] = useState<EvidenciaTrazabilidad[]>([])
@@ -41,6 +44,10 @@ function RecoleccionDetailScreen() {
   const [submittingToValidation, setSubmittingToValidation] = useState(false)
   const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [showValidationPopup, setShowValidationPopup] = useState(false)
+  const [showDiscardDialog, setShowDiscardDialog] = useState(false)
+  const [discardQuantity, setDiscardQuantity] = useState('')
+  const [discardError, setDiscardError] = useState<string | null>(null)
+  const [discarding, setDiscarding] = useState(false)
 
   useEffect(() => {
     const parsedId = Number(id)
@@ -120,6 +127,56 @@ function RecoleccionDetailScreen() {
     }
   }
 
+  const handleOpenDiscardDialog = () => {
+    if (!recoleccion) return
+
+    setDiscardQuantity(String(recoleccion.saldo_actual ?? 0))
+    setDiscardError(null)
+    setShowDiscardDialog(true)
+  }
+
+  const handleDiscard = async () => {
+    if (!recoleccion) return
+
+    const quantity = Number(discardQuantity.replace(',', '.'))
+    const available = Number(recoleccion.saldo_actual ?? 0)
+
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      setDiscardError('Ingresa una cantidad mayor que cero.')
+      return
+    }
+
+    if (quantity > available) {
+      setDiscardError(`La cantidad no puede superar el saldo actual de ${available}.`)
+      return
+    }
+
+    if (recoleccion.unidad_canonica === 'UNIDAD' && !Number.isInteger(quantity)) {
+      setDiscardError('Para unidades debes ingresar un número entero.')
+      return
+    }
+
+    try {
+      setDiscarding(true)
+      setDiscardError(null)
+      const result = await RecoleccionesService.registrarDesecho(recoleccion.id, {
+        cantidad: quantity,
+      })
+      const refreshed = await RecoleccionesService.getById(recoleccion.id)
+      setRecoleccion(refreshed.data)
+      setShowDiscardDialog(false)
+      setActionMessage({ type: 'success', text: result.data.message })
+    } catch (discardRequestError) {
+      setDiscardError(
+        discardRequestError instanceof Error
+          ? discardRequestError.message
+          : 'No se pudo registrar el descarte.',
+      )
+    } finally {
+      setDiscarding(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-brand-50 to-brand-50">
@@ -167,6 +224,13 @@ function RecoleccionDetailScreen() {
   const cantidadActual = recoleccion.saldo_actual ?? 0
   const unidadDisplay = formatUnidadCanonicaDisplay(recoleccion.unidad_canonica, cantidadActual)
   const isBorrador = estadoRegistro === 'BORRADOR'
+  const esCreador = Number(user?.id) === Number(recoleccion.usuario_id)
+  const esAdmin = String(user?.rol ?? '').toUpperCase() === 'ADMIN'
+  const puedeDesechar =
+    estadoRegistro === 'VALIDADO' &&
+    estadoOperativo === 'ABIERTO' &&
+    cantidadActual > 0 &&
+    (esCreador || esAdmin)
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-brand-50 to-brand-50 text-brand-700">
@@ -316,20 +380,71 @@ function RecoleccionDetailScreen() {
                   </Button>
                 </div>
 
-                {actionMessage && (
-                  <p
-                    className={`text-xs font-semibold ${
-                      actionMessage.type === 'success' ? 'text-success-700' : 'text-danger-700'
-                    }`}
-                  >
-                    {actionMessage.text}
-                  </p>
-                )}
               </div>
+            )}
+
+            {puedeDesechar && (
+              <div className="mt-4 border-t border-neutral-100 pt-4">
+                <Button type="button" variant="danger" fullWidth onClick={handleOpenDiscardDialog}>
+                  Registrar pérdida o descarte
+                </Button>
+                <p className="mt-2 text-xs font-medium text-neutral-500">
+                  Se descontará del saldo disponible. No requiere foto ni motivo adicional.
+                </p>
+              </div>
+            )}
+
+            {actionMessage && (
+              <p
+                className={`mt-3 text-xs font-semibold ${
+                  actionMessage.type === 'success' ? 'text-success-700' : 'text-danger-700'
+                }`}
+              >
+                {actionMessage.text}
+              </p>
             )}
           </Card>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={showDiscardDialog}
+        title="Registrar pérdida o descarte"
+        description="Esta acción no se puede deshacer. El saldo se reducirá inmediatamente."
+        confirmLabel="Confirmar descarte"
+        variant="danger"
+        iconName="alert"
+        loading={discarding}
+        errorMessage={discardError}
+        onConfirm={() => void handleDiscard()}
+        onCancel={() => {
+          if (!discarding) {
+            setShowDiscardDialog(false)
+            setDiscardError(null)
+          }
+        }}
+      >
+        <div className="mt-4">
+          <Field
+            label={`Cantidad a desechar (${unidadDisplay})`}
+            required
+            htmlFor="discard-quantity"
+            hint={`Saldo disponible: ${cantidadActual} ${unidadDisplay}`}
+          >
+            <Input
+              id="discard-quantity"
+              type="number"
+              min="0"
+              max={cantidadActual}
+              step={recoleccion.unidad_canonica === 'UNIDAD' ? '1' : '0.000001'}
+              value={discardQuantity}
+              onChange={(event) => setDiscardQuantity(event.target.value)}
+              disabled={discarding}
+              autoFocus
+            />
+          </Field>
+        </div>
+      </ConfirmDialog>
 
       {showValidationPopup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5">

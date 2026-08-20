@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import Icon from './Icon'
 import type { IconName } from './Icon'
 import { Button } from './ui'
@@ -19,6 +19,7 @@ type Props = {
   loading?: boolean
   /** Mensaje de error mostrado como banner rojo bajo la descripción. */
   errorMessage?: string | null
+  children?: ReactNode
   onConfirm: () => void
   onCancel: () => void
 }
@@ -33,6 +34,7 @@ function ConfirmDialog({
   iconName,
   loading = false,
   errorMessage,
+  children,
   onConfirm,
   onCancel,
 }: Props) {
@@ -75,6 +77,7 @@ function ConfirmDialog({
         {description && (
           <p className="mt-1 text-sm font-semibold text-brand-500">{description}</p>
         )}
+        {children}
         {errorMessage && (
           <div className="mt-3 rounded-2xl bg-danger-50 px-3 py-2 text-[12.5px] font-semibold text-danger-700 ring-1 ring-danger-200">
             {errorMessage}

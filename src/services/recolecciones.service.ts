@@ -188,6 +188,21 @@ export interface UpdateRecoleccionDraftDto {
   }
 }
 
+export interface RegistrarDesechoDto {
+  cantidad: number
+}
+
+export interface RegistroDesechoResult {
+  message: string
+  recoleccion_movimiento_id: number
+  recoleccion_id: number
+  cantidad_desechada: number
+  unidad_medida: string
+  saldo_antes: number
+  saldo_despues: number
+  estado_operativo: 'ABIERTO' | 'CERRADO'
+}
+
 const DRAFT_ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'image/heif']
 const DRAFT_ALLOWED_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif']
 const DRAFT_MAX_NEW_FILES = 5
@@ -652,6 +667,41 @@ export class RecoleccionesService {
       return { success: true, data: (payload as ApiEnvelope<Recoleccion>).data as Recoleccion }
     }
     return { success: true, data: payload as Recoleccion }
+  }
+
+  static async registrarDesecho(
+    id: number,
+    data: RegistrarDesechoDto,
+  ): Promise<{ success: boolean; data: RegistroDesechoResult }> {
+    if (!Number.isFinite(id) || id <= 0) {
+      throw new Error('ID de recolección inválido.')
+    }
+
+    if (!Number.isFinite(data.cantidad) || data.cantidad <= 0) {
+      throw new Error('La cantidad a desechar debe ser mayor que cero.')
+    }
+
+    const response = await fetch(`${API_URL}/api/recolecciones/${id}/desecho`, {
+      method: 'POST',
+      headers: this.getAuthHeaders({ requireAuthId: true }),
+      body: JSON.stringify({ cantidad: data.cantidad }),
+    })
+
+    const payload = await this.parseJsonResponse<
+      ApiEnvelope<RegistroDesechoResult> | RegistroDesechoResult
+    >(response)
+
+    if ('data' in (payload as ApiEnvelope<RegistroDesechoResult>) && (payload as ApiEnvelope<RegistroDesechoResult>).data) {
+      return {
+        success: Boolean((payload as ApiEnvelope<RegistroDesechoResult>).success ?? true),
+        data: (payload as ApiEnvelope<RegistroDesechoResult>).data as RegistroDesechoResult,
+      }
+    }
+
+    return {
+      success: true,
+      data: payload as RegistroDesechoResult,
+    }
   }
 
   static async getPendingValidation(filters?: {
