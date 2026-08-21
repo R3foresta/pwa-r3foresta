@@ -144,6 +144,24 @@ export interface ListRecoleccionesResult {
   pagination: ApiPagination
 }
 
+export interface RecoleccionStockItem {
+  planta_id: number
+  especie: string
+  nombre_cientifico: string | null
+  variedad: string | null
+  nombre_comun_principal: string | null
+  imagen_url: string | null
+  gramos_disponibles: number
+  unidades_disponibles: number
+  pendientes_validacion: number
+}
+
+export interface RecoleccionStockResult {
+  success: boolean
+  data: RecoleccionStockItem[]
+  actualizado_en?: string
+}
+
 export interface CreateRecoleccionDto {
   fecha: string
   cantidad_inicial_canonica: number
@@ -369,6 +387,30 @@ export class RecoleccionesService {
 
     const payload = await this.parseJsonResponse<unknown>(response)
     return this.normalizeListResponse(payload)
+  }
+
+  static async getStockSummary(): Promise<RecoleccionStockResult> {
+    const response = await fetch(`${API_URL}/api/recolecciones/stock-summary`, {
+      method: 'GET',
+      headers: this.getAuthHeaders(),
+    })
+
+    const payload = await this.parseJsonResponse<
+      RecoleccionStockResult | { data?: RecoleccionStockItem[]; success?: boolean }
+    >(response)
+
+    return {
+      success: Boolean(payload.success ?? true),
+      data: Array.isArray(payload.data)
+        ? payload.data.map((item) => ({
+            ...item,
+            gramos_disponibles: Number(item.gramos_disponibles) || 0,
+            unidades_disponibles: Number(item.unidades_disponibles) || 0,
+            pendientes_validacion: Number(item.pendientes_validacion) || 0,
+          }))
+        : [],
+      actualizado_en: 'actualizado_en' in payload ? payload.actualizado_en : undefined,
+    }
   }
 
   static async getById(id: number): Promise<{ success: boolean; data: Recoleccion }> {

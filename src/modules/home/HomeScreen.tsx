@@ -5,10 +5,15 @@ import Icon from '../../components/Icon'
 import MenuLateral from '../../components/MenuLateral'
 import { hero, syncNotice, metrics, sections, recent } from '../../data/home'
 import type { Screen } from '../../types/navigation'
+import RecoleccionStockPanel from '../recolecciones/components/RecoleccionStockPanel'
+import { useRecoleccionStock } from '../recolecciones/hooks/useRecoleccionStock'
 
 function HomeScreen() {
   const navigate = useNavigate()
   const { user, isProfileComplete } = useAuth()
+  const isAdmin = (user?.rol ?? '').toUpperCase() === 'ADMIN'
+  const { items: stockItems, loading: stockLoading, error: stockError } =
+    useRecoleccionStock(isAdmin)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const closeMenu = useCallback(() => setIsMenuOpen(false), [])
   const targetPath: Record<Screen, string> = {
@@ -171,6 +176,59 @@ function HomeScreen() {
           ))}
         </div>
       </section>
+
+      {isAdmin && (
+        <div className="mt-7">
+          {stockLoading && (
+            <section>
+              <h2 className="text-lg font-extrabold text-brand-700">
+                Disponibilidad por especie
+              </h2>
+              <div
+                role="status"
+                aria-live="polite"
+                className="mt-3 rounded-3xl bg-white px-4 py-5 text-sm font-semibold text-neutral-600 shadow-soft"
+              >
+                Cargando inventario global...
+              </div>
+            </section>
+          )}
+
+          {stockError && (
+            <section>
+              <h2 className="text-lg font-extrabold text-brand-700">
+                Disponibilidad por especie
+              </h2>
+              <div
+                role="alert"
+                className="mt-3 rounded-3xl bg-danger-50 px-4 py-5 text-sm font-semibold text-danger-700 ring-1 ring-danger-200"
+              >
+                No se pudo cargar el inventario de semillas.
+              </div>
+            </section>
+          )}
+
+          {!stockLoading && !stockError && stockItems.length === 0 && (
+            <section>
+              <h2 className="text-lg font-extrabold text-brand-700">
+                Disponibilidad por especie
+              </h2>
+              <div className="mt-3 rounded-3xl bg-white px-4 py-5 text-sm font-medium text-neutral-600 shadow-soft">
+                No hay plantas activas registradas todavía.
+              </div>
+            </section>
+          )}
+
+          {!stockLoading && !stockError && stockItems.length > 0 && (
+            <RecoleccionStockPanel
+              items={stockItems}
+              limit={4}
+              compact
+              onViewAll={() => navigate('/app/collections/stock')}
+            />
+          )}
+        </div>
+      )}
 
       <section className="mt-7">
         <div className="flex items-center justify-between">
