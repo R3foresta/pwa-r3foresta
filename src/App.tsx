@@ -20,6 +20,9 @@ const RecoverScreen = lazy(() => import('./modules/auth/RecoverScreen'))
 const RecoleccionesScreen = lazy(
   () => import('./modules/recolecciones/RecoleccionesScreen'),
 )
+const RecoleccionStockScreen = lazy(
+  () => import('./modules/recolecciones/RecoleccionStockScreen'),
+)
 const RecoleccionDetailScreen = lazy(
   () => import('./modules/recolecciones/RecoleccionDetailScreen'),
 )
@@ -169,6 +172,7 @@ function App() {
             <Route path="home" element={<HomeScreen />} />
             <Route path="collections">
               <Route index element={<RecoleccionesScreen />} />
+              <Route path="stock" element={<RecoleccionStockScreen />} />
               <Route path="new" element={<RecoleccionFormLayout />}>
                 <Route index element={<RecoleccionFormDatosScreen />} />
                 <Route path="location" element={<RecoleccionFormUbicacionScreen />} />

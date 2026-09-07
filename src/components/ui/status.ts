@@ -34,6 +34,10 @@ export const STATUS_VARIANT: Record<string, BadgeVariant> = {
   MONITOREO_HISTORICO: 'neutral', // hoy slate
   COMPLETADA: 'info', // hoy blue → info
   FINALIZADA_PARCIAL: 'warning', // hoy amber
+  // Dashboard de Recolección — estados derivados de disponibilidad/atención
+  DISPONIBLE: 'success',
+  BAJO_STOCK: 'warning',
+  SIN_SALDO: 'danger',
 }
 
 export function statusVariant(status: string | null | undefined): BadgeVariant {
