@@ -7,14 +7,14 @@ import type { Screen } from '../types/navigation'
 
 export const hero = {
   title: 'Trazabilidad viva',
-  subtitle: 'Monitorea cada fase y mantiene la sincronización al día.',
-  badge: '82% sincronizado',
+  subtitle: 'Consulta y registra cada fase de la trazabilidad.',
+  badge: 'Trazabilidad en campo',
   image: heroCanopy,
 }
 
 export const syncNotice = {
-  label: 'Elementos pendientes de sincronización',
-  detail: '6 registros se cargarán cuando haya señal estable.',
+  label: 'Conexión necesaria para guardar',
+  detail: 'Los registros y las fotos se envían mientras tienes conexión.',
 }
 
 export const metrics = [

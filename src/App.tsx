@@ -108,7 +108,7 @@ const EditarPlantaScreen = lazy(() => import('./modules/plantas/EditarPlantaScre
 function RootRedirect() {
   const { isAuthenticated, hydrated } = useAuth()
 
-  if (!hydrated) return null
+  if (!hydrated) return <AppInitializationScreen message="Verificando tu sesión" />
 
   if (!isAuthenticated) {
     return <Navigate to="/auth/login" replace />
@@ -121,7 +121,7 @@ function RootRedirect() {
 function CompleteProfileRoute() {
   const { isAuthenticated, hydrated } = useAuth()
 
-  if (!hydrated) return null
+  if (!hydrated) return <AppInitializationScreen message="Verificando tu sesión" />
 
   // Si no está autenticado, redirigir a login
   if (!isAuthenticated) {

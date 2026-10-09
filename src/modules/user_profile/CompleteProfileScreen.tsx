@@ -61,25 +61,11 @@ export function CompleteProfileScreen() {
     // Si estamos en modo edición, o guardando/mostrando éxito, no hacer esta verificación
     if (isEditing || isSubmitting || showSuccessModal) return
 
-    console.log('🔍 CompleteProfileScreen - Verificando usuario:', user)
-
     if (user) {
       const isComplete = ProfileService.isProfileComplete(user)
-      console.log('📋 Estado del perfil:', {
-        user_id: user.id,
-        auth_id: user.auth_id,
-        tiene_nombre: !!user.nombre,
-        tiene_apellido: !!user.apellido,
-        tiene_doc_identidad: !!user.doc_identidad,
-        perfil_completo: isComplete
-      })
-
       if (isComplete) {
-        console.log('✅ Usuario ya tiene perfil completo, redirigiendo al home')
         navigate('/app/home', { replace: true })
       }
-    } else {
-      console.log('⚠️ No hay usuario en el contexto')
     }
   }, [user, navigate, isEditing, isSubmitting, showSuccessModal])
 
@@ -226,20 +212,14 @@ export function CompleteProfileScreen() {
     setErrors({})
 
     try {
-      console.log('📤 Completando perfil...', cleanedData)
-      const response = await ProfileService.completeProfile(cleanedData)
-      console.log('📥 Respuesta del backend:', response)
+      await ProfileService.completeProfile(cleanedData)
 
       // Obtener los datos frescos del backend después de completar
-      console.log('🔄 Obteniendo datos actualizados del backend...')
       const updatedUser = await updateUserFromBackend()
 
       // Verificar inmediatamente si el perfil está completo
       const isComplete = ProfileService.isProfileComplete(updatedUser)
-      console.log('✅ Perfil completado. ¿Está completo?', isComplete)
-
       if (isComplete) {
-        console.log('✅ Perfil completado con éxito, mostrando modal')
         setShowSuccessModal(true)
 
         // Cerrar el modal y navegar automáticamente
@@ -248,15 +228,12 @@ export function CompleteProfileScreen() {
           navigate(isEditing ? '/app/profile' : '/app/home', { replace: true })
         }, 2500)
       } else {
-        console.error('⚠️ El perfil aún no está completo después de actualizar')
         setErrors({
           general: 'Error: El perfil no se completó correctamente. Inténtalo nuevamente.'
         })
       }
 
     } catch (error: unknown) {
-      console.error('❌ Error al completar perfil:', error)
-
       const apiError = error instanceof Error
         ? (error as Error & { status?: number })
         : null

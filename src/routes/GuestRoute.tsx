@@ -5,7 +5,7 @@ function GuestRoute() {
   const { isAuthenticated, hydrated } = useAuth()
 
   if (!hydrated) {
-    return null
+    return <div role="status" className="p-6 text-center text-brand-700">Verificando sesión...</div>
   }
 
   if (isAuthenticated) {

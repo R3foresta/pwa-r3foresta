@@ -5,35 +5,20 @@ import Icon from '../../components/Icon'
 import { Button } from '../../components/ui'
 import heroCanopy from '../../assets/home/hero-canopy.webp'
 
-function LoginScreen() {
+function LoginScreen({ initialRegistering = false }: { initialRegistering?: boolean }) {
   const { login: loginWebAuthn, register: registerWebAuthn, loading, error } = useWebAuthn()
-  const { setUser, updateUserFromBackend } = useAuth()
-  const [isRegistering, setIsRegistering] = useState(false)
+  const { sessionError, canRetrySession, retrySession } = useAuth()
+  const [isRegistering, setIsRegistering] = useState(initialRegistering)
+  const [retrying, setRetrying] = useState(false)
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [emailError, setEmailError] = useState('')
 
   const handleLogin = async () => {
     try {
-      console.log('🔵 LoginScreen: Iniciando login...')
-      const result = await loginWebAuthn()
-      console.log('✅ LoginScreen: Login exitoso', result)
-
-      // Obtener los datos completos del usuario desde el backend
-      if (result.success && result.user) {
-        try {
-          console.log('📥 Obteniendo datos completos del perfil...')
-          const fullUserData = await updateUserFromBackend()
-          console.log('✅ LoginScreen: Usuario con datos completos:', fullUserData)
-        } catch (error) {
-          console.error('❌ Error al obtener datos del perfil, usando datos básicos:', error)
-          // Si falla, usar los datos básicos del login
-          setUser(result.user)
-        }
-      }
-    } catch (error) {
-      console.error('❌ LoginScreen: Error en login:', error)
-      // El error ya se muestra a través del hook useWebAuthn
+      await loginWebAuthn()
+    } catch {
+      // El hook muestra el error de autenticación.
     }
   }
 
@@ -52,25 +37,20 @@ function LoginScreen() {
     }
 
     try {
-      console.log('🔵 LoginScreen: Iniciando registro...')
-      const result = await registerWebAuthn(username, email || undefined)
-      console.log('✅ LoginScreen: Registro exitoso', result)
+      await registerWebAuthn(username, email)
+    } catch {
+      // El hook muestra el error de autenticación.
+    }
+  }
 
-      // Para registro nuevo, probablemente no tenga perfil completo aún
-      if (result.success && result.user) {
-        try {
-          console.log('📥 Obteniendo datos del perfil después del registro...')
-          const fullUserData = await updateUserFromBackend()
-          console.log('✅ LoginScreen: Usuario registrado con datos:', fullUserData)
-        } catch (error) {
-          console.error('❌ Error al obtener datos del perfil, usando datos básicos:', error)
-          // Si falla, usar los datos básicos del registro
-          setUser(result.user)
-        }
-      }
-    } catch (error) {
-      console.error('❌ LoginScreen: Error en registro:', error)
-      // El error ya se muestra a través del hook useWebAuthn
+  const handleRetrySession = async () => {
+    setRetrying(true)
+    try {
+      await retrySession()
+    } catch {
+      // AuthContext muestra el estado de conexión o sesión vencida.
+    } finally {
+      setRetrying(false)
     }
   }
 
@@ -137,12 +117,17 @@ function LoginScreen() {
             </div>
           </div>
 
-          {error && (
+          {(error || sessionError) && (
             <div className="rounded-2xl border-l-4 border-danger-500 bg-danger-50 px-4 py-3 text-sm font-semibold text-danger-700 shadow-soft">
               <div className="flex items-center gap-2">
                 <Icon name="info" className="h-5 w-5 text-danger-600" />
-                <span>{error}</span>
+                <span>{sessionError || error}</span>
               </div>
+              {sessionError && canRetrySession && (
+                <button type="button" onClick={handleRetrySession} disabled={retrying} className="mt-2 underline disabled:opacity-50">
+                  {retrying ? 'Verificando...' : 'Reintentar verificación'}
+                </button>
+              )}
             </div>
           )}
 

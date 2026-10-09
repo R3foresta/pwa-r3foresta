@@ -7,37 +7,51 @@ import type {
 
 const API_URL = import.meta.env.VITE_API_URL
 
+export class ProfileRequestError extends Error {
+  readonly status: number
+
+  constructor(status: number, message: string) {
+    super(message)
+    this.name = 'ProfileRequestError'
+    this.status = status
+  }
+}
+
 export class ProfileService {
   /**
    * Obtiene el perfil completo del usuario desde el backend
    */
-  static async getUserProfile(): Promise<UserProfileResponse> {
+  static async getUserProfile(token = localStorage.getItem('authToken')): Promise<UserProfileResponse> {
+    if (!token) throw new ProfileRequestError(401, 'La sesión no tiene token')
+
+    // Un límite evita que el arranque quede detenido cuando la red no responde.
+    const controller = new AbortController()
+    let timeoutId: ReturnType<typeof setTimeout> | undefined
     try {
-      const authId = localStorage.getItem('auth_id')
-      if (!authId) {
-        throw new Error('No se encontró auth_id')
-      }
-
-      console.log('📤 Obteniendo perfil del usuario desde el backend...')
-      const response = await fetch(`${API_URL}/api/users/profile`, {
-        method: 'GET',
-        headers: {
-          'x-auth-id': authId,
-          'Content-Type': 'application/json'
-        }
-      })
-
-      if (!response.ok) {
-        throw new Error(`Error al obtener perfil: ${response.status}`)
-      }
-
-      const userData = (await response.json()) as UserProfileResponse
-      console.log('📥 Datos del perfil obtenidos:', userData)
-      
-      return userData
-    } catch (error) {
-      console.error('❌ Error al obtener perfil:', error)
-      throw error
+      const response = await Promise.race([
+        (async () => {
+          const result = await fetch(`${API_URL}/api/users/profile`, {
+            method: 'GET',
+            headers: { Authorization: `Bearer ${token}` },
+            signal: controller.signal,
+          })
+          if (!result.ok) throw new ProfileRequestError(result.status, 'No se pudo verificar el perfil')
+          const userData = (await result.json()) as UserProfileResponse
+          if (!userData || typeof userData.auth_id !== 'string' || !userData.auth_id || typeof userData.username !== 'string') {
+            throw new Error('El backend devolvió un perfil inválido')
+          }
+          return userData
+        })(),
+        new Promise<never>((_, reject) => {
+          timeoutId = setTimeout(() => {
+            controller.abort()
+            reject(new Error('Tiempo de espera agotado al verificar la sesión'))
+          }, 10000)
+        }),
+      ])
+      return response
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId)
     }
   }
 
@@ -45,29 +59,20 @@ export class ProfileService {
    * Completa el perfil del usuario después del registro
    */
   static async completeProfile(data: ProfileFormData): Promise<ProfileFormResponse> {
-    try {
-      console.log('📤 Enviando datos de perfil al backend...')
-      console.log('📦 Datos:', data)
-
-      const authId = localStorage.getItem('auth_id')
-      if (!authId) {
-        throw new Error('No se encontró auth_id')
-      }
+      const token = localStorage.getItem('authToken')
+      if (!token) throw new ProfileRequestError(401, 'La sesión no tiene token')
 
       const response = await fetch(`${API_URL}/api/users/register-form`, {
         method: 'POST',
         headers: {
-          'x-auth-id': authId,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(data),
       })
 
       const result = (await response.json()) as ProfileFormResponse
-      console.log('📥 Response data:', result)
-
       if (!response.ok) {
-        console.error('❌ Error del backend:', response.status, result.message)
         const error = new Error(result.message || 'Error al completar el perfil') as Error & {
           status?: number
         }
@@ -75,12 +80,7 @@ export class ProfileService {
         throw error
       }
 
-      console.log('✅ Perfil completado exitosamente')
       return result
-    } catch (error) {
-      console.error('❌ Error en completeProfile:', error)
-      throw error
-    }
   }
 
   /**
@@ -104,14 +104,6 @@ export class ProfileService {
       user.doc_identidad && 
       user.apellido &&
       user.nombre
-
-    console.log('🔍 Verificando perfil completo:', {
-      user_id: user.id,
-      doc_identidad: !!user.doc_identidad,
-      apellido: !!user.apellido,
-      nombre: !!user.nombre,
-      isComplete: hasRequiredFields
-    })
 
     return Boolean(hasRequiredFields)
   }
@@ -171,18 +163,16 @@ export class ProfileService {
    * Sube la foto de perfil al servidor
    */
   static async updateProfilePhoto(file: File): Promise<ProfilePhotoResponse> {
-    try {
-      const authId = localStorage.getItem('auth_id')
-      if (!authId) throw new Error('No se encontró auth_id')
+      const token = localStorage.getItem('authToken')
+      if (!token) throw new ProfileRequestError(401, 'La sesión no tiene token')
 
       const formData = new FormData()
       formData.append('file', file) // 'file' debe coincidir con el Interceptor del Backend
 
-      console.log('📤 Subiendo imagen de perfil...')
       const response = await fetch(`${API_URL}/api/users/profile/photo`, {
         method: 'PATCH',
         headers: {
-          'x-auth-id': authId,
+          Authorization: `Bearer ${token}`,
           // Nota: No poner 'Content-Type', el navegador lo pone con el boundary de FormData
         },
         body: formData,
@@ -194,9 +184,5 @@ export class ProfileService {
       }
 
       return (await response.json()) as ProfilePhotoResponse
-    } catch (error) {
-      console.error('❌ Error en updateProfilePhoto:', error)
-      throw error
-    }
   }
 }

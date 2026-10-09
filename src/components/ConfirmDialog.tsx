@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, useId, useRef, type ReactNode } from 'react'
 import Icon from './Icon'
 import type { IconName } from './Icon'
 import { Button } from './ui'
@@ -17,6 +17,8 @@ type Props = {
   /** Ícono decorativo opcional en la cabecera del dialog. */
   iconName?: IconName
   loading?: boolean
+  /** Bloquea la confirmación sin impedir cancelar ni mostrar estado de envío. */
+  confirmDisabled?: boolean
   /** Mensaje de error mostrado como banner rojo bajo la descripción. */
   errorMessage?: string | null
   children?: ReactNode
@@ -33,15 +35,57 @@ function ConfirmDialog({
   variant = 'default',
   iconName,
   loading = false,
+  confirmDisabled = false,
   errorMessage,
   children,
   onConfirm,
   onCancel,
 }: Props) {
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const titleId = useId()
+  const descriptionId = useId()
+
+  useEffect(() => {
+    if (!open) return
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const initialFocus = dialogRef.current?.querySelector<HTMLElement>('[data-confirm-cancel]:not(:disabled)')
+    ;(initialFocus ?? dialogRef.current)?.focus()
+    return () => {
+      document.body.style.overflow = previousOverflow
+      if (previousFocus?.isConnected) previousFocus.focus()
+    }
+  }, [open])
+
   useEffect(() => {
     if (!open) return
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !loading) onCancel()
+      if (event.key === 'Escape' && !loading) {
+        event.preventDefault()
+        onCancel()
+      }
+      if (event.key !== 'Tab') return
+      const dialog = dialogRef.current
+      if (!dialog) return
+      const focusable = Array.from(dialog.querySelectorAll<HTMLElement>(
+        'button:not(:disabled), a[href], input:not(:disabled):not([type="hidden"]), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])',
+      )).filter((element) => !element.closest('[hidden], [aria-hidden="true"]'))
+      const first = focusable[0]
+      const last = focusable.at(-1)
+      if (!first || !last) {
+        event.preventDefault()
+        dialog.focus()
+      } else if (!dialog.contains(document.activeElement) || document.activeElement === dialog) {
+        event.preventDefault()
+        ;(event.shiftKey ? last : first).focus()
+      } else if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+      }
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
@@ -53,12 +97,15 @@ function ConfirmDialog({
 
   return (
     <div
+      ref={dialogRef}
+      tabIndex={-1}
       role="dialog"
       aria-modal="true"
-      aria-labelledby="confirm-dialog-title"
+      aria-labelledby={titleId}
+      aria-describedby={description ? descriptionId : undefined}
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-4 pb-4 pt-8 backdrop-blur-sm sm:items-center"
     >
-      <div className="w-full max-w-sm rounded-3xl bg-white p-5 shadow-soft ring-1 ring-black/5">
+      <div className="max-h-[calc(100dvh-3rem)] w-full max-w-sm overflow-y-auto rounded-3xl bg-white p-5 shadow-soft ring-1 ring-black/5">
         {iconName && (
           <div
             className={`mb-3 inline-flex h-10 w-10 items-center justify-center rounded-full ${
@@ -69,13 +116,13 @@ function ConfirmDialog({
           </div>
         )}
         <h2
-          id="confirm-dialog-title"
+          id={titleId}
           className="text-base font-extrabold text-brand-700"
         >
           {title}
         </h2>
         {description && (
-          <p className="mt-1 text-sm font-semibold text-brand-500">{description}</p>
+          <p id={descriptionId} className="mt-1 text-sm font-semibold text-brand-500">{description}</p>
         )}
         {children}
         {errorMessage && (
@@ -89,12 +136,12 @@ function ConfirmDialog({
             variant={isDanger ? 'danger' : 'primary'}
             fullWidth
             onClick={onConfirm}
-            disabled={loading}
+            disabled={loading || confirmDisabled}
           >
             {loading ? 'Procesando…' : confirmLabel}
           </Button>
           {cancelLabel && (
-            <Button variant="secondary" fullWidth onClick={onCancel} disabled={loading}>
+            <Button data-confirm-cancel variant="secondary" fullWidth onClick={onCancel} disabled={loading}>
               {cancelLabel}
             </Button>
           )}

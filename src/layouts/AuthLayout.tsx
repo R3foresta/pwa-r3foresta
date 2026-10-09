@@ -30,7 +30,7 @@ function AuthLayout() {
         </div>
 
         <footer className="mt-8 text-center text-xs font-semibold text-white/80">
-          Passkeys y sync offline
+          Acceso con passkeys · Requiere conexión
         </footer>
       </div>
     </div>
