@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import Icon from '../../../../../components/Icon'
+import ConfirmDialog from '../../../../../components/ConfirmDialog'
 import { useAuth } from '../../../../../contexts/AuthContext'
 import { LotesViveroService } from '../../../../../services/lotes-vivero.service'
 import SelectorComunidad from '../../../../comunidades/SelectorComunidad'
@@ -12,6 +13,7 @@ import FechaCard from '../FechaCard'
 import PhotoUploader from '../../../../../components/evidence/PhotoUploader'
 import type { Photo } from '../../../../../components/evidence/PhotoUploader'
 import ObservacionesCard from '../ObservacionesCard'
+import EventoConfirmacionResumen from '../EventoConfirmacionResumen'
 
 type Props = {
   lote: LoteViveroItem
@@ -50,6 +52,8 @@ function DespachoForm({ lote, onCompleted }: Props) {
   const [observaciones, setObservaciones] = useState('')
   const [showErrors, setShowErrors] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [confirming, setConfirming] = useState(false)
+  const submissionStarted = useRef(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
   const photosRef = useRef(photos)
@@ -117,13 +121,21 @@ function DespachoForm({ lote, onCompleted }: Props) {
     })
   }
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    if (submitting || confirming) return
     if (!canSubmit) {
       setShowErrors(true)
       return
     }
+    setSubmitError(null)
+    setConfirming(true)
+  }
 
+  const runSubmit = async () => {
+    if (submissionStarted.current || !canSubmit || !confirming) return
+    submissionStarted.current = true
+    setConfirming(false)
     setSubmitting(true)
     setSubmitError(null)
     try {
@@ -159,6 +171,7 @@ function DespachoForm({ lote, onCompleted }: Props) {
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Error al registrar el despacho.')
     } finally {
+      submissionStarted.current = false
       setSubmitting(false)
     }
   }
@@ -367,6 +380,26 @@ function DespachoForm({ lote, onCompleted }: Props) {
         hint={pendingMsg}
         variant="emerald"
       />
+      <ConfirmDialog
+        open={confirming}
+        variant={finalizaLote ? 'danger' : 'default'}
+        title={finalizaLote ? 'Confirmar despacho total' : 'Confirmar despacho'}
+        description="Esta salida quedará registrada en el historial del lote."
+        confirmLabel="Registrar despacho"
+        onConfirm={runSubmit}
+        onCancel={() => setConfirming(false)}
+      >
+        <EventoConfirmacionResumen
+          lote={lote}
+          evento="DESPACHO"
+          cantidad={`${cantidadNum} UNIDAD`}
+          fecha={fecha}
+          responsable={[user?.nombre, user?.apellido].filter(Boolean).join(' ') || authId}
+          evidencias={photos.length}
+          efecto={`Saldo esperado: ${saldoDespues} UNIDAD${finalizaLote ? '; cierre por saldo cero' : ''}`}
+          detalle={`Destino: ${DESTINOS.find((item) => item.key === destino)?.label ?? destino}${requiereComunidad ? ` · ${comunidad?.nombre ?? ''}` : destinoReferencia.trim() ? ` · ${destinoReferencia.trim()}` : ''}`}
+        />
+      </ConfirmDialog>
     </>
   )
 }

@@ -18,6 +18,7 @@ import FechaCard from '../FechaCard'
 import PhotoUploader from '../../../../../components/evidence/PhotoUploader'
 import type { Photo } from '../../../../../components/evidence/PhotoUploader'
 import ObservacionesCard from '../ObservacionesCard'
+import EventoConfirmacionResumen from '../EventoConfirmacionResumen'
 
 // No se reintenta automáticamente registrarMerma: el endpoint es append-only
 // sin Idempotency-Key, así que un retry tras respuesta perdida crearía una
@@ -118,6 +119,7 @@ function MermaForm({ lote, fechaEmbolsado, onCompleted }: Props) {
 
   type Step = 'form' | 'confirming' | 'submitting' | 'success' | 'closed'
   const [step, setStep] = useState<Step>('form')
+  const submissionStarted = useRef(false)
   type MermaResultData = RegistrarMermaResponse['data']
   const [lastResult, setLastResult] = useState<MermaResultData | null>(null)
 
@@ -225,6 +227,8 @@ function MermaForm({ lote, fechaEmbolsado, onCompleted }: Props) {
   }
 
   const runSubmit = async () => {
+    if (submissionStarted.current || step !== 'confirming' || !canSubmit) return
+    submissionStarted.current = true
     setStep('submitting')
     setSubmitError(null)
 
@@ -251,6 +255,7 @@ function MermaForm({ lote, fechaEmbolsado, onCompleted }: Props) {
         err instanceof Error ? err.message : 'No pudimos subir las fotos. Probá de nuevo.',
       )
       setStep('form')
+      submissionStarted.current = false
       return
     }
 
@@ -291,6 +296,8 @@ function MermaForm({ lote, fechaEmbolsado, onCompleted }: Props) {
           : 'No pudimos registrar la merma. Revisá tu conexión y volvé a intentar.',
       )
       setStep('form')
+    } finally {
+      submissionStarted.current = false
     }
   }
 
@@ -534,7 +541,18 @@ function MermaForm({ lote, fechaEmbolsado, onCompleted }: Props) {
         cancelLabel="Cancelar"
         onConfirm={runSubmit}
         onCancel={() => setStep('form')}
-      />
+      >
+        <EventoConfirmacionResumen
+          lote={lote}
+          evento="MERMA"
+          cantidad={`${cantidadNum} UNIDAD`}
+          fecha={fecha}
+          responsable={[user?.nombre, user?.apellido].filter(Boolean).join(' ') || authId}
+          evidencias={photos.length}
+          efecto={`Saldo esperado: ${saldoDespues} UNIDAD${willCloseLote ? '; cierre por saldo cero' : ''}`}
+          detalle={`Causa: ${causaLabel}`}
+        />
+      </ConfirmDialog>
 
       {/* Overlay bloqueante durante el POST: previene doble submit y deja
           claro que el sistema está procesando. Sin Idempotency-Key en el

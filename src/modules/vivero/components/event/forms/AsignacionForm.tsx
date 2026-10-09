@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import Icon from '../../../../../components/Icon'
+import ConfirmDialog from '../../../../../components/ConfirmDialog'
 import { Button } from '../../../../../components/ui'
 import { useAuth } from '../../../../../contexts/AuthContext'
 import { LotesViveroService } from '../../../../../services/lotes-vivero.service'
@@ -11,6 +12,7 @@ import CantidadStepper from '../CantidadStepper'
 import EventoCTABar from '../EventoCTABar'
 import FechaCard from '../FechaCard'
 import PhotoUploader, { type Photo } from '../../../../../components/evidence/PhotoUploader'
+import EventoConfirmacionResumen from '../EventoConfirmacionResumen'
 
 type Props = {
   lote: LoteViveroItem
@@ -122,6 +124,8 @@ function AsignacionForm({ lote, onCompleted }: Props) {
   const [photos, setPhotos] = useState<Photo[]>([])
   const [showErrors, setShowErrors] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [confirming, setConfirming] = useState(false)
+  const submissionStarted = useRef(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [assignmentSuccess, setAssignmentSuccess] = useState<AsignacionSuccess | null>(null)
 
@@ -230,13 +234,21 @@ function AsignacionForm({ lote, onCompleted }: Props) {
           ? `Max ${maxAsignable} plantas en vivero.`
           : null
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    if (submitting || confirming) return
     if (!canCreate) {
       setShowErrors(true)
       return
     }
+    setSubmitError(null)
+    setConfirming(true)
+  }
 
+  const runSubmit = async () => {
+    if (submissionStarted.current || !canCreate || !confirming) return
+    submissionStarted.current = true
+    setConfirming(false)
     setSubmitting(true)
     setSubmitError(null)
     setAssignmentSuccess(null)
@@ -284,6 +296,7 @@ function AsignacionForm({ lote, onCompleted }: Props) {
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Error al registrar la entrega.')
     } finally {
+      submissionStarted.current = false
       setSubmitting(false)
     }
   }
@@ -511,6 +524,27 @@ function AsignacionForm({ lote, onCompleted }: Props) {
         hint={pendingMsg}
         variant="emerald"
       />
+
+      <ConfirmDialog
+        open={confirming}
+        variant={finalizaLote ? 'danger' : 'default'}
+        title={finalizaLote ? 'Confirmar entrega total' : 'Confirmar entrega'}
+        description="La asignación entrega físicamente estas plantas a la subcampaña."
+        confirmLabel="Registrar entrega"
+        onConfirm={runSubmit}
+        onCancel={() => setConfirming(false)}
+      >
+        <EventoConfirmacionResumen
+          lote={lote}
+          evento="ASIGNACIÓN / ENTREGA"
+          cantidad={`${cantidadNum} UNIDAD`}
+          fecha={fecha}
+          responsable={[user?.nombre, user?.apellido].filter(Boolean).join(' ') || authId}
+          evidencias={photos.length}
+          efecto={`Saldo esperado: ${saldoDespues} UNIDAD${finalizaLote ? '; cierre por saldo cero' : ''}`}
+          detalle={`Destino: ${subcampanias.find((sub) => sub.id === Number(subcampaniaId))?.nombre ?? 'Subcampaña seleccionada'}`}
+        />
+      </ConfirmDialog>
 
       <AssignmentSuccessDialog
         success={assignmentSuccess}

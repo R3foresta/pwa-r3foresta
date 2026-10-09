@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import Icon from '../../../../../components/Icon'
+import ConfirmDialog from '../../../../../components/ConfirmDialog'
 import { useAuth } from '../../../../../contexts/AuthContext'
 import { LotesViveroService } from '../../../../../services/lotes-vivero.service'
 import { todayLocalISO } from '../../../../../utils/validations/date'
@@ -9,6 +10,7 @@ import FechaCard from '../FechaCard'
 import PhotoUploader from '../../../../../components/evidence/PhotoUploader'
 import type { Photo } from '../../../../../components/evidence/PhotoUploader'
 import ObservacionesCard from '../ObservacionesCard'
+import EventoConfirmacionResumen from '../EventoConfirmacionResumen'
 
 type Props = {
   lote: LoteViveroItem
@@ -49,6 +51,8 @@ function AdaptabilidadForm({ lote, fechaEmbolsado, onCompleted }: Props) {
   const [observaciones, setObservaciones] = useState('')
   const [showErrors, setShowErrors] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [confirming, setConfirming] = useState(false)
+  const submissionStarted = useRef(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
   const photosRef = useRef(photos)
@@ -81,17 +85,21 @@ function AdaptabilidadForm({ lote, fechaEmbolsado, onCompleted }: Props) {
     })
   }
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    // Doble guarda contra doble submit: el botón ya está disabled cuando
-    // submitting, pero un Enter dentro del form podría disparar submit antes
-    // de que React re-renderee. POST /adaptabilidad NO tiene Idempotency-Key —
-    // un retry crearía un segundo evento ADAPTABILIDAD duplicado.
-    if (submitting) return
+    if (submitting || confirming) return
     if (!canSubmit) {
       setShowErrors(true)
       return
     }
+    setSubmitError(null)
+    setConfirming(true)
+  }
+
+  const runSubmit = async () => {
+    if (submissionStarted.current || !canSubmit || !confirming) return
+    submissionStarted.current = true
+    setConfirming(false)
     setSubmitting(true)
     setSubmitError(null)
     try {
@@ -131,6 +139,7 @@ function AdaptabilidadForm({ lote, fechaEmbolsado, onCompleted }: Props) {
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Error al registrar la adaptabilidad.')
     } finally {
+      submissionStarted.current = false
       setSubmitting(false)
     }
   }
@@ -253,6 +262,25 @@ function AdaptabilidadForm({ lote, fechaEmbolsado, onCompleted }: Props) {
         hint={pendingMsg}
         variant="brand"
       />
+      <ConfirmDialog
+        open={confirming}
+        title="Confirmar adaptabilidad"
+        description="El seguimiento aplica al lote completo."
+        confirmLabel="Registrar adaptabilidad"
+        onConfirm={runSubmit}
+        onCancel={() => setConfirming(false)}
+      >
+        <EventoConfirmacionResumen
+          lote={lote}
+          evento="ADAPTABILIDAD"
+          cantidad="Lote completo · sin cantidad afectada"
+          fecha={fecha}
+          responsable={[user?.nombre, user?.apellido].filter(Boolean).join(' ') || authId}
+          evidencias={photos.length}
+          efecto="No cambia el saldo vivo"
+          detalle={`Subetapa: ${SUBETAPAS.find((item) => item.key === subetapa)?.label ?? subetapa}`}
+        />
+      </ConfirmDialog>
     </>
   )
 }

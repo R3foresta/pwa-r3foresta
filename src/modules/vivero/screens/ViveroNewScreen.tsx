@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Icon from '../../../components/Icon'
+import ConfirmDialog from '../../../components/ConfirmDialog'
 import { Button } from '../../../components/ui'
 import { MAX_DIAS_VIVERO } from '../../../config/vivero'
 import { useAuth } from '../../../contexts/AuthContext'
@@ -143,6 +144,8 @@ function ViveroNewScreen() {
 
   const [showErrors, setShowErrors] = useState(false)
   const [submitPhase, setSubmitPhase] = useState<UploadPhase>('idle')
+  const [confirming, setConfirming] = useState(false)
+  const submissionStarted = useRef(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
   const selectedRecoleccion = useMemo(
@@ -327,13 +330,30 @@ function ViveroNewScreen() {
     setUploadedEvidenceIds(null)
   }
 
-  const handleSubmit = async (event?: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event?: React.FormEvent<HTMLFormElement>) => {
     event?.preventDefault()
-    if (isSubmitting) return
+    if (isSubmitting || confirming) return
     if (!canSubmit || !selectedRecoleccion || !selectedViveroId || !unidadMedida) {
       setShowErrors(true)
       return
     }
+
+    setSubmitError(null)
+    setShowErrors(false)
+    setConfirming(true)
+  }
+
+  const runSubmit = async () => {
+    if (
+      submissionStarted.current ||
+      !confirming ||
+      !canSubmit ||
+      !selectedRecoleccion ||
+      !selectedViveroId ||
+      !unidadMedida
+    ) return
+    submissionStarted.current = true
+    setConfirming(false)
 
     try {
       setSubmitError(null)
@@ -380,6 +400,7 @@ function ViveroNewScreen() {
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'Error al registrar el lote.')
     } finally {
+      submissionStarted.current = false
       setSubmitPhase('idle')
     }
   }
@@ -783,6 +804,33 @@ function ViveroNewScreen() {
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirming}
+        title="Confirmar inicio de lote"
+        description="Revisá el origen y el material que entrará en proceso. El registro será definitivo."
+        confirmLabel="Crear lote e iniciar"
+        onConfirm={runSubmit}
+        onCancel={() => setConfirming(false)}
+      >
+        <dl className="mt-4 max-h-[45vh] space-y-2 overflow-y-auto rounded-2xl bg-brand-50 px-4 py-3 text-sm ring-1 ring-brand-100">
+          {[
+            ['Recolección origen', selectedRecoleccion?.codigo_trazabilidad ?? '—'],
+            ['Vivero', viveroSeleccionado?.nombre ?? '—'],
+            ['Evento', 'INICIO'],
+            ['Cantidad y unidad', `${cantidadInicio} ${unidadMedida ?? ''}`],
+            ['Fecha', fechaInicioCheck.normalized],
+            ['Responsable del registro', [user?.nombre, user?.apellido].filter(Boolean).join(' ') || authId],
+            ['Evidencia', `${photos.length} foto${photos.length === 1 ? '' : 's'}`],
+            ['Efecto esperado', 'Consume material de Recolección y crea material en proceso; aún no registra plantas vivas.'],
+          ].map(([label, value]) => (
+            <div key={label} className="flex justify-between gap-3">
+              <dt className="shrink-0 font-semibold text-brand-500">{label}</dt>
+              <dd className="text-right font-bold text-brand-700">{value}</dd>
+            </div>
+          ))}
+        </dl>
+      </ConfirmDialog>
     </div>
   )
 }

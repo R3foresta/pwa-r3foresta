@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Icon from '../../../../../components/Icon'
+import ConfirmDialog from '../../../../../components/ConfirmDialog'
 import { useAuth } from '../../../../../contexts/AuthContext'
 import { LotesViveroService } from '../../../../../services/lotes-vivero.service'
 import { formatUnidadCanonicaDisplay } from '../../../../../utils/recoleccionUnidad'
@@ -11,6 +12,7 @@ import FechaCard from '../FechaCard'
 import PhotoUploader from '../../../../../components/evidence/PhotoUploader'
 import type { Photo } from '../../../../../components/evidence/PhotoUploader'
 import ObservacionesCard from '../ObservacionesCard'
+import EventoConfirmacionResumen from '../EventoConfirmacionResumen'
 
 type Props = {
   lote: LoteViveroItem
@@ -30,8 +32,6 @@ function EmbolsadoForm({ lote, onCompleted }: Props) {
   const today = todayLocalISO()
   const tipoMaterial = lote.tipo_material_snapshot
   const cap = tipoMaterial === 'ESQUEJE' ? lote.cantidad_inicial_en_proceso : null
-  const softWarningThreshold =
-    tipoMaterial === 'SEMILLA' ? lote.cantidad_inicial_en_proceso * 10 : null
 
   // fechaMin: no antes del inicio del lote NI más de 10 días antes de hoy
   const fechaMin = maxOfDates(lote.fecha_inicio, addDaysLocalISO(today, -10))
@@ -43,6 +43,8 @@ function EmbolsadoForm({ lote, onCompleted }: Props) {
   const [observaciones, setObservaciones] = useState('')
   const [showErrors, setShowErrors] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [confirming, setConfirming] = useState(false)
+  const submissionStarted = useRef(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
   // Cleanup previews on unmount
@@ -74,11 +76,6 @@ function EmbolsadoForm({ lote, onCompleted }: Props) {
     return null
   }, [cantidad, cantidadNum, cap])
 
-  const showSoftWarning =
-    softWarningThreshold !== null &&
-    cantidadValid &&
-    cantidadNum > softWarningThreshold
-
   const fechaValid = fecha && fecha >= fechaMin && fecha <= fechaMax
   const fotosValid = photos.length >= 1 && photos.length <= 5
 
@@ -98,12 +95,20 @@ function EmbolsadoForm({ lote, onCompleted }: Props) {
     })
   }
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!canSubmit) {
       setShowErrors(true)
       return
     }
+    setSubmitError(null)
+    setConfirming(true)
+  }
+
+  const runSubmit = async () => {
+    if (submissionStarted.current || !canSubmit || !confirming) return
+    submissionStarted.current = true
+    setConfirming(false)
     setSubmitting(true)
     setSubmitError(null)
     try {
@@ -133,6 +138,7 @@ function EmbolsadoForm({ lote, onCompleted }: Props) {
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Error al registrar el embolsado.')
     } finally {
+      submissionStarted.current = false
       setSubmitting(false)
     }
   }
@@ -188,15 +194,6 @@ function EmbolsadoForm({ lote, onCompleted }: Props) {
             }
             disabled={submitting}
           />
-          {showSoftWarning && (
-            <div className="mt-3 flex items-start gap-2 rounded-2xl bg-warning-50 px-3 py-2 text-xs font-semibold text-warning-700 ring-1 ring-warning-200">
-              <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>
-                Cantidad inusualmente alta para {lote.cantidad_inicial_en_proceso} g de semillas.
-                Verificá el conteo antes de confirmar.
-              </span>
-            </div>
-          )}
         </section>
 
         {/* Fecha */}
@@ -251,6 +248,24 @@ function EmbolsadoForm({ lote, onCompleted }: Props) {
         hint={pendingMsg}
         variant="emerald"
       />
+      <ConfirmDialog
+        open={confirming}
+        title="Confirmar embolsado"
+        description="Revisá el conteo observado antes de registrar este evento definitivo."
+        confirmLabel="Registrar embolsado"
+        onConfirm={runSubmit}
+        onCancel={() => setConfirming(false)}
+      >
+        <EventoConfirmacionResumen
+          lote={lote}
+          evento="EMBOLSADO"
+          cantidad={`${cantidadNum} UNIDAD`}
+          fecha={fecha}
+          responsable={[user?.nombre, user?.apellido].filter(Boolean).join(' ') || authId}
+          evidencias={photos.length}
+          efecto={`Nace el saldo vivo con ${cantidadNum} plantas`}
+        />
+      </ConfirmDialog>
     </>
   )
 }

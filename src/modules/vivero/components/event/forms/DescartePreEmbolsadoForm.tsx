@@ -14,6 +14,7 @@ import FechaCard from '../FechaCard'
 import PhotoUploader from '../../../../../components/evidence/PhotoUploader'
 import type { Photo } from '../../../../../components/evidence/PhotoUploader'
 import ObservacionesCard from '../ObservacionesCard'
+import EventoConfirmacionResumen from '../EventoConfirmacionResumen'
 
 type Props = {
   lote: LoteViveroDetalle
@@ -93,6 +94,7 @@ function DescartePreEmbolsadoForm({ lote, onCompleted }: Props) {
 
   type Step = 'form' | 'confirming' | 'submitting' | 'done'
   const [step, setStep] = useState<Step>('form')
+  const submissionStarted = useRef(false)
   const submitting = step === 'submitting'
 
   const photosRef = useRef(photos)
@@ -153,7 +155,8 @@ function DescartePreEmbolsadoForm({ lote, onCompleted }: Props) {
   }
 
   const runSubmit = async () => {
-    if (!causa) return
+    if (submissionStarted.current || step !== 'confirming' || !canSubmit || !causa) return
+    submissionStarted.current = true
 
     setStep('submitting')
     setSubmitError(null)
@@ -182,6 +185,7 @@ function DescartePreEmbolsadoForm({ lote, onCompleted }: Props) {
         err instanceof Error ? err.message : 'No pudimos subir las fotos. Probá de nuevo.',
       )
       setStep('form')
+      submissionStarted.current = false
       return
     }
 
@@ -206,6 +210,8 @@ function DescartePreEmbolsadoForm({ lote, onCompleted }: Props) {
           : 'No pudimos registrar el descarte pre-embolsado.',
       )
       setStep('form')
+    } finally {
+      submissionStarted.current = false
     }
   }
 
@@ -349,7 +355,18 @@ function DescartePreEmbolsadoForm({ lote, onCompleted }: Props) {
         cancelLabel="Cancelar"
         onConfirm={runSubmit}
         onCancel={() => setStep('form')}
-      />
+      >
+        <EventoConfirmacionResumen
+          lote={lote}
+          evento="DESCARTE_PRE_EMBOLSADO"
+          cantidad={`${cantidadMaterial} ${unidad}`}
+          fecha={fecha}
+          responsable={[user?.nombre, user?.apellido].filter(Boolean).join(' ') || authId}
+          evidencias={photos.length}
+          efecto="Finalización del lote; no existe saldo vivo"
+          detalle={`Causa: ${causaLabel}`}
+        />
+      </ConfirmDialog>
 
       {step === 'submitting' && (
         <div
