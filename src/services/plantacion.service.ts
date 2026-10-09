@@ -1,6 +1,7 @@
 import {
   activarSubcampaniaApi,
   cancelarSubcampaniaApi,
+  cerrarSubcampaniaApi,
   createCampaniaApi,
   createRegistroPlantacionApi,
   createSubcampaniaApi,
@@ -26,6 +27,7 @@ import {
   postSubcampaniaEquipoApi,
   previewDesactivacionCampaniaApi,
   putSubcampaniaPlanApi,
+  revisarSubcampaniaPlanApi,
   setSubcampaniaPoligonoApi,
   uploadEvidenciasPendientesPlantacionApi,
 } from '../api/plantacion.api'
@@ -44,6 +46,8 @@ import type {
   CampaniaMetrics,
   CampaniaResumen,
   CancelarSubcampaniaData,
+  CerrarSubcampaniaData,
+  CerrarSubcampaniaInput,
   Campania,
   CreateCampaniaInput,
   CreateSubcampaniaInput,
@@ -56,6 +60,8 @@ import type {
   GetPlanData,
   PlanEspecieMetaInput,
   PutPlanData,
+  RevisarPlanData,
+  RevisarPlanInput,
   RolEnSubcampania,
   SetEquipoData,
   SetSubcampaniaPoligonoData,
@@ -683,6 +689,34 @@ export class PlantacionService {
     return payload.data
   }
 
+  static async revisarSubcampaniaPlan(
+    subcampaniaId: number,
+    input: RevisarPlanInput,
+    authId?: string,
+  ): Promise<RevisarPlanData> {
+    if (!Number.isSafeInteger(subcampaniaId) || subcampaniaId <= 0) {
+      throw new Error('ID de subcampaña inválido.')
+    }
+    validateRevisionPlanInput(input)
+    const response = await revisarSubcampaniaPlanApi(subcampaniaId, input, authId)
+    const payload = await parseJsonResponse<ApiEnvelope<RevisarPlanData>>(
+      response,
+      'No se pudo guardar la revisión del plan.',
+    )
+    const data = payload.data
+    if (!data || data.subcampania_id !== subcampaniaId ||
+      !Number.isSafeInteger(data.plan_revision) || data.plan_revision <= input.revision_esperada ||
+      data.meta_total_arboles !== input.meta_total_arboles ||
+      (data.estado !== 'BORRADOR' && data.estado !== 'ACTIVA') || !Array.isArray(data.metas) ||
+      data.metas.length !== input.metas.length || input.metas.some((expected) =>
+        !data.metas.some((actual) => actual.planta_id === expected.planta_id &&
+          actual.cantidad_objetivo === expected.cantidad_objetivo &&
+          actual.porcentaje_objetivo === expected.porcentaje_objetivo))) {
+      throw new Error('No se recibió confirmación completa de la revisión. Consulta el plan vigente antes de reintentar.')
+    }
+    return data
+  }
+
   static async cancelarSubcampania(
     subcampaniaId: number,
     motivo: string,
@@ -706,6 +740,47 @@ export class PlantacionService {
     )
     if (!payload.data) {
       throw new Error('No se recibió confirmación de la cancelación.')
+    }
+    return payload.data
+  }
+
+  static async cerrarSubcampania(
+    subcampaniaId: number,
+    input: CerrarSubcampaniaInput,
+    authId?: string,
+  ): Promise<CerrarSubcampaniaData> {
+    if (!Number.isInteger(subcampaniaId) || subcampaniaId <= 0) {
+      throw new Error('ID de subcampaña inválido.')
+    }
+    if (
+      !input.fecha_cierre_operativo ||
+      !input.fecha_fin_mantenimiento ||
+      !Number.isFinite(Date.parse(input.fecha_cierre_operativo)) ||
+      !Number.isFinite(Date.parse(input.fecha_fin_mantenimiento))
+    ) {
+      throw new Error('Indica fechas válidas de cierre y fin de mantenimiento.')
+    }
+    if (Date.parse(input.fecha_fin_mantenimiento) < Date.parse(input.fecha_cierre_operativo)) {
+      throw new Error('El fin de mantenimiento no puede ser anterior al cierre.')
+    }
+    if (input.estado_final === 'FINALIZADA_PARCIAL' && !input.motivo_cierre_parcial) {
+      throw new Error('Selecciona un motivo para el cierre parcial.')
+    }
+    const observaciones = input.observaciones_cierre?.trim()
+    if (observaciones && observaciones.length > 2000) {
+      throw new Error('Las observaciones no pueden superar 2000 caracteres.')
+    }
+    const response = await cerrarSubcampaniaApi(
+      subcampaniaId,
+      { ...input, observaciones_cierre: observaciones || undefined },
+      authId,
+    )
+    const payload = await parseJsonResponse<ApiEnvelope<CerrarSubcampaniaData>>(
+      response,
+      'Error al cerrar la subcampaña.',
+    )
+    if (!payload.data) {
+      throw new Error('No se recibió confirmación del cierre.')
     }
     return payload.data
   }
@@ -1128,6 +1203,38 @@ function validatePlanMetas(metas: PlanEspecieMetaInput[]): PlanEspecieMetaInput[
       cantidad_objetivo: Math.floor(cantidad),
     }
   })
+}
+
+function validateRevisionPlanInput(input: RevisarPlanInput): void {
+  if (!Number.isSafeInteger(input.meta_total_arboles) || input.meta_total_arboles <= 0) {
+    throw new Error('La meta total debe ser un entero positivo.')
+  }
+  if (!Number.isSafeInteger(input.revision_esperada) || input.revision_esperada < 0) {
+    throw new Error('Falta la versión vigente del plan. Vuelve a cargarlo.')
+  }
+  if (!Array.isArray(input.metas) || input.metas.length === 0) {
+    throw new Error('Agrega al menos una especie al plan.')
+  }
+  const ids = new Set<number>()
+  let cantidad = 0
+  let centesimas = 0
+  for (const meta of input.metas) {
+    if (!Number.isSafeInteger(meta.planta_id) || meta.planta_id <= 0 ||
+      !Number.isSafeInteger(meta.cantidad_objetivo) || meta.cantidad_objetivo <= 0) {
+      throw new Error('Cada especie requiere un ID y una cantidad entera positivos.')
+    }
+    if (ids.has(meta.planta_id)) throw new Error('No se puede repetir una especie en el plan.')
+    ids.add(meta.planta_id)
+    const pct = meta.porcentaje_objetivo
+    if (!Number.isFinite(pct) || pct <= 0 || pct > 100 ||
+      Math.abs(pct * 100 - Math.round(pct * 100)) > 1e-8) {
+      throw new Error('El porcentaje debe ser mayor a 0, hasta 100 y tener como máximo dos decimales.')
+    }
+    cantidad += meta.cantidad_objetivo
+    centesimas += Math.round(pct * 100)
+  }
+  if (centesimas !== 10000) throw new Error('Los porcentajes deben sumar 100%.')
+  if (cantidad !== input.meta_total_arboles) throw new Error('Las cantidades por especie deben sumar la meta total.')
 }
 
 function validateEquipoMembers(miembros: EquipoMemberInput[]): EquipoMemberInput[] {

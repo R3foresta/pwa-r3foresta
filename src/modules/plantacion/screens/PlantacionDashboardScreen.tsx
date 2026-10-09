@@ -344,7 +344,7 @@ function CO2LiveHero({
   const kgPorHora = (RATE_TON_PER_SECOND * 3600 * 1000).toFixed(2).replace('.', ',')
   const kgPorArbol =
     hasCo2 && arbolesPlantados > 0 ? (shown * 1000) / arbolesPlantados : null
-  const pctArboles = avancePct !== null ? Math.min(100, avancePct) : null
+  const pctArboles = avancePct
 
   return (
     // El gradiente va inline (no como clases from/via/to) para garantizar el

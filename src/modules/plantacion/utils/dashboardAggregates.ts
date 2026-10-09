@@ -222,7 +222,7 @@ export function applyResumenGlobal(
     arbolesPlantados,
     avancePct:
       totals.metaArboles > 0 && avance !== null
-        ? Math.max(0, Math.min(100, Math.round(avance)))
+        ? Math.max(0, Math.round(avance))
         : totals.avancePct,
     supervivenciaPct:
       supervivencia !== null
@@ -405,12 +405,37 @@ export function subcampaniasResumen(campania: Campania): string {
 export function avancePctDe(campania: Campania): number {
   const backendPct = toFinite(campania.avance_pct)
   if (backendPct !== null && backendPct > 0) {
-    return Math.max(0, Math.min(100, Math.round(backendPct)))
+    return Math.max(0, Math.round(backendPct))
   }
   const plantados = toCount(campania.arboles_plantados)
   const meta = toCount(campania.meta_arboles ?? campania.meta_planificada_campania)
   if (meta === 0) return 0
-  return Math.max(0, Math.min(100, Math.round((plantados / meta) * 100)))
+  return Math.max(0, Math.round((plantados / meta) * 100))
+}
+
+/** La meta interna incluye BORRADOR y excluye CANCELADA (RN-PLA-36). */
+export function getCampaniaAggregatedTotals(
+  campania: Campania,
+  subcampanias: Subcampania[],
+): { planted: number; target: number; progress: number } {
+  const relevant = subcampanias.filter((subcampania) => subcampania.estado !== 'CANCELADA')
+  const derivedPlanted = relevant.reduce(
+    (acc, subcampania) => acc + toCount(subcampania.plantados ?? subcampania.total_plantado_inicial),
+    0,
+  )
+  const derivedTarget = relevant.reduce(
+    (acc, subcampania) => acc + toCount(subcampania.meta_total_arboles),
+    0,
+  )
+  const planted = toCount(campania.arboles_plantados ?? derivedPlanted)
+  const target = toCount(campania.meta_arboles ?? campania.meta_planificada_campania ?? derivedTarget)
+  const backendProgress = toFinite(campania.avance_pct)
+  const progress = backendProgress !== null && backendProgress > 0
+    ? Math.max(0, backendProgress)
+    : target > 0
+      ? Math.max(0, Math.round((planted / target) * 100))
+      : 0
+  return { planted, target, progress }
 }
 
 export function formatEntero(value: number): string {

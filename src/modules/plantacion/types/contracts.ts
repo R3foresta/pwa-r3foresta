@@ -180,6 +180,7 @@ export type Subcampania = {
   zona_id: number
   zona_nombre?: string | null
   meta_total_arboles: number
+  plan_revision?: number
   fecha_estimada_inicio?: string | null
   fecha_estimada_fin?: string | null
   tolerancia_gps_metros?: number | null
@@ -248,11 +249,24 @@ export type GetPlanData = {
   subcampania_id: number
   estado: EstadoSubcampania
   meta_total_arboles: number
+  // Ausente en servidores anteriores a la revisión atómica (no habilitar editor).
+  plan_revision?: number
   metas: PlanEspecieMeta[]
 }
 
 export type PutPlanInput = {
   metas: PlanEspecieMetaInput[]
+}
+
+// PUT /subcampanias/:id/plan: revisión coherente y protegida contra concurrencia.
+export type RevisarPlanInput = PutPlanInput & {
+  meta_total_arboles: number
+  revision_esperada: number
+}
+
+export type RevisarPlanData = GetPlanData & {
+  plan_revision: number
+  message?: string
 }
 
 export type PutPlanData = {
@@ -263,6 +277,41 @@ export type PutPlanData = {
 
 export type CancelarSubcampaniaInput = {
   motivo: string
+}
+
+export const MOTIVO_CIERRE_PARCIAL_LABEL = {
+  FALTA_STOCK: 'Falta de stock',
+  PROBLEMAS_CLIMATICOS: 'Problemas climáticos',
+  CANCELACION_CONVENIO: 'Cancelación de convenio',
+  CONFLICTO_SOCIAL: 'Conflicto social',
+  ACCESO_RESTRINGIDO: 'Acceso restringido',
+  CAMBIO_PRIORIDAD_INSTITUCIONAL: 'Cambio de prioridad institucional',
+  RIESGO_OPERATIVO: 'Riesgo operativo',
+  META_REDEFINIDA: 'Meta redefinida',
+  CIERRE_ADMINISTRATIVO: 'Cierre administrativo',
+  OTRO: 'Otro',
+} as const
+
+export type MotivoCierreParcial = keyof typeof MOTIVO_CIERRE_PARCIAL_LABEL
+
+export type CerrarSubcampaniaInput = {
+  estado_final: 'COMPLETADA' | 'FINALIZADA_PARCIAL'
+  fecha_cierre_operativo: string
+  fecha_fin_mantenimiento: string
+  motivo_cierre_parcial?: MotivoCierreParcial
+  observaciones_cierre?: string
+}
+
+export type CerrarSubcampaniaData = {
+  message?: string
+  id: number
+  estado: 'COMPLETADA' | 'FINALIZADA_PARCIAL'
+  fase_mantenimiento: FaseMantenimientoSubcampania
+  fecha_cierre_operativo: string
+  fecha_fin_mantenimiento: string
+  motivo_cierre_parcial?: MotivoCierreParcial | null
+  observaciones_cierre?: string | null
+  updated_at?: string
 }
 
 export type CancelarSubcampaniaData = {
@@ -310,6 +359,7 @@ export type PlantacionContextSubcampania = {
   zona_id?: number | null
   zona_nombre?: string | null
   meta_total_arboles: number
+  plan_revision?: number
   total_plantado_inicial?: number | null
   tolerancia_gps_metros?: number | null
   poligono?: GeoJsonPolygon | null

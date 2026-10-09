@@ -12,16 +12,20 @@ import { PlantacionService } from '../../../services/plantacion.service'
 import {
   TIPO_CAMPANIA_LABEL,
   type ActivarSubcampaniaData,
+  type CerrarSubcampaniaInput,
   type EquipoMember,
   type EstadoSubcampania,
   type GeoJsonPolygon,
   type GetPlanData,
+  type RevisarPlanData,
   type Subcampania,
 } from '../types/contracts'
 import { formatDate, toLatLngTuple } from '../utils/subcampaniaFormatters'
 import { loadSubcampaniaBaseDrafts } from '../utils/subcampaniaDraft'
 import { UserAvatar } from '../components/UserAvatar'
 import CancelarSubcampaniaModal from '../components/CancelarSubcampaniaModal'
+import CerrarSubcampaniaModal from '../components/CerrarSubcampaniaModal'
+import EditarPlanSubcampania from '../components/EditarPlanSubcampania'
 import { SubcampaniaEquipoManager } from '../components/SubcampaniaEquipoManager'
 
 // Estados en los que un ADMIN puede gestionar el equipo (agregar/quitar
@@ -718,7 +722,7 @@ function ResumenTab({
           <div className="mt-2 space-y-2.5">
             {metasPlan.map((meta) => {
               const nombre = meta.planta?.especie ?? `Planta #${meta.planta_id}`
-              const pctObjetivo = clampPct(Math.round(meta.porcentaje_objetivo))
+              const pctObjetivo = Math.max(0, Math.min(100, meta.porcentaje_objetivo))
               return (
                 <div key={meta.planta_id}>
                   <div className="flex items-baseline justify-between gap-2">
@@ -727,7 +731,7 @@ function ResumenTab({
                       <span className="text-brand-800">
                         {meta.cantidad_objetivo.toLocaleString('es-BO')}
                       </span>{' '}
-                      · {pctObjetivo}%
+                      · {pctObjetivo.toLocaleString('es-BO', { maximumFractionDigits: 2 })}%
                     </p>
                   </div>
                   {meta.planta?.nombre_cientifico && (
@@ -922,18 +926,26 @@ function MoreSheet({
   open,
   sub,
   canCancel,
+  canClose,
+  canEditPlan,
   onClose,
   onGestionarEquipo,
   onContinuarWizard,
   onCancelar,
+  onCerrar,
+  onEditarPlan,
 }: {
   open: boolean
   sub: Subcampania
   canCancel: boolean
+  canClose: boolean
+  canEditPlan: boolean
   onClose: () => void
   onGestionarEquipo: () => void
   onContinuarWizard: () => void
   onCancelar: () => void
+  onCerrar: () => void
+  onEditarPlan: () => void
 }) {
   if (!open) return null
   const isBorrador = sub.estado === 'BORRADOR'
@@ -979,6 +991,43 @@ function MoreSheet({
                   <p className="text-sm font-extrabold text-brand-800">Continuar configuración</p>
                   <p className="text-[11px] font-medium text-neutral-500">
                     Retomar el asistente de creación
+                  </p>
+                </div>
+                <Icon name="chevron-right" className="h-4 w-4 text-neutral-400" />
+              </button>
+            </li>
+          )}
+
+          {canEditPlan && (
+            <li>
+              <button type="button" onClick={onEditarPlan}
+                className="flex w-full items-center gap-3 rounded-xl px-1 py-3 text-left hover:bg-neutral-50">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
+                  <Icon name="leaf" className="h-4 w-4" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-extrabold text-brand-800">Editar meta y especies</p>
+                  <p className="text-[11px] font-medium text-neutral-500">Revisar el plan vigente · Solo ADMIN global</p>
+                </div>
+                <Icon name="chevron-right" className="h-4 w-4 text-neutral-400" />
+              </button>
+            </li>
+          )}
+
+          {canClose && (
+            <li>
+              <button
+                type="button"
+                onClick={onCerrar}
+                className="flex w-full items-center gap-3 rounded-xl px-1 py-3 text-left hover:bg-neutral-50"
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
+                  <Icon name="flag" className="h-4 w-4" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-extrabold text-brand-800">Cerrar subcampaña</p>
+                  <p className="text-[11px] font-medium text-neutral-500">
+                    Terminar la plantación inicial e iniciar mantenimiento
                   </p>
                 </div>
                 <Icon name="chevron-right" className="h-4 w-4 text-neutral-400" />
@@ -1035,10 +1084,16 @@ function DetalleSubcampanaScreen() {
   )
   const [activeTab, setActiveTab] = useState<DetailTab>('resumen')
   const [moreOpen, setMoreOpen] = useState(false)
+  const [planEditorOpen, setPlanEditorOpen] = useState(false)
+  const [planRefreshWarning, setPlanRefreshWarning] = useState<string | null>(null)
   const [activationNotice, setActivationNotice] = useState<string | null>(null)
   const [cancelModalOpen, setCancelModalOpen] = useState(false)
   const [cancelSubmitting, setCancelSubmitting] = useState(false)
   const [cancelError, setCancelError] = useState<string | null>(null)
+  const [closeModalOpen, setCloseModalOpen] = useState(false)
+  const [closeSubmitting, setCloseSubmitting] = useState(false)
+  const [closeError, setCloseError] = useState<string | null>(null)
+  const closeInFlightRef = useRef(false)
 
   const authId = user?.auth_id
   const isAdmin = (user?.rol ?? '').toUpperCase() === 'ADMIN'
@@ -1092,6 +1147,7 @@ function DetalleSubcampanaScreen() {
     setLoading(true)
     setError(null)
     void fetchSubcampaniaData(requestId)
+    return () => { requestRef.current += 1 }
   }, [hasValidId, numericId, authId, fetchSubcampaniaData])
 
   const goBack = () => {
@@ -1118,6 +1174,81 @@ function DetalleSubcampanaScreen() {
     !!sub &&
     (sub.estado === 'BORRADOR' ||
       (sub.estado === 'ACTIVA' && sub.total_plantado_inicial === 0))
+
+  const canClose = isAdmin && sub?.estado === 'ACTIVA'
+  const canEditPlan = isAdmin && (sub?.estado === 'BORRADOR' || sub?.estado === 'ACTIVA')
+
+  const refreshPlanIndicators = async () => {
+    if (!sub) return
+    const requestId = ++requestRef.current
+    // Las pantallas de campaña/plantación también consultan al entrar, sin
+    // caché. Estas lecturas comprueban los indicadores tras la confirmación.
+    const results = await Promise.allSettled([
+      PlantacionService.getSubcampania(numericId, authId),
+      PlantacionService.getSubcampaniaPlan(numericId, authId),
+      PlantacionService.getCampania(sub.campania_id),
+      PlantacionService.getCampaniaMetrics(sub.campania_id),
+      PlantacionService.getCampaniasResumen(),
+      PlantacionService.getPlantacionContext(numericId, authId),
+    ])
+    if (requestId !== requestRef.current) return
+    const [detailResult, planResult] = results
+    if (detailResult.status === 'fulfilled') setSub(detailResult.value)
+    if (planResult.status === 'fulfilled') setPlan(planResult.value)
+    if (results.some((result) => result.status === 'rejected')) {
+      setPlanRefreshWarning('El plan se guardó, pero no se pudieron actualizar todos los indicadores. Recarga el detalle antes de continuar.')
+    } else {
+      setPlanRefreshWarning(null)
+    }
+  }
+
+  const handlePlanSaved = async (saved: RevisarPlanData) => {
+    setPlan(saved)
+    setSub((current) => current?.id === saved.subcampania_id ? {
+      ...current, meta_total_arboles: saved.meta_total_arboles, estado: saved.estado,
+      avance_pct: undefined,
+    } : current)
+    setActivationNotice('Plan actualizado. Los registros de plantación y el stock físico se conservan.')
+    setPlanRefreshWarning(null)
+    await refreshPlanIndicators()
+  }
+
+  const handleRequestClose = () => {
+    if (!canClose) return
+    setMoreOpen(false)
+    setCloseError(null)
+    setCloseModalOpen(true)
+  }
+
+  const handleDismissClose = () => {
+    if (closeInFlightRef.current) return
+    setCloseModalOpen(false)
+    setCloseError(null)
+  }
+
+  const handleConfirmClose = async (input: CerrarSubcampaniaInput) => {
+    if (!sub || !canClose || closeInFlightRef.current) return
+    closeInFlightRef.current = true
+    setCloseSubmitting(true)
+    setCloseError(null)
+    try {
+      const closed = await PlantacionService.cerrarSubcampania(sub.id, input, authId)
+      setSub((current) => current?.id === closed.id ? { ...current, ...closed } : current)
+      setCloseModalOpen(false)
+      setActivationNotice(
+        closed.estado === 'COMPLETADA'
+          ? 'Subcampaña completada. La plantación inicial terminó y el mantenimiento está activo.'
+          : 'Subcampaña finalizada parcialmente. El mantenimiento está activo.',
+      )
+      const requestId = ++requestRef.current
+      void fetchSubcampaniaData(requestId)
+    } catch (closeErr) {
+      setCloseError(closeErr instanceof Error ? closeErr.message : 'No se pudo cerrar la subcampaña.')
+    } finally {
+      closeInFlightRef.current = false
+      setCloseSubmitting(false)
+    }
+  }
 
   const handleRequestCancel = () => {
     setMoreOpen(false)
@@ -1221,6 +1352,14 @@ function DetalleSubcampanaScreen() {
             <>
               <DetailTabs active={activeTab} onChange={setActiveTab} />
 
+              {planRefreshWarning && (
+                <div role="status" className="rounded-3xl bg-warning-50 p-4 text-xs font-semibold text-warning-900">
+                  <p>{planRefreshWarning}</p>
+                  <Button variant="secondary" size="sm" className="mt-2"
+                    onClick={() => { void refreshPlanIndicators() }}>Recargar detalle</Button>
+                </div>
+              )}
+
               {activationNotice && (
                 <div className="flex items-start gap-3 rounded-3xl bg-success-50 p-4 shadow-soft ring-1 ring-success-100">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-success-100 text-success-700">
@@ -1281,6 +1420,8 @@ function DetalleSubcampanaScreen() {
           open={moreOpen}
           sub={sub}
           canCancel={canCancel}
+          canClose={canClose}
+          canEditPlan={canEditPlan}
           onClose={() => setMoreOpen(false)}
           onGestionarEquipo={() => {
             setMoreOpen(false)
@@ -1291,6 +1432,12 @@ function DetalleSubcampanaScreen() {
             navigate(buildWizardUrl(sub.campania_id, sub.id, 5))
           }}
           onCancelar={handleRequestCancel}
+          onCerrar={handleRequestClose}
+          onEditarPlan={() => {
+            if (!canEditPlan) return
+            setMoreOpen(false)
+            setPlanEditorOpen(true)
+          }}
         />
       )}
 
@@ -1302,6 +1449,21 @@ function DetalleSubcampanaScreen() {
         onClose={handleCloseCancelModal}
         onConfirm={handleConfirmCancel}
       />
+
+      {sub && planEditorOpen && (
+        <EditarPlanSubcampania subcampania={sub} authId={authId} isAdmin={isAdmin}
+          onClose={() => setPlanEditorOpen(false)} onSaved={handlePlanSaved} />
+      )}
+
+      {sub && closeModalOpen && (
+        <CerrarSubcampaniaModal
+          subcampania={sub}
+          submitting={closeSubmitting}
+          error={closeError}
+          onClose={handleDismissClose}
+          onConfirm={(input) => { void handleConfirmClose(input) }}
+        />
+      )}
     </div>
   )
 }

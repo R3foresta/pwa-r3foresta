@@ -1,5 +1,6 @@
 import type {
   CancelarSubcampaniaInput,
+  CerrarSubcampaniaInput,
   CreateCampaniaInput,
   CreateRegistroPlantacionInput,
   CreateSubcampaniaInput,
@@ -7,6 +8,7 @@ import type {
   EquipoMemberInput,
   EstadoSubcampania,
   PutPlanInput,
+  RevisarPlanInput,
   SetCampaniaOrganizacionesInput,
   SetSubcampaniaPoligonoInput,
   UpdateCampaniaInput,
@@ -70,7 +72,7 @@ export async function getCampaniaApi(campaniaId: number): Promise<Response> {
 
 export async function listSubcampaniasByCampaniaApi(campaniaId: number): Promise<Response> {
   return fetch(
-    `${API_BASE_URL}/campanias/${campaniaId}/subcampanias?estados=BORRADOR,ACTIVA,COMPLETADA`,
+    `${API_BASE_URL}/campanias/${campaniaId}/subcampanias?estados=BORRADOR,ACTIVA,COMPLETADA,FINALIZADA_PARCIAL`,
     {
       method: 'GET',
       headers: getAuthHeaders({ includeContentType: false }),
@@ -272,6 +274,18 @@ export async function activarSubcampaniaApi(
   })
 }
 
+export async function cerrarSubcampaniaApi(
+  subcampaniaId: number,
+  input: CerrarSubcampaniaInput,
+  authId?: string,
+): Promise<Response> {
+  return fetch(`${API_BASE_URL}/subcampanias/${subcampaniaId}/cerrar`, {
+    method: 'POST',
+    headers: getAuthHeaders({ authId, includeContentType: true }),
+    body: JSON.stringify(input),
+  })
+}
+
 export async function getSubcampaniaPlanApi(
   subcampaniaId: number,
   authId?: string,
@@ -292,6 +306,14 @@ export async function putSubcampaniaPlanApi(
     headers: getAuthHeaders({ authId, includeContentType: true }),
     body: JSON.stringify(input),
   })
+}
+
+export async function revisarSubcampaniaPlanApi(
+  subcampaniaId: number,
+  input: RevisarPlanInput,
+  authId?: string,
+): Promise<Response> {
+  return putSubcampaniaPlanApi(subcampaniaId, input, authId)
 }
 
 export async function cancelarSubcampaniaApi(

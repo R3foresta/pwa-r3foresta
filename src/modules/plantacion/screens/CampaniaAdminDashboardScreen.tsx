@@ -24,6 +24,7 @@ import {
   type SubcampaniaBaseDraft,
 } from '../utils/subcampaniaDraft'
 import { formatDate as formatFullDate } from '../utils/subcampaniaFormatters'
+import { getCampaniaAggregatedTotals } from '../utils/dashboardAggregates'
 
 type LocationState = {
   campania?: Campania
@@ -128,9 +129,9 @@ function getSubcampaniaActivaData(subcampania: Subcampania): SubcampaniaActivaDa
   const backendAvance = toNullableNumber(subcampania.avance_pct)
   const avancePct =
     backendAvance !== null
-      ? Math.max(0, Math.min(100, backendAvance))
+      ? Math.max(0, backendAvance)
       : meta && meta > 0 && plantados !== null
-        ? Math.max(0, Math.min(100, Math.round((plantados / meta) * 100)))
+        ? Math.max(0, Math.round((plantados / meta) * 100))
         : null
   const areaHectareas = toNullableNumber(subcampania.area_hectareas)
   const personas = Number(subcampania.personas_count ?? subcampania.equipo?.length ?? 0)
@@ -171,46 +172,6 @@ function getSubcampaniaUbicacion(
   if (subcampania.zona_nombre) return subcampania.zona_nombre
   if (campania.zonas?.length) return campania.zonas[0]
   return ''
-}
-
-type CampaniaAggregatedTotals = {
-  planted: number
-  target: number
-  progress: number
-}
-
-// El endpoint de campaña no expone totales agregados de árboles: los derivamos
-// de las subcampañas activas y completadas (BORRADOR queda fuera porque su meta
-// aún no es un compromiso).
-function getCampaniaAggregatedTotals(
-  campania: Campania,
-  subcampanias: Subcampania[],
-): CampaniaAggregatedTotals {
-  const relevant = subcampanias.filter(
-    (s) => s.estado === 'ACTIVA' || s.estado === 'COMPLETADA',
-  )
-  const derivedPlanted = relevant.reduce(
-    (acc, s) => acc + Number(s.plantados ?? s.total_plantado_inicial ?? 0),
-    0,
-  )
-  const derivedTarget = relevant.reduce(
-    (acc, s) => acc + Number(s.meta_total_arboles ?? 0),
-    0,
-  )
-
-  const backendPlanted = Number(campania.arboles_plantados ?? 0)
-  const backendTarget = Number(campania.meta_arboles ?? 0)
-  const planted = backendPlanted > 0 ? backendPlanted : derivedPlanted
-  const target = backendTarget > 0 ? backendTarget : derivedTarget
-
-  const backendProgress = Number(campania.avance_pct)
-  const progress = Number.isFinite(backendProgress) && backendProgress > 0
-    ? Math.max(0, Math.min(100, backendProgress))
-    : target > 0
-      ? Math.max(0, Math.min(100, Math.round((planted / target) * 100)))
-      : 0
-
-  return { planted, target, progress }
 }
 
 function formatMetricNumber(value?: number | null, fractionDigits = 0): string {
@@ -558,7 +519,7 @@ function CampaniaHeader({
               {formatNumber(planted)}
               {showTargetPlaceholder ? (
                 <span className="ml-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-white/60">
-                  Sin meta activa
+                  Sin meta planificada
                 </span>
               ) : (
                 <span className="ml-1 text-base font-extrabold text-white/60">
