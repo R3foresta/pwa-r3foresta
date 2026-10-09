@@ -653,16 +653,15 @@ Antes de cerrar una tarea:
 4. Ejecutar build si el cambio toca estructura, rutas o tipos globales.
 5. Probar manualmente el flujo afectado si es posible.
 
-Comandos típicos:
+Comandos disponibles:
 
 ```bash
 npm run lint
-npm run typecheck
 npm run test
 npm run build
 ```
 
-Si un comando no existe, reportarlo. No decir que pasó si no se ejecutó.
+`build` incluye TypeScript (`tsc -b`); no existe script independiente `typecheck`. `test` ejecuta Vitest en jsdom con Testing Library. Las pruebas `src/**/*.test.ts(x)` verifican comportamiento y usan servicios simulados; no reemplazan QA de permisos y persistencia contra backend real. No decir que una verificación pasó si no se ejecutó.
 
 ### 16.1 Checklist funcional por pantalla
 
@@ -704,11 +703,29 @@ Si un comando no existe, reportarlo. No decir que pasó si no se ejecutó.
 - El estado del diálogo de instalación vive en `src/contexts/PwaInstallContext.tsx`; cualquier sugerencia o acceso alternativo debe consumir ese contexto para no registrar listeners duplicados de `beforeinstallprompt`.
 - Cerrar una sugerencia visual de instalación no debe descartar el evento disponible: el acceso permanente del menú puede seguir utilizándolo.
 - El marcador local de instalación no es fuente de verdad permanente: `getInstalledRelatedApps()` y la reaparición de `beforeinstallprompt` deben reconciliarlo después de una desinstalación.
-- La comprobación del service worker, la disponibilidad del backend y el refresco del perfil deben ejecutarse en segundo plano; no deben bloquear el render global ni un refresh de ruta.
+- La comprobación del service worker y la disponibilidad del backend deben ejecutarse en segundo plano. La restauración de sesión muestra un estado visible en las rutas protegidas mientras valida el token, con timeout y recuperación; nunca habilita permisos desde el cache local ni deja la pantalla en blanco.
 - No agregar caché de API ni sincronización en segundo plano sin definir antes el contrato de offline/outbox.
 - En Vercel, `sw.js`, `index.html` y el manifest deben revalidarse; solo los assets con hash pueden usar caché inmutable.
 
 ---
+
+### 16.5 Sesión y confirmaciones
+
+- `AuthContext` es la fuente de estado de sesión. `useWebAuthn` delega login/registro en ese contexto; no mantiene otra sesión.
+- El perfil se obtiene con JWT Bearer. `r3foresta:user` y `auth_id` son datos auxiliares y no acreditan autenticación.
+- Logout limpia token y datos locales e invalida respuestas pendientes. Ante fallo de conexión, la UI permite revalidar sin conceder acceso; ante token rechazado, exige nuevo ingreso.
+- Las confirmaciones de eventos usan `ConfirmDialog`, con foco de teclado contenido, Escape y retorno del foco al cerrar. Abrir o cancelar el resumen no sube evidencias ni registra operaciones.
+- La guarda de doble envío evita solicitudes simultáneas desde el mismo formulario. No resuelve idempotencia después de una respuesta perdida; ver `AUD-007`.
+
+### 16.6 Revisión del plan de Plantación
+
+- El detalle ofrece «Editar meta y especies» solo a ADMIN global en BORRADOR/ACTIVA (ADR-PLA-05). El coordinador contextual no obtiene este permiso.
+- `EditarPlanSubcampania` carga el plan persistido; el modal conserva cantidades y porcentajes exactos y compara el plan actual con la propuesta antes de confirmar. El cálculo proporcional compartido con el asistente se ejecuta solo por acción explícita.
+- La revisión usa un único `PUT /subcampanias/:id/plan` con `meta_total_arboles`, `metas` y `revision_esperada`. `plan_revision` viene del GET; si falta, no se habilita el guardado. No usar PATCH para cambiar metas.
+- Un 409 conserva la propuesta, exige consultar el plan vigente y revisar la comparación otra vez. Un rechazo de estado o retirada protegida conserva los campos y muestra el mensaje del backend. La guarda de envío y la versión evitan sobrescribir un plan concurrente.
+- Después de la confirmación se consultan detalle, plan, totales/indicadores de campaña y contexto de plantación. Una lectura fallida se comunica como actualización pendiente; no se reenvía una revisión ya confirmada. Las pantallas de campaña y plantación consultan nuevamente al entrar.
+- Las metas siguen siendo orientativas. El porcentaje numérico puede superar 100%; solo el ancho de la barra se limita. Revisar el plan no cambia stock, registros físicos ni estado. El cierre manual sigue siendo una acción independiente.
+- Un borrador incompleto del asistente se conserva localmente hasta completar un plan coherente; el guardado remoto de la meta y especies usa la misma revisión atómica cuando el servidor ofrece versión.
 
 ## 17. Antipatrones a evitar
 

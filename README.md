@@ -56,9 +56,12 @@ src/
 | `npm run dev` | Servidor de desarrollo con Vite. |
 | `npm run build` | TypeScript + bundle de producción. |
 | `npm run lint` | ESLint sobre el workspace activo. |
+| `npm test` | Pruebas de comportamiento con Vitest, Testing Library y jsdom. |
 | `npm run preview` | Servir localmente el bundle generado. |
 
-Actualmente no hay scripts independientes de `test` o `typecheck`; `npm run build` sí ejecuta la comprobación de TypeScript mediante `tsc -b`.
+No hay script independiente de `typecheck`; `npm run build` ejecuta TypeScript mediante `tsc -b`. Para el entorno de pruebas usar Node.js 24.15 o posterior de la rama 24 (verificado con 24.19), o una versión compatible con los requisitos de Vitest y jsdom.
+
+Las pruebas viven junto al código en `src/**/*.test.ts(x)` y no escriben en el backend. Cubren restauración/logout de sesión, contratos de perfil, precisión de unidades, corrección de rechazados, restricciones de edición y confirmación/cancelación de eventos. El QA de persistencia y autorización contra el backend real se registra por separado.
 
 ## Flujos implementados
 

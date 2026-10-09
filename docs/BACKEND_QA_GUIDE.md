@@ -1,6 +1,6 @@
 # Guía de contrato backend para QA del frontend
 
-Actualizado: 2026-08-16
+Actualizado: 2026-09-29 (sesión y perfil; resto del inventario requiere QA del backend real).
 
 ## 1. Propósito y límites
 
@@ -35,7 +35,7 @@ No hay variables frontend confirmadas para storage, CORS, cookies, tenant o ambi
 - WebAuthn obtiene un challenge y envía el objeto de registro/autenticación al backend; el frontend espera `{ success, user, token, auth_id, message? }`. Véanse [`webauthn.service.ts`](../src/services/webauthn.service.ts) y [`auth.types.ts`](../src/types/auth.types.ts).
 - `authToken`, `auth_id` y `r3foresta:user` se guardan en `localStorage`.
 - Las capas modernas envían `Authorization: Bearer <token>` cuando existe y `x-auth-id: <auth_id>` cuando existe; Vivero y Plantación requieren localmente `auth_id` antes de llamar.
-- Perfil usa solamente `x-auth-id` en el código actual.
+- Perfil, completar perfil y foto de perfil usan solamente `Authorization: Bearer <token>`. La sesión se restaura después de validar ese token mediante perfil; el cache local no concede acceso.
 - Las transiciones de Recolección agregan `x-user-role`, obtenido de `r3foresta:user`. Este header es manipulable por el navegador y **no debe autorizar acciones por sí solo**; backend debe derivar identidad y rol de una credencial validada.
 - No se usa `credentials: 'include'`; no hay contrato de cookies confirmado.
 
@@ -43,8 +43,9 @@ Roles visibles: `ADMIN`, `GENERAL`, `VALIDADOR`, `VOLUNTARIO`. La pantalla `/app
 
 ### 3.2 Discrepancias conocidas
 
-- `/auth/login` usa WebAuthn real, pero `/auth/register` usa `AuthContext.login()` mock y crea una sesión local sin backend. No usar esa ruta mock como evidencia de autenticación válida. Fuente: [`RegisterScreen.tsx`](../src/modules/auth/RegisterScreen.tsx) y `AUD-011` en [`FRONTEND_AUDIT.md`](../FRONTEND_AUDIT.md).
-- `AuthContext.logout()` limpia `r3foresta:user` y `auth_id`, pero no `authToken`; `WebAuthnService.logout()` sí limpia token y auth ID. No hay endpoint de revocación confirmado.
+- `/auth/login` y `/auth/register` comparten el flujo real WebAuthn. El estado de sesión es único en `AuthContext`; se retiró el mock (`AUD-011`).
+- `AuthContext.logout()` limpia `r3foresta:user`, `auth_id` y `authToken`, e invalida respuestas pendientes. No hay endpoint de revocación confirmado: logout local no revoca el token en servidor.
+- El controller backend local de perfil acepta `x-auth-id` antes de verificar Bearer sin condicionar esa rama al entorno. El frontend ya no usa esa vía en perfil; el riesgo servidor queda en `AUD-013` y [la tarea backend](BACKEND_SECURITY_AND_IDEMPOTENCY_TASK.md).
 - El challenge devuelve también `sessionId`, pero registro/login reenvían `challenge` y no usan `sessionId`. La asociación, expiración y consumo único del challenge quedan `POR CONFIRMAR`.
 
 ## 4. Inventario de endpoints consumidos
@@ -64,7 +65,7 @@ En “contrato relevante”, `Envelope<T>` significa que varias capas aceptan `{
 
 | Método y ruta | Consumidor | Objetivo y contrato relevante | Estado |
 |---|---|---|---|
-| `GET /api/users/profile` | `AuthContext`, Perfil | Header `x-auth-id`; devuelve `UserProfileResponse`. | `CONFIRMADO EN FRONTEND`; auth solo por `x-auth-id` `POR CONFIRMAR` |
+| `GET /api/users/profile` | `AuthContext`, Perfil | Header Bearer; devuelve `UserProfileResponse`; timeout de 10 s para recuperación de sesión. | `CONFIRMADO EN FRONTEND`; autorización del servidor desplegado pendiente de QA |
 | `POST /api/users/register-form` | Completar perfil | JSON `nombre`, `apellido`, `doc_identidad`, opcionales `wallet_address`, `organizacion`, `contacto`, `rol`; espera `{ success, user, message? }`. | `CONFIRMADO EN FRONTEND` |
 | `PATCH /api/users/profile/photo` | `AvatarUpload` | Multipart, archivo en campo `file`; espera `{ foto_perfil_url }`. | `CONFIRMADO EN FRONTEND` |
 | `GET /api/users/rol/:rol?q=` | Selectores de equipo/coordinación | Lista directa o `Envelope<UsuarioResumen[]>`. | `CONFIRMADO EN FRONTEND` |

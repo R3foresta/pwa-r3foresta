@@ -117,16 +117,17 @@ Contexto adicional si aplica.
 
 ## 6. Resumen ejecutivo
 
-Última auditoría estática: `2026-07-21`. Se revisó el repo real, la configuración, los flujos principales y la documentación asociada. `BIEN` significa que no se detectó una desviación crítica en la revisión estática; no reemplaza pruebas de integración ni QA manual.
+Auditoría base: `2026-07-21`. Cierre de correcciones prioritarias: `2026-09-29`, con lint, build/PWA, 32 pruebas automatizadas y comprobación de acceso/registro/rutas protegidas en navegador. El QA de autorización y persistencia contra el backend desplegado sigue pendiente. `BIEN` no reemplaza esa verificación.
 
 | Área | Estado | Observación |
 |---|---|---|
 | Arquitectura por módulos | `MEJORABLE` | Feature-first funcional, pero hay pantallas y services demasiado grandes. |
 | Servicios/API | `RIESGO` | Existen varias capas y llamadas HTTP repetidas; falta un cliente común. |
-| Formularios | `MEJORABLE` | Los flujos principales manejan loading/error/evidencia; faltan confirmaciones e idempotencia uniforme. |
-| UI/UX dominio | `RIESGO` | Hay una ruta legacy de Embolsado y estados de Recolección incompletos. |
+| Formularios | `MEJORABLE` | Eventos de Vivero con confirmación previa y guarda de doble envío; idempotencia durable pendiente del backend. |
+| UI/UX dominio | `BIEN` | Embolsado unificado, precisión canónica y corrección de rechazados atendidos en frontend. |
 | TypeScript | `BIEN` | TypeScript estricto; no se encontraron usos de `any` en la revisión. |
-| Testing/build | `MEJORABLE` | `build` y `lint` pasan; no existen scripts de typecheck separado ni tests automatizados. |
+| Testing/build | `MEJORABLE` | Al 2026-10-09 pasan build/PWA, lint completo y 149 pruebas. Recorridos en navegador con API sintética; falta QA integrado con backend real (`AUD-015`). |
+| Seguridad | `RIESGO` | Sesión frontend verificada por Bearer; autorización por headers en backend y migración de React Router pendientes (`AUD-013`, `AUD-014`). |
 
 Estados sugeridos para esta tabla:
 
@@ -352,8 +353,8 @@ Hallazgos:
 
 - Router operativo y rutas de Recolección, Vivero y Plantación conectadas.
 - Optimización de arranque aplicada el `2026-08-13`: splash nativo y boot shell anterior a React con fondo consistente, pantallas cargadas bajo demanda, Leaflet fuera del entrypoint, registro del service worker después de la carga inicial y recursos principales convertidos a WebP. El JS/CSS obligatorio comprimido bajó aproximadamente de `313 kB` a `94 kB` en el build local.
-- La ruta `/auth/register` todavía expone un flujo mock; ver `AUD-011`.
-- Existe una ruta legacy `/app/vivero/:id/event/new`; ver `AUD-006`.
+- `/auth/register` reutiliza el registro real con passkeys; ver cierre `AUD-011`.
+- `/app/vivero/:id/event/new` redirige al formulario vigente de Embolsado; ver cierre `AUD-006`.
 
 ### 11.2 `shared/`
 
@@ -371,7 +372,7 @@ Revisar:
 Hallazgos:
 
 - No hay un cliente HTTP único: `fetch`, base URL y headers se repiten entre `src/api` y services.
-- La PWA declara sincronización offline, pero el service worker no implementa una cola de sincronización; ver `AUD-012`.
+- La UI comunica que guardar registros/fotos requiere conexión. Outbox y sincronización offline real siguen fuera del alcance implementado; ver cierre `AUD-012`.
 
 ### 11.3 `modules/recolecciones`
 
@@ -389,8 +390,8 @@ Revisar:
 
 Hallazgos:
 
-- `RECHAZADO` no recibe las mismas acciones de corrección/reenvío que `BORRADOR`.
-- La conversión a `G` no limita la precisión a un decimal y algunas etiquetas muestran `gr`.
+- `RECHAZADO` puede corregirse según permiso; guardar lo devuelve a `BORRADOR`, desde donde puede enviarse. El acceso directo al formulario también verifica estado y permiso.
+- La conversión a `G` valida máximo un decimal sin redondeo silencioso; `UNIDAD` exige enteros. La UI usa la etiqueta oficial `G`.
 - El formateo de fechas puede desplazarse por zona horaria.
 
 ### 11.4 `modules/vivero`
@@ -413,7 +414,8 @@ Revisar:
 Hallazgos:
 
 - Embolsado, Adaptabilidad, Merma, Despacho, Descarte pre-embolsado, timeline, evidencias, asignaciones y devoluciones ya tienen implementación conectada.
-- La ruta legacy de Embolsado mantiene una regla de tope incompatible con el dominio.
+- La ruta legacy redirige a Embolsado vigente; se retiraron el hook y los topes que relacionaban gramos con plantas.
+- INICIO, Embolsado, Adaptabilidad, Merma, Despacho, Descarte y entrega física muestran resumen previo. Cancelar no escribe ni sube evidencias; una guarda evita doble envío simultáneo desde el formulario.
 - Los comentarios de contratos fueron sincronizados en esta auditoría; ver `AUD-010` como `RESUELTO`.
 
 ### 11.5 `modules/evidencias`
@@ -436,7 +438,7 @@ Hallazgos:
 
 ### 11.6 `modules/auth`
 
-Estado: `CRITICO`
+Estado: `RIESGO`
 
 Revisar:
 
@@ -449,9 +451,10 @@ Revisar:
 
 Hallazgos:
 
-- `/auth/register` crea sesión mock sin validar credenciales.
-- `AuthContext.logout` no elimina el token persistido por WebAuthn.
-- El manejo de sesión restaurada depende del cache local y no valida siempre el token contra backend.
+- Login y registro usan WebAuthn y el estado de sesión se centraliza en `AuthContext`.
+- Logout limpia token, usuario e identificador y descarta respuestas pendientes de una sesión anterior.
+- Restauración mediante perfil con JWT Bearer, timeout, manejo de sesión rechazada y reintento tras fallo de red. Los datos locales no conceden acceso.
+- La autorización insegura por headers todavía admitida por backend requiere un cambio coordinado (`AUD-013`).
 
 ---
 
@@ -465,13 +468,17 @@ Mantener esta tabla actualizada.
 | AUD-003 | `ALTA` | `RESUELTO` | `general` | `testing` | `npm run lint` pasa y excluye worktrees internos. | `eslint.config.js`, `src/` |
 | AUD-004 | `BAJA` | `PENDIENTE` | `general` | `deuda` | `formatDate` y `formatRelativeTime` viven duplicados/en línea por módulo; conviene extraerlos a un util compartido. | `src/modules/plantacion/utils/subcampaniaFormatters.ts`, `src/modules/plantacion/screens/CampaniaAdminDashboardScreen.tsx` |
 | AUD-005 | `BAJA` | `PENDIENTE` | `plantacion` | `deuda` | `CAMPANIA_TYPES` está definido dos veces con distinto orden (validación en service, orden visual en form). | `src/services/plantacion.service.ts`, `src/modules/plantacion/components/CrearCampaniaForm.tsx` |
-| AUD-006 | `CRITICA` | `PENDIENTE` | `vivero` | `dominio` | Ruta legacy de Embolsado limita plantas según gramos, contradiciendo RN-VIV-17C. | `src/modules/vivero/utils/validators.ts`, `src/modules/vivero/screens/ViveroEmbolsadoScreen.tsx` |
+| AUD-006 | `CRITICA` | `RESUELTO` | `vivero` | `dominio` | Ruta legacy redirigida; eliminado el tope masa → plantas. | `src/modules/vivero/screens/ViveroEmbolsadoScreen.tsx` |
 | AUD-007 | `ALTA` | `BLOQUEADO` | `vivero` | `api` | Eventos append-only no tienen idempotencia para reintentos después de respuestas perdidas. | `src/modules/vivero/components/event/forms/` |
-| AUD-008 | `ALTA` | `PENDIENTE` | `recoleccion` | `dominio` | La precisión de `G` no está limitada a un decimal y la UI usa `gr` en algunos lugares. | `src/utils/recoleccionUnidad.ts`, `src/modules/recolecciones/` |
-| AUD-009 | `ALTA` | `PENDIENTE` | `recoleccion` | `flujo` | Los registros `RECHAZADO` no se pueden corregir y reenviar desde el detalle. | `src/modules/recolecciones/RecoleccionDetailScreen.tsx` |
+| AUD-008 | `ALTA` | `RESUELTO` | `recoleccion` | `dominio` | Conversión exacta y precisión canónica validadas antes de persistir; etiquetas G. | `src/utils/recoleccionUnidad.ts`, `src/modules/recolecciones/` |
+| AUD-009 | `ALTA` | `RESUELTO` | `recoleccion` | `flujo` | Corrección de RECHAZADO y envío posterior como BORRADOR; rutas de edición protegidas por estado/permiso. | `src/modules/recolecciones/` |
 | AUD-010 | `MEDIA` | `RESUELTO` | `vivero` | `deuda` | Comentarios de contratos y README describían como pendientes funciones ya conectadas. | `src/api/lotes-vivero.api.ts`, `src/modules/vivero/types/contracts.ts`, `src/modules/vivero/README.md` |
-| AUD-011 | `CRITICA` | `PENDIENTE` | `auth` | `seguridad` | Registro mock accesible y logout incompleto para tokens persistidos. | `src/modules/auth/RegisterScreen.tsx`, `src/contexts/AuthContext.tsx` |
-| AUD-012 | `ALTA` | `PENDIENTE` | `shared` | `pwa` | El app shell ya se precachea y actualiza automáticamente, pero la UI todavía promete sync offline sin implementar outbox/API offline. | `vite.config.ts`, `src/pwa/registerPwa.ts`, `src/layouts/AuthLayout.tsx` |
+| AUD-011 | `CRITICA` | `RESUELTO` | `auth` | `seguridad` | Mock retirado; sesión frontend verificada y logout local completo. Seguridad de servidor pendiente en AUD-013. | `src/modules/auth/`, `src/contexts/AuthContext.tsx` |
+| AUD-012 | `ALTA` | `RESUELTO` | `shared` | `pwa` | Retirada la promesa de sincronización y los contadores ficticios; se comunica conexión necesaria. | `src/layouts/AuthLayout.tsx`, `src/data/home.ts` |
+| AUD-013 | `CRITICA` | `BLOQUEADO` | `auth` | `api` | Backend local admite identidad por x-auth-id sin validar JWT en rutas de perfil; no hay revocación confirmada. | `docs/BACKEND_SECURITY_AND_IDEMPOTENCY_TASK.md` |
+| AUD-014 | `MEDIA` | `PENDIENTE` | `shared` | `deuda` | Quedan dos alertas moderadas de React Router cuya solución exige migración de versión principal. | `package-lock.json` |
+| AUD-015 | `ALTA` | `PENDIENTE` | `plantacion` | `testing` | Revisión de plan verificada con fixtures; integración backend/migración 062 pendiente. | `docs/QA_EDITOR_PLAN_USO.md` |
+| AUD-016 | `MEDIA` | `PENDIENTE` | `plantacion` | `ui` | Estado del encabezado puede quedar antiguo tras cierre concurrente rechazado en el editor. | `DetalleSubcampanaScreen.tsx`, `EditarPlanSubcampania.tsx` |
 
 ---
 
@@ -593,7 +600,7 @@ Los dos arrays incluyen exactamente los mismos elementos (comparados por `sort()
 
 ### AUD-006 — Ruta legacy de Embolsado limita plantas según gramos
 
-- Estado: `PENDIENTE`
+- Estado: `RESUELTO`
 - Severidad: `CRITICA`
 - Módulo: `vivero`
 - Ubicación: `src/modules/vivero/utils/validators.ts`, `src/modules/vivero/hooks/useEmbolsado.ts`, `src/modules/vivero/screens/ViveroEmbolsadoScreen.tsx`
@@ -612,6 +619,10 @@ Redirigir la ruta legacy al formulario único de eventos y eliminar el cálculo 
 #### Verificación esperada
 
 Una única pantalla registra Embolsado; una cantidad observada válida no se rechaza por una conversión de gramos.
+
+#### Cierre — 2026-09-29
+
+Ruta legacy convertida en redirección. Retirados `useEmbolsado`, `computeMaxPlantasEmbolsado` y la advertencia del formulario vigente basada en gramos. Las pruebas de Embolsado verifican redirección, conteo observado, cancelación/Escape sin upload y confirmación sin doble envío. Lint, tests y build/PWA pasan.
 
 ### AUD-007 — Operaciones append-only sin idempotencia
 
@@ -635,9 +646,13 @@ Definir con backend una clave de idempotencia por operación y persistirla junto
 
 Repetir la misma operación con la misma clave devuelve el evento original sin crear otro.
 
+#### Avance — 2026-09-29
+
+Se completaron confirmaciones previas y guardas de doble envío desde el formulario; no se añadieron reintentos automáticos. La ausencia de idempotencia durable sigue confirmada en documentación y código backend local. El hallazgo permanece `BLOQUEADO`; contrato y pruebas requeridas en [la tarea backend](docs/BACKEND_SECURITY_AND_IDEMPOTENCY_TASK.md).
+
 ### AUD-008 — Unidad `G` sin precisión canónica única
 
-- Estado: `PENDIENTE`
+- Estado: `RESUELTO`
 - Severidad: `ALTA`
 - Módulo: `recoleccion`
 - Ubicación: `src/utils/recoleccionUnidad.ts`, `src/modules/recolecciones/`
@@ -653,9 +668,13 @@ La conversión redondea a seis decimales y algunos labels muestran `gr`, mientra
 
 Validar la precisión después de convertir `kg` a `G`, mostrar siempre `G` y evitar redondeos silenciosos que cambien el dato observado.
 
+#### Cierre — 2026-09-29
+
+Conversión decimal exacta antes de construir el payload, validada en captura y resumen; se rechazan fracciones no representables y se mantienen visibles para corregir. Se probaron `0.0001 kg → 0.1 G`, rechazo de `1.25 G` y fracciones en `UNIDAD`. Etiquetas de formulario y stock ajustadas a `G`. Lint, tests y build/PWA pasan.
+
 ### AUD-009 — Recolección rechazada sin corrección/reenvío
 
-- Estado: `PENDIENTE`
+- Estado: `RESUELTO`
 - Severidad: `ALTA`
 - Módulo: `recoleccion`
 - Ubicación: `src/modules/recolecciones/RecoleccionDetailScreen.tsx`, `src/modules/recolecciones/recoleccionStatus.ts`
@@ -670,6 +689,10 @@ El detalle solo muestra acciones de edición y envío para `BORRADOR`; `RECHAZAD
 #### Acción sugerida
 
 Centralizar la política de acciones por estado y mostrar badges distintos para `PENDIENTE_VALIDACION` y `RECHAZADO`.
+
+#### Cierre — 2026-09-29
+
+Se conserva el contrato observado en backend: `PATCH /:id/draft` corrige `RECHAZADO` y lo devuelve a `BORRADOR`; `PATCH /:id/submit` admite `BORRADOR`. El detalle permite corregir y el resumen guarda antes de enviar. Se verificaron permisos, bloqueo por URL directa de estados congelados y orden de requests con servicios simulados. Los badges existentes se conservaron. Lint, tests y build/PWA pasan; QA de persistencia real pendiente.
 
 ### AUD-010 — Documentación inline de Vivero desactualizada
 
@@ -698,7 +721,7 @@ Eliminar bloques históricos y documentar el contrato vigente junto con los pend
 
 ### AUD-011 — Registro mock y logout incompleto
 
-- Estado: `PENDIENTE`
+- Estado: `RESUELTO`
 - Severidad: `CRITICA`
 - Módulo: `auth`
 - Ubicación: `src/modules/auth/RegisterScreen.tsx`, `src/contexts/AuthContext.tsx`
@@ -714,9 +737,13 @@ El registro crea una sesión local sin autenticación real y el logout del conte
 
 Eliminar el flujo mock, usar una sola fuente de sesión y limpiar/invalidatear token y usuario en cada logout.
 
+#### Cierre frontend — 2026-09-29
+
+Registro real compartido con Login, único estado de sesión en `AuthContext`, perfil obtenido con Bearer, timeout/reintento y descarte de respuestas tardías después del logout. Se limpiaron logs de autenticación y perfil. Pruebas de sesión y contrato HTTP verifican token rechazado, fallo de red, timeout y logout; en navegador el cache local de un supuesto ADMIN sin token no permite acceder a una ruta protegida. Lint, tests y build/PWA pasan. Logout local no equivale a revocación de servidor; seguimiento separado en `AUD-013`.
+
 ### AUD-012 — Promesa offline superior a la implementación
 
-- Estado: `PENDIENTE`
+- Estado: `RESUELTO`
 - Severidad: `ALTA`
 - Módulo: `shared`
 - Ubicación: `vite.config.ts`, `src/pwa/registerPwa.ts`, `src/layouts/AuthLayout.tsx`
@@ -732,7 +759,61 @@ La interfaz anuncia sync offline. El app shell ya se precachea mediante Workbox,
 
 Retirar la promesa de sincronización hasta implementar offline real o definir e implementar una estrategia explícita de API/outbox. No convertir errores de red del backend en respuestas cacheadas.
 
+#### Cierre — 2026-09-29
+
+Acceso e Inicio comunican conexión necesaria para enviar registros y fotos. Se retiraron `82% sincronizado` y `6 registros se cargarán...`, que eran datos ficticios. No se implementó outbox ni caché de API. Inspección de textos, lint y build/PWA correctos.
+
+### AUD-013 — Autorización backend por headers de identidad
+
+- Estado: `BLOQUEADO`
+- Severidad: `CRITICA`
+- Módulo: `auth`
+- Tipo: `api`
+- Detectado: `2026-09-27`, revisión de código backend local.
+- Ubicación: `../Backend-r3foresta/src/users/users.controller.ts`.
+
+El controller de perfil prioriza `x-auth-id` antes de verificar JWT; la rama identificada como desarrollo no comprueba entorno. La corrección frontend usa Bearer, pero no impide solicitudes directas al servidor. Falta confirmar revocación y migrar coordinadamente otros consumidores de headers. Acción y aceptación: [tarea backend](docs/BACKEND_SECURITY_AND_IDEMPOTENCY_TASK.md). No se verificó el comportamiento del servidor desplegado.
+
+### AUD-014 — Alertas de React Router pendientes de migración
+
+- Estado: `PENDIENTE`
+- Severidad: `MEDIA`
+- Módulo: `shared`
+- Tipo: `deuda`
+- Ubicación: `package-lock.json`.
+- Detectado: `2026-09-27`.
+
+La actualización compatible (`npm audit fix`, sin `--force`) redujo 18 alertas, incluidas 10 altas, a dos moderadas en `react-router`/`react-router-dom`. El lockfile usa React Router 6.30.6 y Vite 7.3.6. Las alertas restantes son GHSA-wrjc-x8rr-h8h6 y GHSA-337j-9hxr-rhxg; npm propone migrar a React Router 7 para cerrarlas. Planificar esa migración con verificación de rutas y redirects; no aplicar un cambio mayor automático. Build y navegación básica fueron verificados tras actualizar.
+
 ---
+
+### AUD-015 — QA integrado de revisiones del plan pendiente
+
+- Estado: `PENDIENTE`
+- Severidad: `ALTA`
+- Módulo: `plantacion`
+- Tipo: `api | testing`
+- Ubicación: `src/modules/plantacion/components/EditarPlanSubcampania.tsx`, backend `migrations/062_subcampania_revision_plan_atomica.sql`.
+- Detectado: `2026-10-09`.
+
+El editor consume la revisión atómica con `meta_total_arboles`, `metas` y `revision_esperada`, conserva propuestas ante rechazos y bloquea servidores que no entregan `plan_revision`. Las pruebas frontend usan servicios/respuestas simulados; no acreditan la migración ni el despliegue en la base compartida.
+
+Verificar en staging con actores controlados: ADMIN ACTIVA 50/40 → 50/60, misma cantidad física y estado; especie nueva sin stock; asignación/plantación posterior; retirada protegida; dos revisiones concurrentes; cierre manual con la meta vigente. Confirmar primero backend y migración 062 coordinados con la PWA. La prueba de idempotencia de eventos físicos continúa en `AUD-007`.
+
+El 2026-10-09 se verificaron recorridos de uso en navegador con las pantallas/API/servicio reales y respuestas HTTP sintéticas, además de lint completo, 149 tests y build/PWA. Evidencia y límites en `docs/QA_EDITOR_PLAN_USO.md`; este avance no cierra la integración pendiente.
+
+### AUD-016 — Encabezado antiguo tras cierre concurrente en el editor
+
+- Estado: `PENDIENTE`
+- Severidad: `MEDIA`
+- Módulo: `plantacion`
+- Tipo: `ui`
+- Ubicación: `src/modules/plantacion/screens/DetalleSubcampanaScreen.tsx`, `src/modules/plantacion/components/EditarPlanSubcampania.tsx`.
+- Detectado: `2026-10-09`.
+
+En la prueba de uso con respuesta 422 y plan vigente COMPLETADA, el editor conservó la propuesta y bloqueó edición/guardado correctamente. El encabezado exterior seguía mostrando ACTIVA, procedente de su última lectura, hasta recargar. Puede confundir al cancelar la edición y volver a las acciones del detalle; no se observó guardado autorizado tras el rechazo.
+
+Sugerencia: reconciliar o recargar el detalle cuando el editor confirma un cambio de estado/permiso, sin eliminar la propuesta ni repetir el PUT. Verificar cierre concurrente, error de la recarga y conservación de valores con una prueba de detalle más el backend integrado.
 
 ## 14. Riesgos conocidos
 
@@ -742,7 +823,7 @@ Registrar riesgos que todavía no son bugs confirmados.
 |---|---|---|---|
 | La implementación y el contrato backend pueden desfasarse | Cambios de API o migraciones no aplicadas | `PENDIENTE` | Verificar staging y mantener `ESTADO.md` actualizado. |
 | El backend no ofrece idempotencia para eventos | Reintentos pueden duplicar trazabilidad | `BLOQUEADO` | Definir contrato con backend. |
-| El service worker no representa sync offline real | La operación en campo puede fallar sin red | `PENDIENTE` | Decidir alcance offline antes de prometerlo en UI. |
+| No existe sync offline de operaciones | La operación en campo necesita red | `PENDIENTE` | La UI ya comunica el límite; diseñar outbox solo tras acordar idempotencia. |
 
 ---
 
@@ -753,7 +834,7 @@ Registrar deuda que se permite por ahora, con límite claro.
 | Deuda | Motivo | Límite | Responsable | Estado |
 |---|---|---|---|---|
 | Pantallas monolíticas en flujos complejos | No bloquea el MVP; priorizar claridad operativa | Extraer gradualmente por caso de uso; la carga de rutas bajo demanda quedó resuelta el 2026-08-13 | Frontend | `PENDIENTE` |
-| Ausencia de pruebas automatizadas | No hay runner configurado actualmente | Añadir unitarias de dominio y E2E de flujos críticos | Frontend | `PENDIENTE` |
+| Cobertura E2E de backend real | Vitest y 32 pruebas frontend ya incorporados; no reemplazan integración real | Probar permisos, evidencia y persistencia con actores QA controlados | Frontend + Backend | `PENDIENTE` |
 
 Regla:
 

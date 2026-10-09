@@ -57,7 +57,7 @@ npm run lint
 # typecheck, si existe
 npm run typecheck
 
-# tests, si existen
+# pruebas de comportamiento (Vitest + Testing Library)
 npm run test
 
 # build
