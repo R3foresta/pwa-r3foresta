@@ -54,6 +54,14 @@ export function validateRecoleccionForm(
     errors.quantity = 'Para UNIDADES la cantidad debe ser entera'
   }
 
+  if (!errors.quantity) {
+    try {
+      mapToCantidadYUnidadCanonica(form.quantity, form.unit)
+    } catch (error) {
+      errors.quantity = error instanceof Error ? error.message : 'Cantidad inválida'
+    }
+  }
+
   const placeCount = form.placePhotos?.length || 0
   const totalCount = form.totalPhotos?.length || 0
   if (
@@ -98,7 +106,7 @@ export function validateRecoleccionForm(
 export function mapFormToCreateDto(form: RecoleccionFormData): CreateRecoleccionDto {
   const tipo_material = form.type === 'cutting' ? 'ESQUEJE' : 'SEMILLA'
   const { cantidad_inicial_canonica, unidad_canonica } = mapToCantidadYUnidadCanonica(
-    Number(form.quantity),
+    form.quantity,
     form.unit,
   )
   return {

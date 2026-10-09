@@ -1,5 +1,5 @@
 import type { UbicacionApi, UbicacionCreateInput } from '../types/ubicacion'
-import type { UnidadCanonicaRecoleccion } from '../utils/recoleccionUnidad'
+import { mapToCantidadYUnidadCanonica, type UnidadCanonicaRecoleccion } from '../utils/recoleccionUnidad'
 import type { PlantaCatalogo } from '../types/plantas.types';
 
 const API_URL = import.meta.env.VITE_API_URL
@@ -696,6 +696,12 @@ export class RecoleccionesService {
     data: UpdateRecoleccionDraftDto,
     files: File[] = [],
   ): Promise<{ success: boolean; data: Recoleccion }> {
+    if (data.cantidad_inicial_canonica !== undefined && data.unidad_canonica) {
+      mapToCantidadYUnidadCanonica(
+        data.cantidad_inicial_canonica,
+        data.unidad_canonica === 'G' ? 'g' : 'units',
+      )
+    }
     const payloadRequest = this.buildDraftPayload(data, files)
 
     const response = await fetch(`${API_URL}/api/recolecciones/${id}/draft`, {
@@ -821,6 +827,11 @@ export class RecoleccionesService {
     if (data.unidad_canonica === 'UNIDAD' && !Number.isInteger(data.cantidad_inicial_canonica)) {
       throw new Error('Para unidad UNIDAD la cantidad debe ser un número entero.')
     }
+
+    mapToCantidadYUnidadCanonica(
+      data.cantidad_inicial_canonica,
+      data.unidad_canonica === 'G' ? 'g' : 'units',
+    )
 
     // Mínimo 2 fotos (1 de Lugar + 1 de Total) y máximo 10 (5 de Lugar + 5 de Total)
     if (data.fotos.length < 2 || data.fotos.length > 10) {

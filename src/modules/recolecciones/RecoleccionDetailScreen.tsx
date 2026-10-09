@@ -9,9 +9,9 @@ import {
   type EvidenciaTrazabilidad,
   type Recoleccion,
 } from '../../services/recolecciones.service'
-import { formatUnidadCanonicaDisplay } from '../../utils/recoleccionUnidad'
+import { formatUnidadCanonicaDisplay, mapToCantidadYUnidadCanonica } from '../../utils/recoleccionUnidad'
 import { getUbicacionCoords, getUbicacionDisplay, getUbicacionDivision } from '../../utils/ubicacion'
-import { resolveEstadoOperativo, resolveEstadoRegistro } from './recoleccionStatus'
+import { getRecoleccionFormActions, resolveEstadoOperativo, resolveEstadoRegistro } from './recoleccionStatus'
 
 function formatDate(value: string) {
   return new Date(value).toLocaleDateString('es-BO', {
@@ -102,7 +102,7 @@ function RecoleccionDetailScreen() {
   }, [evidenciasFallback, recoleccion?.evidencias])
 
   const handleSubmitForValidation = async () => {
-    if (!recoleccion) {
+    if (!recoleccion || !getRecoleccionFormActions(recoleccion, user).canSubmit) {
       return
     }
 
@@ -151,9 +151,13 @@ function RecoleccionDetailScreen() {
       return
     }
 
-    if (recoleccion.unidad_canonica === 'UNIDAD' && !Number.isInteger(quantity)) {
-      setDiscardError('Para unidades debes ingresar un número entero.')
-      return
+    if (recoleccion.unidad_canonica === 'G' || recoleccion.unidad_canonica === 'UNIDAD') {
+      try {
+        mapToCantidadYUnidadCanonica(discardQuantity, recoleccion.unidad_canonica === 'G' ? 'g' : 'units')
+      } catch (precisionError) {
+        setDiscardError(precisionError instanceof Error ? precisionError.message : 'Cantidad inválida.')
+        return
+      }
     }
 
     try {
@@ -223,7 +227,7 @@ function RecoleccionDetailScreen() {
   const estadoOperativo = resolveEstadoOperativo(recoleccion)
   const cantidadActual = recoleccion.saldo_actual ?? 0
   const unidadDisplay = formatUnidadCanonicaDisplay(recoleccion.unidad_canonica, cantidadActual)
-  const isBorrador = estadoRegistro === 'BORRADOR'
+  const formActions = getRecoleccionFormActions(recoleccion, user)
   const esCreador = Number(user?.id) === Number(recoleccion.usuario_id)
   const esAdmin = String(user?.rol ?? '').toUpperCase() === 'ADMIN'
   const puedeDesechar =
@@ -359,26 +363,27 @@ function RecoleccionDetailScreen() {
               </p>
             </div>
 
-            {isBorrador && (
+            {(formActions.canEdit || formActions.canSubmit) && (
               <div className="mt-4 space-y-3 border-t border-neutral-100 pt-4">
                 <div className="grid grid-cols-2 gap-2">
-                  <Button
+                  {formActions.canEdit && <Button
                     type="button"
                     variant="secondary"
                     onClick={() => navigate(`/app/collections/new?editId=${recoleccion.id}`)}
                   >
-                    Editar
-                  </Button>
-                  <Button
+                    {estadoRegistro === 'RECHAZADO' ? 'Corregir' : 'Editar'}
+                  </Button>}
+                  {formActions.canSubmit && <Button
                     type="button"
                     variant="primary"
                     onClick={() => void handleSubmitForValidation()}
                     disabled={submittingToValidation}
                     loading={submittingToValidation}
                   >
-                    {submittingToValidation ? 'Enviando...' : 'Validar'}
-                  </Button>
+                    {submittingToValidation ? 'Enviando...' : 'Enviar a validación'}
+                  </Button>}
                 </div>
+                {estadoRegistro === 'RECHAZADO' && <p className="text-xs font-medium text-neutral-500">Corrige y guarda el registro antes de reenviarlo a validación.</p>}
 
               </div>
             )}

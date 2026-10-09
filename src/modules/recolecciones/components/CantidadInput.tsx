@@ -1,6 +1,5 @@
 import Icon from '../../../components/Icon'
 import type { MaterialType, Unit } from '../recoleccionTypes'
-import { useEffect } from 'react'
 
 type Props = {
   value: string
@@ -10,20 +9,11 @@ type Props = {
   onChange: (value: string) => void
 }
 
-function sanitizeQuantity(value: string, tipo: MaterialType, unidad: Unit): string {
+function sanitizeQuantity(value: string): string {
   if (!value) return ''
 
-  const requiresInteger = tipo === 'cutting' || unidad === 'units'
-
   let clean = value.trim().replace(',', '.')
-
-  if (requiresInteger) {
-    clean = clean.replace(/[^\d.,]/g, '')
-    clean = clean.split(/[.,]/)[0]
-    clean = clean.replace(/^0+(?=\d)/, '')
-    return clean
-  }
-
+  // Mantener la fracción ingresada para mostrar un error, sin truncarla en silencio.
   clean = clean.replace(/[^\d.]/g, '')
 
   const firstDotIndex = clean.indexOf('.')
@@ -44,7 +34,7 @@ function CantidadInput({ value, tipoMaterial, unidad, error, onChange}: Props) {
   const requiresInteger = tipoMaterial === 'cutting' || unidad === 'units'
 
   const handleInput = (next: string) => {
-    const sanitized = sanitizeQuantity(next, tipoMaterial, unidad)
+    const sanitized = sanitizeQuantity(next)
     onChange(sanitized)
   }
 
@@ -59,15 +49,14 @@ function CantidadInput({ value, tipoMaterial, unidad, error, onChange}: Props) {
     handleInput(newValue.toString())
   }
 
-  useEffect(() => {
-    if (!requiresInteger) return
-    if (!value.includes('.')) return
-
-    const integerValue = Math.floor(Number(value) || 0).toString()
-    onChange(integerValue)
-  }, [requiresInteger, value, onChange])
-
   const numericValue = Number.parseFloat(value) || 0
+  const quantityError = numericValue <= 0
+    ? 'Ingresa una cantidad mayor a 0'
+    : requiresInteger
+      ? 'Ingresa un entero ≥ 1'
+      : unidad === 'g'
+        ? 'En G se permite máximo un decimal'
+        : 'En kg se permiten hasta cuatro decimales (0,1 G)'
 
   return (
     <div className="space-y-2">
@@ -98,7 +87,7 @@ function CantidadInput({ value, tipoMaterial, unidad, error, onChange}: Props) {
       </div>
       {error && (
         <p className="text-xs font-semibold text-danger-500">
-          {requiresInteger ? 'Ingresa un entero ≥ 1' : 'Ingresa una cantidad mayor a 0'}
+          {quantityError}
         </p>
       )}
     </div>

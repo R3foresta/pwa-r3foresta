@@ -19,13 +19,8 @@ export const RECOLECCION_STOCK_LABELS: Record<
   SIN_SALDO: 'Sin saldo',
 }
 
-const decimalFormatter = new Intl.NumberFormat('es-BO', {
-  minimumFractionDigits: 1,
-  maximumFractionDigits: 1,
-})
-
 const quantityFormatter = new Intl.NumberFormat('es-BO', {
-  maximumFractionDigits: 2,
+  maximumFractionDigits: 20,
 })
 
 const unitFormatter = new Intl.NumberFormat('es-BO', {
@@ -52,10 +47,7 @@ export function resolveStockAvailability(
 
 export function formatStockWeight(grams: number) {
   const safeGrams = Math.max(0, Number(grams) || 0)
-  if (safeGrams >= 1_000) {
-    return `${decimalFormatter.format(safeGrams / 1_000)} kg`
-  }
-  return `${quantityFormatter.format(safeGrams)} g`
+  return `${quantityFormatter.format(safeGrams)} G`
 }
 
 export function formatStockUnits(units: number) {

@@ -10,6 +10,7 @@ import { buildPastRange } from "../../utils/validations/date";
 import { mapToCantidadYUnidadCanonica } from "../../utils/recoleccionUnidad";
 import { MAX_DIAS_RECOLECCION } from "../../config/recoleccion";
 import { IMAGE_UPLOAD_ACCEPT, getImageFileValidationError } from "../../utils/imageValidation";
+import { getRecoleccionFormActions } from "./recoleccionStatus";
 
 const MAX_NEW_FILES = 5;
 
@@ -33,7 +34,15 @@ function RecoleccionFormResumenScreen() {
   const [newDraftPreviewUrls, setNewDraftPreviewUrls] = useState<string[]>([]);
   const dateRange = useMemo(() => buildPastRange(MAX_DIAS_RECOLECCION), []);
   const typeLabel = formData.type === 'seed' ? 'Semilla' : 'Esqueje';
-  const unitLabel = formData.unit === 'kg' ? 'kg' : formData.unit === 'g' ? 'g' : 'unidades';
+  const unitLabel = formData.unit === 'kg' ? 'kg' : formData.unit === 'g' ? 'G' : 'unidades';
+  const canonicalPreview = useMemo(() => {
+    try {
+      const canonical = mapToCantidadYUnidadCanonica(formData.quantity, formData.unit);
+      return `${canonical.cantidad_inicial_canonica} ${canonical.unidad_canonica}`;
+    } catch {
+      return 'Cantidad inválida';
+    }
+  }, [formData.quantity, formData.unit]);
   const commercialName = formData.nombre_comercial || formData.species || 'Especie seleccionada';
   const scientificName = formData.nombre_cientifico || 'No disponible';
   const summaryText = `${formData.quantity} ${unitLabel} de ${commercialName}`;
@@ -114,11 +123,15 @@ function RecoleccionFormResumenScreen() {
 
       const tipo_material: TipoMaterialCanonico = formData.type === 'cutting' ? 'ESQUEJE' : 'SEMILLA';
       const { cantidad_inicial_canonica, unidad_canonica } = mapToCantidadYUnidadCanonica(
-        Number(formData.quantity),
+        formData.quantity,
         formData.unit,
       );
 
       if (isEditMode && formData.editId) {
+        const current = await RecoleccionesService.getById(formData.editId);
+        if (!getRecoleccionFormActions(current.data, user).canEdit) {
+          throw new Error('Este registro ya no permite edición con tu usuario o en su estado actual.');
+        }
         const draftPayload = {
           fecha: formData.date,
           cantidad_inicial_canonica,
@@ -176,7 +189,6 @@ function RecoleccionFormResumenScreen() {
       setSuccessMode(enviarAValidacion ? 'validacion' : 'borrador');
       setShowSuccess(true);
     } catch (err) {
-      console.error('❌ Error al guardar recolección:', err);
       setSuccessMode(null);
       setError(err instanceof Error ? err.message : 'Error desconocido al crear recolección');
     } finally {
@@ -261,6 +273,10 @@ function RecoleccionFormResumenScreen() {
                 <div className="flex justify-between text-sm">
                   <span className="font-semibold text-neutral-600">Tipo:</span>
                   <span className="font-bold text-neutral-800">{typeLabel}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="font-semibold text-neutral-600">Cantidad que se guardará:</span>
+                  <span className="font-bold text-neutral-800">{canonicalPreview}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="font-semibold text-neutral-600">Nombre comercial:</span>

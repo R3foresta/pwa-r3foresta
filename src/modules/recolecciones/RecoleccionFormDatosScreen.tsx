@@ -36,6 +36,7 @@ function RecoleccionFormDatosScreen() {
 
   const [loadingEditDraft, setLoadingEditDraft] = useState(false);
   const [didHydrateEditDraft, setDidHydrateEditDraft] = useState(false);
+  const [editLoadError, setEditLoadError] = useState<string | null>(null);
   const [showSpeciesModal, setShowSpeciesModal] = useState(false);
   
   const [errors, setErrors] = useState({
@@ -48,7 +49,7 @@ function RecoleccionFormDatosScreen() {
   });
 
   const editIdParam = searchParams.get('editId');
-  const editId = editIdParam ? Number(editIdParam) : NaN;
+  const editId = editIdParam ? Number(editIdParam) : formData.editId ?? NaN;
   const isEditMode = Number.isFinite(editId) && editId > 0;
   const selectedPlant = useMemo(
     () => plantas.find((planta) => planta.id === formData.planta_id),
@@ -158,8 +159,8 @@ function RecoleccionFormDatosScreen() {
           almacenamiento: draft.vivero?.nombre || '',
           vivero_id: draft.vivero_id || draft.vivero?.id || undefined,
         });
-      } catch (errorHydrate) {
-        console.error('❌ Error cargando borrador para edición:', errorHydrate);
+      } catch {
+        if (isMounted) setEditLoadError('No se pudo cargar este registro para edición. Vuelve al detalle e inténtalo de nuevo.');
       } finally {
         if (isMounted) {
           setLoadingEditDraft(false);
@@ -182,27 +183,8 @@ function RecoleccionFormDatosScreen() {
     updateForm,
   ]);
 
-  const validateQuantity = (value: string, requiresInteger: boolean): boolean => {
-    const numericValue = Number(value)
-
-    if (!value || numericValue <= 0) return false
-
-    if (requiresInteger && !Number.isInteger(numericValue)) return false
-
-    return true
-  }
-
-
   const handleContinue = () => {
-  const requiresInteger = type === 'cutting' || unit === 'units'
-
-  if (!validateQuantity(quantity, requiresInteger)) {
-    setErrors((prev) => ({
-      ...prev,
-      quantity: true,
-    }))
-    return
-  }
+  if (isEditMode && (!didHydrateEditDraft || editLoadError)) return
 
   const nextFormData = {
     ...formData,
@@ -229,13 +211,12 @@ function RecoleccionFormDatosScreen() {
   })
 
   if (!isValid) {
-    console.warn('⚠️ Formulario inválido:', validationErrors)
     return
   }
 
   updateForm(nextFormData)
 
-  navigate('/app/collections/new/location')
+  navigate(isEditMode ? `/app/collections/new/location?editId=${editId}` : '/app/collections/new/location')
 }
 
   const hasMinimumPhotos =
@@ -299,6 +280,7 @@ function RecoleccionFormDatosScreen() {
               Cargando borrador para edición...
             </div>
           )}
+          {editLoadError && <p role="alert" className="rounded-2xl bg-danger-50 px-4 py-3 text-sm font-semibold text-danger-700">{editLoadError}</p>}
 
           <div className="space-y-2">
             <p className="text-sm font-semibold text-brand-700">Fecha <span className="text-danger-500">*</span></p>
@@ -453,7 +435,7 @@ function RecoleccionFormDatosScreen() {
             <div className="flex gap-2 flex-wrap">
               {[
                 { label: 'Kg', value: 'kg' as Unit },
-                { label: 'Gr', value: 'g' as Unit },
+                { label: 'G', value: 'g' as Unit },
                 { label: 'Unidades', value: 'units' as Unit },
               ].map((option) => (
                 <button

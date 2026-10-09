@@ -4,7 +4,12 @@ type EstadoRegistroSource = {
   estadoRegistroRecoleccion?: string | null
   usuario_validacion_id?: number | null
   fecha_validacion?: string | null
+  usuario_id?: number | null
+  can_edit?: boolean
+  can_submit_for_validation?: boolean
 }
+
+type UsuarioActual = { id?: number | string | null; rol?: string | null } | null
 
 export type EstadoOperativo = 'ABIERTO' | 'CERRADO'
 type EstadoOperativoSource = {
@@ -35,6 +40,18 @@ export function resolveEstadoRegistro(recoleccion: EstadoRegistroSource) {
     Boolean(recoleccion.fecha_validacion)
 
   return hasValidationData ? 'VALIDADO' : 'BORRADOR'
+}
+
+export function getRecoleccionFormActions(recoleccion: EstadoRegistroSource, user: UsuarioActual) {
+  const estado = resolveEstadoRegistro(recoleccion)
+  const autorizado = Boolean(user && (
+    String(user.rol ?? '').toUpperCase() === 'ADMIN' ||
+    (user.id != null && recoleccion.usuario_id != null && Number(user.id) === Number(recoleccion.usuario_id))
+  ))
+  return {
+    canEdit: autorizado && (estado === 'BORRADOR' || estado === 'RECHAZADO') && recoleccion.can_edit !== false,
+    canSubmit: autorizado && estado === 'BORRADOR' && recoleccion.can_submit_for_validation !== false,
+  }
 }
 
 function normalizeEstadoOperativo(estadoOperativo: string | null | undefined): EstadoOperativo | null {
