@@ -1140,8 +1140,8 @@ function validatePlanMetas(metas: PlanEspecieMetaInput[]): PlanEspecieMetaInput[
 }
 
 function validateRevisionPlanInput(input: RevisarPlanInput): void {
-  if (!Number.isSafeInteger(input.meta_total_arboles) || input.meta_total_arboles <= 0) {
-    throw new Error('La meta total debe ser un entero positivo.')
+  if (!Number.isSafeInteger(input.meta_total_arboles) || input.meta_total_arboles <= 0 || input.meta_total_arboles > 2_147_483_647) {
+    throw new Error('La meta total debe ser un entero positivo de hasta 2147483647.')
   }
   if (!Number.isSafeInteger(input.revision_esperada) || input.revision_esperada < 0) {
     throw new Error('Falta la versión vigente del plan. Vuelve a cargarlo.')
@@ -1154,8 +1154,8 @@ function validateRevisionPlanInput(input: RevisarPlanInput): void {
   let centesimas = 0
   for (const meta of input.metas) {
     if (!Number.isSafeInteger(meta.planta_id) || meta.planta_id <= 0 ||
-      !Number.isSafeInteger(meta.cantidad_objetivo) || meta.cantidad_objetivo <= 0) {
-      throw new Error('Cada especie requiere un ID y una cantidad entera positivos.')
+      !Number.isSafeInteger(meta.cantidad_objetivo) || meta.cantidad_objetivo <= 0 || meta.cantidad_objetivo > 2_147_483_647) {
+      throw new Error('Cada especie requiere un ID y una cantidad entera positivos de hasta 2147483647.')
     }
     if (ids.has(meta.planta_id)) throw new Error('No se puede repetir una especie en el plan.')
     ids.add(meta.planta_id)

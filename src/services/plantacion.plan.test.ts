@@ -1,4 +1,5 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { getSubcampaniaApi } from '../api/plantacion.api'
 import type { RevisarPlanData, RevisarPlanInput } from '../modules/plantacion/types/contracts'
 import { PlantacionService } from './plantacion.service'
 
@@ -30,6 +31,10 @@ function mockResponse(data: unknown) {
   return fetchMock
 }
 
+beforeEach(() => {
+  localStorage.setItem('authToken', 'jwt')
+})
+
 describe('Revisión atómica del plan de subcampaña', () => {
   it('envía meta, especies y versión juntas en un único PUT autenticado y devuelve el plan confirmado', async () => {
     localStorage.setItem('authToken', 'jwt')
@@ -40,7 +45,7 @@ describe('Revisión atómica del plan de subcampaña', () => {
     expect(await PlantacionService.revisarSubcampaniaPlan(54, input, 'auth-1')).toEqual(data)
     expect(fetchMock).toHaveBeenCalledExactlyOnceWith(expect.stringContaining('/api/subcampanias/54/plan'), {
       method: 'PUT',
-      headers: { 'x-auth-id': 'auth-1', Authorization: 'Bearer jwt', 'Content-Type': 'application/json' },
+      headers: { Authorization: 'Bearer jwt', 'Content-Type': 'application/json' },
       body: JSON.stringify(input),
     })
     expect(input).toEqual(makeInput())
@@ -53,7 +58,7 @@ describe('Revisión atómica del plan de subcampaña', () => {
     expect(await PlantacionService.getSubcampaniaPlan(54, 'auth-1')).toEqual(data)
     expect(fetchMock).toHaveBeenCalledExactlyOnceWith(expect.stringContaining('/api/subcampanias/54/plan'), {
       method: 'GET',
-      headers: { 'x-auth-id': 'auth-1', Authorization: 'Bearer jwt' },
+      headers: { Authorization: 'Bearer jwt' },
     })
   })
 
@@ -64,7 +69,7 @@ describe('Revisión atómica del plan de subcampaña', () => {
     expect(await PlantacionService.putSubcampaniaPlan(54, metas, 'auth-1')).toEqual(data)
     expect(fetchMock).toHaveBeenCalledExactlyOnceWith(expect.stringContaining('/api/subcampanias/54/plan'), {
       method: 'PUT',
-      headers: { 'x-auth-id': 'auth-1', 'Content-Type': 'application/json' },
+      headers: { Authorization: 'Bearer jwt', 'Content-Type': 'application/json' },
       body: expect.any(String),
     })
     expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ metas })
@@ -83,6 +88,41 @@ describe('Revisión atómica del plan de subcampaña', () => {
     const fetchMock = mockResponse(data)
     expect(await PlantacionService.revisarSubcampaniaPlan(54, input, 'auth-1')).toEqual(data)
     expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('acepta el máximo entero del backend para meta total y cantidad con Bearer', async () => {
+    const input: RevisarPlanInput = {
+      meta_total_arboles: 2147483647,
+      revision_esperada: 0,
+      metas: [{ planta_id: 10, cantidad_objetivo: 2147483647, porcentaje_objetivo: 100 }],
+    }
+    const data = { ...makeConfirmation(), meta_total_arboles: input.meta_total_arboles, plan_revision: 1, metas: input.metas }
+    const fetchMock = mockResponse(data)
+
+    expect(await PlantacionService.revisarSubcampaniaPlan(54, input)).toEqual(data)
+    expect(fetchMock).toHaveBeenCalledExactlyOnceWith(expect.stringContaining('/api/subcampanias/54/plan'), {
+      method: 'PUT',
+      headers: { Authorization: 'Bearer jwt', 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+    })
+  })
+
+  it.each([
+    { field: 'meta total', hasToken: true },
+    { field: 'meta total', hasToken: false },
+    { field: 'cantidad de especie', hasToken: true },
+    { field: 'cantidad de especie', hasToken: false },
+  ])('rechaza $field superior a 2147483647 antes de autenticar (token: $hasToken)', async ({ field, hasToken }) => {
+    if (!hasToken) localStorage.removeItem('authToken')
+    const input = makeInput()
+    if (field === 'meta total') input.meta_total_arboles = 2147483648
+    else input.metas[0].cantidad_objetivo = 2147483648
+    const fetchMock = mockResponse(makeConfirmation())
+
+    await expect(PlantacionService.revisarSubcampaniaPlan(54, input, 'auth-1')).rejects.toThrow(/2147483647/)
+    expect(fetchMock).not.toHaveBeenCalled()
+    if (field === 'meta total') expect(input.meta_total_arboles).toBe(2147483648)
+    else expect(input.metas[0].cantidad_objetivo).toBe(2147483648)
   })
 
   it.each([0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGER + 1])(
@@ -194,5 +234,124 @@ describe('Revisión atómica del plan de subcampaña', () => {
     await expect(PlantacionService.revisarSubcampaniaPlan(54, input, 'auth-1')).rejects.toThrow(/confirmación completa/)
     expect(fetchMock).toHaveBeenCalledTimes(1)
     expect(input).toEqual(makeInput())
+  })
+})
+
+type PlanRequest = {
+  name: string
+  method: 'GET' | 'PUT'
+  invoke: (input: RevisarPlanInput, authId?: string) => Promise<unknown>
+  body?: (input: RevisarPlanInput) => unknown
+}
+
+const planRequests: PlanRequest[] = [
+  {
+    name: 'lectura GET',
+    method: 'GET',
+    invoke: (_input, authId) => PlantacionService.getSubcampaniaPlan(54, authId),
+  },
+  {
+    name: 'revisión atómica PUT',
+    method: 'PUT',
+    invoke: (input, authId) => PlantacionService.revisarSubcampaniaPlan(54, input, authId),
+    body: (input) => input,
+  },
+  {
+    name: 'guardado histórico PUT',
+    method: 'PUT',
+    invoke: (input, authId) => PlantacionService.putSubcampaniaPlan(54, input.metas, authId),
+    body: (input) => ({ metas: input.metas }),
+  },
+]
+
+describe.each(planRequests)('Sesión WebAuthn del plan: $name', ({ method, invoke, body }) => {
+  it.each([
+    { name: 'sin auth_id', authId: undefined, storedAuthId: undefined },
+    { name: 'auth_id de otra persona', authId: 'otra-persona', storedAuthId: 'otra-sesion' },
+    { name: 'ID numérico auxiliar', authId: '27', storedAuthId: '43' },
+    { name: 'auth_id local de otra sesión', authId: undefined, storedAuthId: 'otra-sesion' },
+  ])('envía el Bearer sin x-auth-id con $name', async ({ authId, storedAuthId }) => {
+    if (storedAuthId !== undefined) localStorage.setItem('auth_id', storedAuthId)
+    const input = makeInput()
+    const data = makeConfirmation()
+    const fetchMock = mockResponse(data)
+
+    expect(await invoke(input, authId)).toEqual(data)
+    expect(fetchMock).toHaveBeenCalledExactlyOnceWith(expect.stringContaining('/api/subcampanias/54/plan'), {
+      method,
+      headers: {
+        Authorization: 'Bearer jwt',
+        ...(body ? { 'Content-Type': 'application/json' } : {}),
+      },
+      ...(body ? { body: expect.any(String) } : {}),
+    })
+    if (body) expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual(body(makeInput()))
+    expect(input).toEqual(makeInput())
+  })
+
+  it.each([null, '', '   '])('bloquea el token ausente o vacío (%s), aunque exista auth_id', async (token) => {
+    if (token === null) localStorage.removeItem('authToken')
+    else localStorage.setItem('authToken', token)
+    localStorage.setItem('auth_id', 'auth-1')
+    const fetchMock = mockResponse(makeConfirmation())
+
+    await expect(invoke(makeInput(), 'auth-1')).rejects.toMatchObject({
+      status: 401,
+      message: expect.stringMatching(/iniciar sesión/),
+    })
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    { status: 401, message: 'La sesión venció.' },
+    { status: 401, message: 'La identidad de la sesión es inconsistente.' },
+    { status: 403, message: 'No tienes permiso para editar.' },
+    { status: 404, message: 'La subcampaña no existe.' },
+    { status: 400, message: 'El plan contiene datos inválidos.' },
+    { status: 422, message: 'No se puede retirar una especie con stock inicial disponible.' },
+    { status: 409, message: 'Otro administrador revisó el plan.' },
+    { status: 500, message: 'No se pudo procesar el plan.' },
+  ])('conserva el error $status ($message), sin reintentar ni modificar el plan', async ({ status, message }) => {
+    const input = makeInput()
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ message }), { status }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(invoke(input, 'otra-persona')).rejects.toMatchObject({ status, message })
+    expect(fetchMock).toHaveBeenCalledExactlyOnceWith(expect.stringContaining('/api/subcampanias/54/plan'), {
+      method,
+      headers: {
+        Authorization: 'Bearer jwt',
+        ...(body ? { 'Content-Type': 'application/json' } : {}),
+      },
+      ...(body ? { body: expect.any(String) } : {}),
+    })
+    if (body) expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual(body(makeInput()))
+    expect(input).toEqual(makeInput())
+  })
+
+  it('conserva el error de red sin reintentar ni declarar éxito', async () => {
+    const input = makeInput()
+    const networkError = new TypeError('Failed to fetch')
+    const fetchMock = vi.fn().mockRejectedValue(networkError)
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(invoke(input, 'auth-1')).rejects.toBe(networkError)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    if (body) expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual(body(makeInput()))
+    else expect(fetchMock.mock.calls[0][1].body).toBeUndefined()
+    expect(input).toEqual(makeInput())
+  })
+})
+
+describe('Compatibilidad de autenticación fuera de /plan', () => {
+  it('conserva el contrato x-auth-id existente de las demás rutas', async () => {
+    localStorage.removeItem('authToken')
+    const fetchMock = mockResponse({ id: 54 })
+
+    await getSubcampaniaApi(54, 'auth-1')
+    expect(fetchMock).toHaveBeenCalledExactlyOnceWith(expect.stringContaining('/api/subcampanias/54'), {
+      method: 'GET',
+      headers: { 'x-auth-id': 'auth-1' },
+    })
   })
 })

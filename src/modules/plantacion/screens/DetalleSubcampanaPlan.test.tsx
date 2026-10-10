@@ -6,7 +6,9 @@ import { PlantacionService } from '../../../services/plantacion.service'
 import type { GetPlanData, PlantacionContext, RevisarPlanData, Subcampania } from '../types/contracts'
 import DetalleSubcampanaScreen from './DetalleSubcampanaScreen'
 
-const authState = vi.hoisted(() => ({ user: { auth_id: 'auth-1', rol: 'ADMIN' } }))
+const authState = vi.hoisted(() => ({
+  user: { auth_id: 'auth-1', rol: 'ADMIN' }, login: vi.fn(), logout: vi.fn(),
+}))
 vi.mock('../../../contexts/AuthContext', () => ({ useAuth: () => authState }))
 vi.mock('../../../services/plantacion.service', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../../services/plantacion.service')>()
@@ -49,10 +51,14 @@ const context: PlantacionContext = {
   reglas: { permite_exceder_meta_especie: true },
 }
 
-function renderDetail() {
-  return render(<MemoryRouter initialEntries={['/subcampanias/54']}>
+function DetailRoute() {
+  return <MemoryRouter initialEntries={['/subcampanias/54']}>
     <Routes><Route path="/subcampanias/:subcampaniaId" element={<DetalleSubcampanaScreen />} /></Routes>
-  </MemoryRouter>)
+  </MemoryRouter>
+}
+
+function renderDetail() {
+  return render(<DetailRoute />)
 }
 
 async function openEditor() {
@@ -72,7 +78,10 @@ async function reviewGoal60() {
 }
 
 beforeEach(() => {
+  authState.user.auth_id = 'auth-1'
   authState.user.rol = 'ADMIN'
+  authState.login.mockReset().mockResolvedValue(undefined)
+  authState.logout.mockReset()
   vi.mocked(PlantacionService.getSubcampania).mockReset().mockResolvedValue(subcampania)
   vi.mocked(PlantacionService.getSubcampaniaEquipo).mockReset().mockResolvedValue([])
   vi.mocked(PlantacionService.getSubcampaniaPlan).mockReset().mockResolvedValue(plan)
@@ -87,6 +96,18 @@ beforeEach(() => {
 })
 
 describe('revisión del plan desde el detalle de subcampaña', () => {
+  it.each(['GENERAL', 'VALIDADOR', 'VOLUNTARIO'])('permite a %s consultar el plan sin pertenecer al equipo', async (rol) => {
+    authState.user.rol = rol
+    renderDetail()
+    expect(await screen.findByText('Mix de especies planificado')).toBeTruthy()
+    expect(screen.getByText('Aliso')).toBeTruthy()
+    expect(PlantacionService.getSubcampaniaPlan).toHaveBeenCalledExactlyOnceWith(54, 'auth-1')
+    expect(PlantacionService.getSubcampaniaEquipo).toHaveBeenCalledExactlyOnceWith(54, 'auth-1')
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Más opciones' }))
+    expect(screen.queryByRole('button', { name: /Editar meta y especies/ })).toBeNull()
+    expect(PlantacionService.revisarSubcampaniaPlan).not.toHaveBeenCalled()
+  })
+
   it.each([
     { rol: 'ADMIN', estado: 'BORRADOR', available: true },
     { rol: 'ADMIN', estado: 'ACTIVA', available: true },
@@ -115,6 +136,84 @@ describe('revisión del plan desde el detalle de subcampaña', () => {
       expect(screen.queryByRole('heading', { name: 'Acciones de subcampaña' })).toBeNull()
     }
     expect(PlantacionService.revisarSubcampaniaPlan).not.toHaveBeenCalled()
+  })
+
+  it('hace visible el 401, bloquea edición y recupera la consulta con el inicio de sesión existente', async () => {
+    vi.mocked(PlantacionService.getSubcampaniaPlan).mockRejectedValueOnce(Object.assign(new Error('Falta JWT'), { status: 401 }))
+    renderDetail()
+    expect(await screen.findByText('Tu sesión no es válida para consultar el plan. Inicia sesión nuevamente.')).toBeTruthy()
+    const user = userEvent.setup()
+    await user.click(screen.getByRole('button', { name: 'Más opciones' }))
+    expect(screen.queryByRole('button', { name: /Editar meta y especies/ })).toBeNull()
+    await user.click(screen.getByRole('button', { name: /^Cerrar$/ }))
+    await user.click(screen.getByRole('button', { name: 'Iniciar sesión' }))
+    expect(await screen.findByText('Mix de especies planificado')).toBeTruthy()
+    expect(screen.queryByText('No se pudo consultar el plan vigente')).toBeNull()
+    expect(authState.login).toHaveBeenCalledTimes(1)
+    expect(authState.logout).not.toHaveBeenCalled()
+    expect(PlantacionService.getSubcampania).toHaveBeenCalledTimes(1)
+    expect(PlantacionService.getSubcampaniaPlan).toHaveBeenCalledTimes(2)
+    expect(PlantacionService.revisarSubcampaniaPlan).not.toHaveBeenCalled()
+    await user.click(screen.getByRole('button', { name: 'Más opciones' }))
+    expect(screen.getAllByRole('button', { name: /Editar meta y especies/ })).toHaveLength(2)
+  })
+
+  it('conserva el bloqueo y permite reintentar si el inicio de sesión falla', async () => {
+    vi.mocked(PlantacionService.getSubcampaniaPlan).mockRejectedValueOnce(Object.assign(new Error('JWT expirado'), { status: 401 }))
+    authState.login.mockRejectedValueOnce(new Error('Se canceló el inicio de sesión.'))
+    renderDetail()
+    const user = userEvent.setup()
+    await user.click(await screen.findByRole('button', { name: 'Iniciar sesión' }))
+    expect(await screen.findByText('Se canceló el inicio de sesión.')).toBeTruthy()
+    expect(PlantacionService.getSubcampaniaPlan).toHaveBeenCalledTimes(1)
+    await user.click(screen.getByRole('button', { name: 'Iniciar sesión' }))
+    expect(await screen.findByText('Mix de especies planificado')).toBeTruthy()
+    expect(PlantacionService.revisarSubcampaniaPlan).not.toHaveBeenCalled()
+  })
+
+  it('invalida la recuperación de lectura anterior si el inicio de sesión cambia la identidad', async () => {
+    vi.mocked(PlantacionService.getSubcampaniaPlan).mockRejectedValueOnce(Object.assign(new Error('JWT expirado'), { status: 401 }))
+    const view = renderDetail()
+    authState.login.mockImplementationOnce(async () => {
+      authState.user.auth_id = 'auth-2'
+      view.rerender(<DetailRoute />)
+    })
+    await userEvent.setup().click(await screen.findByRole('button', { name: 'Iniciar sesión' }))
+    expect(await screen.findByText('Mix de especies planificado')).toBeTruthy()
+    expect(screen.queryByText('Consultando plan…')).toBeNull()
+    expect(screen.queryByText('Cargando subcampaña...')).toBeNull()
+    expect(PlantacionService.getSubcampania).toHaveBeenLastCalledWith(54, 'auth-2')
+    expect(PlantacionService.getSubcampaniaPlan).toHaveBeenLastCalledWith(54, 'auth-2')
+    expect(PlantacionService.getSubcampaniaPlan).toHaveBeenCalledTimes(2)
+    expect(PlantacionService.revisarSubcampaniaPlan).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    { status: 403, message: 'No tienes permiso para consultar este plan.' },
+    { status: 404, message: 'La subcampaña no existe.' },
+  ])('muestra el error $status y bloquea edición sin cerrar la sesión', async ({ status, message }) => {
+    vi.mocked(PlantacionService.getSubcampaniaPlan).mockRejectedValueOnce(Object.assign(new Error('Lectura rechazada'), { status }))
+    renderDetail()
+    expect(await screen.findByText(message)).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Iniciar sesión' })).toBeNull()
+    const user = userEvent.setup()
+    await user.click(screen.getByRole('button', { name: 'Más opciones' }))
+    expect(screen.queryByRole('button', { name: /Editar meta y especies/ })).toBeNull()
+    await user.click(screen.getByRole('button', { name: /^Cerrar$/ }))
+    await user.click(screen.getByRole('button', { name: 'Reintentar consulta del plan' }))
+    expect(await screen.findByText('Mix de especies planificado')).toBeTruthy()
+    expect(authState.login).not.toHaveBeenCalled()
+    expect(authState.logout).not.toHaveBeenCalled()
+    expect(PlantacionService.revisarSubcampaniaPlan).not.toHaveBeenCalled()
+  })
+
+  it('comunica fallos de conexión del plan sin ocultar el detalle', async () => {
+    vi.mocked(PlantacionService.getSubcampaniaPlan).mockRejectedValueOnce(new Error('No hay conexión para consultar el plan.'))
+    renderDetail()
+    expect(await screen.findByText('No hay conexión para consultar el plan.')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Subcampaña Palca', level: 1 })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Reintentar consulta del plan' })).toBeTruthy()
+    expect(screen.queryByText('Mix de especies planificado')).toBeNull()
   })
 
   it('actualiza 50/40 a 50/60 tras confirmar y consulta todos los indicadores conservando ACTIVA', async () => {
@@ -179,5 +278,27 @@ describe('revisión del plan desde el detalle de subcampaña', () => {
     expect(PlantacionService.getCampaniaMetrics).toHaveBeenCalledTimes(2)
     expect(PlantacionService.getCampaniasResumen).toHaveBeenCalledTimes(2)
     expect(PlantacionService.getPlantacionContext).toHaveBeenCalledTimes(2)
+  })
+
+  it('conserva el plan confirmado cuando falla la lectura posterior y recupera solo con GET', async () => {
+    const { container } = renderDetail()
+    const user = await reviewGoal60()
+    vi.mocked(PlantacionService.getSubcampania).mockRejectedValueOnce(new Error('No hay conexión para el detalle.'))
+    vi.mocked(PlantacionService.getSubcampaniaPlan).mockRejectedValueOnce(Object.assign(new Error('JWT expirado'), { status: 401 }))
+    await user.click(screen.getByRole('button', { name: 'Confirmar y guardar plan' }))
+    expect(await screen.findByText('Se muestra el último plan confirmado. Vuelve a consultar para obtener el plan vigente.')).toBeTruthy()
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    const header = container.querySelector('header')!
+    expect(within(header).getByText('/ 60')).toBeTruthy()
+    expect(within(header).getByText('83%')).toBeTruthy()
+    expect(screen.getByText('Aliso')).toBeTruthy()
+    expect(PlantacionService.revisarSubcampaniaPlan).toHaveBeenCalledTimes(1)
+    vi.mocked(PlantacionService.getSubcampaniaPlan).mockResolvedValue(saved)
+    await user.click(screen.getByRole('button', { name: 'Iniciar sesión' }))
+    await waitFor(() => expect(screen.queryByText('No se pudo consultar el plan vigente')).toBeNull())
+    expect(within(header).getByText('/ 60')).toBeTruthy()
+    expect(PlantacionService.revisarSubcampaniaPlan).toHaveBeenCalledTimes(1)
+    expect(PlantacionService.getSubcampaniaPlan).toHaveBeenCalledTimes(4)
+    expect(PlantacionService.getSubcampania).toHaveBeenCalledTimes(2)
   })
 })

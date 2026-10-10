@@ -8,7 +8,7 @@ import plantacionHero from '../../../assets/home/plantacion.webp'
 import Icon from '../../../components/Icon'
 import { Button } from '../../../components/ui'
 import { useAuth } from '../../../contexts/AuthContext'
-import { PlantacionService } from '../../../services/plantacion.service'
+import { getPlantacionErrorStatus, PlantacionService } from '../../../services/plantacion.service'
 import {
   TIPO_CAMPANIA_LABEL,
   type ActivarSubcampaniaData,
@@ -49,6 +49,20 @@ function buildWizardUrl(
 }
 
 type DetailTab = 'resumen' | 'equipo' | 'mapa'
+
+type PlanReadError = { status?: number; message: string }
+
+function getPlanReadError(reason: unknown): PlanReadError {
+  const status = getPlantacionErrorStatus(reason)
+  const message = status === 401
+    ? 'Tu sesión no es válida para consultar el plan. Inicia sesión nuevamente.'
+    : status === 403
+      ? 'No tienes permiso para consultar este plan.'
+      : status === 404
+        ? 'La subcampaña no existe.'
+        : reason instanceof Error ? reason.message : 'No se pudo consultar el plan vigente.'
+  return { status, message }
+}
 
 function getPolygonPositions(poligono: GeoJsonPolygon | null | undefined): LatLngTuple[] {
   return (poligono?.coordinates[0] ?? []).map(toLatLngTuple)
@@ -1104,7 +1118,7 @@ function MoreSheet({
 
 function DetalleSubcampanaScreen() {
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, login } = useAuth()
   const { subcampaniaId } = useParams<{ subcampaniaId: string }>()
 
   const numericId = Number(subcampaniaId)
@@ -1113,6 +1127,10 @@ function DetalleSubcampanaScreen() {
   const [sub, setSub] = useState<Subcampania | null>(null)
   const [equipo, setEquipo] = useState<EquipoMember[]>([])
   const [plan, setPlan] = useState<GetPlanData | null>(null)
+  const [planReadError, setPlanReadError] = useState<PlanReadError | null>(null)
+  const [planReading, setPlanReading] = useState(false)
+  const [planSessionError, setPlanSessionError] = useState<string | null>(null)
+  const planReadInFlightRef = useRef(false)
   const [loading, setLoading] = useState(hasValidId)
   const [error, setError] = useState<string | null>(
     hasValidId ? null : 'ID de subcampaña inválido.',
@@ -1132,6 +1150,7 @@ function DetalleSubcampanaScreen() {
 
   const authId = user?.auth_id
   const isAdmin = (user?.rol ?? '').toUpperCase() === 'ADMIN'
+  const displayedPlan = plan?.subcampania_id === numericId ? plan : null
   const requestRef = useRef(0)
 
   // Fallback: si el backend no incluye `poligono` en GET /subcampanias/:id,
@@ -1147,19 +1166,25 @@ function DetalleSubcampanaScreen() {
 
   const fetchSubcampaniaData = useCallback(async (requestId: number) => {
     try {
-      const [subData, equipoData, planData] = await Promise.all([
+      const [subData, equipoData, planResult] = await Promise.all([
         PlantacionService.getSubcampania(numericId, authId),
         PlantacionService.getSubcampaniaEquipo(numericId, authId),
-        // El plan es opcional: si el endpoint falla (sin plan configurado,
-        // permisos, etc.) el Resumen simplemente omite la sección de mix.
-        PlantacionService.getSubcampaniaPlan(numericId, authId).catch(() => null),
+        // Un fallo del plan no oculta el detalle ni reemplaza el último plan
+        // confirmado; se muestra con su propia recuperación de lectura.
+        Promise.allSettled([PlantacionService.getSubcampaniaPlan(numericId, authId)])
+          .then(([result]) => result),
       ])
 
       if (requestId !== requestRef.current) return
 
       setSub(subData)
       setEquipo(equipoData)
-      setPlan(planData)
+      if (planResult.status === 'fulfilled') {
+        setPlan(planResult.value)
+        setPlanReadError(null)
+      } else {
+        setPlanReadError(getPlanReadError(planResult.reason))
+      }
       setError(null)
     } catch (fetchError) {
       if (requestId !== requestRef.current) return
@@ -1202,6 +1227,38 @@ function DetalleSubcampanaScreen() {
     void fetchSubcampaniaData(requestId)
   }
 
+  const handleRetryPlan = async (recoverSession = false) => {
+    if (!hasValidId || planReadInFlightRef.current) return
+    planReadInFlightRef.current = true
+    const requestId = ++requestRef.current
+    setPlanReading(true)
+    setPlanSessionError(null)
+    try {
+      if (recoverSession) {
+        try {
+          await login()
+        } catch (reason) {
+          if (requestId === requestRef.current) {
+            setPlanSessionError(reason instanceof Error ? reason.message : 'No se pudo iniciar sesión. Vuelve a intentar.')
+          }
+          return
+        }
+      }
+      if (requestId !== requestRef.current) return
+      try {
+        const currentPlan = await PlantacionService.getSubcampaniaPlan(numericId, authId)
+        if (requestId !== requestRef.current) return
+        setPlan(currentPlan)
+        setPlanReadError(null)
+      } catch (reason) {
+        if (requestId === requestRef.current) setPlanReadError(getPlanReadError(reason))
+      }
+    } finally {
+      planReadInFlightRef.current = false
+      setPlanReading(false)
+    }
+  }
+
   // BORRADOR: siempre cancelable. ACTIVA: solo si no hay plantaciones registradas.
   // Si `total_plantado_inicial` no viene del backend, la ACTIVA no expone la acción
   // (comportamiento conservador; el backend igual protege con 409).
@@ -1211,7 +1268,8 @@ function DetalleSubcampanaScreen() {
       (sub.estado === 'ACTIVA' && sub.total_plantado_inicial === 0))
 
   const canClose = isAdmin && sub?.estado === 'ACTIVA'
-  const canEditPlan = isAdmin && (sub?.estado === 'BORRADOR' || sub?.estado === 'ACTIVA')
+  const planReadBlocked = planReadError?.status != null && [401, 403, 404].includes(planReadError.status)
+  const canEditPlan = isAdmin && !planReadBlocked && (sub?.estado === 'BORRADOR' || sub?.estado === 'ACTIVA')
 
   const refreshPlanIndicators = async () => {
     if (!sub) return
@@ -1229,7 +1287,12 @@ function DetalleSubcampanaScreen() {
     if (requestId !== requestRef.current) return
     const [detailResult, planResult] = results
     if (detailResult.status === 'fulfilled') setSub(detailResult.value)
-    if (planResult.status === 'fulfilled') setPlan(planResult.value)
+    if (planResult.status === 'fulfilled') {
+      setPlan(planResult.value)
+      setPlanReadError(null)
+    } else {
+      setPlanReadError(getPlanReadError(planResult.reason))
+    }
     if (results.some((result) => result.status === 'rejected')) {
       setPlanRefreshWarning('El plan se guardó, pero no se pudieron actualizar todos los indicadores. Recarga el detalle antes de continuar.')
     } else {
@@ -1239,8 +1302,10 @@ function DetalleSubcampanaScreen() {
 
   const handlePlanSaved = async (saved: RevisarPlanData) => {
     setPlan(saved)
+    setPlanReadError(null)
     setSub((current) => current?.id === saved.subcampania_id ? {
       ...current, meta_total_arboles: saved.meta_total_arboles, estado: saved.estado,
+      plan_revision: saved.plan_revision,
       avance_pct: undefined,
     } : current)
     setActivationNotice('Plan actualizado. Los registros de plantación y el stock físico se conservan.')
@@ -1393,6 +1458,19 @@ function DetalleSubcampanaScreen() {
             <>
               <DetailTabs active={activeTab} onChange={setActiveTab} />
 
+              {planReadError && (
+                <div role="alert" className="rounded-3xl bg-danger-50 p-4 text-xs font-semibold text-danger-700 ring-1 ring-danger-200">
+                  <p className="font-extrabold">No se pudo consultar el plan vigente</p>
+                  <p className="mt-1">{planReadError.message}</p>
+                  {displayedPlan && <p className="mt-1">Se muestra el último plan confirmado. Vuelve a consultar para obtener el plan vigente.</p>}
+                  {planSessionError && <p className="mt-1">{planSessionError}</p>}
+                  <Button variant="secondary" size="sm" className="mt-2" disabled={planReading}
+                    onClick={() => { void handleRetryPlan(planReadError.status === 401) }}>
+                    {planReading ? 'Consultando plan…' : planReadError.status === 401 ? 'Iniciar sesión' : 'Reintentar consulta del plan'}
+                  </Button>
+                </div>
+              )}
+
               {planRefreshWarning && (
                 <div role="status" className="rounded-3xl bg-warning-50 p-4 text-xs font-semibold text-warning-900">
                   <p>{planRefreshWarning}</p>
@@ -1424,7 +1502,7 @@ function DetalleSubcampanaScreen() {
                 <ResumenTab
                   sub={sub}
                   equipo={equipo}
-                  plan={plan}
+                  plan={displayedPlan}
                   canEditPlan={canEditPlan}
                   onEditarPlan={handleRequestEditPlan}
                   localPoligonoFallback={localPoligonoFallback}
@@ -1491,7 +1569,7 @@ function DetalleSubcampanaScreen() {
 
       {sub && planEditorOpen && (
         <EditarPlanSubcampania subcampania={sub} authId={authId} isAdmin={isAdmin}
-          onClose={() => setPlanEditorOpen(false)} onSaved={handlePlanSaved} />
+          onClose={() => setPlanEditorOpen(false)} onSaved={handlePlanSaved} onRecoverSession={login} />
       )}
 
       {sub && closeModalOpen && (

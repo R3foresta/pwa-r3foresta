@@ -14,6 +14,7 @@ import type {
   UpdateSubcampaniaInput,
   UploadEvidenciasPlantacionInput,
 } from '../modules/plantacion/types/contracts'
+import { WebAuthnService } from '../services/webauthn.service'
 
 const RAW_API_URL = import.meta.env.VITE_API_URL as string | undefined
 const API_BASE_URL = `${(RAW_API_URL || '').replace(/\/$/, '')}/api`
@@ -45,6 +46,28 @@ function getAuthHeaders(options?: {
     headers['Content-Type'] = 'application/json'
   }
 
+  return headers
+}
+
+// El plan acredita la sesión exclusivamente con el JWT del login WebAuthn.
+// authId se acepta por compatibilidad con los consumidores existentes, pero no
+// se transmite: un identificador auxiliar no debe sustituir ni contradecir al JWT.
+function getPlanAuthHeaders(options?: {
+  authId?: string
+  includeContentType?: boolean
+}): HeadersInit {
+  const token = WebAuthnService.getToken()?.trim()
+  if (!token) {
+    throw Object.assign(
+      new Error('Debes iniciar sesión para consultar o guardar el plan de la subcampaña.'),
+      { status: 401 },
+    )
+  }
+
+  const headers: HeadersInit = { Authorization: `Bearer ${token}` }
+  if (options?.includeContentType) {
+    headers['Content-Type'] = 'application/json'
+  }
   return headers
 }
 
@@ -255,7 +278,7 @@ export async function getSubcampaniaPlanApi(
 ): Promise<Response> {
   return fetch(`${API_BASE_URL}/subcampanias/${subcampaniaId}/plan`, {
     method: 'GET',
-    headers: getAuthHeaders({ authId, includeContentType: false }),
+    headers: getPlanAuthHeaders({ authId, includeContentType: false }),
   })
 }
 
@@ -266,7 +289,7 @@ export async function putSubcampaniaPlanApi(
 ): Promise<Response> {
   return fetch(`${API_BASE_URL}/subcampanias/${subcampaniaId}/plan`, {
     method: 'PUT',
-    headers: getAuthHeaders({ authId, includeContentType: true }),
+    headers: getPlanAuthHeaders({ authId, includeContentType: true }),
     body: JSON.stringify(input),
   })
 }

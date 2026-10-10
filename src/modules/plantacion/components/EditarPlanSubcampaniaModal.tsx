@@ -4,11 +4,13 @@ import { Button } from '../../../components/ui'
 import type { GetPlanData } from '../types/contracts'
 import { usePlanMetaEspeciesForm } from '../hooks/usePlanMetaEspeciesForm'
 import { createPlanFormFromPlan, getPlanEspecieNombre, recalculatePlanQuantities, validatePlanForm, type PlanFormErrors, type PlanFormProposal } from '../utils/planMetaEspeciesForm'
+import { loadPlanEditorDraft, savePlanEditorDraft } from '../utils/planEditorDraft'
 import PlanMetaEspeciesForm from './PlanMetaEspeciesForm'
 import CatalogoEspeciesPicker, { type EspecieCatalogoItem } from './CatalogoEspeciesPicker'
 
 type Props = {
   plan: GetPlanData
+  authId?: string
   subcampaniaNombre: string
   isAdmin: boolean
   submitting: boolean
@@ -17,6 +19,8 @@ type Props = {
   reloadingPlan?: boolean
   refreshMessage?: string | null
   onReloadPlan?: () => void
+  onRecoverSession?: () => void | Promise<void>
+  recoveringSession?: boolean
   onClose: () => void
   onConfirm: (proposal: PlanFormProposal) => void
 }
@@ -25,11 +29,12 @@ function formatNumber(value: number): string {
   return value.toLocaleString('es-BO', { maximumFractionDigits: 2 })
 }
 
-function EditarPlanSubcampaniaModal({ plan, subcampaniaNombre, isAdmin, submitting, error, blockedReason, reloadingPlan = false, refreshMessage, onReloadPlan, onClose, onConfirm }: Props) {
+function EditarPlanSubcampaniaModal({ plan, authId, subcampaniaNombre, isAdmin, submitting, error, blockedReason, reloadingPlan = false, refreshMessage, onReloadPlan, onRecoverSession, recoveringSession = false, onClose, onConfirm }: Props) {
   const [pickerOpen, setPickerOpen] = useState(false)
   const [review, setReview] = useState<PlanFormProposal | null>(null)
   const [reviewedPlan, setReviewedPlan] = useState<GetPlanData | null>(null)
   const [validationErrors, setValidationErrors] = useState<PlanFormErrors>({ especies: [] })
+  const [recoveryError, setRecoveryError] = useState<string | null>(null)
   const submissionLock = useRef(false)
   const restriction = !isAdmin
     ? 'Solo ADMIN global puede editar el plan.'
@@ -37,7 +42,7 @@ function EditarPlanSubcampaniaModal({ plan, subcampaniaNombre, isAdmin, submitti
       ? 'El plan solo puede editarse en BORRADOR o ACTIVA.'
       : blockedReason
   const disabled = submitting || reloadingPlan || Boolean(restriction)
-  const form = usePlanMetaEspeciesForm(() => createPlanFormFromPlan(plan), {
+  const form = usePlanMetaEspeciesForm(() => loadPlanEditorDraft(plan.subcampania_id, authId) ?? createPlanFormFromPlan(plan), {
     disabled,
     onChange: () => { setValidationErrors({ especies: [] }); setReview(null) },
   })
@@ -75,6 +80,20 @@ function EditarPlanSubcampaniaModal({ plan, subcampaniaNombre, isAdmin, submitti
     onConfirm(currentReview)
   }
 
+  const handleRecoverSession = async () => {
+    if (!onRecoverSession || submitting || reloadingPlan || recoveringSession) return
+    if (!savePlanEditorDraft(plan.subcampania_id, authId, form.value)) {
+      setRecoveryError('No se pudo conservar la propuesta en esta pestaña. Vuelve a intentar antes de iniciar sesión.')
+      return
+    }
+    setRecoveryError(null)
+    try {
+      await onRecoverSession()
+    } catch (reason) {
+      setRecoveryError(reason instanceof Error ? reason.message : 'No se pudo recuperar la sesión. La propuesta se conserva en esta pestaña.')
+    }
+  }
+
   const comparisonIds = currentReview ? [...new Set([...plan.metas.map((item) => item.planta_id), ...currentReview.metas.map((item) => item.planta_id)])] : []
 
   return <>
@@ -89,6 +108,9 @@ function EditarPlanSubcampaniaModal({ plan, subcampaniaNombre, isAdmin, submitti
         </p>
         {onReloadPlan && <Button variant="secondary" fullWidth loading={reloadingPlan} disabled={submitting}
           onClick={onReloadPlan}>{reloadingPlan ? 'Actualizando plan…' : 'Actualizar plan para continuar'}</Button>}
+        {onRecoverSession && <Button variant="secondary" fullWidth loading={recoveringSession} disabled={submitting}
+          onClick={() => { void handleRecoverSession() }}>{recoveringSession ? 'Verificando sesión…' : 'Iniciar sesión'}</Button>}
+        {recoveryError && <p role="alert" className="rounded-2xl bg-danger-50 p-3 text-xs font-semibold text-danger-700">{recoveryError}</p>}
         {refreshMessage && <p role="status" className="rounded-2xl bg-success-50 p-3 text-xs font-semibold text-success-700">{refreshMessage}</p>}
         {currentReview ? <>
           <div className="grid grid-cols-2 gap-3 rounded-2xl bg-neutral-50 p-3 text-sm text-brand-800">

@@ -477,8 +477,9 @@ Mantener esta tabla actualizada.
 | AUD-012 | `ALTA` | `RESUELTO` | `shared` | `pwa` | Retirada la promesa de sincronización y los contadores ficticios; se comunica conexión necesaria. | `src/layouts/AuthLayout.tsx`, `src/data/home.ts` |
 | AUD-013 | `CRITICA` | `BLOQUEADO` | `auth` | `api` | Backend local admite identidad por x-auth-id sin validar JWT en rutas de perfil; no hay revocación confirmada. | `docs/BACKEND_SECURITY_AND_IDEMPOTENCY_TASK.md` |
 | AUD-014 | `MEDIA` | `PENDIENTE` | `shared` | `deuda` | Quedan dos alertas moderadas de React Router cuya solución exige migración de versión principal. | `package-lock.json` |
-| AUD-015 | `ALTA` | `PENDIENTE` | `plantacion` | `testing` | Revisión de plan verificada con fixtures; integración backend/migración 062 pendiente. | `docs/QA_EDITOR_PLAN_USO.md` |
+| AUD-015 | `ALTA` | `PENDIENTE` | `plantacion` | `testing` | Revisión de plan y JWT verificados con fixtures; integración backend/migraciones 062 y 063 pendiente. | `docs/QA_EDITOR_PLAN_USO.md` |
 | AUD-016 | `MEDIA` | `PENDIENTE` | `plantacion` | `ui` | Estado del encabezado puede quedar antiguo tras cierre concurrente rechazado en el editor. | `DetalleSubcampanaScreen.tsx`, `EditarPlanSubcampania.tsx` |
+| AUD-018 | `MEDIA` | `PENDIENTE` | `plantacion` | `ui` | Otros pasos del asistente de creación carecen de guarda ADMIN en UI; el paso del plan ya restringe edición. | `src/modules/plantacion/screens/CrearSubcampanaScreen.tsx` |
 
 ---
 
@@ -793,7 +794,7 @@ La actualización compatible (`npm audit fix`, sin `--force`) redujo 18 alertas,
 - Severidad: `ALTA`
 - Módulo: `plantacion`
 - Tipo: `api | testing`
-- Ubicación: `src/modules/plantacion/components/EditarPlanSubcampania.tsx`, backend `migrations/062_subcampania_revision_plan_atomica.sql`.
+- Ubicación: `src/api/plantacion.api.ts`, `src/modules/plantacion/components/EditarPlanSubcampania.tsx`, backend migraciones `062` (revisión atómica) y `063` (restricción de lectura directa).
 - Detectado: `2026-10-09`.
 
 El editor consume la revisión atómica con `meta_total_arboles`, `metas` y `revision_esperada`, conserva propuestas ante rechazos y bloquea servidores que no entregan `plan_revision`. Las pruebas frontend usan servicios/respuestas simulados; no acreditan la migración ni el despliegue en la base compartida.
@@ -801,6 +802,10 @@ El editor consume la revisión atómica con `meta_total_arboles`, `metas` y `rev
 Verificar en staging con actores controlados: ADMIN ACTIVA 50/40 → 50/60, misma cantidad física y estado; especie nueva sin stock; asignación/plantación posterior; retirada protegida; dos revisiones concurrentes; cierre manual con la meta vigente. Confirmar primero backend y migración 062 coordinados con la PWA. La prueba de idempotencia de eventos físicos continúa en `AUD-007`.
 
 El 2026-10-09 se verificaron recorridos de uso en navegador con las pantallas/API/servicio reales y respuestas HTTP sintéticas, además de lint completo, 149 tests y build/PWA. Evidencia y límites en `docs/QA_EDITOR_PLAN_USO.md`; este avance no cierra la integración pendiente.
+
+El 2026-10-10 se cerró el envío sin JWT en GET/PUT del plan, incluido el helper histórico. Se retiró del asistente el fallback que actualizaba meta por PATCH y especies por separado; un servidor sin versión conserva el borrador local. Los errores de lectura ya son visibles; 401 ofrece recuperación con el login WebAuthn existente y 403 bloquea edición sin cerrar sesión. Los fallos de guardado incierto exigen consulta y revisión explícita, conservando la propuesta. Las pruebas usan respuestas simuladas: la publicación coordinada del backend y las migraciones 062/063 siguen pendientes a cargo del usuario, sin escrituras de prueba en Supabase compartido.
+
+La propuesta del editor se conserva también durante cambios de passkey y, antes de recuperar sesión, en un borrador temporal por subcampaña/propietario para sobrevivir al desmontaje de la ruta si falla el perfil. No se almacena token ni versión para reenvíos. Verificación ejecutada: `npm run test` (284 pruebas, 19 suites), `npm run lint`, `npm run build` (TypeScript, Vite y PWA) y `git diff --check`, todos aprobados.
 
 ### AUD-016 — Encabezado antiguo tras cierre concurrente en el editor
 
@@ -828,6 +833,17 @@ Sugerencia: reconciliar o recargar el detalle cuando el editor confirma un cambi
 La búsqueda de consumidores permitió retirar `SelectorCampania`, el barrel del módulo, el helper de borrador sin uso y las cadenas API/service/tipos de borrado directo de campaña y asociación/desasociación de organizaciones sin pantallas consumidoras. La desactivación atómica, creación con organizaciones y compatibilidad de borradores siguen conectadas. Esta limpieza cubre los archivos de Plantación revisados, no una auditoría completa del repositorio.
 
 Verificación: 191 pruebas en 19 suites, lint completo, build/TypeScript/PWA y `git diff --check`. Se añadieron siete casos de recuperación; los tests de cierre, plantación y API siguen pasando. Las respuestas de estos tests son simuladas; `AUD-015` y `AUD-016` permanecen pendientes.
+
+### AUD-018 — Permisos de UI en otros pasos del asistente
+
+- Estado: `PENDIENTE`
+- Severidad: `MEDIA`
+- Módulo: `plantacion`
+- Tipo: `ui`
+- Ubicación: `src/modules/plantacion/screens/CrearSubcampanaScreen.tsx` y sus pasos de datos base/equipo/resumen.
+- Detectado: `2026-10-10`.
+
+El asistente admite acceso directo por URL sin una guarda ADMIN global en sus otros pasos. El paso de meta/especies ya limita edición a ADMIN y exige JWT, sin cambiar el contrato de las demás rutas. El backend conserva la autorización final; este hallazgo describe controles de UI que pueden ofrecer acciones rechazadas por el servidor. Revisar los permisos del asistente completo en una tarea propia y cubrir navegación directa de roles sin permiso.
 
 ## 14. Riesgos conocidos
 

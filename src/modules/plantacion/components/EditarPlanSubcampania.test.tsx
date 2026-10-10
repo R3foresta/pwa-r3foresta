@@ -95,7 +95,8 @@ describe('editor conectado del plan de subcampaña', () => {
     expect(screen.getAllByText('60 árboles').length).toBeGreaterThan(0)
     expect(PlantacionService.revisarSubcampaniaPlan).not.toHaveBeenCalled()
     await user.click(screen.getByRole('button', { name: 'Confirmar y guardar plan' }))
-    expect(await screen.findByText('No se pudo guardar la revisión.')).toBeTruthy()
+    expect(await screen.findByText(/No se pudo confirmar el guardado\. Consulta el plan actual/)).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Confirmar y guardar plan' }).hasAttribute('disabled')).toBe(true)
     await user.click(screen.getByRole('button', { name: 'Volver a editar' }))
     expect((screen.getByLabelText(/Meta total propuesta/) as HTMLInputElement).value).toBe('60')
     expect((screen.getByLabelText(/Cantidad propuesta de Aliso/) as HTMLInputElement).value).toBe('60')
@@ -222,7 +223,9 @@ describe('editor conectado del plan de subcampaña', () => {
     const user = await propose()
     await user.click(screen.getByRole('button', { name: 'Confirmar y guardar plan' }))
     if (rejection === 409) await user.click(await screen.findByRole('button', { name: 'Actualizar plan para continuar' }))
-    expect(await screen.findByText('El servidor rechazó el permiso de edición. Vuelve a verificar tu sesión.')).toBeTruthy()
+    expect(await screen.findByText(status === 401
+      ? 'Tu sesión no es válida. Inicia sesión nuevamente para continuar; tu propuesta se conserva.'
+      : 'El servidor rechazó el permiso de edición. Solo ADMIN global puede revisar este plan.')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Actualizar plan para continuar' })).toBeNull()
     expect(screen.getByRole('button', { name: 'Confirmar y guardar plan' }).hasAttribute('disabled')).toBe(true)
     await user.click(screen.getByRole('button', { name: 'Volver a editar' }))
@@ -283,7 +286,9 @@ describe('editor conectado del plan de subcampaña', () => {
     renderEditor()
     const user = await propose()
     await user.click(screen.getByRole('button', { name: 'Confirmar y guardar plan' }))
-    expect(await screen.findByText('El servidor rechazó el permiso de edición. Vuelve a verificar tu sesión.')).toBeTruthy()
+    expect(await screen.findByText(status === 401
+      ? 'Tu sesión no es válida. Inicia sesión nuevamente para continuar; tu propuesta se conserva.'
+      : 'El servidor rechazó el permiso de edición. Solo ADMIN global puede revisar este plan.')).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Volver a editar' }))
     const goal = screen.getByLabelText(/Meta total propuesta/) as HTMLInputElement
     expect(goal.value).toBe('60')
@@ -291,6 +296,71 @@ describe('editor conectado del plan de subcampaña', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Revisar cambios' }))
     expect(PlantacionService.revisarSubcampaniaPlan).toHaveBeenCalledTimes(1)
     expect(screen.queryByRole('button', { name: 'Actualizar plan para continuar' })).toBeNull()
+  })
+
+  it.each([401, 403, 404])('detiene la carga rechazada con %s y distingue recuperación de sesión y permisos', async (status) => {
+    const recover = vi.fn().mockResolvedValue(undefined)
+    vi.mocked(PlantacionService.getSubcampaniaPlan).mockRejectedValueOnce(apiError('Lectura rechazada.', status))
+    renderEditor({ onRecoverSession: recover })
+    const message = status === 401 ? /Tu sesión no es válida/ : status === 403 ? /Solo ADMIN global puede revisar este plan/ : /La subcampaña no existe/
+    expect(await screen.findByText(message)).toBeTruthy()
+    expect(PlantacionService.getSubcampaniaPlan).toHaveBeenCalledOnce()
+    expect(PlantacionService.revisarSubcampaniaPlan).not.toHaveBeenCalled()
+    if (status === 401) {
+      await userEvent.setup().click(screen.getByRole('button', { name: 'Iniciar sesión' }))
+      await screen.findByLabelText(/Meta total propuesta/)
+      expect(recover).toHaveBeenCalledOnce()
+      expect(PlantacionService.getSubcampaniaPlan).toHaveBeenCalledTimes(2)
+      expect(PlantacionService.revisarSubcampaniaPlan).not.toHaveBeenCalled()
+    } else {
+      expect(screen.queryByRole('button', { name: 'Iniciar sesión' })).toBeNull()
+      expect(screen.getByRole('button', { name: 'Reintentar carga' }).hasAttribute('disabled')).toBe(true)
+      expect(recover).not.toHaveBeenCalled()
+    }
+  })
+
+  it('recupera el login tras 401 conservando propuesta, consulta la nueva versión y exige revisar sin repetir PUT', async () => {
+    const recover = vi.fn().mockResolvedValue(undefined)
+    vi.mocked(PlantacionService.getSubcampaniaPlan).mockResolvedValueOnce(plan).mockResolvedValue({ ...plan, plan_revision: 3 })
+    vi.mocked(PlantacionService.revisarSubcampaniaPlan).mockRejectedValueOnce(apiError('JWT expirado.', 401))
+    renderEditor({ onRecoverSession: recover })
+    const user = await propose()
+    await user.click(screen.getByRole('button', { name: 'Confirmar y guardar plan' }))
+    await user.click(await screen.findByRole('button', { name: 'Iniciar sesión' }))
+    expect(await screen.findByRole('status')).toBeTruthy()
+    expect(recover).toHaveBeenCalledOnce()
+    expect((screen.getByLabelText(/Meta total propuesta/) as HTMLInputElement).value).toBe('60')
+    expect(screen.queryByRole('button', { name: 'Confirmar y guardar plan' })).toBeNull()
+    expect(PlantacionService.getSubcampaniaPlan).toHaveBeenCalledTimes(2)
+    expect(PlantacionService.revisarSubcampaniaPlan).toHaveBeenCalledOnce()
+    await user.click(screen.getByRole('button', { name: 'Revisar cambios' }))
+    vi.mocked(PlantacionService.revisarSubcampaniaPlan).mockResolvedValue({ ...plan, plan_revision: 4, meta_total_arboles: 60 })
+    await user.click(screen.getByRole('button', { name: 'Confirmar y guardar plan' }))
+    expect(PlantacionService.revisarSubcampaniaPlan).toHaveBeenLastCalledWith(54, expect.objectContaining({ revision_esperada: 3, meta_total_arboles: 60 }), 'auth-1')
+  })
+
+  it.each([
+    ['red', new TypeError('Failed to fetch')],
+    ['servidor', apiError('Fallo transaccional.', 500)],
+    ['confirmación incompleta', new Error('No se recibió confirmación completa de la revisión.')],
+  ])('tras un fallo de %s exige GET y revisión explícita antes de permitir otra escritura', async (_description, failure) => {
+    vi.mocked(PlantacionService.revisarSubcampaniaPlan).mockRejectedValueOnce(failure)
+    vi.mocked(PlantacionService.getSubcampaniaPlan).mockResolvedValueOnce(plan).mockResolvedValue({ ...plan, plan_revision: 3 })
+    renderEditor()
+    const user = await propose()
+    await user.click(screen.getByRole('button', { name: 'Confirmar y guardar plan' }))
+    const reload = await screen.findByRole('button', { name: 'Actualizar plan para continuar' })
+    const confirm = screen.getByRole('button', { name: 'Confirmar y guardar plan' })
+    expect(confirm.hasAttribute('disabled')).toBe(true)
+    fireEvent.click(confirm)
+    expect(PlantacionService.revisarSubcampaniaPlan).toHaveBeenCalledOnce()
+    expect(PlantacionService.getSubcampaniaPlan).toHaveBeenCalledOnce()
+    await user.click(reload)
+    await screen.findByRole('status')
+    expect((screen.getByLabelText(/Meta total propuesta/) as HTMLInputElement).value).toBe('60')
+    expect(screen.queryByRole('button', { name: 'Confirmar y guardar plan' })).toBeNull()
+    expect(PlantacionService.getSubcampaniaPlan).toHaveBeenCalledTimes(2)
+    expect(PlantacionService.revisarSubcampaniaPlan).toHaveBeenCalledOnce()
   })
 
   it.each(['auth', 'id'] as const)('ignora una consulta vigente retrasada después de cambiar %s', async (changedKey) => {
@@ -312,7 +382,7 @@ describe('editor conectado del plan de subcampaña', () => {
     await screen.findByText('Meta actual: 90 árboles')
     await act(async () => resolveReload({ ...plan, meta_total_arboles: 30 }))
     expect(screen.getByText('Meta actual: 90 árboles')).toBeTruthy()
-    expect((screen.getByLabelText(/Meta total propuesta/) as HTMLInputElement).value).toBe('90')
+    expect((screen.getByLabelText(/Meta total propuesta/) as HTMLInputElement).value).toBe(changedKey === 'auth' ? '60' : '90')
     expect(screen.queryByText('Meta actual: 30 árboles')).toBeNull()
     expect((screen.getByRole('button', { name: 'Revisar cambios' }) as HTMLButtonElement).disabled).toBe(false)
   })
@@ -344,5 +414,27 @@ describe('editor conectado del plan de subcampaña', () => {
     expect(props.onSaved).not.toHaveBeenCalled()
     expect(props.onClose).not.toHaveBeenCalled()
     expect(screen.getByText('Meta actual: 90 árboles')).toBeTruthy()
+    expect((screen.getByLabelText(/Meta total propuesta/) as HTMLInputElement).value).toBe('60')
+  })
+
+  it('conserva la propuesta al recuperar con otra passkey y bloquea envíos hasta leer su plan', async () => {
+    let resolveRead!: (value: GetPlanData) => void
+    vi.mocked(PlantacionService.revisarSubcampaniaPlan).mockRejectedValueOnce(apiError('JWT expirado.', 401))
+    vi.mocked(PlantacionService.getSubcampaniaPlan).mockResolvedValueOnce(plan)
+      .mockImplementationOnce(() => new Promise((done) => { resolveRead = done }))
+    const { rerender, props } = renderEditor({ onRecoverSession: vi.fn().mockResolvedValue(undefined) })
+    const user = await propose()
+    await user.click(screen.getByRole('button', { name: 'Confirmar y guardar plan' }))
+    await screen.findByRole('button', { name: 'Iniciar sesión' })
+    rerender(<EditarPlanSubcampania {...props} authId="auth-2" />)
+    expect(screen.getByRole('button', { name: 'Confirmar y guardar plan' }).hasAttribute('disabled')).toBe(true)
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar y guardar plan' }))
+    expect(PlantacionService.revisarSubcampaniaPlan).toHaveBeenCalledOnce()
+    await act(async () => resolveRead({ ...plan, plan_revision: 8, meta_total_arboles: 90,
+      metas: [{ ...plan.metas[0], cantidad_objetivo: 90 }] }))
+    expect((screen.getByLabelText(/Meta total propuesta/) as HTMLInputElement).value).toBe('60')
+    expect(screen.getByText('Meta actual: 90 árboles')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Confirmar y guardar plan' })).toBeNull()
+    expect(PlantacionService.revisarSubcampaniaPlan).toHaveBeenCalledOnce()
   })
 })

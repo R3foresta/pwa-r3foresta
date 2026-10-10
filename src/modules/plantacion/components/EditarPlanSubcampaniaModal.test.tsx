@@ -4,6 +4,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { LotesViveroService } from '../../../services/lotes-vivero.service'
 import { PlantasService } from '../../../services/plantas.service'
 import type { GetPlanData } from '../types/contracts'
+import { loadPlanEditorDraft, savePlanEditorDraft } from '../utils/planEditorDraft'
+import { createPlanFormFromPlan } from '../utils/planMetaEspeciesForm'
 import EditarPlanSubcampaniaModal from './EditarPlanSubcampaniaModal'
 
 vi.mock('../../../services/plantas.service', () => ({ PlantasService: { listPlantas: vi.fn() } }))
@@ -18,7 +20,7 @@ const plan: GetPlanData = {
 }
 
 function props(overrides: Partial<Parameters<typeof EditarPlanSubcampaniaModal>[0]> = {}) {
-  return { plan, subcampaniaNombre: 'Subcampaña Palca', isAdmin: true, submitting: false,
+  return { plan, authId: 'auth-1', subcampaniaNombre: 'Subcampaña Palca', isAdmin: true, submitting: false,
     error: null, onClose: vi.fn(), onConfirm: vi.fn(), ...overrides }
 }
 
@@ -87,7 +89,7 @@ describe('Editor de revisión de metas y especies', () => {
     render(<EditarPlanSubcampaniaModal {...initial} />)
     change('Meta total propuesta', value)
     await user.click(screen.getByRole('button', { name: 'Revisar cambios' }))
-    expect(screen.getByText('La meta debe ser un número entero positivo.')).toBeTruthy()
+    expect(screen.getByText('La meta debe ser un número entero positivo de hasta 2147483647.')).toBeTruthy()
     expect((screen.getByLabelText(/Meta total propuesta/) as HTMLInputElement).value).toBe(value)
     expect(initial.onConfirm).not.toHaveBeenCalled()
   })
@@ -98,7 +100,7 @@ describe('Editor de revisión de metas y especies', () => {
     render(<EditarPlanSubcampaniaModal {...initial} />)
     change('Cantidad propuesta de Molle', '39.5')
     await user.click(screen.getByRole('button', { name: 'Revisar cambios' }))
-    expect(screen.getByText('Indica una cantidad entera positiva.')).toBeTruthy()
+    expect(screen.getByText('Indica una cantidad entera positiva de hasta 2147483647.')).toBeTruthy()
     change('Cantidad propuesta de Molle', '39')
     await user.click(screen.getByRole('button', { name: 'Revisar cambios' }))
     expect(screen.getByText('Las cantidades por especie deben sumar la meta total.')).toBeTruthy()
@@ -254,4 +256,83 @@ describe('Editor de revisión de metas y especies', () => {
     expect(screen.getByText('Tara')).toBeTruthy()
     expect(initial.onConfirm).not.toHaveBeenCalled()
   })
+
+  it('conserva cantidades manuales al recuperar sesión y remontar tras una lectura nueva, sin guardar automáticamente', async () => {
+    const user = userEvent.setup()
+    const twoSpecies: GetPlanData = { ...plan, plan_revision: 3, metas: [
+      { ...plan.metas[0], cantidad_objetivo: 20, porcentaje_objetivo: 50 },
+      { planta_id: 2, cantidad_objetivo: 20, porcentaje_objetivo: 50, planta: { id: 2, especie: 'Tara' } },
+    ] }
+    const recover = vi.fn().mockRejectedValueOnce(new Error('No se pudo verificar el perfil.'))
+    const initial = props({ plan: twoSpecies, onRecoverSession: recover })
+    const { rerender, unmount } = render(<EditarPlanSubcampaniaModal {...initial} />)
+    change('Meta total propuesta', '60')
+    change('Cantidad propuesta de Molle', '23')
+    change('Cantidad propuesta de Tara', '37')
+    await user.click(screen.getByRole('button', { name: 'Revisar cambios' }))
+    rerender(<EditarPlanSubcampaniaModal {...initial} blockedReason="Tu sesión no es válida. Inicia sesión nuevamente." />)
+    await user.click(screen.getByRole('button', { name: 'Iniciar sesión' }))
+    expect(await screen.findByText('No se pudo verificar el perfil.')).toBeTruthy()
+    expect(recover).toHaveBeenCalledOnce()
+    expect(loadPlanEditorDraft(54, 'auth-1')).toMatchObject({ meta: '60', especies: [
+      { planta_id: 1, cantidad: '23', porcentaje: '50' },
+      { planta_id: 2, cantidad: '37', porcentaje: '50' },
+    ] })
+    unmount()
+
+    const refreshed = props({ plan: { ...twoSpecies, meta_total_arboles: 90, plan_revision: 4 } })
+    render(<EditarPlanSubcampaniaModal {...refreshed} />)
+    expect(screen.getByText('Meta actual: 90 árboles')).toBeTruthy()
+    expect((screen.getByLabelText(/Meta total propuesta/) as HTMLInputElement).value).toBe('60')
+    expect((screen.getByLabelText(/Cantidad propuesta de Molle/) as HTMLInputElement).value).toBe('23')
+    expect((screen.getByLabelText(/Cantidad propuesta de Tara/) as HTMLInputElement).value).toBe('37')
+    expect(screen.queryByRole('button', { name: 'Confirmar y guardar plan' })).toBeNull()
+    expect(refreshed.onConfirm).not.toHaveBeenCalled()
+    await user.click(screen.getByRole('button', { name: 'Revisar cambios' }))
+    expect(refreshed.onConfirm).not.toHaveBeenCalled()
+    await user.click(screen.getByRole('button', { name: 'Confirmar y guardar plan' }))
+    expect(refreshed.onConfirm).toHaveBeenCalledExactlyOnceWith({ meta_total_arboles: 60, metas: [
+      { planta_id: 1, cantidad_objetivo: 23, porcentaje_objetivo: 50 },
+      { planta_id: 2, cantidad_objetivo: 37, porcentaje_objetivo: 50 },
+    ] })
+  })
+
+  it('recupera el texto inválido exacto sin recalcular ni declararlo un plan válido', async () => {
+    const user = userEvent.setup()
+    const initial = props({ onRecoverSession: vi.fn() })
+    const { rerender, unmount } = render(<EditarPlanSubcampaniaModal {...initial} />)
+    change('Meta total propuesta', '60.5')
+    change('Porcentaje propuesto de Molle', '33.333')
+    change('Cantidad propuesta de Molle', '23.5')
+    rerender(<EditarPlanSubcampaniaModal {...initial} blockedReason="Tu sesión no es válida." />)
+    await user.click(screen.getByRole('button', { name: 'Iniciar sesión' }))
+    unmount()
+
+    const restored = props()
+    render(<EditarPlanSubcampaniaModal {...restored} />)
+    expect((screen.getByLabelText(/Meta total propuesta/) as HTMLInputElement).value).toBe('60.5')
+    expect((screen.getByLabelText(/Porcentaje propuesto de Molle/) as HTMLInputElement).value).toBe('33.333')
+    expect((screen.getByLabelText(/Cantidad propuesta de Molle/) as HTMLInputElement).value).toBe('23.5')
+    await user.click(screen.getByRole('button', { name: 'Revisar cambios' }))
+    expect(restored.onConfirm).not.toHaveBeenCalled()
+    expect(screen.queryByRole('button', { name: 'Confirmar y guardar plan' })).toBeNull()
+  })
+
+  it('no restaura una propuesta de otro auth_id', () => {
+    savePlanEditorDraft(54, 'auth-1', { ...createPlanFormFromPlan(plan), meta: '60' })
+    render(<EditarPlanSubcampaniaModal {...props({ authId: 'auth-2' })} />)
+    expect((screen.getByLabelText(/Meta total propuesta/) as HTMLInputElement).value).toBe('40')
+    expect(loadPlanEditorDraft(54, 'auth-1')?.meta).toBe('60')
+  })
+
+  it.each(['{invalid-json', JSON.stringify({ v: 1, authId: 'auth-1', subcampaniaId: 54, value: { meta: 60, especies: [] } })])(
+    'ignora un borrador corrupto y usa el plan persistido', (raw) => {
+      savePlanEditorDraft(54, 'auth-1', createPlanFormFromPlan(plan))
+      sessionStorage.setItem(sessionStorage.key(0)!, raw)
+      render(<EditarPlanSubcampaniaModal {...props()} />)
+      expect((screen.getByLabelText(/Meta total propuesta/) as HTMLInputElement).value).toBe('40')
+      expect((screen.getByLabelText(/Cantidad propuesta de Molle/) as HTMLInputElement).value).toBe('40')
+      expect(sessionStorage.length).toBe(0)
+    },
+  )
 })

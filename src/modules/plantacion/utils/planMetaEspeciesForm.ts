@@ -29,7 +29,7 @@ export function getPlanEspecieNombre(item: PlanEspecieForm): string {
 export function positivePlanInteger(raw: string): number | null {
   if (!/^\d+$/.test(raw)) return null
   const value = Number(raw)
-  return Number.isSafeInteger(value) && value > 0 ? value : null
+  return Number.isSafeInteger(value) && value > 0 && value <= 2_147_483_647 ? value : null
 }
 
 /** 0% permite preparar un mix incompleto; no es un objetivo persistible. */
@@ -98,14 +98,14 @@ export function addPlanCatalogSpecies(value: PlanMetaEspeciesValue, items: Omit<
 export function validatePlanForm(value: PlanMetaEspeciesValue, options: { omitZeroPercent?: boolean } = {}) {
   const errors: PlanFormErrors = { especies: [] }
   const goal = positivePlanInteger(value.meta)
-  if (goal === null) errors.meta = 'La meta debe ser un número entero positivo.'
+  if (goal === null) errors.meta = 'La meta debe ser un número entero positivo de hasta 2147483647.'
   const metas: PlanEspecieMetaInput[] = []
   for (const item of value.especies) {
     const qty = positivePlanInteger(item.cantidad)
     const pct = planPercentage(item.porcentaje)
     const omit = options.omitZeroPercent && pct === 0
     errors.especies.push(omit ? {} : {
-      ...(qty === null ? { cantidad: 'Indica una cantidad entera positiva.' } : {}),
+      ...(qty === null ? { cantidad: 'Indica una cantidad entera positiva de hasta 2147483647.' } : {}),
       ...(pct === null || pct === 0 ? { porcentaje: 'Indica un porcentaje mayor que 0 y hasta 100, con máximo 2 decimales.' } : {}),
     })
     if (!omit && qty !== null && pct !== null && pct > 0) metas.push({

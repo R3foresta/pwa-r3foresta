@@ -90,11 +90,19 @@ describe('formulario compartido de meta y especies', () => {
     ])
   })
 
-  it.each(['', '0', '1.5', '9007199254740992'])('no recalcula ni borra cantidades con meta inválida %s', meta => {
+  it.each(['', '0', '1.5', '2147483648', '9007199254740992'])('no recalcula ni borra cantidades con meta inválida %s', meta => {
     const value = form(meta, [species(1, '33.33', '10'), species(2, '66.67', '30')])
     expect(recalculatePlanQuantities(value)).toBe(value)
     expect(validatePlanForm(value).proposal).toBeNull()
     expect(validatePlanForm(value).errors.meta).toBeTruthy()
+  })
+
+  it('acepta el máximo del contrato y conserva una cantidad que supera el límite para corregirla', () => {
+    expect(validatePlanForm(form('2147483647', [species(1, '100', '2147483647')])).proposal?.meta_total_arboles).toBe(2147483647)
+    const value = form('2147483647', [species(1, '100', '2147483648')])
+    expect(validatePlanForm(value).proposal).toBeNull()
+    expect(validatePlanForm(value).errors.especies[0].cantidad).toContain('2147483647')
+    expect(value.especies[0].cantidad).toBe('2147483648')
   })
 
   it.each(['', '-1', '100.01', '33.333'])('conserva cantidades si se introduce un porcentaje inválido %s', pct => {
