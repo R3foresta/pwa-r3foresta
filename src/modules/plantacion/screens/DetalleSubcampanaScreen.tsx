@@ -530,6 +530,8 @@ function ResumenTab({
   sub,
   equipo,
   plan,
+  canEditPlan,
+  onEditarPlan,
   localPoligonoFallback,
   onTabMapa,
   onActivated,
@@ -538,6 +540,8 @@ function ResumenTab({
   sub: Subcampania
   equipo: EquipoMember[]
   plan: GetPlanData | null
+  canEditPlan: boolean
+  onEditarPlan: () => void
   localPoligonoFallback: GeoJsonPolygon | null
   onTabMapa: () => void
   onActivated: (data: ActivarSubcampaniaData) => void
@@ -715,40 +719,71 @@ function ResumenTab({
 
       {/* Mix de especies (plan de metas) */}
       {metasPlan.length > 0 && (
-        <section className="rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
-          <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
-            Mix de especies planificado
-          </p>
-          <div className="mt-2 space-y-2.5">
+        <section aria-label="Mix de especies planificado" className="overflow-hidden rounded-3xl bg-white shadow-soft ring-1 ring-brand-100">
+          <div className="flex items-center justify-between gap-3 border-b border-brand-100 bg-brand-50/60 p-4">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <div aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-100/70 text-brand-600">
+                <Icon name="leaf" className="h-4 w-4" />
+              </div>
+              <div className="min-w-0">
+                <h2 className="text-sm font-extrabold leading-snug text-brand-800">
+                  Mix de especies planificado
+                </h2>
+                <p className="mt-0.5 text-[11px] font-medium text-neutral-500">
+                  {metasPlan.length} {metasPlan.length === 1 ? 'especie' : 'especies'} en el plan
+                </p>
+              </div>
+            </div>
+            {canEditPlan && (
+              <Button
+                variant="secondary"
+                size="sm"
+                leftIcon="note"
+                className="min-h-11 shrink-0 rounded-xl shadow-none"
+                aria-label="Editar meta y especies"
+                onClick={onEditarPlan}
+              >
+                Editar
+              </Button>
+            )}
+          </div>
+          <ul className="divide-y divide-neutral-100 px-4">
             {metasPlan.map((meta) => {
               const nombre = meta.planta?.especie ?? `Planta #${meta.planta_id}`
               const pctObjetivo = Math.max(0, Math.min(100, meta.porcentaje_objetivo))
               return (
-                <div key={meta.planta_id}>
-                  <div className="flex items-baseline justify-between gap-2">
-                    <p className="text-sm font-extrabold text-brand-800">{nombre}</p>
-                    <p className="text-[11px] font-extrabold tabular-nums text-neutral-500">
-                      <span className="text-brand-800">
+                <li key={meta.planta_id} className="py-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="break-words text-sm font-bold text-brand-800">{nombre}</p>
+                      {meta.planta?.nombre_cientifico && (
+                        <p className="mt-0.5 break-words text-[11px] italic leading-relaxed text-neutral-500">
+                          {meta.planta.nombre_cientifico}
+                        </p>
+                      )}
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <p className="text-lg font-extrabold leading-none tabular-nums text-brand-800">
                         {meta.cantidad_objetivo.toLocaleString('es-BO')}
-                      </span>{' '}
-                      · {pctObjetivo.toLocaleString('es-BO', { maximumFractionDigits: 2 })}%
-                    </p>
+                      </p>
+                      <p className="mt-1 text-[10px] font-medium text-neutral-500">árboles</p>
+                    </div>
                   </div>
-                  {meta.planta?.nombre_cientifico && (
-                    <p className="mb-1 text-[10.5px] italic text-neutral-500">
-                      {meta.planta.nombre_cientifico}
-                    </p>
-                  )}
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-100">
-                    <div
-                      className="h-full rounded-full bg-brand-600"
-                      style={{ width: `${pctObjetivo}%` }}
-                    />
+                  <div className="mt-3 flex items-center gap-3">
+                    <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-brand-50">
+                      <div
+                        className="h-full rounded-full bg-brand-500"
+                        style={{ width: `${pctObjetivo}%` }}
+                      />
+                    </div>
+                    <span className="shrink-0 rounded-lg bg-brand-50 px-2 py-1 text-[11px] font-bold tabular-nums text-brand-600">
+                      {pctObjetivo.toLocaleString('es-BO', { maximumFractionDigits: 2 })}%
+                    </span>
                   </div>
-                </div>
+                </li>
               )
             })}
-          </div>
+          </ul>
         </section>
       )}
 
@@ -1213,6 +1248,12 @@ function DetalleSubcampanaScreen() {
     await refreshPlanIndicators()
   }
 
+  const handleRequestEditPlan = () => {
+    if (!canEditPlan) return
+    setMoreOpen(false)
+    setPlanEditorOpen(true)
+  }
+
   const handleRequestClose = () => {
     if (!canClose) return
     setMoreOpen(false)
@@ -1384,6 +1425,8 @@ function DetalleSubcampanaScreen() {
                   sub={sub}
                   equipo={equipo}
                   plan={plan}
+                  canEditPlan={canEditPlan}
+                  onEditarPlan={handleRequestEditPlan}
                   localPoligonoFallback={localPoligonoFallback}
                   onTabMapa={() => setActiveTab('mapa')}
                   onActivated={handleActivated}
@@ -1433,11 +1476,7 @@ function DetalleSubcampanaScreen() {
           }}
           onCancelar={handleRequestCancel}
           onCerrar={handleRequestClose}
-          onEditarPlan={() => {
-            if (!canEditPlan) return
-            setMoreOpen(false)
-            setPlanEditorOpen(true)
-          }}
+          onEditarPlan={handleRequestEditPlan}
         />
       )}
 

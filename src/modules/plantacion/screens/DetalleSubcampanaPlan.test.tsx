@@ -57,8 +57,8 @@ function renderDetail() {
 
 async function openEditor() {
   const user = userEvent.setup()
-  await user.click(await screen.findByRole('button', { name: 'Más opciones' }))
-  await user.click(screen.getByRole('button', { name: /Editar meta y especies/ }))
+  const card = await screen.findByRole('region', { name: 'Mix de especies planificado' })
+  await user.click(within(card).getByRole('button', { name: 'Editar meta y especies' }))
   await screen.findByLabelText(/Meta total propuesta/)
   return user
 }
@@ -96,13 +96,24 @@ describe('revisión del plan desde el detalle de subcampaña', () => {
     { rol: 'ADMIN', estado: 'PAUSADA', available: false },
     { rol: 'COORDINADOR', estado: 'ACTIVA', available: false },
     { rol: 'GENERAL', estado: 'BORRADOR', available: false },
+    { rol: 'VALIDADOR', estado: 'ACTIVA', available: false },
+    { rol: 'VOLUNTARIO', estado: 'ACTIVA', available: false },
   ] as const)('muestra la acción para $rol en $estado: $available', async ({ rol, estado, available }) => {
     const user = userEvent.setup()
     authState.user.rol = rol
     vi.mocked(PlantacionService.getSubcampania).mockResolvedValue({ ...subcampania, estado })
     renderDetail()
-    await user.click(await screen.findByRole('button', { name: 'Más opciones' }))
-    expect(Boolean(screen.queryByRole('button', { name: /Editar meta y especies/ }))).toBe(available)
+    const card = await screen.findByRole('region', { name: 'Mix de especies planificado' })
+    expect(Boolean(within(card).queryByRole('button', { name: 'Editar meta y especies' }))).toBe(available)
+    await user.click(screen.getByRole('button', { name: 'Más opciones' }))
+    const actions = within(screen.getByRole('heading', { name: 'Acciones de subcampaña' }).parentElement!)
+    expect(Boolean(actions.queryByRole('button', { name: /Editar meta y especies/ }))).toBe(available)
+    expect(screen.queryAllByRole('button', { name: /Editar meta y especies/ })).toHaveLength(available ? 2 : 0)
+    if (available) {
+      await user.click(actions.getByRole('button', { name: /Editar meta y especies/ }))
+      expect(await screen.findByLabelText(/Meta total propuesta/)).toBeTruthy()
+      expect(screen.queryByRole('heading', { name: 'Acciones de subcampaña' })).toBeNull()
+    }
     expect(PlantacionService.revisarSubcampaniaPlan).not.toHaveBeenCalled()
   })
 
