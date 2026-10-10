@@ -69,11 +69,6 @@ export type UpdateCampaniaInput = {
   fecha_estimada_fin?: string
 }
 
-export type DeleteCampaniaData = {
-  message?: string
-  id: number
-}
-
 // ---------------------------------------------------------------------------
 // Desactivación atómica de campaña con cancelación masiva de subcampañas.
 // Contratos de `GET /campanias/:id/desactivacion/preview` y
@@ -118,10 +113,6 @@ export type ResultadoDesactivacionCampania = {
   subcampanias_canceladas: number
   asignaciones_devueltas: number
   unidades_devueltas: number
-}
-
-export type SetCampaniaOrganizacionesInput = {
-  organizacion_ids: number[]
 }
 
 export type SetSubcampaniaPoligonoInput = {

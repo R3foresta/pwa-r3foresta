@@ -7,9 +7,6 @@ import { createPlanFormFromPlan, getPlanEspecieNombre, recalculatePlanQuantities
 import PlanMetaEspeciesForm from './PlanMetaEspeciesForm'
 import CatalogoEspeciesPicker, { type EspecieCatalogoItem } from './CatalogoEspeciesPicker'
 
-/** Propuesta de UI; la pantalla la adapta al contrato de revisión del backend. */
-export type PlanRevisionProposal = PlanFormProposal
-
 type Props = {
   plan: GetPlanData
   subcampaniaNombre: string
@@ -18,18 +15,19 @@ type Props = {
   error: string | null
   blockedReason?: string | null
   reloadingPlan?: boolean
+  refreshMessage?: string | null
   onReloadPlan?: () => void
   onClose: () => void
-  onConfirm: (proposal: PlanRevisionProposal) => void
+  onConfirm: (proposal: PlanFormProposal) => void
 }
 
 function formatNumber(value: number): string {
   return value.toLocaleString('es-BO', { maximumFractionDigits: 2 })
 }
 
-function EditarPlanSubcampaniaModal({ plan, subcampaniaNombre, isAdmin, submitting, error, blockedReason, reloadingPlan = false, onReloadPlan, onClose, onConfirm }: Props) {
+function EditarPlanSubcampaniaModal({ plan, subcampaniaNombre, isAdmin, submitting, error, blockedReason, reloadingPlan = false, refreshMessage, onReloadPlan, onClose, onConfirm }: Props) {
   const [pickerOpen, setPickerOpen] = useState(false)
-  const [review, setReview] = useState<PlanRevisionProposal | null>(null)
+  const [review, setReview] = useState<PlanFormProposal | null>(null)
   const [reviewedPlan, setReviewedPlan] = useState<GetPlanData | null>(null)
   const [validationErrors, setValidationErrors] = useState<PlanFormErrors>({ especies: [] })
   const submissionLock = useRef(false)
@@ -90,7 +88,8 @@ function EditarPlanSubcampaniaModal({ plan, subcampaniaNombre, isAdmin, submitti
           La revisión ajusta la planificación. Lo plantado, el stock y el estado de la subcampaña se conservan.
         </p>
         {onReloadPlan && <Button variant="secondary" fullWidth loading={reloadingPlan} disabled={submitting}
-          onClick={onReloadPlan}>{reloadingPlan ? 'Consultando plan…' : 'Consultar plan vigente'}</Button>}
+          onClick={onReloadPlan}>{reloadingPlan ? 'Actualizando plan…' : 'Actualizar plan para continuar'}</Button>}
+        {refreshMessage && <p role="status" className="rounded-2xl bg-success-50 p-3 text-xs font-semibold text-success-700">{refreshMessage}</p>}
         {currentReview ? <>
           <div className="grid grid-cols-2 gap-3 rounded-2xl bg-neutral-50 p-3 text-sm text-brand-800">
             <div><p className="text-xs font-semibold text-neutral-500">Meta actual</p><p className="font-extrabold">{formatNumber(plan.meta_total_arboles)} árboles</p></div>

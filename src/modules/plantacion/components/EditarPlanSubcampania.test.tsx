@@ -38,7 +38,7 @@ async function propose(goal = '60') {
   const user = userEvent.setup()
   await screen.findByLabelText(/Meta total propuesta/)
   fireEvent.change(screen.getByLabelText(/Meta total propuesta/), { target: { value: goal } })
-  fireEvent.change(screen.getByLabelText(/Cantidad propuesta de Aliso/), { target: { value: goal } })
+  expect((screen.getByLabelText(/Cantidad propuesta de Aliso/) as HTMLInputElement).value).toBe(goal)
   await user.click(screen.getByRole('button', { name: 'Revisar cambios' }))
   return user
 }
@@ -61,6 +61,8 @@ describe('editor conectado del plan de subcampaña', () => {
     expect((screen.getByLabelText(/Meta total propuesta/) as HTMLInputElement).value).toBe('40')
     expect((screen.getByLabelText(/Cantidad propuesta de Aliso/) as HTMLInputElement).value).toBe('40')
     expect(PlantacionService.revisarSubcampaniaPlan).not.toHaveBeenCalled()
+    expect(screen.queryByRole('button', { name: 'Actualizar plan para continuar' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Consultar plan vigente' })).toBeNull()
   })
 
   it('permite reintentar una carga fallida sin enviar un plan vacío', async () => {
@@ -123,7 +125,7 @@ describe('editor conectado del plan de subcampaña', () => {
     expect(props.onClose).toHaveBeenCalledTimes(1)
   })
 
-  it('mantiene la propuesta ante 409 y exige consultar el plan vigente y revisar otra vez', async () => {
+  it('mantiene la propuesta ante 409 y muestra actualización solo ante conflicto y exige revisar otra vez', async () => {
     const currentPlan = { ...plan, meta_total_arboles: 60, plan_revision: 3,
       metas: [{ ...plan.metas[0], cantidad_objetivo: 60 }] }
     vi.mocked(PlantacionService.getSubcampaniaPlan).mockResolvedValueOnce(plan).mockResolvedValue(currentPlan)
@@ -133,11 +135,13 @@ describe('editor conectado del plan de subcampaña', () => {
     renderEditor()
     const user = await propose('70')
     await user.click(screen.getByRole('button', { name: 'Confirmar y guardar plan' }))
-    expect(await screen.findByText(/El plan cambió\. Consulta el plan vigente/)).toBeTruthy()
+    expect(await screen.findByText(/El plan cambió\. Actualiza el plan actual/)).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar y guardar plan' }))
     expect(PlantacionService.revisarSubcampaniaPlan).toHaveBeenCalledTimes(1)
-    await user.click(screen.getByRole('button', { name: 'Consultar plan vigente' }))
+    await user.click(screen.getByRole('button', { name: 'Actualizar plan para continuar' }))
     await screen.findByText('Meta actual: 60 árboles')
+    expect(screen.getByRole('status').textContent).toBe('Plan actual actualizado. Tu propuesta se conservó.')
+    expect(screen.queryByRole('button', { name: 'Actualizar plan para continuar' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Confirmar y guardar plan' })).toBeNull()
     expect((screen.getByLabelText(/Meta total propuesta/) as HTMLInputElement).value).toBe('70')
     expect((screen.getByLabelText(/Cantidad propuesta de Aliso/) as HTMLInputElement).value).toBe('70')
@@ -148,6 +152,82 @@ describe('editor conectado del plan de subcampaña', () => {
       meta_total_arboles: 70, revision_esperada: 3,
       metas: [{ planta_id: 5, cantidad_objetivo: 70, porcentaje_objetivo: 100 }],
     }, 'auth-1')
+  })
+
+  it('muestra fallos de actualización, bloquea doble consulta y conserva la propuesta hasta recuperarse', async () => {
+    let resolveReload!: (value: GetPlanData) => void
+    vi.mocked(PlantacionService.getSubcampaniaPlan)
+      .mockResolvedValueOnce(plan)
+      .mockRejectedValueOnce(new Error('Sin conexión para actualizar.'))
+      .mockImplementationOnce(() => new Promise((resolve) => { resolveReload = resolve }))
+    vi.mocked(PlantacionService.revisarSubcampaniaPlan).mockRejectedValueOnce(apiError('El plan cambió.', 409))
+    renderEditor()
+    const user = await propose('70')
+    await user.click(screen.getByRole('button', { name: 'Confirmar y guardar plan' }))
+    await user.click(await screen.findByRole('button', { name: 'Actualizar plan para continuar' }))
+    expect(await screen.findByText('Sin conexión para actualizar. Actualiza el plan para continuar.')).toBeTruthy()
+    expect(screen.queryByRole('status')).toBeNull()
+    expect(screen.getByRole('button', { name: 'Confirmar y guardar plan' }).hasAttribute('disabled')).toBe(true)
+    const reload = screen.getByRole('button', { name: 'Actualizar plan para continuar' })
+    fireEvent.click(reload)
+    fireEvent.click(reload)
+    await waitFor(() => expect(PlantacionService.getSubcampaniaPlan).toHaveBeenCalledTimes(3))
+    expect(screen.getByRole('button', { name: 'Actualizando plan…' }).hasAttribute('disabled')).toBe(true)
+    await act(async () => resolveReload({ ...plan, meta_total_arboles: 50, plan_revision: 3,
+      metas: [{ ...plan.metas[0], cantidad_objetivo: 50 }] }))
+    expect(screen.getByText('Meta actual: 50 árboles')).toBeTruthy()
+    expect((screen.getByLabelText(/Meta total propuesta/) as HTMLInputElement).value).toBe('70')
+    expect((screen.getByLabelText(/Cantidad propuesta de Aliso/) as HTMLInputElement).value).toBe('70')
+    expect(screen.getByRole('status').textContent).toContain('Tu propuesta se conservó')
+    expect(screen.queryByRole('button', { name: 'Actualizar plan para continuar' })).toBeNull()
+    expect(PlantacionService.revisarSubcampaniaPlan).toHaveBeenCalledOnce()
+  })
+
+  it('exige revisar otra vez incluso si la consulta devuelve los mismos datos actuales', async () => {
+    vi.mocked(PlantacionService.revisarSubcampaniaPlan).mockRejectedValueOnce(apiError('Revisión en conflicto.', 409))
+    renderEditor()
+    const user = await propose()
+    await user.click(screen.getByRole('button', { name: 'Confirmar y guardar plan' }))
+    await user.click(await screen.findByRole('button', { name: 'Actualizar plan para continuar' }))
+    expect(await screen.findByRole('status')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Confirmar y guardar plan' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Revisar cambios' })).toBeTruthy()
+    expect((screen.getByLabelText(/Meta total propuesta/) as HTMLInputElement).value).toBe('60')
+    expect(PlantacionService.getSubcampaniaPlan).toHaveBeenCalledTimes(2)
+    expect(PlantacionService.revisarSubcampaniaPlan).toHaveBeenCalledOnce()
+  })
+
+  it('ofrece recuperación si no pudo leer el estado actual después de un rechazo 422', async () => {
+    vi.mocked(PlantacionService.getSubcampaniaPlan).mockResolvedValueOnce(plan)
+      .mockRejectedValueOnce(new Error('Sin conexión para leer estado.'))
+      .mockResolvedValueOnce({ ...plan, estado: 'COMPLETADA' })
+    vi.mocked(PlantacionService.revisarSubcampaniaPlan).mockRejectedValueOnce(apiError('La subcampaña ya se cerró.', 422))
+    renderEditor()
+    const user = await propose()
+    await user.click(screen.getByRole('button', { name: 'Confirmar y guardar plan' }))
+    expect(await screen.findByText('La subcampaña ya se cerró. Actualiza el plan para continuar.')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Confirmar y guardar plan' }).hasAttribute('disabled')).toBe(true)
+    await user.click(screen.getByRole('button', { name: 'Actualizar plan para continuar' }))
+    expect(await screen.findByText('El plan solo puede editarse en BORRADOR o ACTIVA.')).toBeTruthy()
+    expect((screen.getByLabelText(/Meta total propuesta/) as HTMLInputElement).value).toBe('60')
+    expect(screen.getByLabelText(/Meta total propuesta/).hasAttribute('disabled')).toBe(true)
+    expect(PlantacionService.revisarSubcampaniaPlan).toHaveBeenCalledOnce()
+  })
+
+  it.each([[401, 409], [403, 409], [401, 422], [403, 422]])('retira la recuperación ante consulta %s tras rechazo %s', async (status, rejection) => {
+    vi.mocked(PlantacionService.getSubcampaniaPlan).mockResolvedValueOnce(plan)
+      .mockRejectedValueOnce(apiError('La sesión no permite leer el plan.', status))
+    vi.mocked(PlantacionService.revisarSubcampaniaPlan).mockRejectedValueOnce(apiError('El plan cambió.', rejection))
+    renderEditor()
+    const user = await propose()
+    await user.click(screen.getByRole('button', { name: 'Confirmar y guardar plan' }))
+    if (rejection === 409) await user.click(await screen.findByRole('button', { name: 'Actualizar plan para continuar' }))
+    expect(await screen.findByText('El servidor rechazó el permiso de edición. Vuelve a verificar tu sesión.')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Actualizar plan para continuar' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Confirmar y guardar plan' }).hasAttribute('disabled')).toBe(true)
+    await user.click(screen.getByRole('button', { name: 'Volver a editar' }))
+    expect((screen.getByLabelText(/Meta total propuesta/) as HTMLInputElement).value).toBe('60')
+    expect(PlantacionService.revisarSubcampaniaPlan).toHaveBeenCalledOnce()
   })
 
   it('conserva una propuesta de retiro si el backend protege la especie con 422', async () => {
@@ -167,7 +247,8 @@ describe('editor conectado del plan de subcampaña', () => {
     expect(screen.getByText('Se retira del plan')).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Confirmar y guardar plan' }))
     expect(await screen.findByText('Nogal tiene stock inicial disponible y no se puede retirar.')).toBeTruthy()
-    await user.click(screen.getByRole('button', { name: 'Volver a editar' }))
+    expect(screen.queryByRole('button', { name: 'Confirmar y guardar plan' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Revisar cambios' })).toBeTruthy()
     expect(screen.queryByLabelText(/Cantidad propuesta de Nogal/)).toBeNull()
     expect((screen.getByLabelText(/Meta total propuesta/) as HTMLInputElement).value).toBe('20')
     expect((screen.getByLabelText(/Porcentaje propuesto de Aliso/) as HTMLInputElement).value).toBe('100')
@@ -209,6 +290,7 @@ describe('editor conectado del plan de subcampaña', () => {
     expect(goal.disabled).toBe(true)
     fireEvent.click(screen.getByRole('button', { name: 'Revisar cambios' }))
     expect(PlantacionService.revisarSubcampaniaPlan).toHaveBeenCalledTimes(1)
+    expect(screen.queryByRole('button', { name: 'Actualizar plan para continuar' })).toBeNull()
   })
 
   it.each(['auth', 'id'] as const)('ignora una consulta vigente retrasada después de cambiar %s', async (changedKey) => {
@@ -221,9 +303,10 @@ describe('editor conectado del plan de subcampaña', () => {
       .mockImplementationOnce(() => new Promise((resolve) => { resolveReload = resolve }))
       .mockResolvedValueOnce(nextPlan)
     const { rerender, props } = renderEditor()
-    const user = userEvent.setup()
-    await screen.findByLabelText(/Meta total propuesta/)
-    await user.click(screen.getByRole('button', { name: 'Consultar plan vigente' }))
+    vi.mocked(PlantacionService.revisarSubcampaniaPlan).mockRejectedValueOnce(apiError('El plan cambió.', 409))
+    const user = await propose()
+    await user.click(screen.getByRole('button', { name: 'Confirmar y guardar plan' }))
+    await user.click(await screen.findByRole('button', { name: 'Actualizar plan para continuar' }))
     rerender(<EditarPlanSubcampania {...props} authId={changedKey === 'auth' ? 'auth-2' : 'auth-1'}
       subcampania={{ ...subcampania, id: nextId }} />)
     await screen.findByText('Meta actual: 90 árboles')

@@ -9,7 +9,6 @@ import type {
   EstadoSubcampania,
   PutPlanInput,
   RevisarPlanInput,
-  SetCampaniaOrganizacionesInput,
   SetSubcampaniaPoligonoInput,
   UpdateCampaniaInput,
   UpdateSubcampaniaInput,
@@ -109,16 +108,6 @@ export async function patchCampaniaApi(
   })
 }
 
-export async function deleteCampaniaApi(
-  campaniaId: number,
-  authId?: string,
-): Promise<Response> {
-  return fetch(`${API_BASE_URL}/campanias/${campaniaId}`, {
-    method: 'DELETE',
-    headers: getAuthHeaders({ authId, includeContentType: false }),
-  })
-}
-
 // Previsualiza elegibilidad y efectos de la desactivación masiva. Una campaña
 // no elegible también responde 200 (ver contrato). Solo ADMIN.
 export async function previewDesactivacionCampaniaApi(
@@ -144,32 +133,6 @@ export async function desactivarCampaniaMasivaApi(
     headers: getAuthHeaders({ authId, includeContentType: true }),
     body: JSON.stringify(input),
   })
-}
-
-export async function postCampaniaOrganizacionesApi(
-  campaniaId: number,
-  input: SetCampaniaOrganizacionesInput,
-  authId?: string,
-): Promise<Response> {
-  return fetch(`${API_BASE_URL}/campanias/${campaniaId}/organizaciones`, {
-    method: 'POST',
-    headers: getAuthHeaders({ authId, includeContentType: true }),
-    body: JSON.stringify(input),
-  })
-}
-
-export async function deleteCampaniaOrganizacionApi(
-  campaniaId: number,
-  organizacionId: number,
-  authId?: string,
-): Promise<Response> {
-  return fetch(
-    `${API_BASE_URL}/campanias/${campaniaId}/organizaciones/${organizacionId}`,
-    {
-      method: 'DELETE',
-      headers: getAuthHeaders({ authId, includeContentType: false }),
-    },
-  )
 }
 
 export async function createCampaniaApi(

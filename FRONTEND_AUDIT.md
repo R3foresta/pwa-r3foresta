@@ -126,7 +126,7 @@ Auditoría base: `2026-07-21`. Cierre de correcciones prioritarias: `2026-09-29`
 | Formularios | `MEJORABLE` | Eventos de Vivero con confirmación previa y guarda de doble envío; idempotencia durable pendiente del backend. |
 | UI/UX dominio | `BIEN` | Embolsado unificado, precisión canónica y corrección de rechazados atendidos en frontend. |
 | TypeScript | `BIEN` | TypeScript estricto; no se encontraron usos de `any` en la revisión. |
-| Testing/build | `MEJORABLE` | Al 2026-10-09 pasan build/PWA, lint completo y 149 pruebas. Recorridos en navegador con API sintética; falta QA integrado con backend real (`AUD-015`). |
+| Testing/build | `MEJORABLE` | Al 2026-10-09 pasan build/PWA, lint completo y 191 pruebas. Recorridos en navegador con API sintética; falta QA integrado con backend real (`AUD-015`). |
 | Seguridad | `RIESGO` | Sesión frontend verificada por Bearer; autorización por headers en backend y migración de React Router pendientes (`AUD-013`, `AUD-014`). |
 
 Estados sugeridos para esta tabla:
@@ -149,7 +149,7 @@ Estados sugeridos para esta tabla:
 
 #### Problema
 
-`npm run lint` ejecuta `eslint .` y hoy falla por errores existentes fuera del cambio de Vivero, incluyendo archivos duplicados dentro de `.claude/worktrees` y reglas en módulos legacy.
+En la detección original, `npm run lint` ejecutaba `eslint .` y fallaba por errores fuera del cambio de Vivero, incluyendo archivos duplicados dentro de `.claude/worktrees` y reglas en módulos legacy.
 
 #### Riesgo
 
@@ -814,6 +814,20 @@ El 2026-10-09 se verificaron recorridos de uso en navegador con las pantallas/AP
 En la prueba de uso con respuesta 422 y plan vigente COMPLETADA, el editor conservó la propuesta y bloqueó edición/guardado correctamente. El encabezado exterior seguía mostrando ACTIVA, procedente de su última lectura, hasta recargar. Puede confundir al cancelar la edición y volver a las acciones del detalle; no se observó guardado autorizado tras el rechazo.
 
 Sugerencia: reconciliar o recargar el detalle cuando el editor confirma un cambio de estado/permiso, sin eliminar la propuesta ni repetir el PUT. Verificar cierre concurrente, error de la recarga y conservación de valores con una prueba de detalle más el backend integrado.
+
+### AUD-017 — Consulta del plan sin feedback y código de Plantación sin consumidores
+
+- Estado: `RESUELTO`
+- Severidad: `BAJA`
+- Módulo: `plantacion`
+- Tipo: `ui`, `mantenibilidad`
+- Detectado y corregido: `2026-10-09`.
+
+«Consultar plan vigente» hacía una lectura real, pero aparecía siempre y no informaba cuando el plan no había cambiado. Ahora «Actualizar plan para continuar» aparece ante conflicto o lectura actual fallida tras un rechazo; comunica carga, error o éxito, conserva la propuesta y exige revisar nuevamente. Los rechazos de autorización bloquean la recuperación.
+
+La búsqueda de consumidores permitió retirar `SelectorCampania`, el barrel del módulo, el helper de borrador sin uso y las cadenas API/service/tipos de borrado directo de campaña y asociación/desasociación de organizaciones sin pantallas consumidoras. La desactivación atómica, creación con organizaciones y compatibilidad de borradores siguen conectadas. Esta limpieza cubre los archivos de Plantación revisados, no una auditoría completa del repositorio.
+
+Verificación: 191 pruebas en 19 suites, lint completo, build/TypeScript/PWA y `git diff --check`. Se añadieron siete casos de recuperación; los tests de cierre, plantación y API siguen pasando. Las respuestas de estos tests son simuladas; `AUD-015` y `AUD-016` permanecen pendientes.
 
 ## 14. Riesgos conocidos
 

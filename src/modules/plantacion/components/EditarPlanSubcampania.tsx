@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import ConfirmDialog from '../../../components/ConfirmDialog'
 import { getPlantacionErrorStatus, PlantacionService } from '../../../services/plantacion.service'
 import type { GetPlanData, RevisarPlanData, Subcampania } from '../types/contracts'
-import EditarPlanSubcampaniaModal, { type PlanRevisionProposal } from './EditarPlanSubcampaniaModal'
+import type { PlanFormProposal } from '../utils/planMetaEspeciesForm'
+import EditarPlanSubcampaniaModal from './EditarPlanSubcampaniaModal'
 
 type Props = {
   subcampania: Subcampania
@@ -20,7 +21,8 @@ export default function EditarPlanSubcampania({ subcampania, authId, isAdmin, on
   const [attempt, setAttempt] = useState(0)
   const [submitting, setSubmitting] = useState(false)
   const [reloading, setReloading] = useState(false)
-  const [conflict, setConflict] = useState(false)
+  const [refreshReason, setRefreshReason] = useState<'conflict' | 'read_failed' | null>(null)
+  const [refreshMessage, setRefreshMessage] = useState<string | null>(null)
   const [permissionDenied, setPermissionDenied] = useState(false)
   const inFlight = useRef(false)
   const reloadRequest = useRef(0)
@@ -45,7 +47,8 @@ export default function EditarPlanSubcampania({ subcampania, authId, isAdmin, on
         setError(null)
         setSubmitting(false)
         setReloading(false)
-        setConflict(false)
+        setRefreshReason(null)
+        setRefreshMessage(null)
         setPermissionDenied(false)
       })
       .catch((reason: unknown) => {
@@ -57,18 +60,23 @@ export default function EditarPlanSubcampania({ subcampania, authId, isAdmin, on
   }, [subcampania.id, authId, key, attempt])
 
   const reloadPlan = async () => {
-    if (inFlight.current || reloading) return
+    if (!allowed || permissionDenied || inFlight.current || reloading) return
     const request = ++reloadRequest.current
     setReloading(true)
+    setRefreshMessage(null)
     try {
       const data = await PlantacionService.getSubcampaniaPlan(subcampania.id, authId)
       if (!active.current || request !== reloadRequest.current) return
-      setLoaded({ key, plan: data })
-      setConflict(false)
+      setLoaded({ key, plan: { ...data } })
+      setRefreshReason(null)
       setError(null)
+      setRefreshMessage('Plan actual actualizado. Tu propuesta se conservó.')
     } catch (reason) {
       if (active.current && request === reloadRequest.current) {
-        setError(reason instanceof Error ? reason.message : 'No se pudo consultar el plan vigente.')
+        const status = getPlantacionErrorStatus(reason)
+        setPermissionDenied(status === 401 || status === 403)
+        setRefreshReason('read_failed')
+        setError(reason instanceof Error ? reason.message : 'No se pudo actualizar el plan actual.')
       }
     } finally {
       if (active.current && request === reloadRequest.current) setReloading(false)
@@ -79,18 +87,21 @@ export default function EditarPlanSubcampania({ subcampania, authId, isAdmin, on
     ? 'Solo ADMIN global puede revisar planes en BORRADOR o ACTIVA.'
     : permissionDenied
       ? 'El servidor rechazó el permiso de edición. Vuelve a verificar tu sesión.'
-      : conflict
-        ? 'El plan cambió. Consulta el plan vigente y revisa otra vez tu propuesta antes de guardar.'
-        : plan && (!Number.isSafeInteger(plan.plan_revision) || Number(plan.plan_revision) < 0)
-          ? 'El servidor todavía no ofrece la revisión atómica del plan.'
-          : null
+      : refreshReason === 'conflict'
+        ? 'El plan cambió. Actualiza el plan actual y revisa otra vez tu propuesta antes de guardar.'
+        : refreshReason === 'read_failed'
+          ? `${error || 'No se pudo actualizar el plan actual.'} Actualiza el plan para continuar.`
+          : plan && (!Number.isSafeInteger(plan.plan_revision) || Number(plan.plan_revision) < 0)
+            ? 'El servidor todavía no ofrece la revisión atómica del plan.'
+            : null
 
-  const confirm = async (proposal: PlanRevisionProposal) => {
+  const confirm = async (proposal: PlanFormProposal) => {
     if (!plan || blockedReason || inFlight.current || reloading) return
     const request = reloadRequest.current
     inFlight.current = true
     setSubmitting(true)
     setError(null)
+    setRefreshMessage(null)
     let saved: RevisarPlanData
     try {
       saved = await PlantacionService.revisarSubcampaniaPlan(subcampania.id, {
@@ -100,7 +111,7 @@ export default function EditarPlanSubcampania({ subcampania, authId, isAdmin, on
     } catch (reason) {
       if (active.current && request === reloadRequest.current) {
         const status = getPlantacionErrorStatus(reason)
-        setConflict(status === 409)
+        setRefreshReason(status === 409 ? 'conflict' : null)
         setPermissionDenied(status === 401 || status === 403)
         setError(reason instanceof Error ? reason.message : 'No se pudo guardar la revisión del plan.')
         // Los rechazos de estado/protecciones no eliminan la propuesta. La
@@ -108,8 +119,15 @@ export default function EditarPlanSubcampania({ subcampania, authId, isAdmin, on
         if (status === 422) {
           try {
             const currentPlan = await PlantacionService.getSubcampaniaPlan(subcampania.id, authId)
-            if (active.current && request === reloadRequest.current) setLoaded({ key, plan: currentPlan })
-          } catch { /* Se conserva el rechazo original; el usuario puede consultar nuevamente. */ }
+            if (active.current && request === reloadRequest.current) setLoaded({ key, plan: { ...currentPlan } })
+          } catch (readError) {
+            // Sin lectura actual no se habilita un nuevo envío con la versión anterior.
+            if (active.current && request === reloadRequest.current) {
+              const readStatus = getPlantacionErrorStatus(readError)
+              setPermissionDenied(readStatus === 401 || readStatus === 403)
+              setRefreshReason('read_failed')
+            }
+          }
         }
       }
       if (active.current && request === reloadRequest.current) {
@@ -145,6 +163,7 @@ export default function EditarPlanSubcampania({ subcampania, authId, isAdmin, on
 
   return <EditarPlanSubcampaniaModal plan={plan} subcampaniaNombre={subcampania.nombre} isAdmin={isAdmin}
     submitting={submitting} error={error} blockedReason={blockedReason} reloadingPlan={reloading}
-    onReloadPlan={() => { void reloadPlan() }} onClose={() => { if (!inFlight.current) onClose() }}
+    refreshMessage={refreshMessage}
+    onReloadPlan={allowed && !permissionDenied && refreshReason !== null ? () => { void reloadPlan() } : undefined} onClose={() => { if (!inFlight.current) onClose() }}
     onConfirm={(proposal) => { void confirm(proposal) }} />
 }

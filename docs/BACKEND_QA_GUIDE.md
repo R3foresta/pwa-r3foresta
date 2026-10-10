@@ -165,14 +165,11 @@ Los payloads y respuestas están tipados en [`contracts.ts`](../src/modules/plan
 | `GET /api/campanias/resumen` | `getCampaniasResumen` | Resumen global; espera `CampaniaResumen`. | `CONFIRMADO EN FRONTEND` |
 | `GET /api/campanias/:id` | `getCampania` | Detalle; espera `Campania`. | `CONFIRMADO EN FRONTEND` |
 | `PATCH /api/campanias/:id` | `updateCampania` | JSON `UpdateCampaniaInput`; espera campaña actualizada. | `CONFIRMADO EN FRONTEND` |
-| `DELETE /api/campanias/:id` | `deleteCampania` | Baja; espera ID/mensaje en `DeleteCampaniaData`. | `CONFIRMADO EN FRONTEND` |
 | `GET /api/campanias/:id/subcampanias?estados=BORRADOR,ACTIVA,COMPLETADA` | `listSubcampaniasByCampania` | Espera `Subcampania[]`. | `CONFIRMADO EN FRONTEND` |
 | `GET /api/campanias/:id/metrics` | `getCampaniaMetrics` | Espera `CampaniaMetrics`. | `CONFIRMADO EN FRONTEND` |
 | `GET /api/campanias/:id/activity?limit=` | `getCampaniaActivity` | `limit` se restringe a 1–50; espera `Envelope<CampaniaActivityItem[]>`. | `CONFIRMADO EN FRONTEND` |
 | `GET /api/campanias/:id/desactivacion/preview` | `previewDesactivacionCampania` | Espera `PreviewDesactivacionCampania`; un caso no elegible puede responder `200` con bloqueos. | `CONFIRMADO EN FRONTEND` |
 | `POST /api/campanias/:id/desactivar` | `desactivarCampaniaMasiva` | JSON `{ motivo }`; espera `ResultadoDesactivacionCampania` de operación atómica. | `CONFIRMADO EN FRONTEND` |
-| `POST /api/campanias/:id/organizaciones` | `addCampaniaOrganizaciones` | JSON `{ organizacion_ids }`; exige respuesta JSON exitosa, sin shape de `data` confirmada. | `CONFIRMADO EN FRONTEND`; respuesta `POR CONFIRMAR` |
-| `DELETE /api/campanias/:id/organizaciones/:organizacionId` | `removeCampaniaOrganizacion` | Sin body; exige respuesta JSON exitosa, sin shape de `data` confirmada. | `CONFIRMADO EN FRONTEND`; respuesta `POR CONFIRMAR` |
 | `GET /api/subcampanias?estado=` | `listSubcampanias/listSubcampaniasOperativas` | `estado` opcional; espera `Subcampania[]`. | `CONFIRMADO EN FRONTEND` |
 | `POST /api/subcampanias` | `createSubcampania` | JSON `CreateSubcampaniaInput`; espera `Subcampania`. | `CONFIRMADO EN FRONTEND` |
 | `GET /api/subcampanias/:id` | `getSubcampania` | Espera `Subcampania`. | `CONFIRMADO EN FRONTEND` |
@@ -184,7 +181,7 @@ Los payloads y respuestas están tipados en [`contracts.ts`](../src/modules/plan
 | `POST /api/subcampanias/:id/activar` | `activarSubcampania` | Sin body; espera `ActivarSubcampaniaData`, snapshots y composición asignada. | `CONFIRMADO EN FRONTEND` |
 | `POST /api/subcampanias/:id/cancelar` | `cancelarSubcampania` | JSON `{ motivo }`; espera `CancelarSubcampaniaData`. | `CONFIRMADO EN FRONTEND` |
 | `GET /api/subcampanias/:id/plan` | `getSubcampaniaPlan` | Espera `GetPlanData`. | `CONFIRMADO EN FRONTEND` |
-| `PUT /api/subcampanias/:id/plan` | `putSubcampaniaPlan` | JSON `{ metas }`; espera `PutPlanData`. | `CONFIRMADO EN FRONTEND` |
+| `PUT /api/subcampanias/:id/plan` | `revisarSubcampaniaPlan`; `putSubcampaniaPlan` solo para compatibilidad BORRADOR | Revisión atómica JSON `{ meta_total_arboles, revision_esperada, metas }`; espera `RevisarPlanData` con versión confirmada. El asistente conserva `{ metas }` / `PutPlanData` únicamente para BORRADOR cuando el backend no entrega `plan_revision`. | `CONFIRMADO EN FRONTEND`; integración real pendiente (`AUD-015`) |
 | `GET /api/subcampanias/:id/plantacion/context` | `getPlantacionContext` | Espera `PlantacionContext`: permisos, reglas, plan y stock asignado. | `CONFIRMADO EN FRONTEND` |
 | `POST /api/registros-plantacion/evidencias-pendientes` | `uploadEvidenciasPendientesPlantacion` | Multipart de fotos/metadatos; normaliza a `{ evidencia_ids }`. | `CONFIRMADO EN FRONTEND` |
 | `DELETE /api/registros-plantacion/evidencias-pendientes` | `descartarEvidenciasPendientesPlantacion` | JSON `{ evidencia_ids }`; espera IDs descartados/ignorados. | `CONFIRMADO EN FRONTEND` |
@@ -270,10 +267,11 @@ npm install
 cp .env.example .env.local
 npm run dev
 npm run lint
+npm run test
 npm run build
 ```
 
-No existen scripts `test`, `typecheck` independiente ni E2E en `package.json`; `npm run build` ejecuta `tsc -b`.
+`npm run test` ejecuta Vitest y Testing Library con servicios simulados; no reemplaza QA contra backend real. No existen scripts `typecheck` independiente ni E2E en `package.json`; `npm run build` ejecuta `tsc -b`.
 
 Consultas de solo lectura respaldadas por el código (usar valores locales; nunca pegar secretos en documentos o logs):
 

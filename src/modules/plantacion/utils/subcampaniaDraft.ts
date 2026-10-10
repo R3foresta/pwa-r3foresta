@@ -301,20 +301,3 @@ export function saveSubcampaniaBaseDraft(draft: SubcampaniaBaseDraft): void {
     sortDrafts(nextDrafts),
   )
 }
-
-export function clearSubcampaniaBaseDraft(campaniaId: number, draftId: string): void {
-  const currentDrafts = loadSubcampaniaBaseDrafts(campaniaId)
-  const remainingDrafts = currentDrafts.filter((draft) => draft.draft_id !== draftId)
-
-  if (remainingDrafts.length === currentDrafts.length) return
-
-  if (remainingDrafts.length === 0) {
-    clearDraft(getSubcampaniaBaseDraftsKey(campaniaId))
-    return
-  }
-
-  saveDraft<SubcampaniaBaseDraft[]>(
-    getSubcampaniaBaseDraftsKey(campaniaId),
-    sortDrafts(remainingDrafts),
-  )
-}

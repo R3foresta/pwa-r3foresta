@@ -167,7 +167,7 @@ describe('Editor de revisión de metas y especies', () => {
     await user.click(screen.getByRole('button', { name: 'Revisar cambios' }))
     rerender(<EditarPlanSubcampaniaModal {...initial} blockedReason="El plan cambió. Consulta su revisión vigente." onReloadPlan={reload} />)
     expect(screen.getByRole('button', { name: 'Confirmar y guardar plan' }).hasAttribute('disabled')).toBe(true)
-    await user.click(screen.getByRole('button', { name: 'Consultar plan vigente' }))
+    await user.click(screen.getByRole('button', { name: 'Actualizar plan para continuar' }))
     expect(reload).toHaveBeenCalledOnce()
     const refreshed: GetPlanData = { ...plan, meta_total_arboles: 50, metas: [{ ...plan.metas[0], cantidad_objetivo: 50 }] }
     rerender(<EditarPlanSubcampaniaModal {...initial} plan={refreshed} />)

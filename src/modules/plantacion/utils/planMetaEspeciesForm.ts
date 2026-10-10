@@ -20,7 +20,7 @@ export type PlanFormErrors = {
   especies: Array<{ cantidad?: string; porcentaje?: string }>
 }
 export type PlanFormProposal = { meta_total_arboles: number; metas: PlanEspecieMetaInput[] }
-export const PERCENT_TOLERANCE = 0.000001
+const PERCENT_TOLERANCE = 0.000001
 
 export function getPlanEspecieNombre(item: PlanEspecieForm): string {
   return item.nombre_comun_principal || item.especie || `Especie #${item.planta_id}`

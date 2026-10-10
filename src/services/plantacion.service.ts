@@ -5,8 +5,6 @@ import {
   createCampaniaApi,
   createRegistroPlantacionApi,
   createSubcampaniaApi,
-  deleteCampaniaApi,
-  deleteCampaniaOrganizacionApi,
   deleteEvidenciasPendientesPlantacionApi,
   deleteSubcampaniaEquipoMemberApi,
   desactivarCampaniaMasivaApi,
@@ -23,7 +21,6 @@ import {
   listSubcampaniasByCampaniaApi,
   patchCampaniaApi,
   patchSubcampaniaApi,
-  postCampaniaOrganizacionesApi,
   postSubcampaniaEquipoApi,
   previewDesactivacionCampaniaApi,
   putSubcampaniaPlanApi,
@@ -51,7 +48,6 @@ import type {
   Campania,
   CreateCampaniaInput,
   CreateSubcampaniaInput,
-  DeleteCampaniaData,
   PreviewDesactivacionCampania,
   ResultadoDesactivacionCampania,
   EquipoMember,
@@ -346,21 +342,6 @@ export class PlantacionService {
     return payload.data
   }
 
-  static async deleteCampania(
-    campaniaId: number,
-    authId?: string,
-  ): Promise<DeleteCampaniaData> {
-    if (!Number.isFinite(campaniaId) || campaniaId <= 0) {
-      throw new Error('ID de campaña inválido.')
-    }
-    const response = await deleteCampaniaApi(campaniaId, authId)
-    const payload = await parseJsonResponse<ApiEnvelope<DeleteCampaniaData>>(
-      response,
-      'Error al desactivar la campaña.',
-    )
-    return payload.data ?? { id: campaniaId }
-  }
-
   /**
    * Preview autoritativo de la desactivación masiva
    * (`GET /campanias/:id/desactivacion/preview`). Una campaña no elegible
@@ -423,53 +404,6 @@ export class PlantacionService {
       throw new Error('No se recibió confirmación de la desactivación.')
     }
     return resultado
-  }
-
-  static async addCampaniaOrganizaciones(
-    campaniaId: number,
-    organizacionIds: number[],
-    authId?: string,
-  ): Promise<void> {
-    if (!Number.isFinite(campaniaId) || campaniaId <= 0) {
-      throw new Error('ID de campaña inválido.')
-    }
-    const cleanIds = (organizacionIds || []).filter(
-      (id) => Number.isFinite(id) && id > 0,
-    )
-    if (cleanIds.length === 0) {
-      throw new Error('Selecciona al menos una organización.')
-    }
-    const response = await postCampaniaOrganizacionesApi(
-      campaniaId,
-      { organizacion_ids: cleanIds },
-      authId,
-    )
-    await parseJsonResponse<ApiEnvelope<unknown>>(
-      response,
-      'Error al asociar organizaciones a la campaña.',
-    )
-  }
-
-  static async removeCampaniaOrganizacion(
-    campaniaId: number,
-    organizacionId: number,
-    authId?: string,
-  ): Promise<void> {
-    if (!Number.isFinite(campaniaId) || campaniaId <= 0) {
-      throw new Error('ID de campaña inválido.')
-    }
-    if (!Number.isFinite(organizacionId) || organizacionId <= 0) {
-      throw new Error('ID de organización inválido.')
-    }
-    const response = await deleteCampaniaOrganizacionApi(
-      campaniaId,
-      organizacionId,
-      authId,
-    )
-    await parseJsonResponse<ApiEnvelope<unknown>>(
-      response,
-      'Error al quitar la organización de la campaña.',
-    )
   }
 
   static async createCampania(

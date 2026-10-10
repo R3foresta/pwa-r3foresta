@@ -12,7 +12,7 @@ import {
   type PlanMetaEspeciesValue,
 } from '../utils/planMetaEspeciesForm'
 
-export type PlanMetaEspeciesFormProps = {
+type PlanMetaEspeciesFormProps = {
   value: PlanMetaEspeciesValue
   errors?: PlanFormErrors
   disabled?: boolean
