@@ -11,7 +11,9 @@ vi.mock('../../../services/plantacion.service', () => ({ PlantacionService: {
   getSubcampaniaEquipo: vi.fn(), removeSubcampaniaEquipoMember: vi.fn(), setSubcampaniaEquipo: vi.fn(),
   putSubcampaniaPlan: vi.fn(), revisarSubcampaniaPlan: vi.fn(),
 } }))
-vi.mock('./CatalogoEspeciesPicker', () => ({ default: () => null }))
+vi.mock('./CatalogoEspeciesPicker', () => ({ default: ({ open, onConfirm }: {
+  open: boolean; onConfirm: (items: Array<{ planta_id: number; especie: string; nombre_cientifico: string; saldo_disponible: number }>) => void
+}) => open ? <button onClick={() => onConfirm([{ planta_id: 2, especie: 'Tara', nombre_cientifico: '', saldo_disponible: 0 }])}>Elegir Tara del catálogo</button> : null }))
 
 const campania: Campania = { id: 20, nombre: 'Campaña Palca', tipo: 'REFORESTACION',
   codigo_trazabilidad: 'C20', created_at: '2026-10-01', updated_at: '2026-10-01' }
@@ -182,6 +184,97 @@ describe('Plan coherente del asistente de subcampaña', () => {
     expect(screen.getByRole('button', { name: 'Guardando…' }).hasAttribute('disabled')).toBe(true)
     resolve({ ...plan, plan_revision: 4 })
     await waitFor(() => expect(onNext).toHaveBeenCalledOnce())
+  })
+
+  it('muestra el mismo redondeo por especie que envía al guardar', async () => {
+    const user = userEvent.setup()
+    saveSubcampaniaBaseDraft({ ...draft, meta_total_arboles: 10, especies: [
+      { ...draft.especies![0], pct: 33 },
+      { planta_id: 2, especie: 'Tara', nombre_cientifico: '', saldo_disponible: 0, pct: 33 },
+      { planta_id: 3, especie: 'Queñua', nombre_cientifico: '', saldo_disponible: 0, pct: 34 },
+    ] })
+    const { onNext } = renderStep()
+    await waitFor(() => expect(PlantacionService.getSubcampaniaPlan).toHaveBeenCalledOnce())
+    expect(screen.getAllByText(/Equivale a/).map(item => item.textContent)).toEqual([
+      'Equivale a 3 árboles', 'Equivale a 3 árboles', 'Equivale a 4 árboles',
+    ])
+    await user.click(screen.getByRole('button', { name: 'Siguiente' }))
+    await waitFor(() => expect(onNext).toHaveBeenCalledOnce())
+    expect(PlantacionService.revisarSubcampaniaPlan).toHaveBeenCalledWith(54, {
+      meta_total_arboles: 10, revision_esperada: 3, metas: [
+        { planta_id: 1, cantidad_objetivo: 3, porcentaje_objetivo: 33 },
+        { planta_id: 2, cantidad_objetivo: 3, porcentaje_objetivo: 33 },
+        { planta_id: 3, cantidad_objetivo: 4, porcentaje_objetivo: 34 },
+      ],
+    }, 'auth-1')
+  })
+
+  it('reutiliza el reparto del catálogo y permite planificar una especie sin stock', async () => {
+    const user = userEvent.setup()
+    const { onNext } = renderStep()
+    await waitFor(() => expect(PlantacionService.getSubcampaniaPlan).toHaveBeenCalledOnce())
+    fireEvent.change(screen.getByLabelText('Meta total de árboles'), { target: { value: '60' } })
+    fireEvent.change(screen.getByLabelText('Porcentaje propuesto de Molle'), { target: { value: '50' } })
+    await user.click(screen.getByRole('button', { name: 'Agregar especie del catálogo' }))
+    await user.click(screen.getByRole('button', { name: 'Elegir Tara del catálogo' }))
+    expect((screen.getByLabelText('Porcentaje propuesto de Tara') as HTMLInputElement).value).toBe('50')
+    expect(screen.getAllByText(/Equivale a/).map(item => item.textContent)).toEqual(['Equivale a 30 árboles', 'Equivale a 30 árboles'])
+    expect(screen.getByText('No hay stock en vivero todavía. Puedes definir la planificación.')).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Siguiente' }))
+    await waitFor(() => expect(onNext).toHaveBeenCalledOnce())
+    expect(PlantacionService.revisarSubcampaniaPlan).toHaveBeenCalledWith(54, {
+      meta_total_arboles: 60, revision_esperada: 3, metas: [
+        { planta_id: 1, cantidad_objetivo: 30, porcentaje_objetivo: 50 },
+        { planta_id: 2, cantidad_objetivo: 30, porcentaje_objetivo: 50 },
+      ],
+    }, 'auth-1')
+  })
+
+  it('conserva porcentajes decimales al guardar y reabrir el borrador', async () => {
+    const user = userEvent.setup()
+    saveSubcampaniaBaseDraft({ ...draft, meta_total_arboles: 60, especies: [
+      { ...draft.especies![0], pct: 50 },
+      { planta_id: 2, especie: 'Tara', nombre_cientifico: '', saldo_disponible: 0, pct: 50 },
+    ] })
+    const { onDraftSaved, unmount } = renderStep()
+    await waitFor(() => expect(PlantacionService.getSubcampaniaPlan).toHaveBeenCalledOnce())
+    fireEvent.change(screen.getByLabelText('Porcentaje propuesto de Molle'), { target: { value: '33.33' } })
+    fireEvent.change(screen.getByLabelText('Porcentaje propuesto de Tara'), { target: { value: '66.67' } })
+    await user.click(screen.getByRole('button', { name: 'Guardar borrador' }))
+    await waitFor(() => expect(onDraftSaved).toHaveBeenCalledOnce())
+    expect(loadSubcampaniaBaseDraft(20, 'draft-54')?.especies?.map(item => item.pct)).toEqual([33.33, 66.67])
+    unmount()
+    vi.mocked(PlantacionService.getSubcampaniaPlan).mockResolvedValue({ ...plan, plan_revision: 4 })
+    renderStep()
+    await waitFor(() => expect(PlantacionService.getSubcampaniaPlan).toHaveBeenCalledTimes(3))
+    expect((screen.getByLabelText('Porcentaje propuesto de Molle') as HTMLInputElement).value).toBe('33.33')
+    expect((screen.getByLabelText('Porcentaje propuesto de Tara') as HTMLInputElement).value).toBe('66.67')
+    expect(screen.getByRole('button', { name: 'Siguiente' }).hasAttribute('disabled')).toBe(false)
+  })
+
+  it('explica los formatos inválidos y conserva el texto sin guardar ni transformarlo', async () => {
+    renderStep()
+    await waitFor(() => expect(PlantacionService.getSubcampaniaPlan).toHaveBeenCalledOnce())
+    fireEvent.change(screen.getByLabelText('Meta total de árboles'), { target: { value: '1.5' } })
+    expect((screen.getByLabelText('Meta total de árboles') as HTMLInputElement).value).toBe('1.5')
+    expect(screen.getByText('La meta debe ser un número entero positivo.')).toBeTruthy()
+    fireEvent.change(screen.getByLabelText('Meta total de árboles'), { target: { value: '60' } })
+    fireEvent.change(screen.getByLabelText('Porcentaje propuesto de Molle'), { target: { value: '33.333' } })
+    expect((screen.getByLabelText('Porcentaje propuesto de Molle') as HTMLInputElement).value).toBe('33.333')
+    expect(screen.getByText(/con máximo 2 decimales/)).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Guardar borrador' }).hasAttribute('disabled')).toBe(true)
+    expect(screen.getByRole('button', { name: 'Siguiente' }).hasAttribute('disabled')).toBe(true)
+    expect(PlantacionService.revisarSubcampaniaPlan).not.toHaveBeenCalled()
+    expect(loadSubcampaniaBaseDraft(20, 'draft-54')?.especies?.[0].pct).toBe(100)
+  })
+
+  it('precarga un plan remoto sin inventar una referencia de stock de vivero', async () => {
+    saveSubcampaniaBaseDraft({ ...draft, meta_total_arboles: undefined, especies: undefined })
+    renderStep()
+    await waitFor(() => expect((screen.getByLabelText('Meta total de árboles') as HTMLInputElement).value).toBe('40'))
+    expect(screen.getByText('Molle')).toBeTruthy()
+    expect(screen.queryByText(/Vivero:/)).toBeNull()
+    expect(screen.queryByText(/No hay stock en vivero/)).toBeNull()
   })
 
   it('conserva la compatibilidad con planes BORRADOR de un backend sin revisión', async () => {

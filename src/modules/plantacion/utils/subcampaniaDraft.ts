@@ -15,7 +15,7 @@ export type SubcampaniaEspecieDraft = {
   especie: string
   nombre_cientifico: string
   nombre_comun_principal?: string | null
-  saldo_disponible: number
+  saldo_disponible?: number
   pct: number
 }
 
@@ -151,8 +151,8 @@ function normalizeEspeciesDraft(value: unknown): SubcampaniaEspecieDraft[] | und
           typeof raw.nombre_cientifico === 'string' ? raw.nombre_cientifico : '',
         nombre_comun_principal:
           typeof raw.nombre_comun_principal === 'string' ? raw.nombre_comun_principal : null,
-        saldo_disponible: Number.isFinite(saldo) ? saldo : 0,
-        pct: Math.max(0, Math.min(100, Math.round(pct))),
+        saldo_disponible: raw.saldo_disponible != null && Number.isFinite(saldo) ? saldo : undefined,
+        pct: Math.max(0, Math.min(100, Math.round(pct * 100) / 100)),
       },
     ]
   })

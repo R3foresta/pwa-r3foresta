@@ -62,7 +62,7 @@ describe('Editor de revisión de metas y especies', () => {
     const initial = props()
     const { rerender } = render(<EditarPlanSubcampaniaModal {...initial} />)
     change('Meta total propuesta', '60')
-    change('Cantidad propuesta de Molle', '60')
+    expect((screen.getByLabelText(/Cantidad propuesta de Molle/) as HTMLInputElement).value).toBe('60')
     await user.click(screen.getByRole('button', { name: 'Revisar cambios' }))
     expect(screen.getByText('Meta actual')).toBeTruthy()
     expect(screen.getByText('Meta propuesta')).toBeTruthy()
@@ -129,7 +129,7 @@ describe('Editor de revisión de metas y especies', () => {
     const initial = props()
     const { rerender } = render(<EditarPlanSubcampaniaModal {...initial} />)
     change('Meta total propuesta', '60')
-    change('Cantidad propuesta de Molle', '60')
+    expect((screen.getByLabelText(/Cantidad propuesta de Molle/) as HTMLInputElement).value).toBe('60')
     await user.click(screen.getByRole('button', { name: 'Revisar cambios' }))
     await user.click(screen.getByRole('button', { name: 'Confirmar y guardar plan' }))
     rerender(<EditarPlanSubcampaniaModal {...initial} error="No se pudo guardar la revisión." />)
@@ -163,7 +163,7 @@ describe('Editor de revisión de metas y especies', () => {
     const initial = props()
     const { rerender } = render(<EditarPlanSubcampaniaModal {...initial} />)
     change('Meta total propuesta', '60')
-    change('Cantidad propuesta de Molle', '60')
+    expect((screen.getByLabelText(/Cantidad propuesta de Molle/) as HTMLInputElement).value).toBe('60')
     await user.click(screen.getByRole('button', { name: 'Revisar cambios' }))
     rerender(<EditarPlanSubcampaniaModal {...initial} blockedReason="El plan cambió. Consulta su revisión vigente." onReloadPlan={reload} />)
     expect(screen.getByRole('button', { name: 'Confirmar y guardar plan' }).hasAttribute('disabled')).toBe(true)
@@ -180,7 +180,7 @@ describe('Editor de revisión de metas y especies', () => {
     expect(screen.getByRole('table').textContent).toContain('50 árboles')
   })
 
-  it('incorpora una especie sin stock desde el catálogo y calcula solo al solicitarlo', async () => {
+  it('incorpora una especie sin stock y calcula automáticamente al cambiar meta o porcentajes', async () => {
     const user = userEvent.setup()
     const initial = props()
     render(<EditarPlanSubcampaniaModal {...initial} />)
@@ -189,12 +189,10 @@ describe('Editor de revisión de metas y especies', () => {
     await user.click(await screen.findByRole('button', { name: /Tara.*0 disponibles/ }))
     expect(screen.queryByRole('button', { name: /Molle.*disponibles/ })).toBeNull()
     await user.click(screen.getByRole('button', { name: 'Aceptar (1)' }))
-    expect((screen.getByLabelText(/Cantidad propuesta de Tara/) as HTMLInputElement).value).toBe('')
+    expect((screen.getByLabelText(/Cantidad propuesta de Tara/) as HTMLInputElement).value).toBe('0')
     change('Meta total propuesta', '60')
     change('Porcentaje propuesto de Molle', '50')
     change('Porcentaje propuesto de Tara', '50')
-    expect((screen.getByLabelText(/Cantidad propuesta de Molle/) as HTMLInputElement).value).toBe('40')
-    await user.click(screen.getByRole('button', { name: 'Calcular cantidades desde porcentajes' }))
     expect((screen.getByLabelText(/Cantidad propuesta de Molle/) as HTMLInputElement).value).toBe('30')
     expect((screen.getByLabelText(/Cantidad propuesta de Tara/) as HTMLInputElement).value).toBe('30')
     await user.click(screen.getByRole('button', { name: 'Revisar cambios' }))
@@ -205,6 +203,40 @@ describe('Editor de revisión de metas y especies', () => {
       { planta_id: 2, cantidad_objetivo: 30, porcentaje_objetivo: 50 },
     ] })
     await waitFor(() => expect(LotesViveroService.listStockEspecies).toHaveBeenCalledOnce())
+  })
+
+  it('reutiliza incrementos rápidos y ajustes de porcentaje conservando cantidades manuales válidas', async () => {
+    const user = userEvent.setup()
+    const initial = props({ plan: { ...plan, metas: [
+      { ...plan.metas[0], cantidad_objetivo: 20, porcentaje_objetivo: 50 },
+      { planta_id: 2, cantidad_objetivo: 20, porcentaje_objetivo: 50, planta: { id: 2, especie: 'Tara' } },
+    ] } })
+    render(<EditarPlanSubcampaniaModal {...initial} />)
+    await user.click(screen.getByRole('button', { name: '+500' }))
+    expect((screen.getByLabelText(/Meta total propuesta/) as HTMLInputElement).value).toBe('540')
+    expect((screen.getByLabelText(/Cantidad propuesta de Molle/) as HTMLInputElement).value).toBe('270')
+    await user.click(screen.getByRole('button', { name: 'Restar 5% a Molle' }))
+    await user.click(screen.getByRole('button', { name: 'Sumar 5% a Tara' }))
+    expect((screen.getByLabelText(/Cantidad propuesta de Molle/) as HTMLInputElement).value).toBe('243')
+    expect((screen.getByLabelText(/Cantidad propuesta de Tara/) as HTMLInputElement).value).toBe('297')
+    change('Cantidad propuesta de Molle', '240')
+    change('Cantidad propuesta de Tara', '300')
+    await user.click(screen.getByRole('button', { name: 'Revisar cambios' }))
+    await user.click(screen.getByRole('button', { name: 'Confirmar y guardar plan' }))
+    expect(initial.onConfirm).toHaveBeenCalledWith({ meta_total_arboles: 540, metas: [
+      { planta_id: 1, cantidad_objetivo: 240, porcentaje_objetivo: 45 },
+      { planta_id: 2, cantidad_objetivo: 300, porcentaje_objetivo: 55 },
+    ] })
+  })
+
+  it('explica por qué no puede recalcular una entrada inválida sin perderla', async () => {
+    const user = userEvent.setup()
+    render(<EditarPlanSubcampaniaModal {...props()} />)
+    change('Porcentaje propuesto de Molle', '100.001')
+    await user.click(screen.getByRole('button', { name: 'Calcular cantidades desde porcentajes' }))
+    expect(screen.getByText(/con máximo 2 decimales/)).toBeTruthy()
+    expect((screen.getByLabelText(/Porcentaje propuesto de Molle/) as HTMLInputElement).value).toBe('100.001')
+    expect((screen.getByLabelText(/Cantidad propuesta de Molle/) as HTMLInputElement).value).toBe('40')
   })
 
   it('incluye en el resumen las especies que se propone retirar', async () => {
