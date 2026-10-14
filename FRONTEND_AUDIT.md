@@ -126,8 +126,8 @@ Auditoría base: `2026-07-21`. Cierre de correcciones prioritarias: `2026-09-29`
 | Formularios | `MEJORABLE` | Eventos de Vivero con confirmación previa y guarda de doble envío; idempotencia durable pendiente del backend. |
 | UI/UX dominio | `BIEN` | Embolsado unificado, precisión canónica y corrección de rechazados atendidos en frontend. |
 | TypeScript | `BIEN` | TypeScript estricto; no se encontraron usos de `any` en la revisión. |
-| Testing/build | `MEJORABLE` | Al 2026-10-09 pasan build/PWA, lint completo y 191 pruebas. Recorridos en navegador con API sintética; falta QA integrado con backend real (`AUD-015`). |
-| Seguridad | `RIESGO` | Sesión frontend verificada por Bearer; autorización por headers en backend y migración de React Router pendientes (`AUD-013`, `AUD-014`). |
+| Testing/build | `MEJORABLE` | Al 2026-10-14 pasan build/TypeScript/PWA, lint y 339 pruebas. UX de identidad/perfil en navegador con HTTP sintético; QA integrado de estos cambios y del plan pendiente (`AUD-015`). |
+| Seguridad | `RIESGO` | Sesión frontend verificada por Bearer; cierre JWT/privacidad del backend acreditado localmente y en desarrollo por el informe del 14 de octubre, publicación pendiente (`AUD-013`); migración de React Router pendiente (`AUD-014`). |
 
 Estados sugeridos para esta tabla:
 
@@ -480,6 +480,8 @@ Mantener esta tabla actualizada.
 | AUD-015 | `ALTA` | `PENDIENTE` | `plantacion` | `testing` | Revisión de plan y JWT verificados con fixtures; integración backend/migraciones 062 y 063 pendiente. | `docs/QA_EDITOR_PLAN_USO.md` |
 | AUD-016 | `MEDIA` | `PENDIENTE` | `plantacion` | `ui` | Estado del encabezado puede quedar antiguo tras cierre concurrente rechazado en el editor. | `DetalleSubcampanaScreen.tsx`, `EditarPlanSubcampania.tsx` |
 | AUD-018 | `MEDIA` | `PENDIENTE` | `plantacion` | `ui` | Otros pasos del asistente de creación carecen de guarda ADMIN en UI; el paso del plan ya restringe edición. | `src/modules/plantacion/screens/CrearSubcampanaScreen.tsx` |
+| AUD-019 | `MEDIA` | `RESUELTO` | `auth / user_profile / home` | `ui` | Perfil y afiliación v1 con UX recuperable; Inicio/navegación VOLUNTARIO evita operaciones internas rechazadas. | `src/modules/user_profile/`, `src/modules/home/`, `src/utils/appAccess.ts` |
+| AUD-020 | `ALTA` | `PENDIENTE` | `impacto / app` | `ui / api` | La PWA carece de cliente/pantallas/rutas para Impacto público; su mapa actual es interno. | `src/App.tsx`, `src/modules/map/MapScreen.tsx` |
 
 ---
 
@@ -775,6 +777,8 @@ Acceso e Inicio comunican conexión necesaria para enviar registros y fotos. Se 
 
 El controller de perfil prioriza `x-auth-id` antes de verificar JWT; la rama identificada como desarrollo no comprueba entorno. La corrección frontend usa Bearer, pero no impide solicitudes directas al servidor. Falta confirmar revocación y migrar coordinadamente otros consumidores de headers. Acción y aceptación: [tarea backend](docs/BACKEND_SECURITY_AND_IDEMPOTENCY_TASK.md). No se verificó el comportamiento del servidor desplegado.
 
+Actualización documental — 2026-10-14: el [informe del backend](../Backend-r3foresta/docs/pa-int02a-continuacion-2026-10-14.md) acredita verificación JWT/actividad, headers derivados del actor, perfil v1 y cierre de privilegios 066/067 en desarrollo. El código local de `InternalActorGuard` concuerda con la audiencia ADMIN/GENERAL/VALIDADOR, con excepciones explícitas para cuenta activa. El bloqueo histórico por headers no describe ese código adaptado; permanece pendiente comprobar su publicación coordinada y el entorno desplegado. Este chat de UX no repitió las pruebas DB ni verificó Render/Vercel; el estado histórico se conserva hasta cerrar esa coordinación.
+
 ### AUD-014 — Alertas de React Router pendientes de migración
 
 - Estado: `PENDIENTE`
@@ -844,6 +848,34 @@ Verificación: 191 pruebas en 19 suites, lint completo, build/TypeScript/PWA y `
 - Detectado: `2026-10-10`.
 
 El asistente admite acceso directo por URL sin una guarda ADMIN global en sus otros pasos. El paso de meta/especies ya limita edición a ADMIN y exige JWT, sin cambiar el contrato de las demás rutas. El backend conserva la autorización final; este hallazgo describe controles de UI que pueden ofrecer acciones rechazadas por el servidor. Revisar los permisos del asistente completo en una tarea propia y cubrir navegación directa de roles sin permiso.
+
+### AUD-019 — UI básica tras integrar identidad/perfil v1
+
+- Estado: `RESUELTO`
+- Severidad: `MEDIA`
+- Módulo: `auth / user_profile / home`
+- Tipo: `ui / formulario`
+- Fecha: `2026-10-14`
+- Ubicación: `CompleteProfileScreen.tsx`, `perfil.tsx`, `AfiliacionSelector.tsx`, `HomeScreen.tsx`, `BottomNav.tsx`.
+
+La integración mínima había perdido las primitivas visuales del formulario y ofrecía las operaciones internas a cuentas nuevas VOLUNTARIO, que el guard actual rechaza. Se organizaron perfil/formulario por bloques, afiliación opcional con opciones visibles, límites sin truncado, errores recuperables, selección por ID exacto, foto accesible y confirmación al salir. Inicio/navegación representan la audiencia actual, sin inventar permisos contextuales. La UI no sustituye autorización backend.
+
+Verificación y capturas: [QA de identidad/perfil](docs/QA_PERFIL_PARTICIPACION_UX.md). Lint, build/TypeScript/PWA, tests y navegador con HTTP sintético aprobados; persistencia real y passkey física no se repitieron para estos cambios de UX.
+
+Se retiraron también del Inicio interno las métricas/actividad de demostración, contadores y fechas de actualización ficticios. Las tarjetas conservan imágenes y navegación a los módulos; CO₂ se comunica como próximo, sin acción rápida de actualización. El inventario ADMIN continúa mostrando los datos recibidos del backend.
+
+### AUD-020 — Impacto público todavía sin consumidor en esta PWA
+
+- Estado: `PENDIENTE`
+- Severidad: `ALTA`
+- Módulo: `impacto / app`
+- Tipo: `ui / api`
+- Fecha: `2026-10-14`
+- Ubicación: `src/App.tsx`, `src/modules/map/MapScreen.tsx`.
+
+El contrato de Participación Aliada preserva Impacto sin cuenta/perfil/token. No existen en esta PWA rutas/pantallas/cliente de sus proyecciones públicas; el mapa actual consulta Recolección interna y queda dentro de `ProtectedRoute`. Retirar ese guard no implementa Impacto ni hace públicos esos datos.
+
+Acción: integrar el contrato público definitivo en una feature propia, con enlaces global/campaña/subcampaña/registro, fotos elegibles y estados recuperables fuera de guard de sesión. Verificar incógnito, VOLUNTARIO sin contexto y sesión vencida sin llamadas a perfil/stock/equipo internos. La mejora INT02-A no crea un acceso ficticio a Impacto ni habilita el piloto.
 
 ## 14. Riesgos conocidos
 

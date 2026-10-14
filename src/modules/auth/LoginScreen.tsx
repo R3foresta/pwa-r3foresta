@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useWebAuthn } from '../../hooks/useWebAuthn'
 import { useAuth } from '../../contexts/AuthContext'
 import Icon from '../../components/Icon'
@@ -27,17 +28,17 @@ function LoginScreen({ initialRegistering = false }: { initialRegistering?: bool
 
     if (emailError) setEmailError('')
 
-    if (!username.trim() || !email.trim()) {
+    if (!username.trim()) {
       return
     }
 
-    if (!email.includes('@')) {
-      setEmailError('Ejemplo: pepe@gmail.com')
+    if (email.trim() && !email.includes('@')) {
+      setEmailError('Ingresa un correo válido, por ejemplo nombre@correo.com.')
       return
     }
 
     try {
-      await registerWebAuthn(username, email)
+      await registerWebAuthn(username.normalize('NFC').trim(), email.trim())
     } catch {
       // El hook muestra el error de autenticación.
     }
@@ -55,7 +56,7 @@ function LoginScreen({ initialRegistering = false }: { initialRegistering?: bool
   }
 
   return (
-    <div className="flex min-h-[82vh] flex-col">
+    <div className="flex flex-col">
       <div className="relative overflow-hidden rounded-[28px] bg-white text-brand-800 shadow-2xl backdrop-blur">
         <div className="relative h-48">
           <img
@@ -68,14 +69,14 @@ function LoginScreen({ initialRegistering = false }: { initialRegistering?: bool
           <div className="relative flex h-full flex-col justify-between p-5 text-white">
             <div className="flex items-center justify-between text-xs font-semibold">
               <span className="rounded-full bg-white/25 px-3 py-1 text-white backdrop-blur">
-                Passkeys
+                Sin contraseñas
               </span>
-              <span className="rounded-full bg-white/20 px-3 py-1 text-white">Biometría</span>
+              <span className="rounded-full bg-white/20 px-3 py-1 text-white">Acceso seguro</span>
             </div>
             <div>
               <p className="text-[11px] uppercase tracking-[0.22em] text-white/90">Ingreso</p>
               <h2 className="text-2xl font-semibold leading-tight text-white">Acceso sin contraseñas</h2>
-              <p className="mt-1 text-sm text-white">Face ID, huella o Windows Hello.</p>
+              <p className="mt-1 text-sm leading-5 text-white">Usa tu huella, reconocimiento facial o el bloqueo de tu dispositivo.</p>
             </div>
           </div>
         </div>
@@ -86,45 +87,43 @@ function LoginScreen({ initialRegistering = false }: { initialRegistering?: bool
               {isRegistering ? 'Crear cuenta' : 'Iniciar sesión'}
             </div>
             <div className="rounded-full bg-brand-50 px-3 py-1 text-[11px] font-bold text-brand-600">
-              Passkeys
+              Llave de acceso
             </div>
           </div>
 
-          <div className="relative rounded-full border border-white/60 bg-neutral-100/90 p-1 shadow-soft backdrop-blur">
-            <div
-              className={`absolute top-1 h-[calc(100%-8px)] w-[48%] rounded-full bg-gradient-to-r from-brand-600 to-brand-700 shadow-soft transition-all duration-300 ${isRegistering ? 'translate-x-[104%]' : 'translate-x-[4%]'
-                }`}
-            />
-            <div className="relative z-10 grid grid-cols-2 text-[13px] font-extrabold">
+          <div className="rounded-2xl bg-neutral-100 p-1">
+            <div className="grid grid-cols-2 text-[13px] font-bold">
               <button
                 type="button"
                 onClick={() => setIsRegistering(false)}
-                className={`flex items-center justify-center gap-1 rounded-full px-4 py-2 transition ${!isRegistering ? 'text-white mix-blend-difference' : 'text-neutral-600'
+                aria-pressed={!isRegistering}
+                disabled={loading || retrying}
+                className={`flex items-center justify-center rounded-xl px-3 py-3 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 disabled:opacity-60 ${!isRegistering ? 'bg-brand-600 text-white shadow-soft' : 'text-neutral-600'
                   }`}
               >
-                <span>Iniciar</span>
-                <span className="hidden text-[11px] font-semibold md:inline">sesión</span>
+                <span>Iniciar sesión</span>
               </button>
               <button
                 type="button"
                 onClick={() => setIsRegistering(true)}
-                className={`flex items-center justify-center gap-1 rounded-full px-4 py-2 transition ${isRegistering ? 'text-white mix-blend-difference' : 'text-neutral-600'
+                aria-pressed={isRegistering}
+                disabled={loading || retrying}
+                className={`flex items-center justify-center rounded-xl px-3 py-3 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 disabled:opacity-60 ${isRegistering ? 'bg-brand-600 text-white shadow-soft' : 'text-neutral-600'
                   }`}
               >
-                <span>Crear</span>
-                <span className="hidden text-[11px] font-semibold md:inline">cuenta</span>
+                <span>Crear cuenta</span>
               </button>
             </div>
           </div>
 
           {(error || sessionError) && (
-            <div className="rounded-2xl border-l-4 border-danger-500 bg-danger-50 px-4 py-3 text-sm font-semibold text-danger-700 shadow-soft">
+            <div role="alert" className="rounded-2xl border-l-4 border-danger-500 bg-danger-50 px-4 py-3 text-sm font-semibold text-danger-700 shadow-soft">
               <div className="flex items-center gap-2">
                 <Icon name="info" className="h-5 w-5 text-danger-600" />
                 <span>{sessionError || error}</span>
               </div>
               {sessionError && canRetrySession && (
-                <button type="button" onClick={handleRetrySession} disabled={retrying} className="mt-2 underline disabled:opacity-50">
+                <button type="button" onClick={handleRetrySession} disabled={retrying || loading} className="mt-2 underline disabled:opacity-50">
                   {retrying ? 'Verificando...' : 'Reintentar verificación'}
                 </button>
               )}
@@ -138,24 +137,31 @@ function LoginScreen({ initialRegistering = false }: { initialRegistering?: bool
                 size="lg"
                 fullWidth
                 loading={loading}
+                disabled={retrying}
                 leftIcon="user"
                 onClick={handleLogin}
               >
-                {loading ? 'Autenticando...' : 'Entrar con Passkey'}
+                {loading ? 'Confirmando acceso...' : 'Entrar con mi llave de acceso'}
               </Button>
 
               <p className="text-center text-xs font-semibold text-neutral-700">
-                Biometría solo cuando sea necesario.
+                Tu dispositivo te pedirá confirmar con la llave de acceso (passkey) que registraste.
               </p>
             </div>
           ) : (
             <form onSubmit={handleRegister} className="flex flex-col gap-5">
+              <p className="rounded-2xl bg-brand-50 px-4 py-3 text-sm leading-6 text-brand-700">
+                Crearás una cuenta de voluntariado. Tu perfil y afiliación son personales; el acceso a tareas operativas se coordina con el equipo de R3foresta.
+              </p>
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-brand-700">
+                <label htmlFor="register-username" className="text-sm font-semibold text-brand-700">
                   Nombre de usuario <span className="text-danger-500">*</span>
                 </label>
                 <input
                   type="text"
+                  id="register-username"
+                  autoComplete="username"
+                  disabled={loading || retrying}
                   required
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
@@ -166,16 +172,21 @@ function LoginScreen({ initialRegistering = false }: { initialRegistering?: bool
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm font-semibold text-brand-700">
-                    Correo electrónico <span className="text-danger-500">*</span>
+                  <label htmlFor="register-email" className="text-sm font-semibold text-brand-700">
+                    Correo electrónico <span className="font-normal text-neutral-500">(opcional)</span>
                   </label>
                   {emailError && (
-                    <span className="text-xs font-semibold text-danger-500">{emailError}</span>
+                    <span id="register-email-error" className="text-xs font-semibold text-danger-500">{emailError}</span>
                   )}
                 </div>
                 <input
                   type="email"
-                  required
+                  id="register-email"
+                  autoComplete="email"
+                  autoCapitalize="none"
+                  disabled={loading || retrying}
+                  aria-invalid={Boolean(emailError)}
+                  aria-describedby={emailError ? 'register-email-error' : undefined}
                   value={email}
                   onChange={(e) => {
                     setEmail(e.target.value)
@@ -196,16 +207,19 @@ function LoginScreen({ initialRegistering = false }: { initialRegistering?: bool
                 fullWidth
                 loading={loading}
                 leftIcon="user"
-                disabled={loading || !username.trim() || !email.trim()}
+                disabled={loading || retrying || !username.trim()}
               >
-                {loading ? 'Registrando...' : 'Crear cuenta con Passkey'}
+                {loading ? 'Creando tu cuenta...' : 'Crear mi cuenta'}
               </Button>
 
               <p className="text-center text-xs font-semibold text-neutral-700">
-                Face ID / huella para confirmar alta.
+                Al continuar, guardarás una llave de acceso (passkey) con ayuda de tu dispositivo.
               </p>
             </form>
           )}
+          <Link to="/auth/recover" className="block rounded-xl py-2 text-center text-sm font-semibold text-brand-600 underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400">
+            Ayuda para ingresar
+          </Link>
         </div>
       </div>
     </div>

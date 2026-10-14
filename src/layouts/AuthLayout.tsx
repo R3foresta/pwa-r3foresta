@@ -21,7 +21,7 @@ function AuthLayout() {
             <h1 className="text-2xl font-bold text-white">Acceso</h1>
           </div>
           <div className="rounded-full border border-white/30 bg-white/15 px-3 py-1 text-[11px] font-semibold text-white">
-            PWA lista
+            Acceso seguro
           </div>
         </header>
 

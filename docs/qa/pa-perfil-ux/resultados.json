@@ -1,0 +1,113 @@
+{
+  "source": "Navegador con HTTP sintético; sin backend/DB real ni ceremonia WebAuthn.",
+  "viewports": [
+    "390×844",
+    "1440×1000"
+  ],
+  "assertions": [
+    "Inicio VOLUNTARIO sin llamadas internas",
+    "Sin desbordamiento horizontal",
+    "Selección por BIGINT exacto",
+    "Enter busca sin guardar perfil",
+    "Catálogo vacío/error/reintento",
+    "Guardado PATCH confirmado y recarga",
+    "Cancelar conserva cambios",
+    "Acceso directo interno bloquea carga privada",
+    "Alta móvil con correo opcional"
+  ],
+  "requests": [
+    {
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/usuarios/me/perfil",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/usuarios/me/perfil",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/participacion/organizaciones-seleccionables",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/participacion/organizaciones-seleccionables",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/participacion/organizaciones-seleccionables",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/participacion/organizaciones-seleccionables",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/participacion/organizaciones-seleccionables",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/usuarios/me/perfil",
+      "method": "PATCH"
+    },
+    {
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/usuarios/me/perfil",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/usuarios/me/perfil",
+      "method": "GET"
+    },
+    {
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/usuarios/me/perfil",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/usuarios/me/perfil",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/usuarios/me/perfil",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v1/participacion/organizaciones-seleccionables",
+      "method": "GET"
+    },
+    {
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "path": "/api/users/profile",
+      "method": "GET"
+    }
+  ],
+  "errors": []
+}

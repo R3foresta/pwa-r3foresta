@@ -16,12 +16,11 @@ export interface UserProfile {
 
 export interface ProfileFormData {
   nombre: string
-  apellido: string
-  doc_identidad: string
+  apellido?: string
+  doc_identidad?: string
   wallet_address?: string
   organizacion?: string
   contacto?: string
-  rol?: string
 }
 
 export interface ProfileFormResponse {

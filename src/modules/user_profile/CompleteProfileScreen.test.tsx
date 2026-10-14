@@ -1,0 +1,118 @@
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { CompleteProfileScreen } from './CompleteProfileScreen'
+import { ParticipacionProfileService } from './participacion.service'
+const auth = vi.hoisted(() => ({ user: { auth_id: 'vol', nombre: 'Ana', rol: 'VOLUNTARIO' }, updateUserFromBackend: vi.fn().mockResolvedValue({ nombre: 'Ana' }) }))
+vi.mock('../../contexts/AuthContext', () => ({ useAuth: () => auth }))
+vi.mock('./components/AvatarUpload', () => ({ AvatarUpload: () => null }))
+beforeEach(() => {
+  vi.restoreAllMocks(); auth.updateUserFromBackend.mockClear()
+  vi.spyOn(ParticipacionProfileService, 'leer').mockResolvedValue({ usuario_id: '3', nombre: 'Ana', apellido: null, afiliacion: null, rol_global: 'VOLUNTARIO' })
+  vi.spyOn(ParticipacionProfileService, 'actualizar').mockResolvedValue({ usuario_id: '3', nombre: 'Ana', apellido: null, afiliacion: null, rol_global: 'VOLUNTARIO' })
+  vi.spyOn(ParticipacionProfileService, 'organizaciones').mockResolvedValue({ data: [{ organizacion_id: '9007199254740993', nombre: 'Bosque Vivo' }], observado_en: '2026-10-14T14:00:00Z', siguiente_cursor: null })
+})
+function mount() { render(<MemoryRouter initialEntries={['/app/edit-profile']}><CompleteProfileScreen /></MemoryRouter>) }
+describe('Formulario participante', () => {
+  it('muestra autoridad informativa y permite guardar sin documento/wallet', async () => {
+    mount(); await screen.findByText('Voluntario')
+    expect(screen.queryByLabelText('Documento')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar perfil' }))
+    await waitFor(() => expect(ParticipacionProfileService.actualizar).toHaveBeenCalledWith({ nombre: 'Ana', apellido: null }))
+  })
+  it('guarda selección del catálogo con BIGINT exacto y sin nombre cliente', async () => {
+    mount(); await screen.findByText('Voluntario')
+    fireEvent.click(screen.getByRole('radio', { name: /Organización del catálogo/ }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Bosque Vivo' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar perfil' }))
+    await waitFor(() => expect(ParticipacionProfileService.actualizar).toHaveBeenCalledWith({ nombre: 'Ana', apellido: null, afiliacion: { tipo: 'ORGANIZACION_REGISTRADA', organizacion_id: '9007199254740993' } }))
+  })
+  it('permite Otra y borrado explícito de afiliación', async () => {
+    vi.mocked(ParticipacionProfileService.leer).mockResolvedValue({ usuario_id: '3', nombre: 'Ana', apellido: null, afiliacion: { tipo: 'OTRA', nombre: 'Entidad antigua', organizacion_id: null }, rol_global: 'VOLUNTARIO' })
+    mount(); await screen.findByText('Voluntario')
+    fireEvent.click(screen.getByRole('radio', { name: /Sin afiliación/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar perfil' }))
+    await waitFor(() => expect(ParticipacionProfileService.actualizar).toHaveBeenCalledWith({ nombre: 'Ana', apellido: null, afiliacion: null }))
+  })
+  it('conserva formulario si backend rechaza selección', async () => {
+    vi.mocked(ParticipacionProfileService.actualizar).mockRejectedValue(new Error('Organización no seleccionable.'))
+    mount(); await screen.findByText('Voluntario')
+    fireEvent.click(screen.getByRole('radio', { name: /^Otra/ }))
+    fireEvent.change(screen.getByLabelText('Nombre de otra organización'), { target: { value: 'Organización de prueba' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar perfil' }))
+    expect((await screen.findByRole('alert')).textContent).toContain('Organización no seleccionable.')
+    expect((screen.getByLabelText('Nombre de otra organización') as HTMLInputElement).value).toBe('Organización de prueba')
+    expect(auth.updateUserFromBackend).not.toHaveBeenCalled()
+  })
+  it('muestra error de lectura y permite recuperarse sin guardar datos vacíos', async () => {
+    vi.mocked(ParticipacionProfileService.leer).mockRejectedValueOnce(new Error('Sin conexión'))
+    mount()
+    expect((await screen.findByRole('alert')).textContent).toContain('Sin conexión')
+    expect(screen.queryByRole('button', { name: 'Guardar perfil' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Reintentar lectura' }))
+    await screen.findByRole('textbox', { name: 'Nombre' })
+    expect(ParticipacionProfileService.actualizar).not.toHaveBeenCalled()
+  })
+  it('conserva afiliación guardada que ya no está en catálogo al editar el nombre', async () => {
+    vi.mocked(ParticipacionProfileService.leer).mockResolvedValue({ usuario_id: '3', nombre: 'Ana', apellido: null, afiliacion: { tipo: 'ORGANIZACION_REGISTRADA', nombre: 'Organización anterior', organizacion_id: '8' }, rol_global: 'VOLUNTARIO' })
+    mount()
+    await screen.findByText('Organización anterior')
+    fireEvent.change(screen.getByRole('textbox', { name: 'Nombre' }), { target: { value: 'Ana María' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar perfil' }))
+    await waitFor(() => expect(ParticipacionProfileService.actualizar).toHaveBeenCalledWith({ nombre: 'Ana María', apellido: null }))
+  })
+  it('exige elegir de nuevo al volver al catálogo después de cambiar la opción', async () => {
+    vi.mocked(ParticipacionProfileService.leer).mockResolvedValue({ usuario_id: '3', nombre: 'Ana', apellido: null, afiliacion: { tipo: 'ORGANIZACION_REGISTRADA', nombre: 'Organización anterior', organizacion_id: '8' }, rol_global: 'VOLUNTARIO' })
+    mount()
+    await screen.findByText('Organización anterior')
+    fireEvent.click(screen.getByRole('radio', { name: /Sin afiliación/ }))
+    fireEvent.click(screen.getByRole('radio', { name: /Organización del catálogo/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar perfil' }))
+    expect((await screen.findByRole('alert')).textContent).toContain('Selecciona una organización')
+    expect(ParticipacionProfileService.actualizar).not.toHaveBeenCalled()
+  })
+  it('muestra límites por campo, no trunca y enfoca el dato inválido', async () => {
+    mount()
+    const nombre = await screen.findByRole('textbox', { name: 'Nombre' }) as HTMLInputElement
+    const longName = 'Á'.repeat(101)
+    fireEvent.change(nombre, { target: { value: longName } })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar perfil' }))
+    expect(nombre.value).toBe(longName)
+    expect(nombre.getAttribute('aria-invalid')).toBe('true')
+    expect(document.activeElement).toBe(nombre)
+    expect(ParticipacionProfileService.actualizar).not.toHaveBeenCalled()
+  })
+  it('bloquea nombre vacío y admite los límites Unicode normalizados', async () => {
+    mount()
+    const nombre = await screen.findByRole('textbox', { name: 'Nombre' })
+    fireEvent.change(nombre, { target: { value: ' ' } })
+    expect((screen.getByRole('button', { name: 'Guardar perfil' }) as HTMLButtonElement).disabled).toBe(true)
+    fireEvent.change(nombre, { target: { value: 'A\u0301'.repeat(100) } })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar perfil' }))
+    await waitFor(() => expect(ParticipacionProfileService.actualizar).toHaveBeenCalledWith({ nombre: 'Á'.repeat(100), apellido: null }))
+  })
+  it('cancelar con cambios permite seguir editando sin escribir', async () => {
+    mount()
+    const nombre = await screen.findByRole('textbox', { name: 'Nombre' }) as HTMLInputElement
+    fireEvent.change(nombre, { target: { value: 'Ana María' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+    expect(screen.getByRole('dialog').textContent).toContain('¿Salir sin guardar?')
+    fireEvent.click(screen.getByRole('button', { name: 'Seguir editando' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(nombre.value).toBe('Ana María')
+    expect(ParticipacionProfileService.actualizar).not.toHaveBeenCalled()
+  })
+  it('impide doble envío mientras el backend confirma', async () => {
+    let resolve!: (value: Awaited<ReturnType<typeof ParticipacionProfileService.actualizar>>) => void
+    vi.mocked(ParticipacionProfileService.actualizar).mockImplementation(() => new Promise(done => { resolve = done }))
+    mount()
+    await screen.findByRole('textbox', { name: 'Nombre' })
+    const button = screen.getByRole('button', { name: 'Guardar perfil' })
+    fireEvent.click(button)
+    fireEvent.click(button)
+    expect(ParticipacionProfileService.actualizar).toHaveBeenCalledTimes(1)
+    expect((screen.getByRole('button', { name: 'Guardando…' }) as HTMLButtonElement).disabled).toBe(true)
+    resolve({ usuario_id: '3', nombre: 'Ana', apellido: null, afiliacion: null, rol_global: 'VOLUNTARIO' })
+    await waitFor(() => expect(auth.updateUserFromBackend).toHaveBeenCalledOnce())
+  })
+})

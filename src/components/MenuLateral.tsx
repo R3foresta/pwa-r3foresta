@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import Icon, { type IconName } from './Icon'
 import { Button } from './ui'
 import { usePwaInstall } from '../contexts/PwaInstallContext'
+import { useAuth } from '../contexts/AuthContext'
+import { hasInternalAppAccess } from '../utils/appAccess'
 
 type DrawerItem = {
   label: string
@@ -32,6 +34,8 @@ const FOCUSABLE_ELEMENT_SELECTOR = [
 
 function MenuLateral({ isOpen, onClose }: Props) {
   const navigate = useNavigate()
+  const { user } = useAuth()
+  const items = hasInternalAppAccess(user?.rol) ? ITEMS : []
   const {
     canInstall,
     install,
@@ -157,7 +161,7 @@ function MenuLateral({ isOpen, onClose }: Props) {
         </div>
 
         <nav className="space-y-2">
-          {ITEMS.map((item) => (
+          {items.map((item) => (
             <button
               key={item.path}
               type="button"
@@ -170,6 +174,16 @@ function MenuLateral({ isOpen, onClose }: Props) {
               <span className="text-sm font-semibold">{item.label}</span>
             </button>
           ))}
+          <button
+            type="button"
+            onClick={() => handleNavigate('/app/profile')}
+            className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-brand-700 transition hover:bg-brand-50"
+          >
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 text-brand-700">
+              <Icon name="user" className="h-5 w-5" />
+            </span>
+            <span className="text-sm font-semibold">Mi perfil</span>
+          </button>
         </nav>
 
         {shouldShowMenuInstall && (

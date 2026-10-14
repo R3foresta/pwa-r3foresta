@@ -1,94 +1,47 @@
-# Módulo de Perfil de Usuario
+# Perfil de usuario y afiliación opcional
 
-Este módulo maneja el flujo de "Completar Perfil" después del registro/login con WebAuthn.
+Actualizado el 14 de octubre de 2026 para PA-T-INT02-A. El perfil no modifica autoridad. El usuario ve el rol recibido del backend; afiliación no concede permisos.
 
-## Estructura
+## Flujo y contrato
 
-```
-src/modules/user_profile/
-├── types.ts                    # Tipos para perfil y formulario
-├── profile.service.ts          # Servicio para API de backend
-├── CompleteProfileScreen.tsx   # Pantalla de completar perfil
-└── index.ts                    # Exportaciones del módulo
-```
+AuthContext verifica la sesión leyendo el perfil propio legado con JWT Bearer. Un perfil mínimo requiere nombre no vacío; apellido, documento, wallet y afiliación no bloquean este recorrido. `/complete-profile` y `/app/edit-profile` usan `CompleteProfileScreen`, que carga la proyección v1 antes de habilitar guardar.
 
-## Flujo Completo
+- `GET /api/v1/usuarios/me/perfil`: nombre, apellido opcional, afiliación, usuario_id decimal en cadena y rol_global informativo, en envelope `{data,observado_en}`.
+- `PATCH /api/v1/usuarios/me/perfil`: nombre hasta 100 y apellido opcional hasta 30 caracteres Unicode NFC. No envía autoridad ni datos históricos.
+- `GET /api/v1/participacion/organizaciones-seleccionables`: cualquier cuenta activa, VOLUNTARIO incluido. Solo `{organizacion_id,nombre}`, IDs exactos en cadena, búsqueda de 2..100 caracteres, límite 20 y cursor opaco. No crea ni edita catálogo.
 
-### 1. Autenticación
-- Usuario se registra/loguea con WebAuthn
-- El backend retorna un objeto `User` que puede tener campos de perfil null/undefined
+Ejemplo de cambio con catálogo:
 
-### 2. Detección de Perfil Incompleto
-- `ProfileService.isProfileComplete()` verifica si `doc_identidad`, `apellido` y `nombre` están presentes
-- Si faltan datos: redirección automática a `/complete-profile`
-- Si están completos: redirección normal a `/app/home`
-
-### 3. Pantalla de Completar Perfil
-- Formulario obligatorio con campos requeridos y opcionales
-- Validaciones en tiempo real
-- Integración con backend mediante `ProfileService.completeProfile()`
-
-### 4. Integración con Backend
-
-#### Endpoint: `POST /api/users/register-form`
-- **Auth**: `Authorization: Bearer <token>`
-- **Body**:
 ```json
 {
-  "nombre": "Juan",
-  "apellido": "Perez", 
-  "doc_identidad": "12345678",
-  "wallet_address": "0x123...", 
-  "organizacion": "Mi Empresa",
-  "contacto": "+51987654321",
-  "rol": "GENERAL"
+  "nombre": "Ana",
+  "apellido": null,
+  "afiliacion": {
+    "tipo": "ORGANIZACION_REGISTRADA",
+    "organizacion_id": "9007199254740993"
+  }
 }
 ```
 
-#### Respuestas:
-- **201/200**: Perfil completado exitosamente
-- **409 Conflict**: Documento o wallet ya registrados
-- **400 Bad Request**: Datos inválidos
+«Otra» usa `{tipo:"OTRA",nombre:"Nombre libre"}` (1..150 caracteres NFC). Sin afiliación se guarda `afiliacion:null`; omitir afiliación conserva lo anterior. No se envía nombre cliente para una selección de catálogo. Una afiliación previa a organización luego inactiva se conserva si no se edita.
 
-### 5. Manejo de Estado
-- `AuthContext` actualizado con `isProfileComplete`
-- `ProtectedRoute` verifica perfil completo antes de acceso
-- Redirección automática según estado del perfil
+## Archivos y estados
 
-## Validaciones
+- `participacion.service.ts`: transporte v1 y validación runtime de envelope/IDs/tipos/campos. Sin caché de datos privados; rechaza respuestas tardías de una sesión que cambió.
+- `CompleteProfileScreen.tsx`: composición por bloques de foto, nombre y afiliación; opciones de afiliación con radios, contadores Unicode, errores vinculados al campo y confirmación al cancelar cambios. Al editar, la navegación inferior se oculta para evitar abandonar el formulario desde ella.
+- `hooks/useProfileForm.ts`: lectura/guardado, validación UX, seguimiento de cambios, guarda de doble envío y cancelación de lectura. Al cambiar de cuenta se descartan formulario/búsquedas; al fallar un guardado se conservan los datos.
+- `components/AfiliacionSelector.tsx`: búsqueda por nombre con Enter sin enviar el perfil; paginación que conserva resultados ante error, selección por ID y estados loading/empty/error/retry. Las consultas anteriores se cancelan. Búsqueda NFC de 2..100 caracteres, sin truncado.
+- `components/AvatarUpload.tsx`: botón accesible por teclado, validación, progreso/error/éxito en pantalla. La foto se guarda al subirla, independientemente del formulario; guardar/salir espera su finalización.
+- `components/ProfileRoleBadge.tsx`: etiquetas de presentación para los cuatro roles contractuales, sin autoridad por defecto.
+- `profile.service.ts`: lectura de sesión/foto y adaptador de `register-form`, con proyección explícita de campos históricos; excluye rol aun si un objeto legado manipulado lo contiene.
+- `perfil.tsx`: lectura v1 para nombre/rol/afiliación, carga/error/reintento, confirmación tras guardar y datos históricos propios en un bloque desplegable. Los nombres de catálogo se muestran completos.
 
-### Campos Obligatorios
-- **Nombre**: No vacío
-- **Apellido**: No vacío, máximo 30 caracteres  
-- **Documento de Identidad**: No vacío
+Después de guardar, el backend confirma el cambio y AuthContext vuelve a leer el perfil propio; el alias incorpora el nombre vigente de catálogo. No se inventa una persistencia exitosa desde el estado local.
 
-### Campos Opcionales con Validación
-- **Wallet Address**: Formato Ethereum `^0x[0-9a-fA-F]{40}$`
-- **Contacto**: Formato internacional `^\+\d{7,15}$`
+Las rutas requieren Bearer; identidad ajena/ausente devuelve 401, cuenta inactiva 403, entrada inválida o organización no seleccionable 422. Los nombres no se truncan silenciosamente. El backend conserva la autoridad como fuente de verdad.
 
-## Rutas
+## Verificación y alcance
 
-- `/complete-profile` - Pantalla de completar perfil (acceso especial)
-- Todas las rutas protegidas verifican perfil completo automáticamente
+La integración inicial acreditó 21 archivos/295 pruebas. La mejora de UX añadió pruebas de perfil, formulario, selector, foto y navegación por audiencia. Comandos, resultados actuales y capturas en [QA de UI y UX](../../../docs/QA_PERFIL_PARTICIPACION_UX.md). Las respuestas del navegador son sintéticas; esa comprobación no acredita persistencia en la DB ni una ceremonia WebAuthn real.
 
-## Estados de Usuario
-
-1. **No autenticado** → `/auth/login`
-2. **Autenticado + Perfil incompleto** → `/complete-profile`  
-3. **Autenticado + Perfil completo** → `/app/home`
-
-## Integración
-
-El módulo se integra automáticamente con:
-- ✅ AuthContext (gestión de estado)
-- ✅ Rutas protegidas (verificación automática)
-- ✅ WebAuthn Service (actualización post-auth)
-- ✅ Backend API (persistencia de datos)
-
-## Puntos Clave
-
-- **Una sola vez por usuario**: Una vez completado, no vuelve a mostrar la pantalla
-- **Obligatorio**: No se puede acceder al resto de la app sin completar  
-- **Persistente**: Los datos se guardan en backend y actualizan el contexto local
-- **Validaciones robustas**: Tanto frontend como backend 
-- **Manejo de errores**: Feedback específico para conflictos y validaciones
+[Informe de backend y QA real](../../../../Backend-r3foresta/docs/pa-int02a-continuacion-2026-10-14.md): passkey física en Brave, cuenta GENERAL, afiliación/recargas/negativos y autoridad conservada. VOLUNTARIO y BIGINT se verificaron en fixtures/HTTP simulados. No hay publicación ni habilitación del piloto por esta entrega.

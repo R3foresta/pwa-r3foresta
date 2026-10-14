@@ -3,12 +3,19 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import Icon from '../../components/Icon'
 import MenuLateral from '../../components/MenuLateral'
-import { hero, syncNotice, metrics, sections, recent } from '../../data/home'
+import { hero, syncNotice, sections } from '../../data/home'
 import type { Screen } from '../../types/navigation'
 import RecoleccionStockPanel from '../recolecciones/components/RecoleccionStockPanel'
 import { useRecoleccionStock } from '../recolecciones/hooks/useRecoleccionStock'
+import { hasInternalAppAccess } from '../../utils/appAccess'
+import ParticipantHomeScreen from './ParticipantHomeScreen'
 
 function HomeScreen() {
+  const { user } = useAuth()
+  return hasInternalAppAccess(user?.rol) ? <InternalHomeScreen /> : <ParticipantHomeScreen />
+}
+
+function InternalHomeScreen() {
   const navigate = useNavigate()
   const { user, isProfileComplete } = useAuth()
   const isAdmin = (user?.rol ?? '').toUpperCase() === 'ADMIN'
@@ -75,13 +82,6 @@ function HomeScreen() {
         <div className="flex items-center gap-3">
           <button
             type="button"
-            className="rounded-full bg-white/90 p-2 shadow-sm transition hover:shadow-soft"
-            aria-label="Notificaciones"
-          >
-            <Icon name="bell" className="h-5 w-5 text-brand-700" />
-          </button>
-          <button
-            type="button"
             onClick={() => navigate('/app/profile')}
             className="relative rounded-full bg-white/90 p-2 shadow-sm transition hover:shadow-soft"
             aria-label="Perfil"
@@ -133,7 +133,7 @@ function HomeScreen() {
             
             <div className="flex flex-col text-left">
               <span className="font-semibold">Perfil incompleto</span>
-              <span className="text-xs font-normal text-warning-600">Necesitas completar tu perfil para acceder a todas las funcionalidades de la aplicación.</span>
+              <span className="text-xs font-normal text-warning-600">Agrega tu nombre para identificarte en los registros. El acceso depende de tu rol y los permisos de cada operación.</span>
             </div>
             
             <span className="ml-auto mt-1">
@@ -155,25 +155,6 @@ function HomeScreen() {
             <span>{syncNotice.label}</span>
             <span className="text-xs font-normal text-brand-500">{syncNotice.detail}</span>
           </div>
-        </div>
-      </section>
-
-      <section className="mt-6">
-        <div className="flex items-baseline justify-between">
-          <h2 className="text-base font-semibold text-brand-700">Indicadores clave</h2>
-          <span className="text-xs text-brand-500">Actualizado hace 12 min</span>
-        </div>
-        <div className="mt-3 grid grid-cols-2 gap-3">
-          {metrics.map((item) => (
-            <div
-              key={item.label}
-              className="rounded-2xl bg-white px-4 py-4 text-brand-700 shadow-soft"
-            >
-              <div className="text-xl font-semibold leading-tight">{item.value}</div>
-              <p className="mt-1 text-sm font-medium text-brand-600">{item.label}</p>
-              {item.helper && <p className="mt-1 text-xs text-brand-500">{item.helper}</p>}
-            </div>
-          ))}
         </div>
       </section>
 
@@ -232,7 +213,7 @@ function HomeScreen() {
 
       <section className="mt-7">
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold text-brand-700">Fases en progreso</h2>
+          <h2 className="text-base font-semibold text-brand-700">Operación en campo</h2>
           <button
             type="button"
             className="rounded-full bg-brand-100 px-3 py-1 text-xs font-semibold text-brand-700 shadow-soft"
@@ -246,52 +227,31 @@ function HomeScreen() {
             <button
               key={section.label}
               type="button"
+              disabled={section.disabled}
+              aria-label={`${section.label}: ${section.action}`}
               onClick={() => navigate(targetPath[section.target] ?? '/app/home')}
-              className="group relative h-44 overflow-hidden rounded-2xl text-left shadow-soft transition transform active:scale-[0.99]"
+              className="group relative h-44 overflow-hidden rounded-2xl text-left shadow-soft transition active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2 disabled:cursor-default disabled:active:scale-100"
             >
               <img
                 src={section.image}
-                alt={section.label}
-                className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                alt=""
+                className={`absolute inset-0 h-full w-full object-cover transition duration-500 ${section.disabled ? 'grayscale' : 'group-hover:scale-105'}`}
                 loading="lazy"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent" />
-              <div className="relative flex h-full flex-col justify-between p-4 text-white">
-                <div className="inline-flex w-fit items-center rounded-full bg-white/20 px-3 py-1 text-[11px] font-semibold">
-                  {section.stat}
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold leading-tight">{section.label}</h3>
-                  <p className="mt-1 text-xs text-white/80">{section.detail}</p>
-                </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/60 to-black/20" />
+              <div className="relative flex h-full flex-col justify-end p-4 text-white">
+                <h3 className="text-lg font-semibold leading-tight">{section.label}</h3>
+                <p className="mt-1 text-xs leading-5 text-white/90">{section.detail}</p>
+                <span className="mt-3 flex items-center gap-1 text-xs font-semibold">
+                  {section.action}
+                  {!section.disabled && <Icon name="chevron-right" className="h-4 w-4" />}
+                </span>
               </div>
             </button>
           ))}
         </div>
       </section>
 
-      <section className="mt-7 mb-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold text-brand-700">Actividad reciente</h2>
-          <span className="text-xs text-brand-500">Hoy</span>
-        </div>
-        <div className="mt-3 space-y-3">
-          {recent.map((item) => (
-            <div
-              key={item.title + item.time}
-              className="flex items-start gap-3 rounded-2xl bg-white p-3 shadow-soft"
-            >
-              <div className="flex h-10 w-12 flex-col items-center justify-center rounded-xl bg-brand-100 text-[11px] font-semibold text-brand-700">
-                <span>{item.time}</span>
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-brand-700">{item.title}</p>
-                <p className="text-xs text-brand-500">{item.meta}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
     </div>
   )
 }

@@ -2,9 +2,10 @@ import { lazy, Suspense, useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import Icon, { type IconName } from './Icon'
 import { Button } from './ui'
-import { NAV_ITEMS } from '../data/navigation'
+import { NAV_ITEMS, PARTICIPANT_NAV_ITEMS } from '../data/navigation'
 import { useAuth } from '../contexts/AuthContext'
 import { ProfileService } from '../modules/user_profile/profile.service'
+import { hasInternalAppAccess } from '../utils/appAccess'
 
 const SubcampaniasOperativasSheet = lazy(
   () => import('../modules/plantacion/components/SubcampaniasOperativasSheet'),
@@ -27,12 +28,13 @@ function BottomNav() {
   const [open, setOpen] = useState(false)
   const [sheetView, setSheetView] = useState<SheetView>('actions')
   const [showProfileWarning, setShowProfileWarning] = useState(false)
+  const hasInternalAccess = hasInternalAppAccess(user?.rol)
+  const navItems = hasInternalAccess ? NAV_ITEMS : PARTICIPANT_NAV_ITEMS
 
   const quickActions: QuickAction[] = [
     { label: 'Registrar recolección', icon: 'package', to: '/app/collections/new' },
     { label: 'Nuevo germinación', icon: 'vivero', to: '/app/vivero/new' },
     { label: 'Registrar plantación', icon: 'leaf', to: 'plantacion-selector' },
-    { label: 'Actualizar CO₂', icon: 'balance', to: '/app/co2' },
   ]
 
   const closeSheet = () => {
@@ -46,7 +48,6 @@ function BottomNav() {
       '/app/collections/new',
       '/app/vivero/new',
       'plantacion-selector',
-      '/app/co2',
     ]
 
     if (requiresCompleteProfile.includes(to)) {
@@ -80,11 +81,14 @@ function BottomNav() {
   const isSubcampaniaWizardRoute = pathname.includes('/subcampanias/new')
   const isRegistroPlantacionRoute = pathname.includes('/plantaciones/new')
   const showQuickActionButton =
-    !isInQuickActionRoute && !isSubcampaniaWizardRoute && !isRegistroPlantacionRoute
+    hasInternalAccess && !isInQuickActionRoute && !isSubcampaniaWizardRoute && !isRegistroPlantacionRoute
+
+  // El formulario dispone de volver/cancelar con aviso de cambios sin guardar.
+  if (pathname === '/app/edit-profile') return null
 
   return (
     <>
-      {open && (
+      {hasInternalAccess && open && (
         <div
           className="fixed inset-0 z-30 bg-black/40 backdrop-blur-[2px]"
           onClick={closeSheet}
@@ -92,8 +96,8 @@ function BottomNav() {
       )}
 
       <div className="fixed inset-x-0 bottom-0 z-40 mb-3 flex justify-center">
-        <nav className="relative flex w-[92%] max-w-md items-end justify-between rounded-3xl bg-brand-600 px-4 py-3 text-white shadow-2xl shadow-brand-900/30">
-          {NAV_ITEMS.map((item) => {
+        <nav aria-label="Navegación principal" className="relative flex w-[92%] max-w-md items-end justify-between rounded-3xl bg-brand-600 px-4 py-3 text-white shadow-2xl shadow-brand-900/30">
+          {navItems.map((item) => {
             const isActive = pathname.startsWith(item.path)
             return (
               <NavLink
@@ -136,7 +140,7 @@ function BottomNav() {
         </nav>
       </div>
 
-      {open && (
+      {hasInternalAccess && open && (
         <div className="fixed inset-x-0 bottom-20 z-40 flex justify-center px-4">
           <div className="w-full max-w-md rounded-3xl bg-white text-brand-800 shadow-2xl shadow-brand-900/20 ring-1 ring-black/5 backdrop-blur">
             <div className="flex items-center justify-between px-4 pt-4">
@@ -219,7 +223,7 @@ function BottomNav() {
               </h3>
               
               <p className="mb-6 text-center text-sm text-brand-600">
-                Necesitas completar tu perfil para acceder a todas las funcionalidades de la aplicación.
+                Agrega tu nombre para identificarte en los registros. Tu rol y los permisos de cada operación determinan el acceso.
               </p>
               
               <div className="flex flex-col gap-3">

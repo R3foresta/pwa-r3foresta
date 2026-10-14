@@ -17,52 +17,41 @@ export const syncNotice = {
   detail: 'Los registros y las fotos se envían mientras tienes conexión.',
 }
 
-export const metrics = [
-  { label: 'Plantaciones activas', value: '12', helper: 'en 4 fincas' },
-  { label: 'Listos para trasplantar', value: '120', helper: 'Semana 48' },
-  { label: 'CO₂ estimado', value: '20,6 T', helper: '+1.4 T este mes' },
-  { label: 'Superficie monitoreada', value: '86 ha', helper: 'Satélite al día' },
-]
-
 export const sections: {
   label: string
   target: Screen
   image: string
-  stat: string
   detail: string
+  action: string
+  disabled?: boolean
 }[] = [
   {
     label: 'Recolección',
     target: 'collections',
     image: recoleccionImg,
-    stat: '24 lotes',
-    detail: 'Último ingreso hace 1h',
+    detail: 'Registra lotes y consulta su estado.',
+    action: 'Ver recolecciones',
   },
   {
     label: 'Germinación',
     target: 'vivero',
     image: germinacionImg,
-    stat: '120 plántulas',
-    detail: '78% con riego hoy',
+    detail: 'Revisa lotes y eventos del vivero.',
+    action: 'Ver lotes',
   },
   {
     label: 'Plantación',
     target: 'planting',
     image: plantacionImg,
-    stat: '3 predios activos',
-    detail: '42% de meta semanal',
+    detail: 'Consulta campañas y subcampañas.',
+    action: 'Ver campañas',
   },
   {
     label: 'CO₂',
     target: 'co2',
     image: co2Img,
-    stat: '20,6 T capturadas',
-    detail: 'Actualizado cada 24h',
+    detail: 'Seguimiento de captura de carbono.',
+    action: 'Próximamente',
+    disabled: true,
   },
-]
-
-export const recent = [
-  { title: 'Trasplante programado', time: '09:30', meta: 'Lote Alto Verde · 36 plántulas' },
-  { title: 'Riego completado', time: '08:10', meta: 'Germinación · Sector B' },
-  { title: 'Captura de CO₂', time: 'Ayer', meta: ' +0,3 T estimadas' },
 ]

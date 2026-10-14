@@ -55,7 +55,7 @@ export class WebAuthnService {
     const response = await fetch(`${API_URL}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, email, registration, challenge }),
+      body: JSON.stringify({ username, email: email?.trim() || undefined, registration, challenge }),
     })
     const data = await readJson(response)
     if (!response.ok) throw new Error(backendMessage(data, 'No se pudo registrar la passkey'))

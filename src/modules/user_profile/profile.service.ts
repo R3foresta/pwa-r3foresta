@@ -68,7 +68,7 @@ export class ProfileService {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ nombre: data.nombre, apellido: data.apellido, doc_identidad: data.doc_identidad, wallet_address: data.wallet_address, organizacion: data.organizacion, contacto: data.contacto }),
       })
 
       const result = (await response.json()) as ProfileFormResponse
@@ -99,13 +99,7 @@ export class ProfileService {
   ): boolean {
     if (!user) return false
     
-    // Verificar campos obligatorios
-    const hasRequiredFields = 
-      user.doc_identidad && 
-      user.apellido &&
-      user.nombre
-
-    return Boolean(hasRequiredFields)
+    return Boolean(user.nombre?.normalize('NFC').trim())
   }
 
   /**
@@ -119,15 +113,8 @@ export class ProfileService {
       errors.nombre = 'El nombre es obligatorio'
     }
 
-    if (!data.apellido.trim()) {
-      errors.apellido = 'El apellido es obligatorio'
-    } else if (data.apellido.length > 30) {
-      errors.apellido = 'El apellido debe tener máximo 30 caracteres'
-    }
-
-    if (!data.doc_identidad.trim()) {
-      errors.doc_identidad = 'El documento de identidad es obligatorio'
-    }
+    if ([...data.nombre.normalize('NFC').trim()].length > 100) errors.nombre = 'El nombre admite hasta 100 caracteres'
+    if (data.apellido && [...data.apellido.normalize('NFC').trim()].length > 30) errors.apellido = 'El apellido admite hasta 30 caracteres'
 
     // Validaciones opcionales - solo validar si tienen contenido real
     if (data.wallet_address && data.wallet_address.length > 0) {

@@ -14,6 +14,11 @@ export const NAV_ITEMS: NavItem<IconName>[] = [
   { label: 'Mapa', icon: 'map', screen: 'report', path: '/app/report' },
 ]
 
+export const PARTICIPANT_NAV_ITEMS: NavItem<IconName>[] = [
+  { label: 'Inicio', icon: 'home', screen: 'home', path: '/app/home' },
+  { label: 'Mi perfil', icon: 'user', screen: 'profile', path: '/app/profile' },
+]
+
 export const SCREEN_TITLE: Record<Screen, string> = {
   home: 'Inicio',
   collections: 'Recolecciones',

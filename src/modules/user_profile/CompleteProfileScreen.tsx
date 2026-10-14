@@ -1,536 +1,141 @@
-import React, { useState, useEffect } from 'react'
+import { useState, type FormEvent } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
-import { ProfileService } from './profile.service'
-import type { ProfileFormData, ProfileValidationErrors } from './types'
+import { Button, Card, Input, PageHeader } from '../../components/ui'
+import ConfirmDialog from '../../components/ConfirmDialog'
+import Icon from '../../components/Icon'
+import { AfiliacionSelector } from './components/AfiliacionSelector'
 import { AvatarUpload } from './components/AvatarUpload'
-import { Button } from '../../components/ui'
-import { useNavigate, useLocation } from 'react-router-dom'
-
-const COUNTRIES = [
-  { code: '+591', name: 'Bolivia', flag: '🇧🇴' },
-  { code: '+51', name: 'Perú', flag: '🇵🇪' },
-  { code: '+52', name: 'México', flag: '🇲🇽' },
-] as const
-
-type Country = (typeof COUNTRIES)[number]
+import { ProfileRoleBadge } from './components/ProfileRoleBadge'
+import { useProfileForm } from './hooks/useProfileForm'
 
 export function CompleteProfileScreen() {
+  const { user } = useAuth()
+  return <ProfileForm key={user?.auth_id} />
+}
+
+const affiliationOptions = [
+  { value: 'NINGUNA', label: 'Sin afiliación', description: 'Participa a título personal.', icon: 'user' },
+  { value: 'ORGANIZACION_REGISTRADA', label: 'Organización del catálogo', description: 'Busca y selecciona una organización.', icon: 'users' },
+  { value: 'OTRA', label: 'Otra', description: 'Escribe el nombre de tu organización.', icon: 'note' },
+] as const
+
+function ProfileForm() {
   const { user, updateUserFromBackend } = useAuth()
   const navigate = useNavigate()
-  const location = useLocation()
-
-  // Detectar si estamos en modo edición
-  const isEditing = location.pathname === '/app/edit-profile'
-
-  // Países disponibles con sus códigos y banderas
-  const [selectedCountry, setSelectedCountry] = useState<Country>(COUNTRIES[0])
-  const [phoneNumber, setPhoneNumber] = useState('')
-
-  const [formData, setFormData] = useState<ProfileFormData>({
-    nombre: user?.nombre || '',
-    apellido: user?.apellido || '',
-    doc_identidad: user?.doc_identidad || '',
-    wallet_address: user?.wallet_address || '',
-    organizacion: user?.organizacion || '',
-    contacto: user?.contacto || '',
-    rol: user?.rol || 'GENERAL',
-  })
-
-  const [errors, setErrors] = useState<ProfileValidationErrors>({})
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [showSuccessModal, setShowSuccessModal] = useState(false)
-
-  // Inicializar país y número si ya existe contacto
-  React.useEffect(() => {
-    if (user?.contacto) {
-      // Buscar si el contacto existente coincide con algún código de país
-      const existingContact = user.contacto
-      const foundCountry = COUNTRIES.find(country => existingContact.startsWith(country.code))
-
-      if (foundCountry) {
-        setSelectedCountry(foundCountry)
-        setPhoneNumber(existingContact.replace(foundCountry.code, ''))
-      } else {
-        setPhoneNumber(existingContact)
-      }
-    }
-  }, [user?.contacto])
-
-  // Verificar si el usuario ya tiene perfil completo (solo si NO estamos editando)
-  useEffect(() => {
-    // Si estamos en modo edición, o guardando/mostrando éxito, no hacer esta verificación
-    if (isEditing || isSubmitting || showSuccessModal) return
-
-    if (user) {
-      const isComplete = ProfileService.isProfileComplete(user)
-      if (isComplete) {
-        navigate('/app/home', { replace: true })
-      }
-    }
-  }, [user, navigate, isEditing, isSubmitting, showSuccessModal])
-
-  const handleInputChange = (field: keyof ProfileFormData, value: string) => {
-    let processedValue = value
-    let fieldError = ''
-
-    // Validaciones específicas por campo
-    switch (field) {
-      case 'nombre':
-        // Solo letras y espacios, máximo 20 caracteres
-        if (value.length > 20) {
-          fieldError = 'Sobrepasó el límite de 20 caracteres'
-          processedValue = value.substring(0, 20)
-        } else if (!/^[a-zA-ZÀ-ÿ\s]*$/.test(value)) {
-          fieldError = 'Solo se permiten letras'
-          processedValue = value.replace(/[^a-zA-ZÀ-ÿ\s]/g, '')
-        }
-        break
-
-      case 'apellido':
-        // Solo letras y espacios, máximo 20 caracteres
-        if (value.length > 20) {
-          fieldError = 'Sobrepasó el límite de 20 caracteres'
-          processedValue = value.substring(0, 20)
-        } else if (!/^[a-zA-ZÀ-ÿ\s]*$/.test(value)) {
-          fieldError = 'Solo se permiten letras'
-          processedValue = value.replace(/[^a-zA-ZÀ-ÿ\s]/g, '')
-        }
-        break
-
-      case 'doc_identidad':
-        // Solo números, exactamente 8 caracteres
-        if (!/^[0-9]*$/.test(value)) {
-          fieldError = 'Solo se permiten números'
-          processedValue = value.replace(/[^0-9]/g, '')
-        }
-        if (processedValue.length > 8) {
-          fieldError = 'Debe tener exactamente 8 caracteres'
-          processedValue = processedValue.substring(0, 8)
-        }
-        break
-
-      case 'wallet_address':
-        // Formato wallet Ethereum (42 caracteres, empieza con 0x)
-        if (value.length > 42) {
-          fieldError = 'Sobrepasó el límite de 42 caracteres'
-          processedValue = value.substring(0, 42)
-        } else if (value && !value.startsWith('0x')) {
-          fieldError = 'Debe comenzar con 0x'
-        } else if (value && value.toLowerCase() === '0x0000000000000000000000000000000000000000') {
-          fieldError = 'Esta wallet no es válida'
-        } else if (value && !/^0x[a-fA-F0-9]*$/.test(value)) {
-          fieldError = 'Formato de wallet inválido'
-          // Mantener solo caracteres válidos
-          if (value.startsWith('0x')) {
-            processedValue = '0x' + value.substring(2).replace(/[^a-fA-F0-9]/g, '')
-          }
-        }
-        break
-
-      case 'organizacion':
-        // Máximo 25 caracteres para organización
-        if (value.length > 25) {
-          fieldError = 'Sobrepasó el límite de 25 caracteres'
-          processedValue = value.substring(0, 25)
-        }
-        break
-    }
-
-    setFormData(prev => ({
-      ...prev,
-      [field]: processedValue
-    }))
-
-    // Actualizar errores
-    setErrors(prev => ({
-      ...prev,
-      [field]: fieldError || undefined
-    }))
+  const { pathname } = useLocation()
+  const isEditing = pathname === '/app/edit-profile'
+  const form = useProfileForm()
+  const [confirmLeave, setConfirmLeave] = useState(false)
+  const [photoUploading, setPhotoUploading] = useState(false)
+  const backTo = isEditing ? '/app/profile' : '/app/home'
+  const leave = () => { if (!form.saving && !photoUploading) navigate(backTo, { replace: true }) }
+  const requestLeave = () => {
+    if (form.saving || photoUploading) return
+    if (form.dirty) setConfirmLeave(true); else leave()
   }
 
-  const handlePhoneChange = (value: string) => {
-    let processedValue = value
-    let phoneError = ''
-
-    // Solo números, máximo 10 dígitos
-    if (!/^[0-9]*$/.test(value)) {
-      phoneError = 'Solo se permiten números'
-      processedValue = value.replace(/[^0-9]/g, '')
-    }
-    if (processedValue.length > 10) {
-      phoneError = 'Sobrepasó el límite de 10 números'
-      processedValue = processedValue.substring(0, 10)
-    }
-
-    setPhoneNumber(processedValue)
-
-    // Actualizar el contacto completo en formData
-    const fullContact = processedValue.trim() ? `${selectedCountry.code}${processedValue}` : ''
-    setFormData(prev => ({
-      ...prev,
-      contacto: fullContact
-    }))
-
-    // Actualizar errores
-    setErrors(prev => ({
-      ...prev,
-      contacto: phoneError || undefined
-    }))
-  }
-
-  const handleCountryChange = (country: Country) => {
-    setSelectedCountry(country)
-    // Actualizar el contacto completo en formData
-    const fullContact = phoneNumber.trim() ? `${country.code}${phoneNumber}` : ''
-    setFormData(prev => ({
-      ...prev,
-      contacto: fullContact
-    }))
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    if (isSubmitting) return
-
-    // Limpiar campos opcionales vacíos (convertir a undefined)
-    const cleanedData: ProfileFormData = {
-      ...formData,
-      wallet_address: formData.wallet_address?.trim() || undefined,
-      organizacion: formData.organizacion?.trim() || undefined,
-      contacto: formData.contacto?.trim() || undefined,
-    }
-
-    // Validar datos
-    const validation = ProfileService.validateProfileData(cleanedData)
-    if (!validation.isValid) {
-      setErrors(validation.errors as ProfileValidationErrors)
-      return
-    }
-
-    setIsSubmitting(true)
-    setErrors({})
-
-    try {
-      await ProfileService.completeProfile(cleanedData)
-
-      // Obtener los datos frescos del backend después de completar
-      const updatedUser = await updateUserFromBackend()
-
-      // Verificar inmediatamente si el perfil está completo
-      const isComplete = ProfileService.isProfileComplete(updatedUser)
-      if (isComplete) {
-        setShowSuccessModal(true)
-
-        // Cerrar el modal y navegar automáticamente
-        setTimeout(() => {
-          setShowSuccessModal(false)
-          navigate(isEditing ? '/app/profile' : '/app/home', { replace: true })
-        }, 2500)
-      } else {
-        setErrors({
-          general: 'Error: El perfil no se completó correctamente. Inténtalo nuevamente.'
-        })
-      }
-
-    } catch (error: unknown) {
-      const apiError = error instanceof Error
-        ? (error as Error & { status?: number })
-        : null
-      const status = apiError?.status
-      if (status === 409) {
-        setErrors({
-          general: 'El documento de identidad o la wallet ya están registrados en otra cuenta'
-        })
-      } else if (status === 400) {
-        setErrors({
-          general: 'Por favor revisa los datos ingresados'
-        })
-      } else {
-        setErrors({
-          general: apiError?.message || 'Error al completar el perfil'
-        })
-      }
-    } finally {
-      setIsSubmitting(false)
-    }
+  async function submit(event: FormEvent) {
+    event.preventDefault()
+    if (photoUploading) return
+    if (await form.save()) navigate(isEditing ? '/app/profile' : '/app/home', { replace: true, state: { profileUpdated: true } })
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-brand-50 px-4 py-8">
-      <div className="w-full max-w-md">
-        <div className="overflow-hidden rounded-[28px] bg-white shadow-soft">
-          {/* Header */}
-          <div className="relative bg-gradient-to-r from-brand-600 to-brand-700 px-6 py-6">
-            {/* Botón de cerrar */}
-            <button
-              onClick={() => navigate(isEditing ? '/app/profile' : '/app/home', { replace: true })}
-              className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
-              type="button"
-              title={isEditing ? "Volver al perfil" : "Ir al inicio"}
-            >
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-
-            <p className="text-[11px] uppercase tracking-[0.22em] text-white/80">
-              {isEditing ? 'Editar datos' : 'Paso final'}
-            </p>
-            <h1 className="mt-1 text-xl font-semibold text-white">
-              {isEditing ? 'Actualizar perfil' : 'Completa tu perfil'}
-            </h1>
-            <p className="mt-1 text-sm text-white/70">
-              {isEditing ? 'Modifica tus datos personales' : 'Necesitamos algunos datos para continuar'}
-            </p>
+    <div className="mx-auto w-full max-w-2xl px-5 pb-10 pt-6">
+      <PageHeader eyebrow="Mi cuenta" title={isEditing ? 'Editar perfil' : 'Tu perfil en R3foresta'}
+        subtitle="Un nombre para reconocerte y una afiliación si deseas compartirla." onBack={requestLeave} />
+      {form.loading ? (
+        <Card className="space-y-5 py-8" aria-busy="true">
+          <p role="status" className="text-center text-sm font-semibold text-brand-600">Cargando tu perfil…</p>
+          <div aria-hidden="true" className="motion-safe:animate-pulse space-y-4">
+            <div className="mx-auto h-24 w-24 rounded-full bg-brand-100" />
+            <div className="h-12 rounded-2xl bg-neutral-100" /><div className="h-12 rounded-2xl bg-neutral-100" />
           </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4 px-6 pb-6 pt-5">
-
-            {/* AVATAR */}
-            <div className="mb-6 flex justify-center">
-              <AvatarUpload 
-                currentPhotoUrl={user?.foto_perfil_url} 
-                onUploadSuccess={() => updateUserFromBackend()} 
-              />
+        </Card>
+      ) : !form.perfil ? (
+        <Card className="space-y-4 py-8 text-center">
+          <Icon name="alert" className="mx-auto h-9 w-9 text-warning-600" />
+          <h2 className="text-lg font-bold text-brand-700">No pudimos cargar tu perfil</h2>
+          <p role="alert" className="text-sm text-neutral-600">{form.error}</p>
+          <Button leftIcon="refresh" onClick={form.retry}>Reintentar lectura</Button>
+        </Card>
+      ) : (
+        <form noValidate onSubmit={event => void submit(event)} className="space-y-5">
+          <Card className="flex flex-col items-center gap-4 sm:flex-row sm:items-start sm:p-6">
+            <AvatarUpload currentPhotoUrl={user?.foto_perfil_url} disabled={form.saving} onUploadingChange={setPhotoUploading}
+              onUploadSuccess={() => updateUserFromBackend().then(() => undefined)} />
+            <div className="min-w-0 space-y-2 text-center sm:pt-2 sm:text-left">
+              <p className="text-sm font-bold text-brand-700">Tu foto de perfil</p>
+              <p className="text-xs leading-relaxed text-neutral-500">Es opcional y se guarda al subirla.</p>
+              <ProfileRoleBadge rol={form.perfil.rol_global} />
+              <p className="text-xs leading-relaxed text-neutral-500">Tu rol es informativo. La afiliación no cambia tus permisos.</p>
             </div>
-
-            {/* Nombre */}
-            <div className="space-y-1">
-              <label htmlFor="nombre" className="text-sm font-semibold text-brand-700">
-                Nombre <span className="text-danger-500">*</span>
-              </label>
-              <input
-                id="nombre"
-                type="text"
-                value={formData.nombre}
-                onChange={(e) => handleInputChange('nombre', e.target.value)}
-                maxLength={20}
-                className={`w-full rounded-2xl border bg-white/80 px-4 py-3 text-base font-semibold text-neutral-800 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200 ${errors.nombre ? 'border-danger-400' : 'border-neutral-200'
-                  }`}
-                placeholder="Tu nombre (máx. 20 letras)"
-                disabled={isSubmitting}
-              />
-              {errors.nombre && (
-                <p className="text-xs font-medium text-danger-500">{errors.nombre}</p>
-              )}
-              {formData.nombre && (
-                <p className="text-xs text-neutral-500">{formData.nombre.length}/20 caracteres</p>
-              )}
-            </div>
-
-            {/* Apellido */}
-            <div className="space-y-1">
-              <label htmlFor="apellido" className="text-sm font-semibold text-brand-700">
-                Apellido <span className="text-danger-500">*</span>
-              </label>
-              <input
-                id="apellido"
-                type="text"
-                value={formData.apellido}
-                onChange={(e) => handleInputChange('apellido', e.target.value)}
-                maxLength={20}
-                className={`w-full rounded-2xl border bg-white/80 px-4 py-3 text-base font-semibold text-neutral-800 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200 ${errors.apellido ? 'border-danger-400' : 'border-neutral-200'
-                  }`}
-                placeholder="Tu apellido (máx. 20 letras)"
-                disabled={isSubmitting}
-              />
-              {errors.apellido && (
-                <p className="text-xs font-medium text-danger-500">{errors.apellido}</p>
-              )}
-              {formData.apellido && (
-                <p className="text-xs text-neutral-500">{formData.apellido.length}/20 caracteres</p>
-              )}
-            </div>
-
-            {/* Documento de identidad */}
-            <div className="space-y-1">
-              <label htmlFor="doc_identidad" className="text-sm font-semibold text-brand-700">
-                Documento de identidad <span className="text-danger-500">*</span>
-              </label>
-              <input
-                id="doc_identidad"
-                type="text"
-                value={formData.doc_identidad}
-                onChange={(e) => handleInputChange('doc_identidad', e.target.value)}
-                maxLength={8}
-                className={`w-full rounded-2xl border bg-white/80 px-4 py-3 text-base font-semibold text-neutral-800 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200 ${errors.doc_identidad ? 'border-danger-400' : 'border-neutral-200'
-                  }`}
-                placeholder="DNI, Cédula, etc. (8 dígitos)"
-                disabled={isSubmitting}
-              />
-              {errors.doc_identidad && (
-                <p className="text-xs font-medium text-danger-500">{errors.doc_identidad}</p>
-              )}
-              {formData.doc_identidad && (
-                <p className="text-xs text-neutral-500">
-                  {formData.doc_identidad.length}/8 caracteres
-                  {formData.doc_identidad.length === 8 && (
-                    <span className="ml-1 text-success-600">✓</span>
-                  )}
-                </p>
-              )}
-            </div>
-
-            {/* Organización */}
-            <div className="space-y-1">
-              <label htmlFor="organizacion" className="text-sm font-semibold text-brand-700">
-                Organización
-              </label>
-              <input
-                id="organizacion"
-                type="text"
-                value={formData.organizacion}
-                onChange={(e) => handleInputChange('organizacion', e.target.value)}
-                maxLength={25}
-                className="w-full rounded-2xl border border-neutral-200 bg-white/80 px-4 py-3 text-base font-semibold text-neutral-800 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
-                placeholder="Opcional (máx. 25 caracteres)"
-                disabled={isSubmitting}
-              />
-              {formData.organizacion && (
-                <p className="text-xs text-neutral-500">{formData.organizacion.length}/25 caracteres</p>
-              )}
-            </div>
-
-            {/* Wallet Address */}
-            <div className="space-y-1">
-              <label htmlFor="wallet_address" className="text-sm font-semibold text-brand-700">
-                Wallet Address
-              </label>
-              <input
-                id="wallet_address"
-                type="text"
-                value={formData.wallet_address}
-                onChange={(e) => handleInputChange('wallet_address', e.target.value)}
-                maxLength={42}
-                className={`w-full rounded-2xl border bg-white/80 px-4 py-3 text-base font-semibold text-neutral-800 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200 ${errors.wallet_address ? 'border-danger-400' : 'border-neutral-200'
-                  }`}
-                placeholder="0x... (42 caracteres)"
-                disabled={isSubmitting}
-              />
-              {errors.wallet_address && (
-                <p className="text-xs font-medium text-danger-500">{errors.wallet_address}</p>
-              )}
-              {formData.wallet_address && (
-                <p className="text-xs text-neutral-500">{formData.wallet_address.length}/42 caracteres</p>
-              )}
-            </div>
-
-            {/* Contacto */}
-            <div className="space-y-1">
-              <label htmlFor="contacto" className="text-sm font-semibold text-brand-700">
-                Contacto
-              </label>
-              <div className="flex gap-2">
-                {/* Selector de país */}
-                <div className="relative">
-                  <select
-                    value={selectedCountry.code}
-                    onChange={(e) => {
-                      const country = COUNTRIES.find(c => c.code === e.target.value)
-                      if (country) handleCountryChange(country)
-                    }}
-                    className="appearance-none rounded-2xl border border-neutral-200 bg-white/80 px-3 py-3 text-base font-semibold text-neutral-800 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200 pr-10 min-w-[120px]"
-                    disabled={isSubmitting}
-                  >
-                    {COUNTRIES.map((country) => (
-                      <option key={country.code} value={country.code}>
-                        {country.flag} {country.code}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-neutral-400">
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                </div>
-
-                {/* Campo de número */}
-                <input
-                  id="contacto"
-                  type="tel"
-                  value={phoneNumber}
-                  onChange={(e) => handlePhoneChange(e.target.value)}
-                  maxLength={10}
-                  className={`flex-1 rounded-2xl border bg-white/80 px-4 py-3 text-base font-semibold text-neutral-800 shadow-soft outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-200 ${errors.contacto ? 'border-danger-400' : 'border-neutral-200'
-                    }`}
-                  placeholder={
-                    selectedCountry.code === '+591' ? '12345678 (máx. 10 díg.)' :
-                      selectedCountry.code === '+51' ? '87654321 (máx. 10 díg.)' :
-                        '5512345678 (máx. 10 díg.)'
-                  }
-                  disabled={isSubmitting}
-                />
+          </Card>
+          <Card as="section" className="space-y-5 sm:p-6" aria-labelledby="datos-personales-title">
+            <div><h2 id="datos-personales-title" className="text-base font-bold text-brand-700">¿Cómo te llamas?</h2>
+              <p className="mt-1 text-sm text-neutral-500">Solo el nombre es obligatorio.</p></div>
+            <ProfileInput id="nombre" label="Nombre" required value={form.nombre} limit={100}
+              error={form.errors.nombre} disabled={form.disabled} autoComplete="given-name"
+              onChange={form.setNombre} onBlur={() => form.touch('nombre')} />
+            <ProfileInput id="apellido" label="Apellido (opcional)" value={form.apellido} limit={30}
+              error={form.errors.apellido} disabled={form.disabled} autoComplete="family-name"
+              onChange={form.setApellido} onBlur={() => form.touch('apellido')} />
+          </Card>
+          <Card as="section" className="space-y-4 sm:p-6" aria-labelledby="afiliacion-title">
+            <fieldset disabled={form.disabled} aria-describedby="afiliacion-hint" className="space-y-4">
+              <legend id="afiliacion-title" className="text-base font-bold text-brand-700">Afiliación (opcional)</legend>
+              <p id="afiliacion-hint" className="text-sm leading-relaxed text-neutral-500">Puedes continuar sin una organización. Elige cómo quieres aparecer en tu perfil.</p>
+              <div className="space-y-2">
+                {affiliationOptions.map(option => (
+                  <label key={option.value} className={`flex min-h-16 cursor-pointer items-center gap-3 rounded-2xl border p-4 transition focus-within:ring-2 focus-within:ring-brand-400 ${form.tipo === option.value ? 'border-brand-300 bg-brand-50' : 'border-neutral-200 hover:bg-neutral-50'}`}>
+                    <input type="radio" name="afiliacion" value={option.value} checked={form.tipo === option.value}
+                      onChange={() => form.setTipo(option.value)} className="h-4 w-4 shrink-0 accent-brand-600" />
+                    <Icon name={option.icon} className="h-5 w-5 shrink-0 text-brand-500" />
+                    <span className="min-w-0"><span className="block text-sm font-semibold text-brand-700">{option.label}</span>
+                      <span className="mt-0.5 block text-xs text-neutral-500">{option.description}</span></span>
+                  </label>
+                ))}
               </div>
-              {errors.contacto && (
-                <p className="text-xs font-medium text-danger-500">{errors.contacto}</p>
-              )}
-              {phoneNumber && (
-                <p className="text-xs text-neutral-500">{phoneNumber.length}/10 números</p>
-              )}
-            </div>
-
-            {/* Error general */}
-            {errors.general && (
-              <div className="rounded-2xl border-l-4 border-danger-500 bg-danger-50 px-4 py-3 text-sm font-semibold text-danger-700 shadow-soft">
-                {errors.general}
-              </div>
-            )}
-
-            {/* Submit */}
-            <Button type="submit" size="lg" fullWidth disabled={isSubmitting}>
-              {isSubmitting
-                ? (isEditing ? 'Guardando...' : 'Guardando...')
-                : (isEditing ? 'Actualizar perfil' : 'Completar perfil')
-              }
-            </Button>
-
-            <p className="text-center text-[11px] text-neutral-400">
-              Los campos con <span className="text-danger-500">*</span> son obligatorios
-              {isEditing && <span className="block mt-1">Campos vacíos mantendrán su valor actual</span>}
-            </p>
-          </form>
-        </div>
-      </div>
-
-      {/* Modal de éxito */}
-      {showSuccessModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl">
-            <div className="flex flex-col items-center space-y-6">
-
-              <h2 className="text-center text-2xl font-extrabold text-neutral-800">
-                ¡Actualización Exitosa!
-              </h2>
-
-              <div className="flex h-32 w-32 items-center justify-center rounded-full bg-success-100">
-                <svg
-                  className="h-20 w-20 text-success-500"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              </div>
-
-              <div className="text-center">
-                <p className="text-base font-semibold text-neutral-700">
-                  {isEditing
-                    ? 'Tu perfil se ha actualizado exitosamente.'
-                    : 'Tu perfil se ha completado exitosamente.'}
-                </p>
-              </div>
-            </div>
+              {form.tipo === 'ORGANIZACION_REGISTRADA' && <AfiliacionSelector selected={form.organizacion} disabled={form.disabled} onSelect={form.setOrganizacion} />}
+              {form.tipo === 'OTRA' && <ProfileInput id="otra-organizacion" label="Nombre de otra organización" value={form.otra} limit={150}
+                error={form.errors.afiliacion} disabled={form.disabled} autoComplete="organization"
+                onChange={form.setOtra} onBlur={() => form.touch('afiliacion')}
+                hint="Este nombre se guarda en tu perfil. No crea una organización en el catálogo." />}
+              {form.tipo === 'ORGANIZACION_REGISTRADA' && form.errors.afiliacion && <p role="alert" className="text-sm font-semibold text-danger-700">{form.errors.afiliacion}</p>}
+            </fieldset>
+          </Card>
+          {form.error && <div role="alert" className="rounded-2xl border border-danger-200 bg-danger-50 p-4 text-sm text-danger-700">{form.error}</div>}
+          <div className="space-y-3 rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5 sm:p-5">
+            <p role="status" className="text-center text-xs text-neutral-500">{form.saving ? 'Guardando tu perfil…' : photoUploading ? 'Espera a que termine de guardarse la foto.' : form.dirty ? 'Tienes cambios sin guardar.' : 'No necesitas documento ni wallet para completar tu perfil.'}</p>
+            <Button type="submit" fullWidth size="lg" loading={form.saving} disabled={form.disabled || photoUploading || !form.nombre.trim()} leftIcon="check">{form.saving ? 'Guardando…' : 'Guardar perfil'}</Button>
+            <Button variant="ghost" fullWidth disabled={form.saving || photoUploading} onClick={requestLeave}>{isEditing ? 'Cancelar' : 'Volver al inicio'}</Button>
           </div>
-        </div>
+        </form>
       )}
+      <ConfirmDialog open={confirmLeave} title="¿Salir sin guardar?" description="Los cambios de nombre y afiliación se perderán."
+        confirmLabel="Salir sin guardar" cancelLabel="Seguir editando" onConfirm={leave} onCancel={() => setConfirmLeave(false)} />
+    </div>
+  )
+}
+
+type ProfileInputProps = {
+  id: string; label: string; value: string; limit: number; error?: string; hint?: string
+  required?: boolean; disabled: boolean; autoComplete: string
+  onChange: (value: string) => void; onBlur: () => void
+}
+function ProfileInput({ id, label, value, limit, error, hint, onChange, onBlur, ...props }: ProfileInputProps) {
+  const count = [...value.normalize('NFC').trim()].length
+  const visibleError = error || (count > limit ? `Admite hasta ${limit} caracteres. Ajusta el texto para guardarlo completo.` : undefined)
+  return (
+    <div className="space-y-2">
+      <div className="flex items-baseline justify-between gap-3">
+        <label htmlFor={id} className="text-sm font-semibold text-brand-700">{label}{props.required && <span className="ml-1 text-danger-500" aria-hidden="true">*</span>}</label>
+        <span aria-hidden="true" className={`shrink-0 text-xs ${count > limit ? 'font-bold text-danger-600' : 'text-neutral-400'}`}>{count}/{limit}</span>
+      </div>
+      <Input id={id} value={value} onChange={event => onChange(event.target.value)} onBlur={onBlur}
+        error={Boolean(visibleError)} aria-invalid={Boolean(visibleError)} aria-describedby={`${id}-hint`} {...props} />
+      <p id={`${id}-hint`} className={`text-xs leading-relaxed ${visibleError ? 'font-semibold text-danger-700' : 'text-neutral-500'}`}>{visibleError || hint || `Hasta ${limit} caracteres.`}</p>
     </div>
   )
 }
