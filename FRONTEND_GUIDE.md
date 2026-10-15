@@ -1,793 +1,102 @@
-# FRONTEND_GUIDE.md — Guía de construcción frontend R3foresta
+# Guía de construcción frontend
 
-## 1. Propósito
+Guía práctica del código actual. Arranque/comandos: [README](README.md). Reglas obligatorias: [AGENTS](AGENTS.md). Dominio: [índice y fuentes](DOMAIN_INDEX.md). Trabajo pendiente: [auditoría](FRONTEND_AUDIT.md).
 
-Este documento explica cómo entender, construir, probar y validar el frontend de R3foresta.
+## Arquitectura y puntos de entrada
 
-Sirve para guiar a devs y agentes de IA al construir pantallas, formularios, servicios, hooks y componentes sin romper contratos del backend ni reglas críticas del dominio.
+| Responsabilidad | Dónde buscar |
+| --- | --- |
+| Rutas lazy y guards | `src/App.tsx`, `src/routes/` |
+| Arranque/proveedores | `src/main.tsx`, `src/contexts/`, `src/layouts/AppLayout.tsx` |
+| Features | `src/modules/<feature>/`: pantallas, componentes, hooks, contratos, mappers y utilidades |
+| Transporte/casos de uso existentes | `src/api/`, `src/services/`; clientes v1 de perfil/participación dentro del módulo |
+| UI compartida | `src/components/ui/`, `src/components/ConfirmDialog.tsx` |
+| PWA | `src/pwa/`, `vite.config.ts`, `vercel.json` |
 
-No reemplaza:
+Seguir la estructura real del módulo: hay `screens/` y `pages/`, sin necesidad de renombrar carpetas para uniformarlas. Las rutas usan `React.lazy` con imports directos; Leaflet y sus estilos se cargan donde se usan. Las capas compartidas no deben incorporar reglas de una feature.
 
-- `AGENTS.md`: reglas obligatorias para agentes.
-- `FRONTEND_AUDIT.md`: deuda técnica, hallazgos y checklist vivo.
-- `DOMAIN_INDEX.md`: mapa resumido del dominio.
-- Documentos fuente: requerimientos, reglas de negocio, procesos y esquema DB.
+## Secuencia para un cambio
 
-Regla de uso:
+1. Leer `package.json`, la pantalla/contrato y sus consumidores; revisar el README del módulo si existe.
+2. Si afecta dominio, abrir la fuente concreta del [índice](DOMAIN_INDEX.md). Si falta contrato, pedirlo; no inferir enums/endpoints nuevos.
+3. Elegir el cambio mínimo y explicar el plan si abarca varios archivos.
+4. Reutilizar UI, hooks y servicios existentes; mantener separados transporte, validación/mapeo y presentación.
+5. Verificar el comportamiento afectado y los checks pertinentes. Registrar qué se ejecutó y qué sigue sin acreditar.
 
-> Si necesitas construir frontend, usa esta guía.
-> Si necesitas validar una regla de negocio, consulta `DOMAIN_INDEX.md` y la documentación fuente.
+## Contratos y datos
 
----
+- Conservar nombres de campos del backend y separar DTO de valores de formulario/view model cuando aporte claridad. Evitar `any`.
+- Usar la configuración de URL existente. No colocar fetch en JSX ni crear otro cliente si el módulo ya resuelve el caso.
+- Mantener la atomicidad del endpoint: no dividir un comando o una revisión de plan en varias escrituras.
+- Cancelar/descartar respuestas obsoletas al cambiar filtros, persona, cuenta o desmontar. El spinner o botón deshabilitado no garantizan idempotencia.
+- Mostrar `loading`, vacío válido, error recuperable y resultado confirmado por separado. Nunca convertir un error de lectura en «sin permisos» o saldo cero.
+- Los datos calculados/snapshots son lectura. No recalcular saldo como verdad ni simular persistencia/cierre.
+- Perfil y participación v1 validan respuestas en runtime; IDs/revisiones BIGINT son cadenas decimales. No convertirlos a `number`.
+- Algunos clientes legados conservan headers de identidad/rol por compatibilidad. No copiarlos a rutas v1 ni retirarlos globalmente sin cotejar backend; esos headers no son fuente de autoridad.
 
-## 2. Stack y verificación inicial
+## UI y formularios
 
-Stack base:
+UI en español, Tailwind y primitivas de `src/components/ui/`. Componentes enfocados; la pantalla compone y delega datos/validaciones a hooks/servicios. No introducir otra librería UI para resolver un caso cubierto.
 
-- React
-- TypeScript
-- Vite
-- Tailwind CSS
+- Formularios largos por bloques: datos base, cantidad/unidad, ubicación, evidencia, observaciones y resumen.
+- Errores por campo cuando el contrato los ofrece; conservar propuestas ante rechazo o incertidumbre.
+- Estados/saldos/restricciones visibles. Diferenciar material en proceso, plantas vivas, campos editables, calculados e historial.
+- Antes de una operación definitiva, `ConfirmDialog`: persona/lote, ámbitos/evento, cantidad/unidad si aplica, fecha, responsable, evidencia y consecuencia. Cancelar el diálogo no escribe.
+- El diálogo existente contiene foco, admite Escape y devuelve foco al cerrar. Reutilizarlo.
+- En evidencias mostrar preview seguro y metadatos recibidos; `bucket`/`ruta_archivo` no son URLs públicas.
+- Eventos/movimientos append-only: historial completo, sin editar/borrar; filtros sólo visuales.
 
-Antes de crear o modificar código, revisar:
+## Sesión, rutas y capacidades
 
-- `package.json`
-- lockfile
-- estructura de carpetas
-- componentes existentes
-- servicios API existentes
-- rutas existentes
-- configuración de `.env`
-- patrones ya usados
+`AuthContext` es la fuente de sesión; `useWebAuthn` delega en él. El arranque verifica perfil con Bearer antes de abrir privados. `r3foresta:user` y `auth_id` son datos auxiliares, nunca autoridad.
 
-No introducir librerías nuevas si el patrón existente resuelve el problema.
+El perfil visible está ligado al token que lo verificó. Al cambiar token por login, otra pestaña o recuperar foco se oculta la cuenta anterior hasta verificar la nueva. Reconsultar el mismo token no desmonta formularios. Las respuestas tardías no restauran una sesión cerrada ni borran la nueva.
 
----
+- `ProtectedRoute` verifica sesión y audiencia de navegación; el backend decide cada operación.
+- `appAccess.ts` conserva la entrada interna de ADMIN/GENERAL/VALIDADOR. Ser administrador contextual no abre esos módulos.
+- Perfil mínimo: nombre. Apellido, documento, wallet y afiliación no deben convertirse en requisitos nuevos de este recorrido.
+- `AppLayout` aporta el provider compartido de capacidades. No reemplazar todas las facultades internas por este DTO limitado al recorrido participante.
+- La consulta pública de Impacto debe quedar independiente de sesión/capacidades cuando se implemente. El mapa interno actual no es esa proyección.
 
-## 3. Principios del frontend
+## Plan de Plantación
 
-El frontend es una capa de operación y experiencia de usuario.
+Reutilizar `PlanMetaEspeciesForm`, `usePlanMetaEspeciesForm` y utilidades del módulo. Asistente y detalle conservan su propia carga, autorización, confirmación y persistencia.
 
-Debe:
+- GET/PUT del plan requieren Bearer; no usan `x-auth-id`. Sin token no enviar petición. El detalle ofrece edición a ADMIN global en BORRADOR/ACTIVA.
+- Una revisión usa un único PUT con `meta_total_arboles`, `metas`, `revision_esperada`; `plan_revision` procede de GET, incluido `0`. Sin versión no habilitar guardado ni hacer fallback por PATCH.
+- Mantener la propuesta exacta al abrir/reconsultar. Cambiar meta o porcentajes usa `buildPlanMetasPayload`; el ajuste de cantidades es explícito. Cantidades/meta enteras positivas hasta `2147483647`; porcentajes en centésimas. Un 0% del borrador se omite del plan remoto; el editor requiere objetivos positivos y retirada explícita.
+- 401 pide recuperar sesión, 403 bloquea edición sin inventar autorización y 404 indica recurso no disponible. Un 409 exige consultar y revisar otra vez.
+- Red/5xx/confirmación incompleta: consultar antes de otra escritura, conservar propuesta, invalidar la comparación anterior y exigir confirmación nueva. No asumir que no guardó ni reintentar automáticamente.
+- Antes de recuperar sesión, el borrador temporal de `sessionStorage` se vincula a subcampaña/`auth_id` verificado. No guarda token/versión para reenviar; sólo se restaura al mismo actor después de consultar el plan.
+- Tras éxito actualizar detalle/plan/indicadores/contexto. Si falla esa lectura, informar actualización pendiente; no repetir el PUT confirmado.
+- Meta orientativa: el avance puede superar 100%; sólo se limita el ancho de barra. Revisar plan no cambia stock, hechos, estado ni ejecuta el cierre.
 
-- guiar al usuario;
-- mostrar estado real del sistema;
-- prevenir errores obvios;
-- consumir contratos del backend;
-- representar saldos, estados, snapshots y evidencias con claridad;
-- mantener formularios simples;
-- mostrar restricciones antes de enviar.
+Contrato/evidencia y límites: [QA del editor](docs/QA_EDITOR_PLAN_USO.md), `AUD-015` y `AUD-016`.
 
-No debe:
+## Capacidades y comandos de participación
 
-- ser motor final de reglas de negocio;
-- recalcular saldos como fuente de verdad;
-- inventar enums, estados o flujos;
-- simular persistencia antes de respuesta exitosa;
-- ocultar restricciones críticas.
+`src/modules/participacion/` centraliza DTO, validadores y cliente `/api/v1`. Usar Bearer, `no-store`, cancelación y timeout de 40 s incluido el body; verificar actor con capacidades del mismo token. [Detalle del módulo](src/modules/participacion/README.md).
 
-Idea central:
+- Consumir `useParticipacionCapabilities()` dentro del provider de `AppLayout`, sin otro cliente/provider paralelo. Completar paginación antes de publicar selección; distinguir carga, vacío, error y sesión vencida.
+- C04–C09: una selección de hasta 100 IDs actuales, revisiones consultadas y confirmación explícita. Cambiar persona/acción/selección/tratamiento invalida revisión, incluso al volver a una selección anterior.
+- `useAccessCommand`: un UUID por confirmación, guardado antes del POST con actor/operación/payload. `localStorage` por actor, sin tokens/nombres/búsquedas/fotos. Web Locks coordina pestañas; fallo de almacenamiento, falta de soporte o pendiente incierto bloquean nuevas confirmaciones.
+- Timeout/5xx/recibo inválido/GET 202 o 404 mantienen resultado no confirmado. Recuperar o reenviar usa exactamente UUID/payload/revisiones originales. Logout/recarga no autorizan otra clave.
+- Sólo un terminal validado acredita éxito/rechazo y permite liberar el intento. El recibo es histórico: después se consultan capacidades/miembros y nuevas revisiones.
+- Inicio debe ofrecer recuperar un pendiente propio aunque se pierda la capacidad de gestión; otra cuenta no lo muestra ni recupera.
+- INT04 reutilizará capacidades y extenderá/extraerá las primitivas con sus DTO/evidencias. El hook actual acepta sólo C04–C09. No crear otro motor ni tratarlo como contrato de registro.
 
-> Validación frontend = ayuda UX.  
-> Validación backend = verdad del sistema.
+## PWA y verificación
 
----
+El SW se genera con Workbox en `npm run build`; no versionar `public/sw.js`. Precachear shell/assets no equivale a una outbox. No añadir caché pública de API/recibos ni sync offline sin su contrato.
 
-## 4. Arquitectura general
-
-El frontend se organiza por módulos de dominio. En el repo actual la implementación usa `src/modules/` para las features y mantiene `src/api/` y `src/services/` como capas compartidas de acceso a datos y casos de uso.
-
-```txt
-src/
-  api/
-  components/
-  contexts/
-  hooks/
-  layouts/
-  modules/
-    recolecciones/
-    vivero/
-    plantacion/
-    evidencias/
-    auth/
-  services/
-  utils/
-```
-
-Adaptar nombres a la estructura real del repo, pero mantener la separación conceptual.
-
-### 4.1 Entrada y composición de la aplicación
-
-El router principal vive en `src/App.tsx`; los providers globales viven en `src/contexts/`, los layouts en `src/layouts/` y la configuración de build en la raíz.
-
-No debe contener lógica específica de Recolección, Vivero o Evidencias.
-
-Las pantallas registradas en el router se cargan bajo demanda con `React.lazy` y rutas de importación directas. `Suspense` debe ofrecer feedback visible mientras llega un chunk. El entrypoint global no debe importar librerías pesadas de una feature, como Leaflet; sus scripts y estilos pertenecen a las pantallas que realmente los usan.
-
-### 4.2 Capas compartidas
-
-`src/components/`, `src/hooks/`, `src/utils/`, `src/api/` y `src/services/` contienen componentes reutilizables, utilidades, tipos transversales, llamadas HTTP y casos de uso compartidos.
-
-No debe depender de una feature concreta.
-
-### 4.3 `modules/`
-
-Contiene pantallas, componentes, hooks, tipos, mappers, validaciones de UI y composición específica de cada módulo.
-
-Cada feature debe poder entenderse sin revisar todo el proyecto.
-
----
-
-## 5. Estructura recomendada por módulo
-
-Ejemplo:
-
-```txt
-modules/vivero/
-  api/
-  components/
-  hooks/
-  pages/
-  types/
-  utils/
-  schemas/
-  index.ts
-```
-
-No todas las carpetas son obligatorias desde el inicio. Crear solo lo necesario.
-
-### 5.1 `api/`
-
-Centraliza llamadas al backend.
-
-Reglas:
-
-- no hacer `fetch`/`axios` disperso en componentes;
-- no hardcodear base URL;
-- usar configuración/env existente;
-- tipar request y response;
-- no partir operaciones atómicas en varios requests desde UI.
-
-Ejemplos:
-
-```txt
-src/api/lotes-vivero.api.ts
-src/services/recolecciones.service.ts
-src/api/plantacion.api.ts
-```
-
-### 5.2 `components/`
-
-Componentes propios de la feature.
-
-Reglas:
-
-- componentes pequeños;
-- nombres explícitos;
-- props tipadas;
-- sin lógica de negocio compleja dentro de JSX;
-- reutilizar antes de crear.
-
-Ejemplos:
-
-```txt
-LoteViveroCard.tsx
-EventoTimeline.tsx
-EvidenciaPreview.tsx
-SaldoVivoBadge.tsx
-```
-
-### 5.3 `hooks`
-
-Hooks para carga de datos, acciones o composición de estado.
-
-Reglas:
-
-- responsabilidad clara;
-- no duplicar llamadas API;
-- exponer estados útiles: `loading`, `error`, `data`, `isEmpty`, `submitting`;
-- encapsular lógica repetida de pantalla.
-
-### 5.4 `pages`
-
-Pantallas conectadas a rutas.
-
-Reglas:
-
-- la page orquesta;
-- no debe convertirse en componente gigante;
-- dividir en secciones;
-- delegar UI repetida a componentes.
-
-### 5.5 `types`
-
-Tipos TypeScript del módulo.
-
-Separar cuando aporte claridad:
-
-- DTOs del backend;
-- request/response;
-- modelos de UI;
-- valores de formulario.
-
-Regla:
-
-> No deformar el contrato del backend por comodidad visual.
-
-### 5.6 `utils`, `mappers` o `schemas`
-
-Usar para transformar datos sin contaminar componentes:
-
-- enum a label;
-- fechas;
-- badges;
-- response a view model;
-- schemas de formulario si el proyecto usa una librería para eso.
-
----
-
-## 6. Tipos, DTOs y view models
-
-Mantener tres capas cuando sea útil.
-
-### 6.1 Response del backend
-
-Mantiene nombres reales del contrato.
-
-```ts
-type EventoLoteViveroResponse = {
-  id: number;
-  tipo_evento: "INICIO" | "EMBOLSADO" | "ADAPTABILIDAD" | "MERMA" | "DESPACHO" | "CIERRE_AUTOMATICO";
-  fecha_evento: string;
-  cantidad_afectada: number | null;
-  unidad_medida_evento: "UNIDAD" | "G" | null;
-};
-```
-
-### 6.2 Form values
-
-Representan lo que llena el usuario.
-
-```ts
-type RegistrarMermaFormValues = {
-  fecha_evento: string;
-  cantidad_afectada: string;
-  causa_merma: string;
-  observaciones?: string;
-};
-```
-
-### 6.3 View model
-
-Representa datos listos para UI.
-
-```ts
-type EventoTimelineItem = {
-  id: number;
-  title: string;
-  dateLabel: string;
-  quantityLabel?: string;
-  badgeLabel: string;
-};
-```
-
-Usar mappers para pasar de response a view model.
-
----
-
-## 7. Servicios/API
-
-Patrón recomendado:
-
-```ts
-// src/api/lotes-vivero.api.ts
-
-export async function getLotesVivero() {
-  // usar client HTTP existente
-}
-
-export async function registrarEmbolsado(payload: RegistrarEmbolsadoRequest) {
-  // usar endpoint del backend
-}
-```
-
-Reglas:
-
-- usar client HTTP existente;
-- usar `.env` para URL base;
-- tipar request y response;
-- manejar errores de forma consistente;
-- no actualizar estado local como persistido hasta recibir confirmación;
-- consumir endpoints transaccionales del backend para operaciones críticas.
-
-Evitar:
-
-- endpoints hardcodeados en componentes;
-- payloads armados en JSX;
-- duplicar funciones API similares;
-- simular respuestas exitosas sin backend.
-
----
-
-## 8. Estado de UI
-
-Toda pantalla o acción debe representar estados explícitos:
-
-- `loading`
-- `error`
-- `empty`
-- `success`
-- `submitting`
-
-Flujo mental:
-
-```txt
-Cargar datos -> loading
-Sin datos -> empty state
-Error -> mensaje recuperable
-Datos -> contenido
-Submit -> botón deshabilitado + feedback
-Success -> actualizar vista, timeline o redirigir
-```
-
-No ocultar fallos.
-
----
-
-## 9. Dominio mínimo en UI
-
-Esta sección solo resume lo necesario para construir interfaz. Para reglas completas, revisar `DOMAIN_INDEX.md`.
-
-### 9.1 Recolección
-
-Estados de registro:
-
-- `BORRADOR`
-- `PENDIENTE_VALIDACION`
-- `VALIDADO`
-- `RECHAZADO`
-
-Estado operativo:
-
-- `ABIERTO`
-- `CERRADO`
-
-Principios UI:
-
-- `BORRADOR` y `RECHAZADO` pueden mostrar edición si el rol lo permite.
-- `PENDIENTE_VALIDACION` debe mostrarse congelado.
-- `VALIDADO` no debe mostrar edición directa.
-- Solo `VALIDADO + ABIERTO` debe aparecer como elegible para iniciar Vivero.
-- El consumo hacia Vivero no debe aparecer como acción manual suelta en Recolección si el flujo oficial ocurre desde Vivero.
-
-### 9.2 Vivero
-
-Secuencia visual recomendada:
-
-```txt
-Recolección -> Consumo -> Inicio -> Embolsado -> Adaptabilidad -> Merma/Despacho -> Cierre
-```
-
-Principios UI:
-
-- `INICIO` representa material en proceso, no plantas vivas.
-- `EMBOLSADO` crea plantas vivas y saldo vivo.
-- `ADAPTABILIDAD` no cambia saldo.
-- `MERMA` y `DESPACHO` descuentan saldo vivo.
-- `CIERRE_AUTOMATICO` se muestra cuando el backend lo devuelve o cuando el lote ya aparece finalizado.
-
-### 9.3 Evidencias
-
-Principios UI:
-
-- eventos críticos deben exigir evidencia antes de enviar;
-- mostrar preview cuando exista;
-- mostrar nombre, tipo, peso y fecha cuando estén disponibles;
-- no tratar `bucket` o `ruta_archivo` como URL pública;
-- mostrar errores de carga;
-- evitar flujos de evidencia tardía si el MVP no los soporta.
-
----
-
-## 10. Diseño de pantallas
-
-Toda pantalla debe responder:
-
-1. ¿Qué está viendo el usuario?
-2. ¿En qué estado está el registro/lote?
-3. ¿Qué puede hacer ahora?
-4. ¿Qué no puede hacer y por qué?
-5. ¿Qué datos son calculados por backend?
-6. ¿Qué evidencia respalda la operación?
-7. ¿Qué pasará después de confirmar?
-
-### 10.1 Listados
-
-Incluir cuando aplique:
-
-- buscador;
-- filtros principales;
-- estado visible;
-- acciones permitidas;
-- loading;
-- empty state;
-- error state;
-- estrategia de carga/paginación si aplica.
-
-Ejemplo Vivero:
-
-- filtro por estado del lote;
-- búsqueda por código, lote de vivero o lote origen.
-
-### 10.2 Detalles
-
-Priorizar lectura operativa.
-
-Secciones sugeridas:
-
-- resumen principal;
-- identidad/snapshots;
-- saldos;
-- estado;
-- origen;
-- timeline;
-- evidencias;
-- acciones disponibles;
-- restricciones o alertas.
-
-### 10.3 Formularios
-
-Deben ser simples y por bloques.
-
-Bloques sugeridos:
-
-- datos base;
-- cantidad/unidad;
-- ubicación o destino;
-- evidencia;
-- observaciones;
-- resumen antes de confirmar.
-
-No diseñar formularios enormes sin secciones.
-
-### 10.4 Modales
-
-Usar modales para confirmaciones, resúmenes previos, acciones pequeñas y previews.
-
-Evitar formularios largos en modales si afecta claridad.
-
----
-
-## 11. Formularios y validaciones
-
-Las validaciones frontend ayudan a evitar errores obvios antes del envío.
-
-Deben validar:
-
-- campos obligatorios evidentes;
-- formato de fecha;
-- formato de número;
-- unidad seleccionada;
-- archivos requeridos;
-- tamaño/formato básico de evidencia si aplica;
-- consistencia visual de campos condicionales.
-
-No deben:
-
-- reemplazar validación backend;
-- decidir elegibilidad final;
-- recalcular saldos como fuente de verdad;
-- asumir persistencia antes de respuesta exitosa.
-
-### 11.1 Confirmación para eventos append-only
-
-Antes de registrar eventos definitivos, mostrar resumen:
-
-- lote;
-- tipo de evento;
-- fecha;
-- responsable;
-- cantidad;
-- unidad;
-- evidencia;
-- efecto esperado sobre saldo si aplica.
-
-Texto sugerido:
-
-> Este evento se agregará al historial del lote. Una vez registrado, no podrá editarse desde la interfaz.
-
-### 11.2 Errores
-
-Preferir errores claros:
-
-- por campo si backend responde validaciones específicas;
-- globales si la operación falla;
-- con instrucción de recuperación si aplica.
-
-Evitar:
-
-> Error desconocido
-
-Mejor:
-
-> No se pudo registrar la merma. Revisa la cantidad disponible y vuelve a intentar.
-
----
-
-## 12. UI/UX del dominio
-
-### 12.1 Badges de estado
-
-Usar badges para estados relevantes:
-
-- `BORRADOR`
-- `PENDIENTE_VALIDACION`
-- `VALIDADO`
-- `RECHAZADO`
-- `ABIERTO`
-- `CERRADO`
-- `ACTIVO`
-- `FINALIZADO`
-
-Los badges deben ayudar a decidir acciones.
-
-Ejemplos:
-
-- `VALIDADO + ABIERTO`: puede iniciar Vivero.
-- `VALIDADO + CERRADO`: no puede iniciar Vivero.
-- `FINALIZADO`: no permite nuevos eventos operativos.
-
-### 12.2 Saldos y cantidades
-
-Diferenciar visualmente:
-
-- cantidad inicial;
-- material en proceso;
-- plantas vivas iniciales;
-- saldo vivo actual;
-- saldo antes;
-- saldo después.
-
-Si el dato es calculado por backend, mostrarlo como solo lectura.
-
-### 12.3 Snapshots
-
-Los snapshots son datos congelados. Mostrar como lectura, no como campos editables.
-
-### 12.4 Timeline
-
-El timeline debe ser auditable y claro.
-
-Cada evento debería mostrar, cuando exista:
-
-- tipo de evento;
-- fecha del evento;
-- fecha de registro;
-- responsable;
-- cantidad/unidad;
-- saldo antes/después;
-- evidencia asociada;
-- observaciones;
-- anclaje blockchain.
-
-No ocultar eventos. Los filtros deben ser visuales, no eliminación de historia.
-
----
-
-## 13. Rutas y navegación
-
-Nombrar rutas por intención del usuario, no solo por tabla.
-
-Ejemplos sugeridos:
-
-```txt
-/recoleccion
-/recoleccion/:id
-/recoleccion/:id/editar
-/vivero
-/vivero/nuevo
-/vivero/:id
-/vivero/:id/eventos/embolsado
-/vivero/:id/eventos/adaptabilidad
-/vivero/:id/eventos/merma
-/vivero/:id/eventos/despacho
-```
-
-Ajustar a la convención real del repo.
-
-Reglas:
-
-- rutas de detalle deben permitir entender el estado del recurso;
-- formularios de eventos deben estar ligados al lote;
-- no crear rutas que permitan acciones prohibidas por dominio.
-
----
-
-## 14. Construir una nueva pantalla
-
-Proceso recomendado:
-
-1. Identificar feature.
-2. Leer `AGENTS.md`.
-3. Revisar `DOMAIN_INDEX.md` si toca reglas del dominio.
-4. Buscar pantalla parecida.
-5. Crear tipos mínimos.
-6. Crear o reutilizar servicio API.
-7. Crear hook si hay lógica de datos.
-8. Crear componentes pequeños.
-9. Crear page/ruta.
-10. Agregar estados `loading`, `error` y `empty`.
-11. Agregar validaciones UX.
-12. Ejecutar verificación.
-
-Evitar construir una pantalla completa en un solo archivo enorme.
-
----
-
-## 15. Construir un formulario de evento Vivero
-
-Flujo base:
-
-1. Cargar lote.
-2. Validar visualmente si el lote permite el evento.
-3. Mostrar resumen del lote.
-4. Capturar datos del evento.
-5. Adjuntar evidencia si es obligatoria.
-6. Mostrar resumen previo.
-7. Enviar al backend.
-8. Esperar respuesta.
-9. Actualizar timeline/detalle.
-10. Mostrar confirmación o error.
-
-No asumir cierre automático desde frontend. Si el backend devuelve lote finalizado o evento `CIERRE_AUTOMATICO`, entonces mostrarlo.
-
----
-
-## 16. Testing y verificación
-
-Antes de cerrar una tarea:
-
-1. Ejecutar lint si existe.
-2. Ejecutar typecheck si existe.
-3. Ejecutar tests si existen.
-4. Ejecutar build si el cambio toca estructura, rutas o tipos globales.
-5. Probar manualmente el flujo afectado si es posible.
-
-Comandos disponibles:
+`registerPwa.ts` controla actualización del shell; el estado de instalación se comparte por `PwaInstallContext`. No duplicar listeners de instalación. Cerrar la sugerencia conserva el acceso del menú; reconciliar instalación después de desinstalar. `sw.js`, HTML y manifest deben revalidarse; sólo assets con hash son inmutables.
 
 ```bash
-npm run lint
 npm run test
+npm run lint
 npm run build
 ```
 
-`build` incluye TypeScript (`tsc -b`); no existe script independiente `typecheck`. `test` ejecuta Vitest en jsdom con Testing Library. Las pruebas `src/**/*.test.ts(x)` verifican comportamiento y usan servicios simulados; no reemplazan QA de permisos y persistencia contra backend real. No decir que una verificación pasó si no se ejecutó.
+El build incluye TypeScript; no hay script `typecheck`. Los tests coexisten con código en `src/**/*.test.ts(x)` y normalmente simulan servicios/HTTP. Añadir pruebas de comportamiento cuando el cambio lo requiera, no pruebas espejo para texto/estilos reversibles.
 
-### 16.1 Checklist funcional por pantalla
-
-- ¿Carga datos correctamente?
-- ¿Tiene loading?
-- ¿Tiene empty state?
-- ¿Tiene error state?
-- ¿Muestra estados/badges?
-- ¿Respeta acciones permitidas?
-- ¿No muestra acciones prohibidas?
-- ¿Los campos calculados son read-only?
-- ¿La evidencia se muestra o exige cuando corresponde?
-- ¿El submit maneja error y éxito?
-
-### 16.2 Checklist Vivero
-
-- `INICIO` no muestra saldo vivo como existente.
-- `EMBOLSADO` crea plantas vivas iniciales.
-- `ADAPTABILIDAD` no modifica saldo.
-- `MERMA` y `DESPACHO` muestran efecto sobre saldo.
-- `FINALIZADO` bloquea eventos normales.
-- Timeline muestra eventos append-only.
-
-### 16.3 Checklist Recolección
-
-- `BORRADOR` editable si rol permite.
-- `PENDIENTE_VALIDACION` congelado.
-- `VALIDADO` no editable.
-- `RECHAZADO` corregible si rol permite.
-- Solo `VALIDADO + ABIERTO` aparece como elegible para Vivero.
-- No existe consumo manual suelto desde Recolección si el flujo oficial parte desde Vivero.
-
-### 16.4 PWA y actualizaciones
-
-- El service worker se genera en cada `npm run build` con `vite-plugin-pwa` y Workbox.
-- No crear ni versionar manualmente `public/sw.js`.
-- Los cambios en los assets producen revisiones de precaché nuevas de forma automática.
-- El registro global vive en `src/pwa/registerPwa.ts` y comprueba actualizaciones al abrir, recuperar conexión, volver a la app y cada hora.
-- El estado del diálogo de instalación vive en `src/contexts/PwaInstallContext.tsx`; cualquier sugerencia o acceso alternativo debe consumir ese contexto para no registrar listeners duplicados de `beforeinstallprompt`.
-- Cerrar una sugerencia visual de instalación no debe descartar el evento disponible: el acceso permanente del menú puede seguir utilizándolo.
-- El marcador local de instalación no es fuente de verdad permanente: `getInstalledRelatedApps()` y la reaparición de `beforeinstallprompt` deben reconciliarlo después de una desinstalación.
-- La comprobación del service worker y la disponibilidad del backend deben ejecutarse en segundo plano. La restauración de sesión muestra un estado visible en las rutas protegidas mientras valida el token, con timeout y recuperación; nunca habilita permisos desde el cache local ni deja la pantalla en blanco.
-- No agregar caché de API ni sincronización en segundo plano sin definir antes el contrato de offline/outbox.
-- En Vercel, `sw.js`, `index.html` y el manifest deben revalidarse; solo los assets con hash pueden usar caché inmutable.
-
----
-
-### 16.5 Sesión y confirmaciones
-
-- `AuthContext` es la fuente de estado de sesión. `useWebAuthn` delega login/registro en ese contexto; no mantiene otra sesión.
-- El perfil se obtiene con JWT Bearer. `r3foresta:user` y `auth_id` son datos auxiliares y no acreditan autenticación.
-- Logout limpia token y datos locales e invalida respuestas pendientes. Ante fallo de conexión, la UI permite revalidar sin conceder acceso; ante token rechazado, exige nuevo ingreso.
-- El perfil visible queda ligado al token que lo verificó. Cambios de `authToken` entre pestañas y al recuperar foco ocultan la cuenta anterior hasta verificar la nueva; reconsultar el mismo token no desmonta los formularios. Logout no elimina comandos inciertos por actor.
-- Las confirmaciones de eventos usan `ConfirmDialog`, con foco de teclado contenido, Escape y retorno del foco al cerrar. Abrir o cancelar el resumen no sube evidencias ni registra operaciones.
-- La guarda de doble envío evita solicitudes simultáneas desde el mismo formulario. No resuelve idempotencia después de una respuesta perdida; ver `AUD-007`.
-
-### 16.6 Revisión del plan de Plantación
-
-- GET y PUT `/subcampanias/:id/plan` requieren el token del login WebAuthn (`WebAuthnService.getToken()`); sin token se informa 401 local y no se hace ninguna petición, incluido el helper histórico de guardado. Estas rutas omiten el header opcional `x-auth-id` para usar una sola identidad. Las demás rutas conservan sus contratos. No configurar secretos JWT ni claves administrativas en variables `VITE_*`.
-- Cualquier usuario autenticado puede consultar el plan sin pertenecer al equipo. Un 401 detiene los envíos y ofrece el login con passkey del contexto existente; recuperar la sesión solo permite consultar y revisar otra vez. Un 403 informa falta de permiso y bloquea edición sin cerrar la sesión; un 404 informa que la subcampaña no está disponible. Los errores de lectura del detalle y del asistente deben ser visibles.
-- El detalle ofrece «Editar meta y especies» solo a ADMIN global en BORRADOR/ACTIVA (ADR-PLA-05). El coordinador contextual no obtiene este permiso.
-- `SubcampaniaEspeciesStep` (paso 2 de creación) y `EditarPlanSubcampaniaModal` (detalle de una subcampaña) usan `PlanMetaEspeciesForm` y `usePlanMetaEspeciesForm`: controles, estado y validación del mix compartidos, sin llamadas API en el formulario. Cada flujo conserva su carga, permisos, confirmación y persistencia.
-- `EditarPlanSubcampania` carga el plan persistido; el formulario conserva cantidades y porcentajes exactos al abrir o consultar otra revisión. Cambiar la meta o porcentajes recalcula las cantidades con `buildPlanMetasPayload`, de modo que lo mostrado coincide con lo enviado. El editor permite ajustar cantidades manualmente y compara el plan actual con la propuesta antes de confirmar.
-- Antes de recuperar sesión, el editor conserva los campos en un borrador temporal de `sessionStorage`, vinculado a subcampaña y `auth_id` verificado. Si la ruta se desmonta al verificar el perfil, la misma persona puede restaurarlo después de consultar el plan. El borrador no acredita permisos ni guarda token/versión para reenviar; requiere revisión explícita y se elimina al guardar confirmado o cancelar. No se restaura para otra identidad.
-- El catálogo reparte el porcentaje restante entre las especies nuevas en centésimas; los botones ±5% ajustan solo la especie elegida. Los borradores conservan porcentajes de hasta 2 decimales. Un 0% puede quedar localmente en el asistente y se omite del plan remoto; el editor exige objetivos positivos y una retirada explícita.
-- El stock de vivero del catálogo es una referencia, no stock asignado a la subcampaña. Definir una especie no crea stock ni bloquea la planificación por falta de existencias.
-- La revisión usa un único `PUT /subcampanias/:id/plan` con `meta_total_arboles`, `metas` y `revision_esperada`. `plan_revision` viene del GET; si falta, no se habilita el guardado. No usar PATCH para cambiar metas.
-- Un 409 conserva la propuesta y ofrece «Actualizar plan para continuar». También se exige consultar tras un error de red, 500 o confirmación incompleta antes de otra escritura: no se presume que el PUT falló sin guardar. La consulta conserva la propuesta e invalida la comparación anterior; el usuario debe revisar otra vez antes de confirmar. Un rechazo de validación, estado o retirada protegida conserva los campos y muestra el mensaje del backend. La guarda de envío y la versión evitan sobrescribir un plan concurrente; no hay reintentos automáticos de escrituras.
-- Después de la confirmación se consultan detalle, plan, totales/indicadores de campaña y contexto de plantación. Una lectura fallida se comunica como actualización pendiente; no se reenvía una revisión ya confirmada. Las pantallas de campaña y plantación consultan nuevamente al entrar.
-- Las metas siguen siendo orientativas. El porcentaje numérico puede superar 100%; solo el ancho de la barra se limita. Revisar el plan no cambia stock, registros físicos ni estado. El cierre manual sigue siendo una acción independiente.
-- Un borrador incompleto del asistente se conserva localmente hasta completar un plan coherente; el guardado remoto de la meta y especies exige la revisión atómica y una versión vigente, incluido 0. Si el servidor no ofrece versión se conserva el borrador local, sin cambiar la meta por PATCH ni guardar especies por separado. La meta total y las cantidades son enteros positivos de hasta `2147483647`.
-
-### 16.7 Capacidades y comandos de participación
-
-- `src/modules/participacion/` centraliza el cliente `/api/v1`, DTO y validadores de participación. IDs/revisiones BIGINT permanecen como cadenas. El cliente usa Bearer, `no-store`, cancelación y timeout de 40 segundos, incluida la lectura del body; verifica el actor con capacidades del mismo token y descarta respuestas al cambiar sesión.
-- Consumir `useParticipacionCapabilities()` bajo el provider existente de `AppLayout`. Completa páginas y distingue carga, vacío válido, error y sesión vencida. Las acciones proceden del DTO actual; un error bloquea nuevas confirmaciones sin declarar que todos los permisos desaparecieron. Impacto público debe funcionar independientemente.
-- Los comandos C04–C09 usan `useAccessCommand`, con revisión y confirmación explícitas, una selección atómica de hasta 100 ámbitos y un UUID generado una sola vez. El store conserva actor/operación/payload en `localStorage` por cuenta, sin tokens, nombres, búsquedas ni fotos. Web Locks coordina pestañas; si falta, falla el almacenamiento o existe un intento incierto, se bloquean nuevas confirmaciones.
-- Timeout, 5xx, recibo incompatible o GET 202/404 mantienen resultado no confirmado. Recuperar o reenviar conserva el UUID, personas, ámbitos y revisiones originales; logout/recarga no autorizan otra clave. Un terminal válido permite liberar la identidad local. El recibo describe el resultado histórico; capacidades, miembros y una revisión nueva determinan las acciones siguientes.
-- INT04 debe reutilizar capacidades y extender/extraer las primitivas de comandos con su contrato de plantación/evidencias; el hook actual sólo acepta accesos C04–C09. Diseño, mocks o QA local no completan INT02-D, Impacto/WebAuthn ni la verificación externa. Ver [documentación del módulo](src/modules/participacion/README.md).
-
-## 17. Antipatrones a evitar
-
-Evitar:
-
-- componentes gigantes;
-- `any` por comodidad;
-- lógica de negocio dentro de JSX;
-- `fetch`/`axios` en cualquier componente;
-- duplicar enums manualmente en muchos archivos;
-- hardcodear URLs;
-- tratar campos calculados como editables;
-- mostrar snapshots como editables;
-- convertir `kg` en persistencia;
-- mezclar `G` y `GR`;
-- ocultar eventos históricos;
-- crear botones para editar/borrar eventos append-only;
-- partir operaciones atómicas en varios requests desde UI;
-- agregar librerías sin necesidad.
-
----
-
-## 18. Relación con otros documentos
-
-Orden de consulta recomendado:
-
-1. `AGENTS.md`: reglas obligatorias de trabajo.
-2. `FRONTEND_GUIDE.md`: cómo construir frontend.
-3. `FRONTEND_AUDIT.md`: deuda técnica y checklist.
-4. `../docs/DOMAIN_INDEX.md`: mapa de reglas del dominio.
-5. Documentación fuente del dominio.
-6. Código existente.
-
-Si hay conflicto entre esta guía y reglas de negocio oficiales, prevalecen las reglas de negocio oficiales.
-
----
-
-## 19. Mantenimiento
-
-Actualizar este archivo cuando:
-
-- cambie la arquitectura de carpetas;
-- cambien patrones de API;
-- cambien patrones de formularios;
-- cambie la librería de rutas, estado o formularios;
-- se adopte una convención UI nueva;
-- una confusión se repita varias veces;
-- se agregue una feature grande nueva.
-
-Mantenerlo práctico. No convertirlo en una copia de los documentos de negocio.
+Para QA real, seguir el [índice de evidencia](docs/README.md) y el runner correspondiente. Registrar revisión, entorno, actor, peticiones, persistencia y límites. Una captura no demuestra atomicidad, un mock no demuestra autorización y un push no demuestra despliegue. Revisar estado, restricciones, cancelación, error, cuenta cambiada y respuesta perdida según el flujo.

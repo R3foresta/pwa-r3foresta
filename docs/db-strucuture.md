@@ -1,3 +1,8 @@
+# Esquema DB legado
+
+Fotografía histórica, no esquema vigente ni contrato para implementar. Consultar [database oficial](../../r3foresta-docs/database/00_database_schema.md), migraciones backend y catálogo del entorno antes de usar campos/enums. Se conserva como antecedente.
+
+```text
 erDiagram
 
   PAIS {
@@ -416,3 +421,4 @@ USUARIO
 rol_usuario = [ADMIN, GENERAL, VALIDADOR, VOLUNTARIO]
 UNIDADES
 unidad_medida = [UNIDAD, G]
+```

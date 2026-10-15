@@ -41,4 +41,4 @@ El flujo principal de eventos reutiliza:
 2. `services/lotes-vivero.service.ts` para consumo HTTP.
 3. `utils/validators.ts` para reglas de cantidad, unidad y fecha.
 
-Pendientes reales documentados en `FRONTEND_AUDIT.md`: retirar la ruta legacy de Embolsado, definir idempotencia para operaciones append-only y completar la cobertura automatizada.
+La ruta legacy de Embolsado ya redirige al formulario unificado (`AUD-006`, resuelto). Continúan la idempotencia durable/recuperación de eventos físicos y su QA integrado (`AUD-007`); no confundirla con el motor de comandos C04–C09 de Participación. Consultar la [auditoría vigente](../../../FRONTEND_AUDIT.md) antes de retomar pendientes.

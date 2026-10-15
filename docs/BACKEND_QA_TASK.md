@@ -1,5 +1,7 @@
 # TASK — Habilitar backend para QA E2E de Recolección
 
+**Encargo histórico de septiembre de 2026.** No acredita que siga bloqueado ni sustituye los contratos actuales. Revisar la [auditoría vigente](../FRONTEND_AUDIT.md) y confirmar el entorno antes de ejecutar sus pasos.
+
 ## 1. Contexto
 
 El frontend R3foresta consume un backend configurado mediante `VITE_API_URL` y agrega `/api`. El QA de la Iteración UI 2 (`Card` en listado y detalle de Recolección) quedó bloqueado porque el navegador no pudo alcanzar el backend (`Failed to fetch`).

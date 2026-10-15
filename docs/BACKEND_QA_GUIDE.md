@@ -2,6 +2,8 @@
 
 Actualizado: 2026-09-29 (sesión y perfil; resto del inventario requiere QA del backend real).
 
+**Referencia fechada:** no incluye los contratos v1 de identidad/Participación ni INT06. Para trabajar, usar la [guía vigente](../FRONTEND_GUIDE.md) y las fuentes del [índice de dominio](../DOMAIN_INDEX.md); cotejar este inventario antes de ejecutar.
+
 ## 1. Propósito y límites
 
 Esta guía describe el contrato HTTP que **el frontend actual intenta consumir**. Se infiere del código de `src/api`, `src/services`, los contratos TypeScript y las pantallas registradas en `src/App.tsx`.

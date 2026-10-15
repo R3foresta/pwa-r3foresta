@@ -1,100 +1,64 @@
-# R3Foresta PWA
+# R3foresta PWA
 
-Frontend operativo de R3Foresta para trazabilidad de material biológico desde la recolección hasta el vivero y la plantación.
+Frontend de trazabilidad de Recolección, Vivero y Plantación. React 19 + TypeScript + Vite 7 + React Router 6 + Tailwind 3; npm y `package-lock.json`.
 
-La aplicación está construida con React, TypeScript, Vite, React Router y Tailwind CSS. La estructura principal es feature-first:
+## Empezar
 
-```txt
-src/
-  api/                 # llamadas HTTP de bajo nivel
-  services/            # casos de uso, parseo y mapeos
-  modules/
-    auth/
-    recolecciones/
-    vivero/
-    plantacion/
-    comunidades/
-    organizaciones/
-    plantas/
-  components/          # componentes compartidos
-  contexts/            # sesión y proveedores globales
-  utils/               # validaciones y utilidades transversales
-```
-
-## Requisitos
-
-- Node.js compatible con Vite 7.
-- npm.
-- Backend de R3Foresta accesible desde la URL configurada.
-
-## Configuración local
-
-1. Instala dependencias:
-
-   ```bash
-   npm install
-   ```
-
-2. Crea `.env.local` a partir de `.env.example` y configura:
-
-   ```env
-   VITE_API_URL=http://localhost:3000
-   ```
-
-   La aplicación agrega `/api` a esta URL para consumir el backend.
-
-3. Inicia el servidor de desarrollo:
-
-   ```bash
-   npm run dev
-   ```
-
-## Comandos
-
-| Comando | Uso |
-|---|---|
-| `npm run dev` | Servidor de desarrollo con Vite. |
-| `npm run build` | TypeScript + bundle de producción. |
-| `npm run lint` | ESLint sobre el workspace activo. |
-| `npm test` | Pruebas de comportamiento con Vitest, Testing Library y jsdom. |
-| `npm run preview` | Servir localmente el bundle generado. |
-
-No hay script independiente de `typecheck`; `npm run build` ejecuta TypeScript mediante `tsc -b`. Para el entorno de pruebas usar Node.js 24.15 o posterior de la rama 24 (verificado con 24.19), o una versión compatible con los requisitos de Vitest y jsdom.
-
-Las pruebas viven junto al código en `src/**/*.test.ts(x)` y no escriben en el backend. Cubren restauración/logout de sesión, contratos de perfil, precisión de unidades, corrección de rechazados, restricciones de edición y confirmación/cancelación de eventos. El QA de persistencia y autorización contra el backend real se registra por separado.
-
-## Flujos implementados
-
-- Recolección: creación de borradores, ubicación, resumen, evidencias, validación y detalle del lote.
-- Vivero: inicio de lote, Embolsado, Adaptabilidad, Merma, Despacho manual, Descarte pre-embolsado, timeline y evidencias.
-- Integración Vivero → Plantación: asignación física con evidencia, devolución física y saldos separados.
-- Plantación: campañas, subcampañas, equipo, polígono, activación/cancelación y registro inicial de plantación en campo con GPS, evidencias y consumo de asignaciones.
-- Catálogos operativos: comunidades, organizaciones y plantas.
-
-La ruta de registro de plantación inicial es:
-
-```txt
-/app/planting/subcampanias/:id/plantaciones/new
-```
-
-## Reglas de dominio importantes
-
-- Los eventos de Vivero son append-only; no se editan ni eliminan desde la UI.
-- `EMBOLSADO` registra plantas vivas observadas. No se convierte automáticamente gramos en plantas.
-- `INICIO` representa material en proceso y no crea plantas vivas.
-- El saldo vivo y los cierres automáticos son responsabilidad del backend.
-- Las operaciones críticas requieren evidencia según el contrato vigente.
-- La asignación a Plantación es física; Plantación consume asignaciones y no genera un despacho automático adicional.
-
-Las reglas completas viven en el repositorio documental de R3Foresta. En este repo, consultar [FRONTEND_GUIDE.md](FRONTEND_GUIDE.md), [FRONTEND_AUDIT.md](FRONTEND_AUDIT.md), [DOMAIN_INDEX.md](DOMAIN_INDEX.md) y [AGENTS.md](AGENTS.md).
-
-## Verificación antes de cerrar cambios
-
-Ejecuta al menos:
+Usar Node 24.15 o posterior de la rama 24 (compatible con las dependencias actuales de Vitest/jsdom).
 
 ```bash
-npm run lint
-npm run build
+npm ci
+cp .env.example .env.local
+npm run dev
 ```
 
-Si el cambio toca un flujo de dominio, valida también el contrato correspondiente en `r3foresta-docs` y documenta cualquier verificación que no haya sido posible ejecutar.
+Configurar `VITE_API_URL` con el origen del backend, sin `/api` ni barra final; ejemplo: `http://localhost:3000`. Los clientes agregan `/api` o `/api/v1` según el contrato. Hace falta un backend accesible y, para operaciones privadas, una cuenta autorizada con passkey. Todo `VITE_*` es público: nunca poner secretos o claves administrativas.
+
+| Comando | Qué hace |
+| --- | --- |
+| `npm run dev` | Vite local. |
+| `npm run test` | Vitest + Testing Library en jsdom. |
+| `npm run lint` | ESLint. |
+| `npm run build` | TypeScript (`tsc -b`), Vite y service worker PWA. |
+| `npm run preview` | Sirve el build local; no inicia backend. |
+
+No existe script `typecheck`. Si el entorno restringe su carpeta temporal, anteponer `TMPDIR=/private/tmp` a tests/build.
+
+## Leer sólo lo necesario
+
+| Necesidad | Fuente |
+| --- | --- |
+| Reglas de trabajo del agente | [AGENTS.md](AGENTS.md) |
+| Ubicar código y mantener patrones | [FRONTEND_GUIDE.md](FRONTEND_GUIDE.md) |
+| Regla de negocio o contrato | [DOMAIN_INDEX.md](DOMAIN_INDEX.md) → fuentes oficiales |
+| Saber qué falta y cómo cerrarlo | [FRONTEND_AUDIT.md](FRONTEND_AUDIT.md) |
+| Revisar pruebas/capturas o antecedentes | [Índice de evidencia](docs/README.md) |
+
+La documentación de dominio y el estado global de entregas viven en [r3foresta-docs](../r3foresta-docs/README.md), con su [tablero de Participación Aliada](../r3foresta-docs/specs/plantacion/participacion-aliada/implementacion/README.md). Si no están los repositorios hermanos, consultar [la documentación remota](https://github.com/R3foresta/r3foresta-docs); no inventar endpoints.
+
+## Mapa del código
+
+- `src/App.tsx`: rutas lazy; `src/main.tsx`: proveedores globales y arranque PWA.
+- `src/modules/`: pantallas, componentes, hooks, contratos y adaptadores por feature. Conviven `screens/` y `pages/`; seguir el módulo existente.
+- `src/api/` y `src/services/`: transporte/casos de uso existentes. Participación y perfil v1 tienen sus clientes dentro del módulo.
+- `src/components/ui/` y `ConfirmDialog.tsx`: primitivas y confirmación accesible; reutilizar antes de crear estilos/componentes nuevos.
+- `src/contexts/AuthContext.tsx`: sesión verificada; `src/utils/appAccess.ts`: navegación interna, no autoridad final.
+- `src/pwa/`, `vite.config.ts`, `vercel.json`: actualización, build y hosting del shell.
+
+## Alcance actual y límites
+
+| Área | Qué existe |
+| --- | --- |
+| Recolección | Borrador, evidencia, corrección de rechazados, validación y stock de origen. |
+| Vivero | Inicio, eventos, timeline, evidencias y operaciones físicas hacia Plantación. [Módulo](src/modules/vivero/README.md). |
+| Plantación interna | Campañas/subcampañas, equipo logístico, plan, polígono, cierre y registro interno existente. |
+| Identidad/perfil | Passkey, perfil propio y afiliación opcional. [Módulo](src/modules/user_profile/README.md). |
+| Acceso contextual | `/app/participacion/accesos`: C04–C09, capacidades, selección múltiple y recuperación. [Módulo](src/modules/participacion/README.md). |
+
+**INT06 FE01–FE05 verificadas localmente; FE06 parcial.** [Evidencia](docs/QA_GESTION_ACCESOS_INT06.md): 445 tests en el corte de esa entrega, 28 comprobaciones de navegador y cotejo DB. Esto no acredita despliegue ni piloto. El registro participante v1, Impacto público/Mis registros y la regresión compartida INT02-D siguen pendientes. El mapa actual es interno; no hacerlo público quitando su guard.
+
+El service worker precachea el shell; no hay sincronización offline ni caché de API. Enviar operaciones/fotos necesita red. La idempotencia de C04–C09 no demuestra idempotencia de los eventos físicos de Vivero.
+
+## Antes de publicar un cambio
+
+Ejecutar los checks pertinentes de `package.json` y revisar el flujo afectado. Separar tests simulados, navegador con backend sintético y QA externo real. Registrar limitaciones y deuda en la auditoría; usar las evidencias fechadas como resultados de su revisión, no como un certificado del árbol actual.

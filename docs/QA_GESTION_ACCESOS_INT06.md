@@ -26,7 +26,7 @@ El launcher de C no incluye WebAuthn ni el endpoint de perfil de arranque. El QA
 - Recibos validados semánticamente contra el comando y su selección. Se distinguen CONFIRMADO, RECHAZADO e inconcluso; el recibo histórico no sustituye las lecturas vigentes. Hay recuperación por GET y reenvío idéntico, también tras recarga.
 - La entrada de recuperación sigue disponible con un pendiente propio aunque ya no existan capacidades de gestión. Cambiar cuenta o cerrar sesión oculta los datos anteriores y conserva el comando para su actor original. Los cambios de token entre pestañas ocultan la pantalla hasta verificar el perfil nuevo.
 
-Arquitectura y contrato de reutilización para INT04: [README del módulo](../src/modules/participacion/README.md) y `FRONTEND_GUIDE.md` §16.7. El motor de registro/evidencias debe extender las primitivas compartidas con sus contratos propios; el hook actual está tipado para acceso C04–C09.
+Arquitectura y contrato de reutilización para INT04: [README del módulo](../src/modules/participacion/README.md) y [capacidades y comandos en la guía](../FRONTEND_GUIDE.md#capacidades-y-comandos-de-participación). El motor de registro/evidencias debe extender las primitivas compartidas con sus contratos propios; el hook actual está tipado para acceso C04–C09.
 
 ## Verificación automatizada
 

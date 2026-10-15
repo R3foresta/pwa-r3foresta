@@ -70,12 +70,12 @@ Regla: no inventes scripts. Si un script no existe, reporta que no existe y que 
 
 ## 4. Archivos de referencia
 
-Documentos esperados dentro de `/frontend`:
+Documentos en la raíz de este repositorio:
 
 - `AGENTS.md`: reglas para agentes.
 - `FRONTEND_GUIDE.md`: arquitectura frontend, convenciones UI/UX y patrones.
 - `FRONTEND_AUDIT.md`: checklist vivo de deuda técnica, calidad y pendientes.
-- `../docs/DOMAIN_INDEX.md`: resumen de entidades, reglas y procesos del dominio.
+- `DOMAIN_INDEX.md`: índice de reglas y enlaces al repositorio hermano `../r3foresta-docs`.
 
 ---
 

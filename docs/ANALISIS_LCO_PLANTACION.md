@@ -1,6 +1,6 @@
 # Análisis de implementación: participación por persona y subcampaña
 
-Fecha: 9 de octubre de 2026. Estado: análisis local para elaborar el plan; no implementa la capacidad ni aprueba sus specs.
+Fecha: 9 de octubre de 2026. Estado: análisis local histórico para elaborar el plan; no implementa la capacidad ni aprueba sus specs. Fue sucedido por A/C/INT06; consultar el [tablero vigente](../../r3foresta-docs/specs/plantacion/participacion-aliada/implementacion/README.md), no usar este diagnóstico como encargo actual.
 
 La base existente permite conservar el formulario de plantación, los controles de evidencia/GPS y el consumo de stock por subcampaña. El cambio principal está en la autorización contextual, las lecturas permitidas y la gestión de acceso. Renombrar COORDINADOR/OPERARIO no alcanza: sus restricciones y poderes actuales difieren de los roles aprobados.
 
@@ -28,7 +28,7 @@ Antes de construir cada comportamiento quedan por acordar: correspondencia/migra
 
 ### Plan activo ya implementado localmente
 
-La PWA y el backend local ya incluyen la revisión atómica ADR-PLA-05: ADMIN global ajusta meta total y especies en BORRADOR/ACTIVA mediante `PUT /subcampanias/:id/plan`, con `revision_esperada`, `plan_revision` y auditoría. La [migración 062](../../Backend-r3foresta/migrations/062_subcampania_revision_plan_atomica.sql) escribe plan/meta/versión/historial juntos y comparte el bloqueo de subcampaña usado por asignación y plantación. Protege retiradas con plantación inicial o stock inicial disponible. Ver el [contrato backend de revisión](../../Backend-r3foresta/documentacion/tareas/subcampanias-revision-plan-atomica.md) y [FRONTEND_GUIDE §16.6](../FRONTEND_GUIDE.md).
+La PWA y el backend local ya incluyen la revisión atómica ADR-PLA-05: ADMIN global ajusta meta total y especies en BORRADOR/ACTIVA mediante `PUT /subcampanias/:id/plan`, con `revision_esperada`, `plan_revision` y auditoría. La [migración 062](../../Backend-r3foresta/migrations/062_subcampania_revision_plan_atomica.sql) escribe plan/meta/versión/historial juntos y comparte el bloqueo de subcampaña usado por asignación y plantación. Protege retiradas con plantación inicial o stock inicial disponible. Ver el [contrato backend de revisión](../../Backend-r3foresta/documentacion/tareas/subcampanias-revision-plan-atomica.md) y [guía de revisión de plan](../FRONTEND_GUIDE.md#plan-de-plantación).
 
 Ese avance conserva metas orientativas, especies iniciales limitadas al plan, stock como límite y cierre manual por ADMIN global. Añadir una especie no crea stock; revisar la meta no cambia plantas, saldos físicos ni ACTIVA. Es una base que la nueva participación debe conservar.
 

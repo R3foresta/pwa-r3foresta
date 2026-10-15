@@ -44,4 +44,4 @@ Las rutas requieren Bearer; identidad ajena/ausente devuelve 401, cuenta inactiv
 
 La integración inicial acreditó 21 archivos/295 pruebas. La mejora de UX añadió pruebas de perfil, formulario, selector, foto y navegación por audiencia. Comandos, resultados actuales y capturas en [QA de UI y UX](../../../docs/QA_PERFIL_PARTICIPACION_UX.md). Las respuestas del navegador son sintéticas; esa comprobación no acredita persistencia en la DB ni una ceremonia WebAuthn real.
 
-[Informe de backend y QA real](../../../../Backend-r3foresta/docs/pa-int02a-continuacion-2026-10-14.md): passkey física en Brave, cuenta GENERAL, afiliación/recargas/negativos y autoridad conservada. VOLUNTARIO y BIGINT se verificaron en fixtures/HTTP simulados. No hay publicación ni habilitación del piloto por esta entrega.
+[Informe de backend y QA real](../../../../Backend-r3foresta/docs/pa-int02a-continuacion-2026-10-14.md): passkey física en Brave, cuenta GENERAL, afiliación/recargas/negativos y autoridad conservada. VOLUNTARIO y BIGINT se verificaron en fixtures/HTTP simulados. La UX se publicó en Git en `cf130365`; eso no acredita despliegue ni habilita el piloto.

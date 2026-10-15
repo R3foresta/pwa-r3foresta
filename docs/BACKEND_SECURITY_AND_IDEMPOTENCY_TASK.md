@@ -2,6 +2,8 @@
 
 Revisión estática: 2026-09-27. Relacionado con `AUD-007`, `AUD-011` y `AUD-013` de `FRONTEND_AUDIT.md`.
 
+**Actualización de lectura, 15 de octubre:** el bypass por headers descrito abajo es un diagnóstico histórico, corregido localmente en INT02-A; queda verificar publicación/regresión externa (`AUD-013`). C04–C09 ya tienen comandos durables/recuperación en INT06; no extrapolarlo a eventos físicos de Vivero (`AUD-007`). Usar la [auditoría vigente](../FRONTEND_AUDIT.md) y el [informe INT06](QA_GESTION_ACCESOS_INT06.md).
+
 Este documento registra dependencias encontradas al corregir el frontend. No acredita el estado del backend desplegado ni autoriza migraciones o cambios de datos. Las referencias se verificaron en el repositorio local `../Backend-r3foresta` y en `../r3foresta-docs/ARCHITECTURE.md`.
 
 ## 1. Identidad autenticada en backend — prioridad crítica
