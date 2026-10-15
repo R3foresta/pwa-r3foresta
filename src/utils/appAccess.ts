@@ -8,5 +8,6 @@ export function canOpenAppPath(path: string, role: string | null | undefined): b
   const pathname = path.split(/[?#]/)[0].replace(/\/$/, '')
   if (!/^\/app(?:\/|$)/.test(pathname)) return false
   if (hasInternalAppAccess(role)) return true
-  return ['/app', '/app/home', '/app/profile', '/app/edit-profile'].includes(pathname)
+  // La pantalla verifica capacidades del servidor; esta excepción no abre el módulo interno.
+  return ['/app', '/app/home', '/app/profile', '/app/edit-profile', '/app/participacion/accesos'].includes(pathname)
 }

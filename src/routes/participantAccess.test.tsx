@@ -18,6 +18,9 @@ const state = vi.hoisted(() => ({
 }))
 
 vi.mock('../contexts/AuthContext', () => ({ useAuth: () => state.auth }))
+vi.mock('../modules/participacion/hooks/useParticipacionCapabilities', () => ({
+  useParticipacionCapabilities: () => ({ data: { data: { subcampanias: [] } }, status: 'ready', error: null, refresh: vi.fn() }),
+}))
 vi.mock('../contexts/PwaInstallContext', () => ({
   usePwaInstall: () => ({ shouldShowMenuInstall: false }),
 }))

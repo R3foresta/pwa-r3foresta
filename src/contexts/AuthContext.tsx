@@ -53,16 +53,20 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
+  const [verifiedSession, setVerifiedSession] = useState<{ token: string; user: User } | null>(null)
   const [hydrated, setHydrated] = useState(false)
   const [sessionError, setSessionError] = useState<string | null>(null)
   // Cada operación asíncrona conserva esta versión. Logout invalida todas las anteriores.
   const revision = useRef(0)
+  const sessionToken = useRef<string | null>(null)
+  const verifiedToken = useRef<string | null>(null)
 
   const clearSession = useCallback(() => {
     revision.current += 1
+    sessionToken.current = null
+    verifiedToken.current = null
     WebAuthnService.clearSession()
-    setUser(null)
+    setVerifiedSession(null)
     setSessionError(null)
     setHydrated(true)
   }, [])
@@ -70,26 +74,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const readVerifiedProfile = useCallback(async (token: string, operation: number): Promise<User> => {
     try {
       const profile = await ProfileService.getUserProfile(token)
-      if (operation !== revision.current) throw new Error('La sesión cambió durante la verificación')
+      if (operation !== revision.current || WebAuthnService.getToken() !== token) throw new Error('La sesión cambió durante la verificación')
       const verifiedUser = toUser(profile)
       localStorage.setItem(AUTH_ID_KEY, profile.auth_id)
       localStorage.setItem(USER_KEY, JSON.stringify(verifiedUser))
-      setUser(verifiedUser)
+      verifiedToken.current = token
+      setVerifiedSession({ token, user: verifiedUser })
       setSessionError(null)
       return verifiedUser
     } catch (error) {
-      if (operation === revision.current) {
-        setUser(null)
+      if (operation === revision.current && WebAuthnService.getToken() === token) {
+        verifiedToken.current = null
+        setVerifiedSession(null)
         localStorage.removeItem(USER_KEY)
         localStorage.removeItem(AUTH_ID_KEY)
         if (isInvalidSession(error)) {
           WebAuthnService.clearSession()
+          sessionToken.current = null
           setSessionError('Tu sesión expiró. Ingresa nuevamente con tu passkey.')
         } else {
           setSessionError('No pudimos verificar tu sesión. Revisa la conexión e intenta de nuevo.')
         }
       }
       throw error
+    }
+  }, [])
+
+  const prepareVerification = useCallback((token: string) => {
+    sessionToken.current = token
+    if (verifiedToken.current !== token) {
+      verifiedToken.current = null
+      setVerifiedSession(null)
+      setHydrated(false)
+      setSessionError(null)
     }
   }, [])
 
@@ -101,26 +118,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return
     }
     const operation = ++revision.current
+    prepareVerification(token)
     try {
       await readVerifiedProfile(token, operation)
     } finally {
       if (operation === revision.current) setHydrated(true)
     }
-  }, [clearSession, readVerifiedProfile])
+  }, [clearSession, prepareVerification, readVerifiedProfile])
 
   useEffect(() => {
     void retrySession().catch(() => {
       // El error ya está disponible en sessionError y el arranque se libera.
     })
-    return () => { revision.current += 1 }
+    const syncToken = () => {
+      if (WebAuthnService.getToken() !== sessionToken.current) void retrySession().catch(() => {})
+    }
+    const onStorage = (event: StorageEvent) => {
+      if (event.storageArea && event.storageArea !== localStorage) return
+      if (event.key === TOKEN_KEY || event.key === null) syncToken()
+    }
+    window.addEventListener('storage', onStorage)
+    window.addEventListener('focus', syncToken)
+    return () => {
+      revision.current += 1
+      window.removeEventListener('storage', onStorage)
+      window.removeEventListener('focus', syncToken)
+    }
   }, [retrySession])
 
   const acceptAuthResponse = useCallback(async (response: AuthResponse, operation: number) => {
     if (operation !== revision.current) return
-    localStorage.setItem(TOKEN_KEY, response.token)
-    localStorage.setItem(AUTH_ID_KEY, response.auth_id)
-    await readVerifiedProfile(response.token, operation)
-  }, [readVerifiedProfile])
+    prepareVerification(response.token)
+    try {
+      localStorage.setItem(TOKEN_KEY, response.token)
+      localStorage.setItem(AUTH_ID_KEY, response.auth_id)
+      await readVerifiedProfile(response.token, operation)
+    } finally {
+      if (operation === revision.current) setHydrated(true)
+    }
+  }, [prepareVerification, readVerifiedProfile])
 
   const login = useCallback(async () => {
     const operation = ++revision.current
@@ -137,18 +173,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateUserFromBackend = useCallback(async (): Promise<User> => {
     const token = WebAuthnService.getToken()
     if (!token) throw new ProfileRequestError(401, 'La sesión no tiene token')
-    const operation = revision.current
-    return readVerifiedProfile(token, operation)
-  }, [readVerifiedProfile])
+    const operation = verifiedToken.current === token ? revision.current : ++revision.current
+    prepareVerification(token)
+    try {
+      return await readVerifiedProfile(token, operation)
+    } finally {
+      if (operation === revision.current) setHydrated(true)
+    }
+  }, [prepareVerification, readVerifiedProfile])
+
+  const currentToken = WebAuthnService.getToken()
+  const verifiedUser = verifiedSession?.token === currentToken ? verifiedSession.user : null
 
   return (
     <AuthContext.Provider value={{
-      user,
-      isAuthenticated: Boolean(user) && Boolean(WebAuthnService.getToken()),
-      isProfileComplete: ProfileService.isProfileComplete(user),
+      user: verifiedUser,
+      isAuthenticated: Boolean(verifiedUser) && Boolean(currentToken),
+      isProfileComplete: ProfileService.isProfileComplete(verifiedUser),
       hydrated,
       sessionError,
-      canRetrySession: Boolean(WebAuthnService.getToken()),
+      canRetrySession: Boolean(currentToken),
       login,
       register,
       retrySession,

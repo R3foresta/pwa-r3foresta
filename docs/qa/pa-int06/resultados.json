@@ -1,0 +1,747 @@
+{
+  "fecha": "2026-10-15T15:04:25.992Z",
+  "entorno": "SINTETICO_LOCAL_INT02C",
+  "backend": {
+    "url": "http://127.0.0.1:3304",
+    "revision": "57e5b7155270e0d83936175ef51d31575876ec11",
+    "cambios_de_trabajo": true,
+    "migraciones_sha256": {
+      "068_pa_participacion_comando.sql": "838e1e658d178e59af5318e5b64514aef6b02317c1d4b19a3bd71af77e353a45",
+      "069_pa_int02b_eventos_acceso.sql": "cc360b8799d6a681d3ac98fe0114feae38223dfea7bea9dda0a4b739d0afca39",
+      "070_pa_int02b_permisos_contextuales.sql": "fe577206af76c8aa5f61ad453d0916b0e025b13b1660ba996fc8bbbd81dddd39",
+      "071_pa_int02b_bootstrap_controlado.sql": "ef8a2e3ff9a4e370c8ff176e0f85b46447f135dd3e5bd34ce21f74f909dbb560",
+      "072_pa_int02c_comandos_acceso.sql": "747b74f9a1d4c0eab006544119c4a5d505c757939a4eeedaec77e95f25233ee7",
+      "073_pa_int02c_lecturas.sql": "7bfcc6d60e5baaf603a514475e5403137d28a478dba715eed22a63797c34b157"
+    }
+  },
+  "pwa_base": "http://127.0.0.1:5173",
+  "adaptador_sesion": "Sólo perfil propio interceptado; JWT sintético verificado por capacidades reales. WebAuthn no incluido.",
+  "checks": [
+    "voluntario: sin acciones de gestión y sin miembros descargados",
+    "plantador: sin acciones de gestión y sin miembros descargados",
+    "logistica: sin acciones de gestión y sin miembros descargados",
+    "gestora contextual: entrada propia sin descargas internas",
+    "gestora: Sur ajena y acciones centrales ausentes",
+    "cancelar confirmación no envía comando",
+    "selección múltiple: un único POST para dos ámbitos",
+    "API/DB: permisos y revisiones confirmados en ambos ámbitos",
+    "respuesta perdida: conserva comando e impide confirmación nueva",
+    "recarga recupera GET propio sin un POST nuevo",
+    "recuperación muestra cambios reales una sola vez",
+    "cambio de cuenta oculta recibos/personas y acciones previos",
+    "ADMIN: último administrador rechazado durable sin cambios",
+    "sin desbordamiento horizontal",
+    "C06: segunda administración confirmada",
+    "C07: cambio conserva otro administrador",
+    "C09: reemplazo protegido en cerrada sin reapertura",
+    "C08: retirar contexto a ADMIN conserva su acceso global",
+    "revisión obsoleta rechaza toda la selección sin tocar el otro ámbito",
+    "sin errores de ejecución del navegador"
+  ],
+  "commands": [
+    {
+      "profile": "gestora",
+      "path": "/api/v1/participacion/accesos/otorgar-plantador",
+      "body": {
+        "comando_id": "89c23a08-a2cc-4a52-ad42-114ca72fa1d0",
+        "usuario_destino_id": "604",
+        "ambitos": [
+          {
+            "subcampania_id": "600",
+            "revision_esperada": "0"
+          },
+          {
+            "subcampania_id": "603",
+            "revision_esperada": "0"
+          }
+        ]
+      }
+    },
+    {
+      "profile": "gestora",
+      "path": "/api/v1/participacion/accesos/retirar-plantador",
+      "body": {
+        "comando_id": "9b4d983f-9514-48f3-804b-46d14a3a75be",
+        "usuario_destino_id": "604",
+        "ambitos": [
+          {
+            "subcampania_id": "600",
+            "revision_esperada": "1"
+          },
+          {
+            "subcampania_id": "603",
+            "revision_esperada": "1"
+          }
+        ]
+      }
+    },
+    {
+      "profile": "admin",
+      "path": "/api/v1/participacion/accesos/retirar-administrador",
+      "body": {
+        "comando_id": "8e05baa6-5cd3-40cd-8a2a-d9c81c5667ef",
+        "usuario_destino_id": "602",
+        "ambitos": [
+          {
+            "subcampania_id": "600",
+            "revision_esperada": "1"
+          }
+        ]
+      }
+    },
+    {
+      "profile": "admin",
+      "path": "/api/v1/participacion/accesos/designar-administrador",
+      "body": {
+        "comando_id": "df7de1fc-18b9-47cb-b17c-f7593d6ca849",
+        "usuario_destino_id": "603",
+        "ambitos": [
+          {
+            "subcampania_id": "600",
+            "revision_esperada": "1"
+          }
+        ]
+      }
+    },
+    {
+      "profile": "admin",
+      "path": "/api/v1/participacion/accesos/administrador-a-plantador",
+      "body": {
+        "comando_id": "c03c9db5-b6d0-4da7-acc8-cec7e53de130",
+        "usuario_destino_id": "603",
+        "ambitos": [
+          {
+            "subcampania_id": "600",
+            "revision_esperada": "2"
+          }
+        ]
+      }
+    },
+    {
+      "profile": "admin",
+      "path": "/api/v1/participacion/accesos/reemplazar-administrador",
+      "body": {
+        "comando_id": "7374a9b7-eb1f-49ba-be6d-4ccd1d1b223f",
+        "usuario_saliente_id": "602",
+        "usuario_reemplazo_id": "604",
+        "tratamiento_saliente": "SIN_ACCESO",
+        "ambitos": [
+          {
+            "subcampania_id": "602",
+            "revision_saliente_esperada": "1",
+            "revision_reemplazo_esperada": "0"
+          }
+        ]
+      }
+    },
+    {
+      "profile": "admin",
+      "path": "/api/v1/participacion/accesos/designar-administrador",
+      "body": {
+        "comando_id": "d09f5296-25ac-4985-9d26-748a0ebb7e71",
+        "usuario_destino_id": "600",
+        "ambitos": [
+          {
+            "subcampania_id": "603",
+            "revision_esperada": "0"
+          }
+        ]
+      }
+    },
+    {
+      "profile": "admin",
+      "path": "/api/v1/participacion/accesos/retirar-administrador",
+      "body": {
+        "comando_id": "b33b0a4d-ea2a-4876-82b6-38d96e737ac0",
+        "usuario_destino_id": "600",
+        "ambitos": [
+          {
+            "subcampania_id": "603",
+            "revision_esperada": "1"
+          }
+        ]
+      }
+    },
+    {
+      "profile": "admin",
+      "path": "/api/v1/participacion/accesos/otorgar-plantador",
+      "body": {
+        "comando_id": "4d4f292c-b3cf-49e8-86a2-13bbd5a91033",
+        "usuario_destino_id": "604",
+        "ambitos": [
+          {
+            "subcampania_id": "600",
+            "revision_esperada": "2"
+          },
+          {
+            "subcampania_id": "603",
+            "revision_esperada": "2"
+          }
+        ]
+      }
+    }
+  ],
+  "network": [
+    {
+      "profile": "voluntario",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "profile": "voluntario",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "profile": "voluntario",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "voluntario",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "plantador",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "profile": "plantador",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "profile": "plantador",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "plantador",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "logistica",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "profile": "logistica",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "profile": "logistica",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "logistica",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "gestora",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "profile": "gestora",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "profile": "gestora",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "gestora",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "gestora",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "gestora",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/600/miembros-participacion"
+    },
+    {
+      "profile": "gestora",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/600/miembros-participacion"
+    },
+    {
+      "profile": "gestora",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/600/miembros-participacion"
+    },
+    {
+      "profile": "gestora",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/600/miembros-participacion"
+    },
+    {
+      "profile": "gestora",
+      "method": "POST",
+      "path": "/api/v1/participacion/personas/buscar"
+    },
+    {
+      "profile": "gestora",
+      "method": "POST",
+      "path": "/api/v1/participacion/accesos/revisar"
+    },
+    {
+      "profile": "gestora",
+      "method": "POST",
+      "path": "/api/v1/participacion/accesos/otorgar-plantador"
+    },
+    {
+      "profile": "gestora",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "gestora",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "gestora",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/600/miembros-participacion"
+    },
+    {
+      "profile": "gestora",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/600/miembros-participacion"
+    },
+    {
+      "profile": "gestora",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/600/miembros-participacion"
+    },
+    {
+      "profile": "gestora",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/600/miembros-participacion"
+    },
+    {
+      "profile": "gestora",
+      "method": "POST",
+      "path": "/api/v1/participacion/accesos/revisar"
+    },
+    {
+      "profile": "gestora",
+      "method": "POST",
+      "path": "/api/v1/participacion/accesos/retirar-plantador"
+    },
+    {
+      "profile": "gestora",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "profile": "gestora",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "profile": "gestora",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "gestora",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "gestora",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "gestora",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "gestora",
+      "method": "GET",
+      "path": "/api/v1/participacion/comandos/9b4d983f-9514-48f3-804b-46d14a3a75be"
+    },
+    {
+      "profile": "gestora",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "gestora",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "profile": "gestora",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "profile": "gestora",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "gestora",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/600/miembros-participacion"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/600/miembros-participacion"
+    },
+    {
+      "profile": "admin",
+      "method": "POST",
+      "path": "/api/v1/participacion/accesos/revisar"
+    },
+    {
+      "profile": "admin",
+      "method": "POST",
+      "path": "/api/v1/participacion/accesos/retirar-administrador"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/600/miembros-participacion"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/600/miembros-participacion"
+    },
+    {
+      "profile": "admin",
+      "method": "POST",
+      "path": "/api/v1/participacion/accesos/revisar"
+    },
+    {
+      "profile": "admin",
+      "method": "POST",
+      "path": "/api/v1/participacion/accesos/designar-administrador"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/600/miembros-participacion"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/600/miembros-participacion"
+    },
+    {
+      "profile": "admin",
+      "method": "POST",
+      "path": "/api/v1/participacion/accesos/revisar"
+    },
+    {
+      "profile": "admin",
+      "method": "POST",
+      "path": "/api/v1/participacion/accesos/administrador-a-plantador"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/602/miembros-participacion"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/602/miembros-participacion"
+    },
+    {
+      "profile": "admin",
+      "method": "POST",
+      "path": "/api/v1/participacion/personas/buscar"
+    },
+    {
+      "profile": "admin",
+      "method": "POST",
+      "path": "/api/v1/participacion/accesos/revisar"
+    },
+    {
+      "profile": "admin",
+      "method": "POST",
+      "path": "/api/v1/participacion/accesos/revisar"
+    },
+    {
+      "profile": "admin",
+      "method": "POST",
+      "path": "/api/v1/participacion/accesos/reemplazar-administrador"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/603/miembros-participacion"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/603/miembros-participacion"
+    },
+    {
+      "profile": "admin",
+      "method": "POST",
+      "path": "/api/v1/participacion/accesos/revisar"
+    },
+    {
+      "profile": "admin",
+      "method": "POST",
+      "path": "/api/v1/participacion/accesos/designar-administrador"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/603/miembros-participacion"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/603/miembros-participacion"
+    },
+    {
+      "profile": "admin",
+      "method": "POST",
+      "path": "/api/v1/participacion/accesos/revisar"
+    },
+    {
+      "profile": "admin",
+      "method": "POST",
+      "path": "/api/v1/participacion/accesos/retirar-administrador"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/600/miembros-participacion"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/600/miembros-participacion"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/600/miembros-participacion"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/600/miembros-participacion"
+    },
+    {
+      "profile": "admin",
+      "method": "POST",
+      "path": "/api/v1/participacion/personas/buscar"
+    },
+    {
+      "profile": "admin",
+      "method": "POST",
+      "path": "/api/v1/participacion/accesos/revisar"
+    },
+    {
+      "profile": "admin",
+      "method": "POST",
+      "path": "/api/v1/participacion/accesos/otorgar-plantador"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    }
+  ],
+  "errors": []
+}

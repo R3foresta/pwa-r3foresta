@@ -5,6 +5,7 @@ import Icon from '../../components/Icon'
 import MenuLateral from '../../components/MenuLateral'
 import { Card } from '../../components/ui'
 import heroCanopy from '../../assets/home/hero-canopy.webp'
+import GestionAccesosEntry from '../participacion/components/GestionAccesosEntry'
 
 function ParticipantHomeScreen() {
   const { user, isProfileComplete } = useAuth()
@@ -54,6 +55,8 @@ function ParticipantHomeScreen() {
           <p className="mt-3 text-sm leading-6 text-white/90">Tu espacio en R3foresta. Gracias por ser parte de la reforestación.</p>
         </div>
       </section>
+
+      <GestionAccesosEntry />
 
       <Card as="section" className="mt-5" padding="lg">
         <div className="flex items-start gap-3">

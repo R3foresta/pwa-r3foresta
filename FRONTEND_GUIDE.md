@@ -714,6 +714,7 @@ npm run build
 - `AuthContext` es la fuente de estado de sesión. `useWebAuthn` delega login/registro en ese contexto; no mantiene otra sesión.
 - El perfil se obtiene con JWT Bearer. `r3foresta:user` y `auth_id` son datos auxiliares y no acreditan autenticación.
 - Logout limpia token y datos locales e invalida respuestas pendientes. Ante fallo de conexión, la UI permite revalidar sin conceder acceso; ante token rechazado, exige nuevo ingreso.
+- El perfil visible queda ligado al token que lo verificó. Cambios de `authToken` entre pestañas y al recuperar foco ocultan la cuenta anterior hasta verificar la nueva; reconsultar el mismo token no desmonta los formularios. Logout no elimina comandos inciertos por actor.
 - Las confirmaciones de eventos usan `ConfirmDialog`, con foco de teclado contenido, Escape y retorno del foco al cerrar. Abrir o cancelar el resumen no sube evidencias ni registra operaciones.
 - La guarda de doble envío evita solicitudes simultáneas desde el mismo formulario. No resuelve idempotencia después de una respuesta perdida; ver `AUD-007`.
 
@@ -732,6 +733,14 @@ npm run build
 - Después de la confirmación se consultan detalle, plan, totales/indicadores de campaña y contexto de plantación. Una lectura fallida se comunica como actualización pendiente; no se reenvía una revisión ya confirmada. Las pantallas de campaña y plantación consultan nuevamente al entrar.
 - Las metas siguen siendo orientativas. El porcentaje numérico puede superar 100%; solo el ancho de la barra se limita. Revisar el plan no cambia stock, registros físicos ni estado. El cierre manual sigue siendo una acción independiente.
 - Un borrador incompleto del asistente se conserva localmente hasta completar un plan coherente; el guardado remoto de la meta y especies exige la revisión atómica y una versión vigente, incluido 0. Si el servidor no ofrece versión se conserva el borrador local, sin cambiar la meta por PATCH ni guardar especies por separado. La meta total y las cantidades son enteros positivos de hasta `2147483647`.
+
+### 16.7 Capacidades y comandos de participación
+
+- `src/modules/participacion/` centraliza el cliente `/api/v1`, DTO y validadores de participación. IDs/revisiones BIGINT permanecen como cadenas. El cliente usa Bearer, `no-store`, cancelación y timeout de 40 segundos, incluida la lectura del body; verifica el actor con capacidades del mismo token y descarta respuestas al cambiar sesión.
+- Consumir `useParticipacionCapabilities()` bajo el provider existente de `AppLayout`. Completa páginas y distingue carga, vacío válido, error y sesión vencida. Las acciones proceden del DTO actual; un error bloquea nuevas confirmaciones sin declarar que todos los permisos desaparecieron. Impacto público debe funcionar independientemente.
+- Los comandos C04–C09 usan `useAccessCommand`, con revisión y confirmación explícitas, una selección atómica de hasta 100 ámbitos y un UUID generado una sola vez. El store conserva actor/operación/payload en `localStorage` por cuenta, sin tokens, nombres, búsquedas ni fotos. Web Locks coordina pestañas; si falta, falla el almacenamiento o existe un intento incierto, se bloquean nuevas confirmaciones.
+- Timeout, 5xx, recibo incompatible o GET 202/404 mantienen resultado no confirmado. Recuperar o reenviar conserva el UUID, personas, ámbitos y revisiones originales; logout/recarga no autorizan otra clave. Un terminal válido permite liberar la identidad local. El recibo describe el resultado histórico; capacidades, miembros y una revisión nueva determinan las acciones siguientes.
+- INT04 debe reutilizar capacidades y extender/extraer las primitivas de comandos con su contrato de plantación/evidencias; el hook actual sólo acepta accesos C04–C09. Diseño, mocks o QA local no completan INT02-D, Impacto/WebAuthn ni la verificación externa. Ver [documentación del módulo](src/modules/participacion/README.md).
 
 ## 17. Antipatrones a evitar
 

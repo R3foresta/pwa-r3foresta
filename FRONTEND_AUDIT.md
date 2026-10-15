@@ -877,6 +877,19 @@ El contrato de Participación Aliada preserva Impacto sin cuenta/perfil/token. N
 
 Acción: integrar el contrato público definitivo en una feature propia, con enlaces global/campaña/subcampaña/registro, fotos elegibles y estados recuperables fuera de guard de sesión. Verificar incógnito, VOLUNTARIO sin contexto y sesión vencida sin llamadas a perfil/stock/equipo internos. La mejora INT02-A no crea un acceso ficticio a Impacto ni habilita el piloto.
 
+### AUD-021 — QA integrado de gestión contextual pendiente
+
+- Estado: `PENDIENTE`
+- Severidad: `ALTA`
+- Módulo: `participacion / auth`
+- Tipo: `api / testing`
+- Fecha: `2026-10-15`
+- Ubicación: `src/modules/participacion/`, `src/contexts/AuthContext.tsx`.
+
+INT06-FE01–FE05 están implementadas y verificadas localmente: cliente validado, capacidades por cuenta, C04–C09, selección atómica y recuperación con la misma identidad. FE06 aporta 20 comprobaciones reales de navegador/API, cotejo READ ONLY de nueve comandos/historial y ocho comprobaciones de sesión entre pestañas. Las pruebas unitarias no reemplazan el QA pendiente.
+
+Faltan INT02-D y las carreras/regresiones con registro/stock/logística/cierre, registro/cargas INT03-A/INT04, Impacto/Mis registros INT05 y sus enlaces públicos, WebAuthn real y un entorno externo identificado. El launcher C carece de perfil/ceremonias; el QA adapta sólo el perfil propio y verifica identidad contra capacidades reales. No se acredita transición de personas reales, despliegue ni piloto. Evidencia y reproducción: [informe INT06](docs/QA_GESTION_ACCESOS_INT06.md).
+
 ## 14. Riesgos conocidos
 
 Registrar riesgos que todavía no son bugs confirmados.

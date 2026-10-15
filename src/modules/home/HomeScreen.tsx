@@ -9,6 +9,7 @@ import RecoleccionStockPanel from '../recolecciones/components/RecoleccionStockP
 import { useRecoleccionStock } from '../recolecciones/hooks/useRecoleccionStock'
 import { hasInternalAppAccess } from '../../utils/appAccess'
 import ParticipantHomeScreen from './ParticipantHomeScreen'
+import GestionAccesosEntry from '../participacion/components/GestionAccesosEntry'
 
 function HomeScreen() {
   const { user } = useAuth()
@@ -157,6 +158,8 @@ function InternalHomeScreen() {
           </div>
         </div>
       </section>
+
+      <GestionAccesosEntry />
 
       {isAdmin && (
         <div className="mt-7">

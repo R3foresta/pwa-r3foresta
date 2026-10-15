@@ -14,6 +14,7 @@ import {
 } from './pwa/pwaStatus'
 
 const HomeScreen = lazy(() => import('./modules/home/HomeScreen'))
+const GestionAccesosScreen = lazy(() => import('./modules/participacion/pages/GestionAccesosScreen'))
 const LoginScreen = lazy(() => import('./modules/auth/LoginScreen'))
 const RegisterScreen = lazy(() => import('./modules/auth/RegisterScreen'))
 const RecoverScreen = lazy(() => import('./modules/auth/RecoverScreen'))
@@ -170,6 +171,7 @@ function App() {
           <Route path="/app" element={<AppLayout />}>
             <Route index element={<Navigate to="home" replace />} />
             <Route path="home" element={<HomeScreen />} />
+            <Route path="participacion/accesos" element={<GestionAccesosScreen />} />
             <Route path="collections">
               <Route index element={<RecoleccionesScreen />} />
               <Route path="stock" element={<RecoleccionStockScreen />} />
