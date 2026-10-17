@@ -230,5 +230,37 @@
     "Sin ceremonia WebAuthn, revisión humana ni cierre de INT05/07/08 o de sus tareas padre",
     "Los IDs/códigos/UUID de comandos en evidencia son sintéticos; no se conservan tokens ni UUID de archivos/cargas",
     "El fixture se consumió durante QA; cada registro se coteja por comando, no por conteo global del seed"
-  ]
+  ],
+  "alcance_revisiones": "base/arbol_sin_commit, sha256_fuentes, documentacion y sha256_evidencia_y_guias describen el corte histórico anterior a los commits; entrega_local registra la entrega Git posterior, sin repetir pruebas.",
+  "entrega_local": {
+    "actualizacion_utc": "2026-10-17T10:21:10.282716+00:00",
+    "pwa": {
+      "commit": "94f62a91831fd35cc7b89f62d05f31ad1762caca",
+      "rama": "main",
+      "fuentes_coincidentes": 57,
+      "push_realizado": false
+    },
+    "backend": {
+      "commit": "75a57eb05e57b3048908cccc04aa14fc24ae8629",
+      "rama": "main",
+      "fuentes_coincidentes": 76,
+      "push_realizado": false,
+      "normalizaciones": {
+        "migrations/077_pa_int02d_operaciones_compartidas.sql": {
+          "sha256_probado": "0659d5a26660f8f7135f9d4cfa50b5c65258a1fc0efd24c9a8a78177d694c7ae",
+          "sha256_entregado": "c11660a287349ccadc45ff0026008f193834e55cf28f2ce89b99ba46a799088b",
+          "equivalencia_verificada": "bytes_entregados + un salto de línea = bytes_probados; línea vacía final, sin cambio SQL semántico"
+        }
+      }
+    },
+    "sql_remoto_aplicado": false,
+    "despliegue_realizado": false,
+    "piloto_habilitado": false,
+    "suites_repetidas_por_esta_actualizacion": false,
+    "sha256_documentacion_actualizada": {
+      "docs/QA_REGISTRO_PARTICIPANTE_INT04.md": "dd6b2b77c0ad00bb6da8141e845abf09bf221f1eee097ff5e4709f719baaf535",
+      "README.md": "872737dffa916c58f21c96904548f45f66355d5cd46aa491b1108fd4b06c02c6",
+      "FRONTEND_AUDIT.md": "6fdc542189365a7b7c21f909a4b5e2bb660619ce22e1c1a56f9e17fec5dbdb4e"
+    }
+  }
 }

@@ -27,7 +27,7 @@ El orden de ejecución entre repositorios se decide en el tablero oficial; esta 
 
 ### AUD-021 — QA integrado de gestión contextual
 
-INT06 FE01–FE05 e INT04 están implementadas/verificadas localmente. INT04 añade 30 checks integrados de registro/cargas, dos pestañas, plan concurrente y retiro, más 18 de reposición y 12 de fotos adversarias con D ([informe](docs/QA_REGISTRO_PARTICIPANTE_INT04.md)). INT06 FE06 sigue parcial: Impacto/Mis registros INT05, WebAuthn real, entorno externo y QA completo del recorrido conservan evidencia pendiente. El QA sintético sólo adapta perfil propio; capacidades/comandos/DB son reales dentro del fixture.
+INT06 FE01–FE05 e INT04 están implementadas/verificadas localmente. Entrega INT04 en commit local PWA `94f62a9`, con backend D `75a57eb`; pendiente de push, sin SQL remoto ni despliegue acreditados. INT04 añade 30 checks integrados de registro/cargas, dos pestañas, plan concurrente y retiro, más 18 de reposición y 12 de fotos adversarias con D ([informe](docs/QA_REGISTRO_PARTICIPANTE_INT04.md)). INT06 FE06 sigue parcial: Impacto/Mis registros INT05, WebAuthn real, entorno externo y QA completo del recorrido conservan evidencia pendiente. El QA sintético sólo adapta perfil propio; capacidades/comandos/DB son reales dentro del fixture.
 
 Cerrar con evidencia navegador → API → DB de roles/estados, pérdida de respuesta tras commit, recarga/cambio de cuenta y regresión interna/pública. [Informe reproducible](docs/QA_GESTION_ACCESOS_INT06.md); [módulo](src/modules/participacion/README.md). No habilitar piloto sólo por cerrar esta UI.
 

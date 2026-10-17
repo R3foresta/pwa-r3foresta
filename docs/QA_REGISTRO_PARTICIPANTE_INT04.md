@@ -1,6 +1,8 @@
 # INT04 — Registro participante: entrega técnica local
 
-Corte: **17 de octubre de 2026**. Frontend sobre `20157dc` más árbol INT04; backend sobre `a045d9d` más árbol INT02-D. Las revisiones, hashes de fuentes y entorno exactos se conservan en [versiones.json](qa/pa-int04/versiones.json). No son commits de esta entrega.
+Corte de pruebas: **17 de octubre de 2026**. Se conservan las revisiones originales: frontend `20157dc` más árbol INT04 y backend `a045d9d` más árbol D. **Entrega local en `main`: PWA `94f62a9` y backend `75a57eb`**, verificados en Git; ambos pendientes de push. [Versiones y huellas](qa/pa-int04/versiones.json) separa el corte histórico de pruebas de estos commits posteriores.
+
+El cotejo enlaza las 57 fuentes PWA con `94f62a9` y 76 de las 77 fuentes backend con `75a57eb` byte por byte. En 077 sólo se retiró una línea vacía final: se comprobó que bytes entregados + un salto de línea reproducen la huella probada. Se conserva la huella original y se registra esta normalización; no se repitieron suites ni se alteraron resultados por esta actualización documental.
 
 ## Qué revisar primero
 
