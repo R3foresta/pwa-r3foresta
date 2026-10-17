@@ -258,7 +258,7 @@
     "piloto_habilitado": false,
     "suites_repetidas_por_esta_actualizacion": false,
     "sha256_documentacion_actualizada": {
-      "docs/QA_REGISTRO_PARTICIPANTE_INT04.md": "dd6b2b77c0ad00bb6da8141e845abf09bf221f1eee097ff5e4709f719baaf535",
+      "docs/QA_REGISTRO_PARTICIPANTE_INT04.md": "242f375c4a050c3d5fd59ea18bf093a729230fb4ed51d727946adaa6d7d38456",
       "README.md": "872737dffa916c58f21c96904548f45f66355d5cd46aa491b1108fd4b06c02c6",
       "FRONTEND_AUDIT.md": "6fdc542189365a7b7c21f909a4b5e2bb660619ce22e1c1a56f9e17fec5dbdb4e"
     }

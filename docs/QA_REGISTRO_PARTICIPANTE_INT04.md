@@ -35,7 +35,7 @@ Capturas: [fotos](qa/pa-int04/fotos-mobile.png), [resumen](qa/pa-int04/resumen-m
 
 ## Reproducir
 
-Usar el [launcher D](../../backend-r3foresta/docs/pa-int02d-preview.md), con sus fuentes actuales y runtime PostGIS. Desde backend:
+Usar el [launcher D](../../Backend-r3foresta/docs/pa-int02d-preview.md), con sus fuentes actuales y runtime PostGIS. Desde backend:
 
 ```sh
 PA_A_HTTP_PORT=3305 TMPDIR=/private/tmp npm run preview:participacion-d -- --pg-bin /ruta/runtime/14/bin
