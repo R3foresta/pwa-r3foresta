@@ -1,0 +1,180 @@
+{
+  "entorno": "SINTETICO_LOCAL_INT02D",
+  "ok": true,
+  "api": "http://127.0.0.1:3305",
+  "pwa": "http://127.0.0.1:5175",
+  "actor": "802",
+  "subcampania": "824",
+  "adaptador": "Sólo perfil; capacidades/decoder/servicios/RPC reales",
+  "checks": [
+    "API/PWA locales y actor802 explícitamente sintético",
+    "PNG declarado con bytes inválidos llega a decoder real y es rechazado",
+    "Foto inválida no emite POST inicial ni consume stock",
+    "Recarga conserva un File privado con sus bytes en actor802/ámbito824",
+    "Descarte UI clausura preparación por servidor antes de eliminar File local",
+    "Clausura no crea registro ni consumo",
+    "Cliente v1 real prepara dos comandos y confirma PNG válido sólo en origen",
+    "Evidencia de otra preparación produce RECHAZADO durable sin registro",
+    "Preparación de la foto válida queda clausurada explícitamente",
+    "DB conserva exactamente registros, consumo y saldo Vivero tras foto ajena",
+    "Único POST inicial es el rechazo esperado de evidencia ajena",
+    "Sin errores JavaScript de navegador"
+  ],
+  "result": {
+    "foto_invalida": {
+      "http": 422,
+      "codigo": "FOTO_NO_DECODIFICABLE"
+    },
+    "otra_preparacion": {
+      "preparaciones": 2,
+      "carga": "DISPONIBLE",
+      "estado": "RECHAZADO",
+      "codigo": "EVIDENCIA_NO_DISPONIBLE",
+      "original_clausurado": true
+    }
+  },
+  "balances": [
+    {
+      "stage": "antes",
+      "registros": 0,
+      "saldo_vivero": 300,
+      "stock_consumido": 0
+    },
+    {
+      "stage": "decoder_rechazado",
+      "registros": 0,
+      "saldo_vivero": 300,
+      "stock_consumido": 0
+    },
+    {
+      "stage": "captura_cancelada",
+      "registros": 0,
+      "saldo_vivero": 300,
+      "stock_consumido": 0
+    },
+    {
+      "stage": "evidencia_otra_preparacion_rechazada",
+      "registros": 0,
+      "saldo_vivero": 300,
+      "stock_consumido": 0
+    }
+  ],
+  "network": [
+    {
+      "method": "GET",
+      "path": "/api/users/profile",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/profile",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/subcampanias/824/contexto-registro",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/participacion/comandos/preparaciones",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/participacion/comandos/:uuid/cargas",
+      "status": 200
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/participacion/comandos/:uuid/cargas/:uuid",
+      "status": 422
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/profile",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/profile",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/participacion/comandos/:uuid",
+      "status": 202
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/participacion/comandos/:uuid/cargas",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/subcampanias/824/contexto-registro",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/participacion/comandos/:uuid/descarte-preparacion",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/subcampanias/824/contexto-registro",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/participacion/comandos/preparaciones",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/participacion/comandos/preparaciones",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "status": 200
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/participacion/comandos/:uuid/cargas/:uuid",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/plantaciones/iniciales",
+      "status": 409
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/participacion/comandos/:uuid/descarte-preparacion",
+      "status": 200
+    }
+  ],
+  "errors": []
+}

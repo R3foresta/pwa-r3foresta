@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { PlantacionService } from '../../../services/plantacion.service'
-import type { GetPlanData, PlantacionContext, RevisarPlanData, Subcampania } from '../types/contracts'
+import type { GetPlanData, RevisarPlanData, Subcampania } from '../types/contracts'
 import DetalleSubcampanaScreen from './DetalleSubcampanaScreen'
 
 const authState = vi.hoisted(() => ({
@@ -21,7 +21,6 @@ vi.mock('../../../services/plantacion.service', async (importOriginal) => {
     getCampania: vi.fn(),
     getCampaniaMetrics: vi.fn(),
     getCampaniasResumen: vi.fn(),
-    getPlantacionContext: vi.fn(),
   } }
 })
 vi.mock('react-leaflet', () => ({
@@ -43,14 +42,6 @@ const saved: RevisarPlanData = {
   ...plan, plan_revision: 3, meta_total_arboles: 60,
   metas: [{ ...plan.metas[0], cantidad_objetivo: 60 }],
 }
-const context: PlantacionContext = {
-  subcampania: { ...subcampania, meta_total_arboles: 60, plan_revision: 3 },
-  usuario: { id: 1, rol_global: 'ADMIN', puede_registrar: true }, equipo: [],
-  plan_por_especie: [{ planta_id: 5, cantidad_objetivo: 60, plantado_inicial: 50, pendiente_meta: 10 }],
-  stock_por_especie: [{ planta_id: 5, stock_asignado_disponible: 12, asignaciones: [] }],
-  reglas: { permite_exceder_meta_especie: true },
-}
-
 function DetailRoute() {
   return <MemoryRouter initialEntries={['/subcampanias/54']}>
     <Routes><Route path="/subcampanias/:subcampaniaId" element={<DetalleSubcampanaScreen />} /></Routes>
@@ -92,7 +83,6 @@ beforeEach(() => {
   })
   vi.mocked(PlantacionService.getCampaniaMetrics).mockReset().mockResolvedValue(null)
   vi.mocked(PlantacionService.getCampaniasResumen).mockReset().mockResolvedValue(null)
-  vi.mocked(PlantacionService.getPlantacionContext).mockReset().mockResolvedValue(context)
 })
 
 describe('revisión del plan desde el detalle de subcampaña', () => {
@@ -221,7 +211,6 @@ describe('revisión del plan desde el detalle de subcampaña', () => {
     expect(await screen.findByText('125%')).toBeTruthy()
     const user = await reviewGoal60()
     expect(PlantacionService.getCampania).not.toHaveBeenCalled()
-    expect(PlantacionService.getPlantacionContext).not.toHaveBeenCalled()
     expect(PlantacionService.revisarSubcampaniaPlan).not.toHaveBeenCalled()
     vi.mocked(PlantacionService.getSubcampania).mockResolvedValue({ ...subcampania, meta_total_arboles: 60 })
     vi.mocked(PlantacionService.getSubcampaniaPlan).mockResolvedValue(saved)
@@ -239,12 +228,10 @@ describe('revisión del plan desde el detalle de subcampaña', () => {
     expect(PlantacionService.getCampania).toHaveBeenCalledExactlyOnceWith(20)
     expect(PlantacionService.getCampaniaMetrics).toHaveBeenCalledExactlyOnceWith(20)
     expect(PlantacionService.getCampaniasResumen).toHaveBeenCalledTimes(1)
-    expect(PlantacionService.getPlantacionContext).toHaveBeenCalledExactlyOnceWith(54, 'auth-1')
     expect(PlantacionService.revisarSubcampaniaPlan).toHaveBeenCalledExactlyOnceWith(54, {
       meta_total_arboles: 60, revision_esperada: 2,
       metas: [{ planta_id: 5, cantidad_objetivo: 60, porcentaje_objetivo: 100 }],
     }, 'auth-1')
-    expect(context.stock_por_especie[0].stock_asignado_disponible).toBe(12)
     await user.click(screen.getByRole('button', { name: 'Más opciones' }))
     await user.click(screen.getByRole('button', { name: /Cerrar subcampaña/ }))
     expect(screen.getByText('50 plantados / meta 60')).toBeTruthy()
@@ -277,7 +264,6 @@ describe('revisión del plan desde el detalle de subcampaña', () => {
     expect(PlantacionService.getCampania).toHaveBeenCalledTimes(2)
     expect(PlantacionService.getCampaniaMetrics).toHaveBeenCalledTimes(2)
     expect(PlantacionService.getCampaniasResumen).toHaveBeenCalledTimes(2)
-    expect(PlantacionService.getPlantacionContext).toHaveBeenCalledTimes(2)
   })
 
   it('conserva el plan confirmado cuando falla la lectura posterior y recupera solo con GET', async () => {

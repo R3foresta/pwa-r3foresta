@@ -12,7 +12,6 @@ import {
   getCampaniaApi,
   getCampaniaMetricsApi,
   getCampaniasResumenApi,
-  getPlantacionContextApi,
   getSubcampaniaApi,
   getSubcampaniaEquipoApi,
   getSubcampaniaPlanApi,
@@ -35,7 +34,7 @@ import type {
   ApiEnvelope,
   CreateRegistroPlantacionInput,
   DescartarEvidenciasData,
-  PlantacionContext,
+  DescartarEvidenciasPlantacionInput,
   RegistroPlantacionData,
   UploadEvidenciasPlantacionData,
   UploadEvidenciasPlantacionInput,
@@ -747,52 +746,12 @@ export class PlantacionService {
     )
   }
 
-  static async getPlantacionContext(
-    subcampaniaId: number,
-    authId?: string,
-  ): Promise<PlantacionContext> {
-    if (!Number.isFinite(subcampaniaId) || subcampaniaId <= 0) {
-      throw new Error('ID de subcampaña inválido.')
-    }
-    const response = await getPlantacionContextApi(subcampaniaId, authId)
-    const payload = await parseJsonResponse<ApiEnvelope<PlantacionContext>>(
-      response,
-      'Error al cargar el contexto de plantación.',
-    )
-    const context = payload.data
-    if (!context?.subcampania || !context.usuario) {
-      throw new Error('El contexto de plantación llegó incompleto.')
-    }
-
-    // Backend garantiza `fecha_asignacion ASC, asignacion_id ASC`; se reordena
-    // defensivamente para que la distribución automática sea determinística
-    // incluso si el contrato cambia.
-    const stockOrdenado = (context.stock_por_especie ?? []).map((stock) => ({
-      ...stock,
-      asignaciones: [...(stock.asignaciones ?? [])].sort((a, b) => {
-        if (a.fecha_asignacion !== b.fecha_asignacion) {
-          return a.fecha_asignacion < b.fecha_asignacion ? -1 : 1
-        }
-        return a.asignacion_id - b.asignacion_id
-      }),
-    }))
-
-    return {
-      ...context,
-      equipo: Array.isArray(context.equipo) ? context.equipo : [],
-      plan_por_especie: Array.isArray(context.plan_por_especie)
-        ? context.plan_por_especie
-        : [],
-      stock_por_especie: stockOrdenado,
-      reglas: context.reglas ?? {},
-    }
-  }
-
   static async uploadEvidenciasPendientesPlantacion(
     input: UploadEvidenciasPlantacionInput,
     limits?: { minFotos?: number; maxFotos?: number },
     authId?: string,
   ): Promise<UploadEvidenciasPlantacionData> {
+    validateReposicionScope(input)
     const minFotos = limits?.minFotos ?? 1
     const maxFotos = limits?.maxFotos ?? MAX_FOTOS_PLANTACION_DEFAULT
 
@@ -827,21 +786,22 @@ export class PlantacionService {
   }
 
   /**
-   * Descarta evidencias pendientes pre-subidas (cancelación del flujo o fallo
-   * del POST final). Idempotente: IDs ya eliminados/vinculados vuelven en
+   * Descarta fotos propias de reposición en un ámbito explícito. Solo usar al
+   * cancelar antes del envío o tras rechazo concluyente; nunca ante timeout.
+   * Idempotente: IDs ya eliminados/vinculados vuelven en
    * `evidencia_ids_ignoradas` y no se tratan como error.
    */
   static async descartarEvidenciasPendientesPlantacion(
-    evidenciaIds: number[],
+    input: DescartarEvidenciasPlantacionInput,
     authId?: string,
   ): Promise<DescartarEvidenciasData> {
-    const cleanIds = (evidenciaIds ?? []).filter(
-      (id) => Number.isInteger(id) && id > 0,
-    )
+    validateReposicionScope(input)
+    const cleanIds = input.evidencia_ids
+    if (!Array.isArray(cleanIds) || cleanIds.some(id => !Number.isSafeInteger(id) || id <= 0)) throw new Error('Los IDs de evidencia recibidos son inválidos.')
     if (cleanIds.length === 0) {
       return { evidencia_ids_descartadas: [], evidencia_ids_ignoradas: [] }
     }
-    const response = await deleteEvidenciasPendientesPlantacionApi(cleanIds, authId)
+    const response = await deleteEvidenciasPendientesPlantacionApi({ ...input, evidencia_ids: cleanIds }, authId)
     const payload = await parseJsonResponse<ApiEnvelope<DescartarEvidenciasData>>(
       response,
       'Error al descartar las evidencias pendientes.',
@@ -891,7 +851,7 @@ function extractEvidenciaIds(payload: {
     if (Array.isArray(candidate)) {
       const ids = candidate
         .map((value) => Number(value))
-        .filter((value) => Number.isInteger(value) && value > 0)
+        .filter((value) => Number.isSafeInteger(value) && value > 0)
       if (ids.length > 0) return ids
     }
   }
@@ -901,9 +861,8 @@ function extractEvidenciaIds(payload: {
 function validateRegistroPlantacionInput(
   input: CreateRegistroPlantacionInput,
 ): CreateRegistroPlantacionInput {
-  if (!Number.isFinite(input.subcampania_id) || input.subcampania_id <= 0) {
-    throw new Error('Subcampaña inválida para registrar la plantación.')
-  }
+  validateReposicionScope(input)
+  if (!Number.isSafeInteger(input.registro_plantacion_origen_id) || input.registro_plantacion_origen_id <= 0) throw new Error('La reposición requiere el registro inicial de origen. El servidor comprobará que pertenece a esta subcampaña.')
   if (!/^\d{4}-\d{2}-\d{2}$/.test(input.fecha_plantacion)) {
     throw new Error('La fecha de plantación debe tener formato YYYY-MM-DD.')
   }
@@ -922,16 +881,16 @@ function validateRegistroPlantacionInput(
     throw new Error('El registro debe incluir al menos un detalle por asignación.')
   }
   const detalles = input.detalles.map((detalle) => {
-    if (!Number.isInteger(detalle.asignacion_id) || detalle.asignacion_id <= 0) {
+    if (!Number.isSafeInteger(detalle.asignacion_id) || detalle.asignacion_id <= 0) {
       throw new Error('Detalle con asignación inválida.')
     }
-    if (!Number.isInteger(detalle.lote_vivero_id) || detalle.lote_vivero_id <= 0) {
+    if (!Number.isSafeInteger(detalle.lote_vivero_id) || detalle.lote_vivero_id <= 0) {
       throw new Error('Detalle con lote de vivero inválido.')
     }
-    if (!Number.isInteger(detalle.planta_id) || detalle.planta_id <= 0) {
+    if (!Number.isSafeInteger(detalle.planta_id) || detalle.planta_id <= 0) {
       throw new Error('Detalle con especie inválida.')
     }
-    if (!Number.isInteger(detalle.cantidad) || detalle.cantidad < 1) {
+    if (!Number.isSafeInteger(detalle.cantidad) || detalle.cantidad < 1) {
       throw new Error('Cada detalle debe tener una cantidad entera mayor o igual a 1.')
     }
     return {
@@ -946,19 +905,20 @@ function validateRegistroPlantacionInput(
     throw new Error('El registro requiere al menos una evidencia fotográfica.')
   }
   const evidenciaIds = input.evidencia_ids.filter(
-    (id) => Number.isInteger(id) && id > 0,
+    (id) => Number.isSafeInteger(id) && id > 0,
   )
   if (evidenciaIds.length < 1) {
     throw new Error('Los IDs de evidencia recibidos son inválidos.')
   }
 
   const coresponsableIds = Array.from(
-    new Set((input.coresponsable_ids ?? []).filter((id) => Number.isInteger(id) && id > 0)),
+    new Set((input.coresponsable_ids ?? []).filter((id) => Number.isSafeInteger(id) && id > 0)),
   )
 
   return {
     subcampania_id: input.subcampania_id,
-    es_reposicion: input.es_reposicion ?? false,
+    es_reposicion: true,
+    registro_plantacion_origen_id: input.registro_plantacion_origen_id,
     fecha_plantacion: input.fecha_plantacion,
     latitud: input.latitud,
     longitud: input.longitud,
@@ -967,6 +927,11 @@ function validateRegistroPlantacionInput(
     detalles,
     evidencia_ids: evidenciaIds,
   }
+}
+
+function validateReposicionScope(input: { subcampania_id: number; es_reposicion: boolean }) {
+  if (input.es_reposicion !== true) throw new Error('El registro inicial usa el formulario de participación v1. Este contrato solo admite reposición.')
+  if (!Number.isSafeInteger(input.subcampania_id) || input.subcampania_id <= 0) throw new Error('Subcampaña inválida para registrar la reposición.')
 }
 
 function validateUpdateCampaniaInput(input: UpdateCampaniaInput): UpdateCampaniaInput {

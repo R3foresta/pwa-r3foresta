@@ -6,6 +6,7 @@ import MenuLateral from '../../components/MenuLateral'
 import { Card } from '../../components/ui'
 import heroCanopy from '../../assets/home/hero-canopy.webp'
 import GestionAccesosEntry from '../participacion/components/GestionAccesosEntry'
+import RegistroParticipanteEntry from '../participacion/components/RegistroParticipanteEntry'
 
 function ParticipantHomeScreen() {
   const { user, isProfileComplete } = useAuth()
@@ -56,6 +57,7 @@ function ParticipantHomeScreen() {
         </div>
       </section>
 
+      <RegistroParticipanteEntry />
       <GestionAccesosEntry />
 
       <Card as="section" className="mt-5" padding="lg">
@@ -88,7 +90,7 @@ function ParticipantHomeScreen() {
           <h2 className="text-base font-bold">Para trabajar en campo</h2>
         </div>
         <p className="mt-3 text-sm leading-6 text-brand-800">
-          El registro de recolecciones, vivero y plantaciones está disponible para el equipo operativo. Si necesitas realizar estas tareas, coordina tu acceso con el equipo de R3foresta.
+          Puedes registrar plantaciones en las subcampañas donde tengas permiso. Recolecciones y vivero requieren acceso del equipo operativo. Coordina cualquier habilitación con el equipo de R3foresta.
         </p>
         <p className="mt-3 text-xs leading-5 text-brand-700">Editar tu perfil o elegir una organización conserva el acceso de tu cuenta.</p>
       </section>

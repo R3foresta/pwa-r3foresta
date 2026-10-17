@@ -1,5 +1,6 @@
 import type { AccesoEntrada, IntentoAcceso, OperacionSimple, ReemplazoEntrada } from '../types'
 import { validarId, validarIntentoAcceso } from '../api/participacion.contract'
+import { withPrivateCommandLock } from './commandLifecycle'
 
 export type AccessCommandDraft =
   | { operacion: OperacionSimple; payload: Omit<AccesoEntrada, 'comando_id'> }
@@ -64,8 +65,7 @@ export function readAccessCommand(actorId: string): IntentoAcceso | null {
 // pestañas: sin esta garantía se bloquean escrituras, pero aún se puede consultar.
 export async function withAccessCommandLock<T>(actorId: string, callback: () => Promise<T> | T): Promise<T> {
   const key = accessCommandStorageKey(actorId)
-  if (!navigator.locks?.request) throw new AccessCommandStorageError('Este navegador no permite coordinar los envíos entre pestañas. Usa un navegador compatible para confirmar acciones.')
-  return navigator.locks.request(key, { mode: 'exclusive' }, callback)
+  return withPrivateCommandLock(key, callback)
 }
 
 export async function claimAccessCommand(actorId: string, draft: AccessCommandDraft): Promise<IntentoAcceso> {

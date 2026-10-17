@@ -75,15 +75,19 @@ Contrato/evidencia y límites: [QA del editor](docs/QA_EDITOR_PLAN_USO.md), `AUD
 
 ## Capacidades y comandos de participación
 
-`src/modules/participacion/` centraliza DTO, validadores y cliente `/api/v1`. Usar Bearer, `no-store`, cancelación y timeout de 40 s incluido el body; verificar actor con capacidades del mismo token. [Detalle del módulo](src/modules/participacion/README.md).
+`src/modules/participacion/` centraliza acceso INT06 y registro inicial INT04. `api/participacion.transport.ts` comparte Bearer, `no-store`, cancelación y timeout de 40 s incluido el body; ambos clientes verifican actor con capacidades del mismo token. Multipart deja el boundary al navegador. [Detalle del módulo](src/modules/participacion/README.md).
 
 - Consumir `useParticipacionCapabilities()` dentro del provider de `AppLayout`, sin otro cliente/provider paralelo. Completar paginación antes de publicar selección; distinguir carga, vacío, error y sesión vencida.
 - C04–C09: una selección de hasta 100 IDs actuales, revisiones consultadas y confirmación explícita. Cambiar persona/acción/selección/tratamiento invalida revisión, incluso al volver a una selección anterior.
 - `useAccessCommand`: un UUID por confirmación, guardado antes del POST con actor/operación/payload. `localStorage` por actor, sin tokens/nombres/búsquedas/fotos. Web Locks coordina pestañas; fallo de almacenamiento, falta de soporte o pendiente incierto bloquean nuevas confirmaciones.
-- Timeout/5xx/recibo inválido/GET 202 o 404 mantienen resultado no confirmado. Recuperar o reenviar usa exactamente UUID/payload/revisiones originales. Logout/recarga no autorizan otra clave.
+- Timeout/5xx/recibo inválido/GET 202 o 404 tras envío final mantienen resultado no confirmado. Recuperar o reenviar usa exactamente UUID/payload/revisiones originales. Logout/recarga no autorizan otra clave. Inicial admite la excepción 503 `RECHAZADO` durable por `EVALUADOR_NO_DISPONIBLE`, sólo tras validar el recibo completo; una pausa/503 fuera de recibo conserva incertidumbre.
 - Sólo un terminal validado acredita éxito/rechazo y permite liberar el intento. El recibo es histórico: después se consultan capacidades/miembros y nuevas revisiones.
 - Inicio debe ofrecer recuperar un pendiente propio aunque se pierda la capacidad de gestión; otra cuenta no lo muestra ni recupera.
-- INT04 reutilizará capacidades y extenderá/extraerá las primitivas con sus DTO/evidencias. El hook actual acepta sólo C04–C09. No crear otro motor ni tratarlo como contrato de registro.
+- `CommandLifecycle`/Web Locks son primitivas compartidas. `useRegistroCommand` adapta `RegistrationCommandController`: preparación/cargas, payload final inmutable y conciliación, reutilizando identidad y exclusión de INT06.
+- `registrationDraftStore.ts` guarda campos/fotos/UUID/terminal en IndexedDB privado por actor y subcampaña, sin tokens ni URLs firmadas. Confirmar la transacción local antes de preparar/PUT/POST; fallo de almacenamiento o conflicto entre pestañas bloquea otra escritura. No es outbox offline ni caché pública.
+- Registro inicial: `/api/v1/subcampanias/:id/contexto-registro` y participantes seleccionables; preparar/cargar con la misma identidad antes de `POST /plantaciones/iniciales`. PREPARADO/202 sin POST final permite reanudar captura; no acredita guardado. Congelar payload antes del POST; mientras sea incierto bloquear edición/intención nueva. Después de rechazo terminal y revisión explícita, otra intención genera UUID nuevos de comando/carga y vuelve a subir las fotos conservadas. Descartar clausura preparación antes de liberar bytes; no limpiar evidencias por un fallo de red.
+- La captura mantiene tres pasos y confirmación final: GPS/manual, fotos propias, cantidades por especie, fecha de servidor, observaciones y participantes opcionales del ámbito. No calcular FIFO/LIFO ni enviar lotes/asignaciones; metas orientativas y saldo elegible del servidor. El detalle propio muestra snapshots y observaciones sólo del autor; fotos elegibles usan `/api/v1/impact/imagenes/:id` sin Bearer.
+- Las entradas internas de inicial dirigen al formulario v1; reposición conserva su contrato interno autorizado con `es_reposicion:true`, origen del mismo ámbito y fotos con ámbito explícito. No heredar reposición por permiso contextual. Evidencia/pendientes: [informe INT04](docs/QA_REGISTRO_PARTICIPANTE_INT04.md); esta guía no acredita QA completo, entorno externo ni INT05/INT08.
 
 ## PWA y verificación
 

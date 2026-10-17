@@ -51,11 +51,12 @@ La documentación de dominio y el estado global de entregas viven en [r3foresta-
 | --- | --- |
 | Recolección | Borrador, evidencia, corrección de rechazados, validación y stock de origen. |
 | Vivero | Inicio, eventos, timeline, evidencias y operaciones físicas hacia Plantación. [Módulo](src/modules/vivero/README.md). |
-| Plantación interna | Campañas/subcampañas, equipo logístico, plan, polígono, cierre y registro interno existente. |
+| Plantación interna | Campañas/subcampañas, equipo logístico, plan, polígono y cierre; inicial compartida con v1 y cliente de reposición con ámbito/origen explícitos. |
 | Identidad/perfil | Passkey, perfil propio y afiliación opcional. [Módulo](src/modules/user_profile/README.md). |
+| Registro participante | `/app/participacion/registrar`: tres pasos, fotos privadas recuperables, comando durable, recibo y detalle propio. [QA INT04](docs/QA_REGISTRO_PARTICIPANTE_INT04.md). |
 | Acceso contextual | `/app/participacion/accesos`: C04–C09, capacidades, selección múltiple y recuperación. [Módulo](src/modules/participacion/README.md). |
 
-**INT06 FE01–FE05 verificadas localmente; FE06 parcial.** [Evidencia](docs/QA_GESTION_ACCESOS_INT06.md): 445 tests en el corte de esa entrega, 28 comprobaciones de navegador y cotejo DB. Esto no acredita despliegue ni piloto. El registro participante v1, Impacto público/Mis registros y la regresión compartida INT02-D siguen pendientes. El mapa actual es interno; no hacerlo público quitando su guard.
+**INT06 FE01–FE05 verificadas localmente; FE06 parcial.** [Evidencia](docs/QA_GESTION_ACCESOS_INT06.md): 445 tests en el corte de esa entrega, 28 comprobaciones de navegador y cotejo DB. Esto no acredita despliegue ni piloto. INT04 agrega registro participante v1 y regresión local con D; su evidencia y límites están en el informe enlazado. Impacto público/Mis registros, WebAuthn y el entorno externo siguen pendientes. El mapa actual es interno; no hacerlo público quitando su guard.
 
 El service worker precachea el shell; no hay sincronización offline ni caché de API. Enviar operaciones/fotos necesita red. La idempotencia de C04–C09 no demuestra idempotencia de los eventos físicos de Vivero.
 

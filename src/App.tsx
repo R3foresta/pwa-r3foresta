@@ -14,6 +14,9 @@ import {
 } from './pwa/pwaStatus'
 
 const HomeScreen = lazy(() => import('./modules/home/HomeScreen'))
+const RegistroSelectorScreen = lazy(() => import('./modules/participacion/registro/pages/RegistroSelectorScreen'))
+const RegistrarParticipanteScreen = lazy(() => import('./modules/participacion/registro/pages/RegistrarParticipanteScreen'))
+const DetallePropioScreen = lazy(() => import('./modules/participacion/registro/pages/DetallePropioScreen'))
 const GestionAccesosScreen = lazy(() => import('./modules/participacion/pages/GestionAccesosScreen'))
 const LoginScreen = lazy(() => import('./modules/auth/LoginScreen'))
 const RegisterScreen = lazy(() => import('./modules/auth/RegisterScreen'))
@@ -172,6 +175,9 @@ function App() {
             <Route index element={<Navigate to="home" replace />} />
             <Route path="home" element={<HomeScreen />} />
             <Route path="participacion/accesos" element={<GestionAccesosScreen />} />
+            <Route path="participacion/registrar" element={<RegistroSelectorScreen />} />
+            <Route path="participacion/subcampanias/:subcampaniaId/registrar" element={<RegistrarParticipanteScreen />} />
+            <Route path="participacion/registros/:registroId" element={<DetallePropioScreen />} />
             <Route path="collections">
               <Route index element={<RecoleccionesScreen />} />
               <Route path="stock" element={<RecoleccionStockScreen />} />

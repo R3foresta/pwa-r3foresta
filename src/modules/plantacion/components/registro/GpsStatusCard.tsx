@@ -53,13 +53,11 @@ function GpsStatusCard({
 
   const status: GpsStatus = loading
     ? 'buscando'
-    : error
-      ? 'error'
-      : hasCoords && coordsInRange && precisionBaja
+    : hasCoords && coordsInRange && precisionBaja
         ? 'baja'
         : hasCoords && coordsInRange
           ? 'capturado'
-          : 'pendiente'
+          : error ? 'error' : 'pendiente'
 
   // Si la validación marca coordenadas inválidas, mantener abierta la edición
   // manual para que el error sea corregible sin buscar el control.
@@ -78,7 +76,7 @@ function GpsStatusCard({
       tone: 'bg-success-50 ring-success-200 text-success-800',
       iconTone: 'bg-white/70 text-success-600',
       icon: 'check-circle',
-      label: 'GPS capturado',
+      label: precisionM === null ? 'Ubicación manual' : 'GPS capturado',
       detail:
         precisionM !== null
           ? `Precisión aproximada ±${precisionM} m`
@@ -189,6 +187,7 @@ function GpsStatusCard({
               <p className="text-xs font-semibold text-brand-600">{field.label}</p>
               <input
                 type="text"
+                aria-label={field.label}
                 inputMode="decimal"
                 value={field.value}
                 onChange={(event) => field.onChange(event.target.value)}

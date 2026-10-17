@@ -5,6 +5,7 @@ import type {
   CreateRegistroPlantacionInput,
   CreateSubcampaniaInput,
   DesactivarCampaniaMasivaInput,
+  DescartarEvidenciasPlantacionInput,
   EquipoMemberInput,
   EstadoSubcampania,
   PutPlanInput,
@@ -329,20 +330,12 @@ export async function listSubcampaniasApi(
   })
 }
 
-export async function getPlantacionContextApi(
-  subcampaniaId: number,
-  authId?: string,
-): Promise<Response> {
-  return fetch(`${API_BASE_URL}/subcampanias/${subcampaniaId}/plantacion/context`, {
-    method: 'GET',
-    headers: getAuthHeaders({ authId, includeContentType: false }),
-  })
-}
-
 function buildPlantacionEvidenceFormData(
   input: UploadEvidenciasPlantacionInput,
 ): FormData {
   const formData = new FormData()
+  formData.append('subcampania_id', String(input.subcampania_id))
+  formData.append('es_reposicion', String(input.es_reposicion))
   input.fotos.forEach((file) => formData.append('fotos', file))
 
   if (input.titulo?.trim()) {
@@ -350,9 +343,6 @@ function buildPlantacionEvidenceFormData(
   }
   if (input.descripcion?.trim()) {
     formData.append('descripcion', input.descripcion.trim())
-  }
-  if (input.metadata) {
-    formData.append('metadata', JSON.stringify(input.metadata))
   }
   if (input.tomado_en) {
     formData.append('tomado_en', input.tomado_en)
@@ -376,13 +366,13 @@ export async function uploadEvidenciasPendientesPlantacionApi(
 }
 
 export async function deleteEvidenciasPendientesPlantacionApi(
-  evidenciaIds: number[],
+  input: DescartarEvidenciasPlantacionInput,
   authId?: string,
 ): Promise<Response> {
   return fetch(`${API_BASE_URL}/registros-plantacion/evidencias-pendientes`, {
     method: 'DELETE',
     headers: getAuthHeaders({ authId, includeContentType: true }),
-    body: JSON.stringify({ evidencia_ids: evidenciaIds }),
+    body: JSON.stringify(input),
   })
 }
 

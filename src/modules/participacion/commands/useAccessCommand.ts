@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useSyncExternalStore } from 'react'
 import { ParticipacionApiError, ParticipacionService } from '../api/participacion.api'
 import type { IntentoAcceso, ReciboAcceso } from '../types'
+import { CommandLifecycle } from './commandLifecycle'
 import {
   AccessCommandPendingError,
   accessCommandStorageKey,
@@ -36,41 +37,20 @@ function initialSnapshot(actorId: string | null): Snapshot {
 
 // Instancia por cuenta; useSyncExternalStore evita mostrar siquiera un render
 // del actor anterior mientras React cambia de sesión.
-class AccessCommandController {
+class AccessCommandController extends CommandLifecycle<Snapshot> {
   private readonly actorId: string | null
-  private snapshot: Snapshot
-  private readonly listeners = new Set<() => void>()
-  private active = false
-  private running = false
-  private requestVersion = 0
-  private abort: AbortController | null = null
 
   constructor(actorId: string | null) {
+    super(initialSnapshot(actorId))
     this.actorId = actorId
-    this.snapshot = initialSnapshot(actorId)
-  }
-
-  getSnapshot = (): Snapshot => this.snapshot
-
-  subscribe = (listener: () => void): (() => void) => {
-    this.listeners.add(listener)
-    return () => this.listeners.delete(listener)
-  }
-
-  private update(next: Snapshot): void {
-    this.snapshot = next
-    this.listeners.forEach((listener) => listener())
   }
 
   start = (): (() => void) => {
-    this.active = true
+    this.activate()
     window.addEventListener('storage', this.storageChanged)
     if (this.snapshot.pending && !this.snapshot.receipt) void this.recover()
     return () => {
-      this.active = false
-      this.requestVersion += 1
-      this.abort?.abort()
-      this.running = false
+      this.deactivate()
       window.removeEventListener('storage', this.storageChanged)
     }
   }
@@ -123,11 +103,9 @@ class AccessCommandController {
       this.update({ state: 'sessionExpired', busy: false, pending: null, receipt: null, error: 'Ingresa con la cuenta original para gestionar o recuperar sus envíos.' })
       return
     }
-    this.running = true
-    const version = ++this.requestVersion
-    const controller = new AbortController()
-    this.abort = controller
-    const current = () => this.active && version === this.requestVersion
+    const operation = this.begin()
+    if (!operation) return
+    const { signal, current } = operation
     let intento = mode === 'confirm' ? null : this.snapshot.pending
     this.update({ state: 'sending', busy: true, pending: intento, receipt: null, error: null })
     try {
@@ -141,15 +119,15 @@ class AccessCommandController {
       const original = intento
       this.update({ state: 'sending', busy: true, pending: original, receipt: null, error: null })
       const receipt = mode === 'recover'
-        ? await ParticipacionService.recuperar(original, controller.signal)
+        ? await ParticipacionService.recuperar(original, signal)
         : await withAccessCommandLock(actorId, async () => {
-          controller.signal.throwIfAborted()
+          signal.throwIfAborted()
           const stored = readAccessCommand(actorId)
           // Un terminal conocido por otra pestaña puede haber liberado el slot.
           // En ese caso sólo consultamos, sin reabrir un envío local antiguo.
           return stored?.payload.comando_id === original.payload.comando_id && stored.operacion === original.operacion
-            ? ParticipacionService.enviar(original, controller.signal)
-            : ParticipacionService.recuperar(original, controller.signal)
+            ? ParticipacionService.enviar(original, signal)
+            : ParticipacionService.recuperar(original, signal)
         })
       if (!current()) return
       let cleanupError: string | null = null
@@ -164,10 +142,7 @@ class AccessCommandController {
       if (error instanceof AccessCommandPendingError) intento = error.intento
       this.update({ state: error instanceof ParticipacionApiError && error.status === 401 ? 'sessionExpired' : 'unconfirmed', busy: false, pending: intento, receipt: null, error: message(error) })
     } finally {
-      if (current()) {
-        this.running = false
-        this.abort = null
-      }
+      operation.finish()
     }
   }
 }

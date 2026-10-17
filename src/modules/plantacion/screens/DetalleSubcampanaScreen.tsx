@@ -1282,7 +1282,6 @@ function DetalleSubcampanaScreen() {
       PlantacionService.getCampania(sub.campania_id),
       PlantacionService.getCampaniaMetrics(sub.campania_id),
       PlantacionService.getCampaniasResumen(),
-      PlantacionService.getPlantacionContext(numericId, authId),
     ])
     if (requestId !== requestRef.current) return
     const [detailResult, planResult] = results

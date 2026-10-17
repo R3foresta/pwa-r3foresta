@@ -1,0 +1,294 @@
+{
+  "entorno": "SINTETICO_LOCAL_INT02D",
+  "ok": true,
+  "api": "http://127.0.0.1:3305",
+  "pwa": "http://127.0.0.1:5175",
+  "adaptador": "Solo perfil de arranque; autoridad de capacidades real y servicios de reposición sin interceptar",
+  "checks": [
+    "API/PWA localhost y tres sesiones explícitamente sintéticas",
+    "Cluster aislado D con GENERAL/OPERARIO sintético 901",
+    "PlantacionService real desde navegador sube una foto de reposición propia",
+    "Multipart real declara subcampania820, es_reposicion:true y fotos",
+    "Pendiente de reposición no tiene fotografía pública",
+    "Origen821000 ajeno a820 es rechazado por backend real",
+    "Rechazo de origen ajeno no consume ni crea registro ni modifica origen/Vivero",
+    "GENERAL901 con OPERARIO820 confirma reposición de una unidad",
+    "DB confirma un registro, consumo1 y reposición1 del origen, sin segundo débito M2",
+    "Foto vinculada elegible responde JPEG público sin JWT",
+    "Descarte mediante servicio conserva ámbito y propósito explícitos",
+    "Descartar pendientes no altera consumo ni registros",
+    "Entrada interna inicial redirige al formulario v1 compartido",
+    "ADMIN803 sin equipo no obtiene upload ni registro de reposición",
+    "PLANTADOR801 contextual no obtiene upload ni registro de reposición",
+    "Intentos no autorizados conservan exactamente saldos y registros de reposición",
+    "QA reposición no emite ningún POST de plantación inicial",
+    "Sin errores JavaScript de navegador"
+  ],
+  "balances": [
+    {
+      "stage": "antes",
+      "saldo_vivero": 100,
+      "repuesto_origen": 0,
+      "consumido_reposicion": 0,
+      "registros_reposicion": 0
+    },
+    {
+      "stage": "origen_ajeno_rechazado",
+      "saldo_vivero": 100,
+      "repuesto_origen": 0,
+      "consumido_reposicion": 0,
+      "registros_reposicion": 0
+    },
+    {
+      "stage": "reposicion_confirmada",
+      "saldo_vivero": 100,
+      "repuesto_origen": 1,
+      "consumido_reposicion": 1,
+      "registros_reposicion": 1
+    },
+    {
+      "stage": "descarte_confirmado",
+      "saldo_vivero": 100,
+      "repuesto_origen": 1,
+      "consumido_reposicion": 1,
+      "registros_reposicion": 1
+    },
+    {
+      "stage": "continuacion_antes_denegaciones",
+      "saldo_vivero": 100,
+      "repuesto_origen": 1,
+      "consumido_reposicion": 1,
+      "registros_reposicion": 1
+    },
+    {
+      "stage": "sin_autorizacion_rechazada",
+      "saldo_vivero": 100,
+      "repuesto_origen": 1,
+      "consumido_reposicion": 1,
+      "registros_reposicion": 1
+    }
+  ],
+  "network": [
+    {
+      "actor": "901",
+      "method": "GET",
+      "path": "/api/users/profile",
+      "status": 200
+    },
+    {
+      "actor": "901",
+      "method": "GET",
+      "path": "/api/users/profile",
+      "status": 200
+    },
+    {
+      "actor": "901",
+      "method": "GET",
+      "path": "/api/users/profile",
+      "status": 200
+    },
+    {
+      "actor": "901",
+      "method": "GET",
+      "path": "/api/users/profile",
+      "status": 200
+    },
+    {
+      "actor": "901",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "status": 200
+    },
+    {
+      "actor": "901",
+      "method": "POST",
+      "path": "/api/registros-plantacion/evidencias-pendientes",
+      "status": 201,
+      "multipart_scope": true,
+      "multipart_reposicion": true,
+      "multipart_fotos": true
+    },
+    {
+      "actor": "901",
+      "method": "POST",
+      "path": "/api/registros-plantacion",
+      "status": 400
+    },
+    {
+      "actor": "901",
+      "method": "POST",
+      "path": "/api/registros-plantacion",
+      "status": 201
+    },
+    {
+      "actor": "901",
+      "method": "POST",
+      "path": "/api/registros-plantacion/evidencias-pendientes",
+      "status": 201,
+      "multipart_scope": true,
+      "multipart_reposicion": true,
+      "multipart_fotos": true
+    },
+    {
+      "actor": "901",
+      "method": "DELETE",
+      "path": "/api/registros-plantacion/evidencias-pendientes",
+      "status": 200,
+      "descarta_con_ambito": true
+    },
+    {
+      "actor": "803",
+      "method": "GET",
+      "path": "/api/users/profile",
+      "status": 200
+    },
+    {
+      "actor": "803",
+      "method": "GET",
+      "path": "/api/users/profile",
+      "status": 200
+    },
+    {
+      "actor": "803",
+      "method": "GET",
+      "path": "/api/users/profile",
+      "status": 200
+    },
+    {
+      "actor": "803",
+      "method": "GET",
+      "path": "/api/users/profile",
+      "status": 200
+    },
+    {
+      "actor": "803",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "status": 200
+    },
+    {
+      "actor": "803",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "status": 200
+    },
+    {
+      "actor": "803",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/820/contexto-registro",
+      "status": 200
+    },
+    {
+      "actor": "803",
+      "method": "POST",
+      "path": "/api/registros-plantacion/evidencias-pendientes",
+      "status": 403,
+      "multipart_scope": true,
+      "multipart_reposicion": true,
+      "multipart_fotos": true
+    },
+    {
+      "actor": "803",
+      "method": "POST",
+      "path": "/api/registros-plantacion",
+      "status": 400
+    },
+    {
+      "actor": "901",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "status": 200
+    },
+    {
+      "actor": "803",
+      "method": "GET",
+      "path": "/api/users/profile",
+      "status": 200
+    },
+    {
+      "actor": "803",
+      "method": "GET",
+      "path": "/api/users/profile",
+      "status": 200
+    },
+    {
+      "actor": "803",
+      "method": "GET",
+      "path": "/api/users/profile",
+      "status": 200
+    },
+    {
+      "actor": "803",
+      "method": "GET",
+      "path": "/api/users/profile",
+      "status": 200
+    },
+    {
+      "actor": "803",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "status": 200
+    },
+    {
+      "actor": "803",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "status": 200
+    },
+    {
+      "actor": "803",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/820/contexto-registro",
+      "status": 200
+    },
+    {
+      "actor": "803",
+      "method": "POST",
+      "path": "/api/registros-plantacion/evidencias-pendientes",
+      "status": 403,
+      "multipart_scope": true,
+      "multipart_reposicion": true,
+      "multipart_fotos": true
+    },
+    {
+      "actor": "803",
+      "method": "POST",
+      "path": "/api/registros-plantacion",
+      "status": 400
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile",
+      "status": 200
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile",
+      "status": 200
+    },
+    {
+      "actor": "801",
+      "method": "POST",
+      "path": "/api/registros-plantacion/evidencias-pendientes",
+      "status": 403,
+      "multipart_scope": true,
+      "multipart_reposicion": true,
+      "multipart_fotos": true
+    },
+    {
+      "actor": "801",
+      "method": "POST",
+      "path": "/api/registros-plantacion",
+      "status": 403
+    }
+  ],
+  "errors": [],
+  "resumen": {
+    "reposiciones_creadas": 1,
+    "consumo_reposicion": 1,
+    "posts_iniciales": 0,
+    "continuacion_sin_repetir_registro": true
+  }
+}

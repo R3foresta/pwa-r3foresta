@@ -1,6 +1,6 @@
 # Auditoría y pendientes del frontend
 
-Corte: 15 de octubre de 2026. Lista única de deuda frontend. No sustituye el [tablero global](../r3foresta-docs/specs/plantacion/participacion-aliada/implementacion/README.md) ni acredita estado del backend desplegado.
+Corte: 17 de octubre de 2026. Lista única de deuda frontend. No sustituye el [tablero global](../r3foresta-docs/specs/plantacion/participacion-aliada/implementacion/README.md) ni acredita estado del backend desplegado.
 
 El [histórico de auditoría](docs/archivo/FRONTEND_AUDIT_2026-10-15.md) conserva diagnósticos, cierres y resultados anteriores. Se retiraron de esta entrada los checklists repetidos y diagnósticos de módulos que ya no describían su implementación. Un hallazgo abierto se mantiene pendiente hasta verificar su cierre; este ajuste documental no lo resuelve por sí solo.
 
@@ -10,7 +10,7 @@ Entrega INT06 publicada en PWA `62f55dc`: 32 suites/445 tests, lint y build/Type
 
 | Prioridad | ID | Estado | Qué falta |
 | --- | --- | --- | --- |
-| Alta | AUD-021 | PENDIENTE | QA integrado de acceso con D/registro/evidencias y entorno externo. |
+| Alta | AUD-021 | PENDIENTE | Completar Impacto/WebAuthn/entorno externo y QA integrado; registro/cargas con D verificados localmente en INT04. |
 | Alta | AUD-020 | PENDIENTE | Implementar Impacto público/Mis registros con su proyección; no abrir el mapa interno. |
 | Crítica | AUD-013 | PENDIENTE de verificación externa | Acreditar la publicación/regresión de identidad y autoridad corregidas en backend. |
 | Alta | AUD-007 | BLOQUEADO en eventos físicos | Idempotencia durable/recuperación de operaciones de Vivero; C04–C09 ya tienen su propio contrato. |
@@ -27,7 +27,7 @@ El orden de ejecución entre repositorios se decide en el tablero oficial; esta 
 
 ### AUD-021 — QA integrado de gestión contextual
 
-FE01–FE05 están implementadas/verificadas localmente. FE06 sigue parcial: faltan INT02-D, carreras/regresiones con plan/stock/logística/cierre, registro/cargas INT03-A/INT04, Impacto/Mis registros INT05, WebAuthn real y entorno externo. El QA sintético sólo adapta perfil propio; capacidades/comandos/DB son reales dentro del fixture.
+INT06 FE01–FE05 e INT04 están implementadas/verificadas localmente. INT04 añade 30 checks integrados de registro/cargas, dos pestañas, plan concurrente y retiro, más 18 de reposición y 12 de fotos adversarias con D ([informe](docs/QA_REGISTRO_PARTICIPANTE_INT04.md)). INT06 FE06 sigue parcial: Impacto/Mis registros INT05, WebAuthn real, entorno externo y QA completo del recorrido conservan evidencia pendiente. El QA sintético sólo adapta perfil propio; capacidades/comandos/DB son reales dentro del fixture.
 
 Cerrar con evidencia navegador → API → DB de roles/estados, pérdida de respuesta tras commit, recarga/cambio de cuenta y regresión interna/pública. [Informe reproducible](docs/QA_GESTION_ACCESOS_INT06.md); [módulo](src/modules/participacion/README.md). No habilitar piloto sólo por cerrar esta UI.
 

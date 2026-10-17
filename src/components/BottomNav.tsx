@@ -84,7 +84,7 @@ function BottomNav() {
     hasInternalAccess && !isInQuickActionRoute && !isSubcampaniaWizardRoute && !isRegistroPlantacionRoute
 
   // El formulario dispone de volver/cancelar con aviso de cambios sin guardar.
-  if (pathname === '/app/edit-profile') return null
+  if (pathname === '/app/edit-profile' || /^\/app\/participacion\/subcampanias\/[^/]+\/registrar$/.test(pathname)) return null
 
   return (
     <>
@@ -177,7 +177,7 @@ function BottomNav() {
                   onRegistrar={(subcampaniaId) => {
                     closeSheet()
                     navigate(
-                      `/app/planting/subcampanias/${subcampaniaId}/plantaciones/new`,
+                      `/app/participacion/subcampanias/${subcampaniaId}/registrar`,
                     )
                   }}
                 />

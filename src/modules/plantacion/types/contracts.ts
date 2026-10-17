@@ -333,102 +333,24 @@ export type ApiEnvelope<T> = {
 }
 
 // ---------------------------------------------------------------------------
-// Registro de plantación inicial (PLT-EPIC-01)
-// Contratos de `GET /subcampanias/:id/plantacion/context`,
-// `POST/DELETE /registros-plantacion/evidencias-pendientes` y
-// `POST /registros-plantacion`.
+// Reposición interna: inicial usa registroTypes.ts y el cliente de participación v1.
+// POST/DELETE /registros-plantacion/evidencias-pendientes y POST /registros-plantacion.
 // ---------------------------------------------------------------------------
 
-export type PlantacionContextSubcampania = {
-  id: number
-  codigo_trazabilidad?: string | null
-  nombre: string
-  estado: EstadoSubcampania
-  fase_mantenimiento?: FaseMantenimientoSubcampania | null
-  campania_id: number
-  campania_nombre?: string | null
-  zona_id?: number | null
-  zona_nombre?: string | null
-  meta_total_arboles: number
-  plan_revision?: number
-  total_plantado_inicial?: number | null
-  tolerancia_gps_metros?: number | null
-  poligono?: GeoJsonPolygon | null
-}
-
-export type PlantacionContextUsuario = {
-  id: number
-  nombre?: string | null
-  rol_global?: string | null
-  rol_en_subcampania?: RolEnSubcampania | null
-  puede_registrar: boolean
-  motivo_bloqueo?: string | null
-}
-
-export type PlantacionContextEquipoMember = {
-  usuario_id: number
-  nombre_usuario?: string | null
-  rol: RolEnSubcampania
-}
-
-export type PlanEspecieContext = {
-  planta_id: number
-  nombre_comun_principal?: string | null
-  nombre_cientifico?: string | null
-  cantidad_objetivo: number
-  plantado_inicial: number
-  pendiente_meta: number
-}
-
-export type AsignacionDisponible = {
-  asignacion_id: number
-  lote_vivero_id: number
-  codigo_lote?: string | null
-  vivero_nombre?: string | null
-  fecha_asignacion: string
-  cantidad_asignada?: number | null
-  cantidad_consumida?: number | null
-  cantidad_devuelta?: number | null
-  cantidad_mermada?: number | null
-  saldo_asignado_disponible: number
-  orden_consumo?: number | null
-}
-
-export type StockEspecieContext = {
-  planta_id: number
-  nombre_comun_principal?: string | null
-  nombre_cientifico?: string | null
-  stock_asignado_disponible: number
-  asignaciones: AsignacionDisponible[]
-}
-
-export type ReglasPlantacion = {
-  max_dias_retroactivos?: number | null
-  gps_fuera_poligono_bloquea?: boolean | null
-  precision_gps_advertencia_m?: number | null
-  requiere_evidencia?: boolean | null
-  min_fotos?: number | null
-  max_fotos?: number | null
-  permite_exceder_meta_especie?: boolean | null
-  orden_consumo_asignaciones?: string | null
-}
-
-export type PlantacionContext = {
-  subcampania: PlantacionContextSubcampania
-  usuario: PlantacionContextUsuario
-  equipo: PlantacionContextEquipoMember[]
-  plan_por_especie: PlanEspecieContext[]
-  stock_por_especie: StockEspecieContext[]
-  reglas: ReglasPlantacion
-}
-
 export type UploadEvidenciasPlantacionInput = {
+  subcampania_id: number
+  es_reposicion: true
   fotos: File[]
   titulo?: string
   descripcion?: string
-  metadata?: Record<string, unknown>
   tomado_en?: string
   es_principal?: boolean
+}
+
+export type DescartarEvidenciasPlantacionInput = {
+  subcampania_id: number
+  es_reposicion: true
+  evidencia_ids: number[]
 }
 
 // El backend puede devolver los IDs como `evidencia_ids` top-level (idiom
@@ -452,7 +374,8 @@ export type PlantacionDetalleInput = {
 
 export type CreateRegistroPlantacionInput = {
   subcampania_id: number
-  es_reposicion?: boolean
+  es_reposicion: true
+  registro_plantacion_origen_id: number
   fecha_plantacion: string
   latitud: number
   longitud: number
