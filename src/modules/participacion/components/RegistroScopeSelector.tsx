@@ -3,6 +3,7 @@ import { Button } from '../../../components/ui'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useParticipacionCapabilities } from '../hooks/useParticipacionCapabilities'
 import type { CapacidadSubcampania } from '../types'
+import { saveLastCampaign } from '../../impacto/utils/lastCampaign'
 
 type Props = { onRegistrar: (id: string) => void; onVer?: (id: string) => void }
 type Preference = { campania_id: string; subcampania_id: string }
@@ -35,6 +36,7 @@ function AccountSelector({ actorId, login, onRegistrar, onVer }: Props & { actor
   const remember = (scope: CapacidadSubcampania) => {
     const value = { campania_id: scope.campania_id, subcampania_id: scope.subcampania_id }
     setSelection(value)
+    saveLastCampaign(actorId, scope.campania_id)
     try { localStorage.setItem(`r3foresta:registro-scope:v1:${actorId}`, JSON.stringify(value)) } catch { /* La preferencia es opcional. */ }
   }
   if (status === 'loading') return <p role="status">Consultando subcampañas habilitadas…</p>

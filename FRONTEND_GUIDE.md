@@ -56,7 +56,7 @@ El perfil visible está ligado al token que lo verificó. Al cambiar token por l
 - `appAccess.ts` conserva la entrada interna de ADMIN/GENERAL/VALIDADOR. Ser administrador contextual no abre esos módulos.
 - Perfil mínimo: nombre. Apellido, documento, wallet y afiliación no deben convertirse en requisitos nuevos de este recorrido.
 - `AppLayout` aporta el provider compartido de capacidades. No reemplazar todas las facultades internas por este DTO limitado al recorrido participante.
-- La consulta pública de Impacto debe quedar independiente de sesión/capacidades cuando se implemente. El mapa interno actual no es esa proyección.
+- `src/modules/impacto/` implementa la consulta pública sin esperar sesión/capacidades; sólo sus acciones montan el provider existente para cuentas verificadas. Mis registros/detalle histórico usan Bearer sin exigir capacidad operativa. Rutas, filtros, paginación y preferencia por cuenta: [módulo Impacto](src/modules/impacto/README.md). Evidencia y límites: [QA INT05](docs/QA_IMPACTO_INT05.md).
 
 ## Plan de Plantación
 
@@ -75,7 +75,7 @@ Contrato/evidencia y límites: [QA del editor](docs/QA_EDITOR_PLAN_USO.md), `AUD
 
 ## Capacidades y comandos de participación
 
-`src/modules/participacion/` centraliza acceso INT06 y registro inicial INT04. `api/participacion.transport.ts` comparte Bearer, `no-store`, cancelación y timeout de 40 s incluido el body; ambos clientes verifican actor con capacidades del mismo token. Multipart deja el boundary al navegador. [Detalle del módulo](src/modules/participacion/README.md).
+`src/modules/participacion/` centraliza acceso INT06 y registro inicial INT04. `api/participacion.transport.ts` comparte Bearer, `no-store`, cancelación y timeout de 40 s incluido el body; comandos y lecturas operativas verifican actor con capacidades del mismo token. El detalle histórico usa Bearer sin esa dependencia operativa y valida al actor en su respuesta. Multipart deja el boundary al navegador. [Detalle del módulo](src/modules/participacion/README.md).
 
 - Consumir `useParticipacionCapabilities()` dentro del provider de `AppLayout`, sin otro cliente/provider paralelo. Completar paginación antes de publicar selección; distinguir carga, vacío, error y sesión vencida.
 - C04–C09: una selección de hasta 100 IDs actuales, revisiones consultadas y confirmación explícita. Cambiar persona/acción/selección/tratamiento invalida revisión, incluso al volver a una selección anterior.
@@ -87,7 +87,7 @@ Contrato/evidencia y límites: [QA del editor](docs/QA_EDITOR_PLAN_USO.md), `AUD
 - `registrationDraftStore.ts` guarda campos/fotos/UUID/terminal en IndexedDB privado por actor y subcampaña, sin tokens ni URLs firmadas. Confirmar la transacción local antes de preparar/PUT/POST; fallo de almacenamiento o conflicto entre pestañas bloquea otra escritura. No es outbox offline ni caché pública.
 - Registro inicial: `/api/v1/subcampanias/:id/contexto-registro` y participantes seleccionables; preparar/cargar con la misma identidad antes de `POST /plantaciones/iniciales`. PREPARADO/202 sin POST final permite reanudar captura; no acredita guardado. Congelar payload antes del POST; mientras sea incierto bloquear edición/intención nueva. Después de rechazo terminal y revisión explícita, otra intención genera UUID nuevos de comando/carga y vuelve a subir las fotos conservadas. Descartar clausura preparación antes de liberar bytes; no limpiar evidencias por un fallo de red.
 - La captura mantiene tres pasos y confirmación final: GPS/manual, fotos propias, cantidades por especie, fecha de servidor, observaciones y participantes opcionales del ámbito. No calcular FIFO/LIFO ni enviar lotes/asignaciones; metas orientativas y saldo elegible del servidor. El detalle propio muestra snapshots y observaciones sólo del autor; fotos elegibles usan `/api/v1/impact/imagenes/:id` sin Bearer.
-- Las entradas internas de inicial dirigen al formulario v1; reposición conserva su contrato interno autorizado con `es_reposicion:true`, origen del mismo ámbito y fotos con ámbito explícito. No heredar reposición por permiso contextual. Evidencia/pendientes: [informe INT04](docs/QA_REGISTRO_PARTICIPANTE_INT04.md); esta guía no acredita QA completo, entorno externo ni INT05/INT08.
+- Las entradas internas de inicial dirigen al formulario v1; reposición conserva su contrato interno autorizado con `es_reposicion:true`, origen del mismo ámbito y fotos con ámbito explícito. No heredar reposición por permiso contextual. Evidencia/pendientes: [informe INT04](docs/QA_REGISTRO_PARTICIPANTE_INT04.md) e [informe INT05](docs/QA_IMPACTO_INT05.md); esta guía no acredita QA completo, entorno externo ni piloto INT08.
 
 ## PWA y verificación
 

@@ -38,6 +38,8 @@ function InternalHomeScreen() {
     profile: '/app/profile',
     planting: '/app/planting',
     co2: '/app/co2',
+    impacto: '/impacto',
+    misRegistros: '/app/participacion/mis-registros',
   }
 
   useEffect(() => {

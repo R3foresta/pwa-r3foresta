@@ -15,7 +15,9 @@ export const NAV_ITEMS: NavItem<IconName>[] = [
 ]
 
 export const PARTICIPANT_NAV_ITEMS: NavItem<IconName>[] = [
-  { label: 'Inicio', icon: 'home', screen: 'home', path: '/app/home' },
+  { label: 'Inicio', icon: 'home', screen: 'home', path: '/' },
+  { label: 'Impacto', icon: 'map', screen: 'impacto', path: '/impacto' },
+  { label: 'Mis registros', icon: 'leaf', screen: 'misRegistros', path: '/app/participacion/mis-registros' },
   { label: 'Mi perfil', icon: 'user', screen: 'profile', path: '/app/profile' },
 ]
 
@@ -32,4 +34,6 @@ export const SCREEN_TITLE: Record<Screen, string> = {
   profile: 'Perfil',
   planting: 'Plantación',
   co2: 'CO₂',
+  impacto: 'Impacto público',
+  misRegistros: 'Mis registros',
 }

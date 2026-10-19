@@ -128,6 +128,14 @@ describe('registro API sobre transporte privado compartido', () => {
     expect(Service.imagenPublicaUrl('9007199254740993')).toBe(`${api}/impact/imagenes/9007199254740993`)
     expect(fetch).toHaveBeenCalledTimes(1)
   })
+  it('detalle histórico abre con JWT vigente aunque no se puedan consultar capacidades', async () => {
+    const fetch = vi.fn().mockResolvedValue(response(detail)); vi.stubGlobal('fetch', fetch)
+    const capabilities = vi.spyOn(ParticipacionService, 'capacidades').mockRejectedValue(new Error('Capacidades temporalmente no disponibles'))
+    await expect(Service.detallePropio('801', '21')).resolves.toEqual(detail)
+    expect(capabilities).not.toHaveBeenCalled()
+    expect(fetch).toHaveBeenCalledTimes(1)
+    expect(fetch.mock.calls[0][1].headers).toEqual({ Authorization: `Bearer registro-jwt-${sequence}` })
+  })
   it('descarta una respuesta tardía tras cambiar token y no envía bajo otra cuenta', async () => {
     const fetch = await prime(); fetch.mockImplementationOnce(async () => { localStorage.setItem('authToken', 'otro-token'); return response(receipt) })
     await expect(Service.enviar(attempt)).rejects.toMatchObject({ status: 401 })

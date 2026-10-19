@@ -1,0 +1,256 @@
+{
+  "entorno": "SINTETICO_LOCAL_INT02C",
+  "solo_lectura": true,
+  "checks": [
+    "Una fila durable por identidad enviada desde el navegador",
+    "Un evento por ámbito con cambios reales; ningún evento para rechazos",
+    "Respuesta perdida: un retiro durable, dos ámbitos, una revisión por persona/ámbito",
+    "Rechazos durables por revisión y continuidad, sin historial parcial"
+  ],
+  "comandos": [
+    {
+      "estado": "CONFIRMADO",
+      "eventos": 2,
+      "actor_id": "602",
+      "operacion": "OTORGAR_PLANTADOR",
+      "resultado": {
+        "tipo": "ACCESO",
+        "cambios": [
+          {
+            "usuarios": [
+              {
+                "cambio": "CAMBIO_APLICADO",
+                "usuario_id": "604",
+                "permiso_nuevo": "PLANTADOR",
+                "revision_nueva": "1",
+                "permiso_anterior": null,
+                "revision_anterior": "0",
+                "conserva_acceso_global": false
+              }
+            ],
+            "subcampania_id": "600"
+          },
+          {
+            "usuarios": [
+              {
+                "cambio": "CAMBIO_APLICADO",
+                "usuario_id": "604",
+                "permiso_nuevo": "PLANTADOR",
+                "revision_nueva": "1",
+                "permiso_anterior": null,
+                "revision_anterior": "0",
+                "conserva_acceso_global": false
+              }
+            ],
+            "subcampania_id": "603"
+          }
+        ]
+      },
+      "comando_id": "b4708bb4-dc8b-4b12-a4a2-d662cb624793",
+      "error_codigo": null
+    },
+    {
+      "estado": "CONFIRMADO",
+      "eventos": 2,
+      "actor_id": "602",
+      "operacion": "RETIRAR_PLANTADOR",
+      "resultado": {
+        "tipo": "ACCESO",
+        "cambios": [
+          {
+            "usuarios": [
+              {
+                "cambio": "CAMBIO_APLICADO",
+                "usuario_id": "604",
+                "permiso_nuevo": null,
+                "revision_nueva": "2",
+                "permiso_anterior": "PLANTADOR",
+                "revision_anterior": "1",
+                "conserva_acceso_global": false
+              }
+            ],
+            "subcampania_id": "600"
+          },
+          {
+            "usuarios": [
+              {
+                "cambio": "CAMBIO_APLICADO",
+                "usuario_id": "604",
+                "permiso_nuevo": null,
+                "revision_nueva": "2",
+                "permiso_anterior": "PLANTADOR",
+                "revision_anterior": "1",
+                "conserva_acceso_global": false
+              }
+            ],
+            "subcampania_id": "603"
+          }
+        ]
+      },
+      "comando_id": "d5f7cc5e-e669-40f9-9639-2cdffd776587",
+      "error_codigo": null
+    },
+    {
+      "estado": "RECHAZADO",
+      "eventos": 0,
+      "actor_id": "600",
+      "operacion": "RETIRAR_ADMINISTRADOR",
+      "resultado": null,
+      "comando_id": "9c95fe99-9e97-40db-9943-9c7e1442c109",
+      "error_codigo": "ULTIMO_ADMINISTRADOR_CONTEXTUAL"
+    },
+    {
+      "estado": "CONFIRMADO",
+      "eventos": 1,
+      "actor_id": "600",
+      "operacion": "DESIGNAR_ADMINISTRADOR",
+      "resultado": {
+        "tipo": "ACCESO",
+        "cambios": [
+          {
+            "usuarios": [
+              {
+                "cambio": "CAMBIO_APLICADO",
+                "usuario_id": "603",
+                "permiso_nuevo": "ADMINISTRADOR_SUBCAMPANIA",
+                "revision_nueva": "2",
+                "permiso_anterior": "PLANTADOR",
+                "revision_anterior": "1",
+                "conserva_acceso_global": false
+              }
+            ],
+            "subcampania_id": "600"
+          }
+        ]
+      },
+      "comando_id": "9be2c8f4-4b4a-46ec-8ccf-342d4d3b0b7a",
+      "error_codigo": null
+    },
+    {
+      "estado": "CONFIRMADO",
+      "eventos": 1,
+      "actor_id": "600",
+      "operacion": "CAMBIAR_ADMINISTRADOR_A_PLANTADOR",
+      "resultado": {
+        "tipo": "ACCESO",
+        "cambios": [
+          {
+            "usuarios": [
+              {
+                "cambio": "CAMBIO_APLICADO",
+                "usuario_id": "603",
+                "permiso_nuevo": "PLANTADOR",
+                "revision_nueva": "3",
+                "permiso_anterior": "ADMINISTRADOR_SUBCAMPANIA",
+                "revision_anterior": "2",
+                "conserva_acceso_global": false
+              }
+            ],
+            "subcampania_id": "600"
+          }
+        ]
+      },
+      "comando_id": "c833216a-fc0d-4341-a1f2-4d9fe61e6635",
+      "error_codigo": null
+    },
+    {
+      "estado": "CONFIRMADO",
+      "eventos": 1,
+      "actor_id": "600",
+      "operacion": "REEMPLAZAR_ADMINISTRADOR",
+      "resultado": {
+        "tipo": "ACCESO",
+        "cambios": [
+          {
+            "usuarios": [
+              {
+                "cambio": "CAMBIO_APLICADO",
+                "usuario_id": "602",
+                "permiso_nuevo": null,
+                "revision_nueva": "2",
+                "permiso_anterior": "ADMINISTRADOR_SUBCAMPANIA",
+                "revision_anterior": "1",
+                "conserva_acceso_global": false
+              },
+              {
+                "cambio": "CAMBIO_APLICADO",
+                "usuario_id": "604",
+                "permiso_nuevo": "ADMINISTRADOR_SUBCAMPANIA",
+                "revision_nueva": "1",
+                "permiso_anterior": null,
+                "revision_anterior": "0",
+                "conserva_acceso_global": false
+              }
+            ],
+            "subcampania_id": "602"
+          }
+        ]
+      },
+      "comando_id": "f2c3155a-6332-4e67-abca-d8348a09416f",
+      "error_codigo": null
+    },
+    {
+      "estado": "CONFIRMADO",
+      "eventos": 1,
+      "actor_id": "600",
+      "operacion": "DESIGNAR_ADMINISTRADOR",
+      "resultado": {
+        "tipo": "ACCESO",
+        "cambios": [
+          {
+            "usuarios": [
+              {
+                "cambio": "CAMBIO_APLICADO",
+                "usuario_id": "600",
+                "permiso_nuevo": "ADMINISTRADOR_SUBCAMPANIA",
+                "revision_nueva": "1",
+                "permiso_anterior": null,
+                "revision_anterior": "0",
+                "conserva_acceso_global": true
+              }
+            ],
+            "subcampania_id": "603"
+          }
+        ]
+      },
+      "comando_id": "94b82df3-e21e-4c82-bd11-ca5635098642",
+      "error_codigo": null
+    },
+    {
+      "estado": "CONFIRMADO",
+      "eventos": 1,
+      "actor_id": "600",
+      "operacion": "RETIRAR_ADMINISTRADOR",
+      "resultado": {
+        "tipo": "ACCESO",
+        "cambios": [
+          {
+            "usuarios": [
+              {
+                "cambio": "CAMBIO_APLICADO",
+                "usuario_id": "600",
+                "permiso_nuevo": null,
+                "revision_nueva": "2",
+                "permiso_anterior": "ADMINISTRADOR_SUBCAMPANIA",
+                "revision_anterior": "1",
+                "conserva_acceso_global": true
+              }
+            ],
+            "subcampania_id": "603"
+          }
+        ]
+      },
+      "comando_id": "8c201d80-8d7d-4e18-985c-4d1cbfd545e7",
+      "error_codigo": null
+    },
+    {
+      "estado": "RECHAZADO",
+      "eventos": 0,
+      "actor_id": "600",
+      "operacion": "OTORGAR_PLANTADOR",
+      "resultado": null,
+      "comando_id": "3fde5b4a-fd73-45fe-912c-56ad620fc6f8",
+      "error_codigo": "REVISION_OBSOLETA"
+    }
+  ]
+}

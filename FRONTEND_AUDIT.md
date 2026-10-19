@@ -1,6 +1,6 @@
 # Auditoría y pendientes del frontend
 
-Corte: 17 de octubre de 2026. Lista única de deuda frontend. No sustituye el [tablero global](../r3foresta-docs/specs/plantacion/participacion-aliada/implementacion/README.md) ni acredita estado del backend desplegado.
+Corte: 18 de octubre de 2026. Lista única de deuda frontend. No sustituye el [tablero global](../r3foresta-docs/specs/plantacion/participacion-aliada/implementacion/README.md) ni acredita estado del backend desplegado.
 
 El [histórico de auditoría](docs/archivo/FRONTEND_AUDIT_2026-10-15.md) conserva diagnósticos, cierres y resultados anteriores. Se retiraron de esta entrada los checklists repetidos y diagnósticos de módulos que ya no describían su implementación. Un hallazgo abierto se mantiene pendiente hasta verificar su cierre; este ajuste documental no lo resuelve por sí solo.
 
@@ -10,8 +10,8 @@ Entrega INT06 publicada en PWA `62f55dc`: 32 suites/445 tests, lint y build/Type
 
 | Prioridad | ID | Estado | Qué falta |
 | --- | --- | --- | --- |
-| Alta | AUD-021 | PENDIENTE | Completar Impacto/WebAuthn/entorno externo y QA integrado; registro/cargas con D verificados localmente en INT04. |
-| Alta | AUD-020 | PENDIENTE | Implementar Impacto público/Mis registros con su proyección; no abrir el mapa interno. |
+| Alta | AUD-021 | PENDIENTE externo | WebAuthn real, entorno externo y QA completo del incremento; Impacto/registro/acceso ya verificados localmente. |
+| Alta | AUD-020 | CERRADO local | Impacto público/Mis registros implementados con proyecciones INT05 y verificación sintética; evidencia externa en AUD-021. |
 | Crítica | AUD-013 | PENDIENTE de verificación externa | Acreditar la publicación/regresión de identidad y autoridad corregidas en backend. |
 | Alta | AUD-007 | BLOQUEADO en eventos físicos | Idempotencia durable/recuperación de operaciones de Vivero; C04–C09 ya tienen su propio contrato. |
 | Alta | AUD-015 | PENDIENTE | QA del editor de plan con backend/migraciones 062/063 coordinados. |
@@ -27,15 +27,19 @@ El orden de ejecución entre repositorios se decide en el tablero oficial; esta 
 
 ### AUD-021 — QA integrado de gestión contextual
 
-INT06 FE01–FE05 e INT04 están implementadas/verificadas localmente. Entrega INT04 en commit local PWA `94f62a9`, con backend D `75a57eb`; pendiente de push, sin SQL remoto ni despliegue acreditados. INT04 añade 30 checks integrados de registro/cargas, dos pestañas, plan concurrente y retiro, más 18 de reposición y 12 de fotos adversarias con D ([informe](docs/QA_REGISTRO_PARTICIPANTE_INT04.md)). INT06 FE06 sigue parcial: Impacto/Mis registros INT05, WebAuthn real, entorno externo y QA completo del recorrido conservan evidencia pendiente. El QA sintético sólo adapta perfil propio; capacidades/comandos/DB son reales dentro del fixture.
+INT06 FE01–FE05 e INT04 están implementadas/verificadas localmente. Entrega INT04 en commit local PWA `94f62a9`, con backend D `75a57eb`; pendiente de push, sin SQL remoto ni despliegue acreditados. INT04 añade 30 checks integrados de registro/cargas, dos pestañas, plan concurrente y retiro, más 18 de reposición y 12 de fotos adversarias con D ([informe](docs/QA_REGISTRO_PARTICIPANTE_INT04.md)). INT06 FE06 conserva los pendientes de WebAuthn real, entorno externo y QA completo del recorrido; la integración local de Impacto/Mis registros se acredita a continuación en INT05. El QA sintético sólo adapta perfil propio; capacidades/comandos/DB son reales dentro del fixture.
 
-Cerrar con evidencia navegador → API → DB de roles/estados, pérdida de respuesta tras commit, recarga/cambio de cuenta y regresión interna/pública. [Informe reproducible](docs/QA_GESTION_ACCESOS_INT06.md); [módulo](src/modules/participacion/README.md). No habilitar piloto sólo por cerrar esta UI.
+INT05 FE01–FE06 implementadas/verificadas localmente el 18 de octubre: 48 suites/691 pruebas, lint/build y 111 comprobaciones integradas/SQL, con nuevas regresiones INT04/INT06. [Informe y versiones](docs/QA_IMPACTO_INT05.md). Se retira Impacto local del pendiente; permanecen WebAuthn real, revisión humana, entorno externo, despliegue/corte y QA completo del incremento.
 
-### AUD-020 — Impacto público pendiente
+Cerrar el pendiente externo con evidencia navegador → API → DB en destino y decisión de piloto. [Informe de acceso](docs/QA_GESTION_ACCESOS_INT06.md); [módulo](src/modules/participacion/README.md). No habilitar piloto sólo por cerrar esta UI.
 
-`src/App.tsx` y `modules/map/MapScreen.tsx` todavía no implementan la proyección pública. El mapa actual consulta Recolección interna bajo sesión.
+### AUD-020 — Impacto público implementado/verificado localmente
 
-Cerrar con contratos públicos y rutas global/campaña/subcampaña/registro/foto fuera de guards privados, probadas en incógnito, con VOLUNTARIO sin permiso y sesión vencida. No descargar stock/equipos ni exigir perfil para consultar.
+`src/modules/impacto/` implementa global/campaña/subcampaña/registro/fotos sin guards privados y lista propia por JWT, con retorno, filtros, snapshots, cantidades grupales y preferencias por cuenta. El mapa de Recolección conserva su audiencia interna.
+
+El [cotejo previo del 17](docs/PREPARACION_IMPACTO_INT05.md) detectó contratos faltantes y diferencias de estado/avance; backend los resolvió en su entrega INT05 con 081 antes de integrar. La PWA consume la nueva proyección estricta, sin recomponer permisos ni totales desde respuestas internas.
+
+Cierre técnico local: [QA INT05](docs/QA_IMPACTO_INT05.md), 31 comprobaciones propias de navegador/HTTP/SQL más regresiones. Incógnito, VOLUNTARIO ajeno, sesión vencida/fallo de capacidades, autor retirado y cambio de cuenta verificados sin descargar stock/equipo. No acredita despliegue ni entorno externo; esos límites permanecen en AUD-021.
 
 ### AUD-013 — Identidad/autoridad: verificación externa pendiente
 

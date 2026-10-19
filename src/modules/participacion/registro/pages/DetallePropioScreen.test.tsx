@@ -51,4 +51,11 @@ describe('Detalle propio persistido', () => {
     expect(screen.queryByText('PLT-PERSISTIDA')).toBeNull()
     expect(screen.queryByText('Observación privada persistida')).toBeNull()
   })
+
+  it.each([401, 403])('ofrece recuperar sesión ante rechazo de identidad %s', async status => {
+    vi.spyOn(RegistroParticipacionService, 'detallePropio').mockRejectedValue(Object.assign(new Error('Recupera tu sesión'), { status }))
+    render(element())
+    await screen.findByRole('button', { name: 'Recuperar sesión con passkey' })
+    expect(screen.queryByRole('button', { name: 'Reintentar consulta propia' })).toBeNull()
+  })
 })

@@ -6,6 +6,7 @@ Entrada de trabajo: [README](../README.md). Pendientes vigentes: [auditoría](..
 
 | Área | Informe | Alcance |
 | --- | --- | --- |
+| Impacto y Mis registros INT05 | [QA y reproducción](QA_IMPACTO_INT05.md), [resultados](qa/pa-int05/resultados.json), [versiones](qa/pa-int05/versiones.json) | Consulta pública/propia, preferencias y regresión integrada local de INT04/INT06; sin despliegue ni piloto. [Cotejo previo](PREPARACION_IMPACTO_INT05.md) conservado como antecedente. |
 | Registro participante INT04 | [QA y reproducción](QA_REGISTRO_PARTICIPANTE_INT04.md), [registro/DB](qa/pa-int04/resultados.json), [reposición](qa/pa-int04/reposicion.json), [fotos](qa/pa-int04/fotos.json), [versiones](qa/pa-int04/versiones.json) | Tres pasos, cargas/recuperación real con D/PostGIS, aislamiento y regresión interna local. |
 | Gestión de acceso INT06 | [QA y reproducción](QA_GESTION_ACCESOS_INT06.md), [resultados](qa/pa-int06/resultados.json), [DB](qa/pa-int06/db.json), [sesión](qa/pa-int06/session.json) | C04–C09 con backend/PostgreSQL sintéticos reales; perfil de arranque adaptado, FE06 parcial. |
 | Identidad/perfil | [QA UX](QA_PERFIL_PARTICIPACION_UX.md) | Pantallas/API con HTTP sintético; enlaza a evidencia backend separada. |

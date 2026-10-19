@@ -1,0 +1,118 @@
+{
+  "fecha": "2026-10-18T13:16:12.106Z",
+  "entorno": "SINTETICO_LOCAL_INT02C",
+  "adaptador_sesion": "Perfil propio sintético ligado al JWT verificado; capacidades y recibos son HTTP real.",
+  "checks": [
+    "cambio en otra pestaña oculta inmediatamente el pendiente anterior",
+    "sólo muestra la cuenta nueva después de verificar su perfil",
+    "la cuenta nueva nunca consulta el comando del actor anterior",
+    "el cambio de cuenta conserva el comando privado original",
+    "volver al actor original reanuda el mismo comando por GET",
+    "logout en otra pestaña oculta la pantalla privada",
+    "sin POST de acceso durante la prueba de sesión",
+    "sin errores de ejecución del navegador"
+  ],
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/api/users/profile",
+      "actor": "602"
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/profile",
+      "actor": "602"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "actor": "602"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "actor": "602"
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/profile",
+      "actor": "602"
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/profile",
+      "actor": "602"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "actor": "602"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "actor": "602"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "actor": "602"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "actor": "602"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/participacion/comandos/73982005-790e-4302-aa01-1b1889cabb47",
+      "actor": "602"
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/profile",
+      "actor": "603"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "actor": "603"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "actor": "603"
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/profile",
+      "actor": "602"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "actor": "602"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "actor": "602"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "actor": "602"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "actor": "602"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/participacion/comandos/73982005-790e-4302-aa01-1b1889cabb47",
+      "actor": "602"
+    }
+  ],
+  "errors": []
+}

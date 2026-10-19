@@ -17,6 +17,10 @@ const HomeScreen = lazy(() => import('./modules/home/HomeScreen'))
 const RegistroSelectorScreen = lazy(() => import('./modules/participacion/registro/pages/RegistroSelectorScreen'))
 const RegistrarParticipanteScreen = lazy(() => import('./modules/participacion/registro/pages/RegistrarParticipanteScreen'))
 const DetallePropioScreen = lazy(() => import('./modules/participacion/registro/pages/DetallePropioScreen'))
+const ImpactoEntry = lazy(() => import('./modules/impacto/components/ImpactoEntry'))
+const ImpactoConsultaScreen = lazy(() => import('./modules/impacto/pages/ImpactoConsultaScreen'))
+const ImpactoRegistroScreen = lazy(() => import('./modules/impacto/pages/ImpactoRegistroScreen'))
+const MisRegistrosScreen = lazy(() => import('./modules/impacto/pages/MisRegistrosScreen'))
 const GestionAccesosScreen = lazy(() => import('./modules/participacion/pages/GestionAccesosScreen'))
 const LoginScreen = lazy(() => import('./modules/auth/LoginScreen'))
 const RegisterScreen = lazy(() => import('./modules/auth/RegisterScreen'))
@@ -109,18 +113,6 @@ const PlantasScreen = lazy(() => import('./modules/plantas/PlantasScreen'))
 const NuevaPlantaScreen = lazy(() => import('./modules/plantas/NuevaPlantaScreen'))
 const EditarPlantaScreen = lazy(() => import('./modules/plantas/EditarPlantaScreen'))
 
-function RootRedirect() {
-  const { isAuthenticated, hydrated } = useAuth()
-
-  if (!hydrated) return <AppInitializationScreen message="Verificando tu sesión" />
-
-  if (!isAuthenticated) {
-    return <Navigate to="/auth/login" replace />
-  }
-
-  return <Navigate to="/app/home" replace />
-}
-
 // Guard para la ruta de completar perfil: requiere auth
 function CompleteProfileRoute() {
   const { isAuthenticated, hydrated } = useAuth()
@@ -156,7 +148,11 @@ function App() {
     <>
       <Suspense fallback={<AppInitializationScreen message="Cargando la aplicación" />}>
         <Routes>
-          <Route path="/" element={<RootRedirect />} />
+          <Route path="/" element={<ImpactoEntry />} />
+          <Route path="/impacto" element={<ImpactoConsultaScreen />} />
+          <Route path="/impacto/campanias/:campaniaId" element={<ImpactoConsultaScreen />} />
+          <Route path="/impacto/subcampanias/:subcampaniaId" element={<ImpactoConsultaScreen />} />
+          <Route path="/impacto/registros/:registroId" element={<ImpactoRegistroScreen />} />
 
         <Route element={<GuestRoute />}>
           <Route path="/auth" element={<AuthLayout />}>
@@ -178,6 +174,7 @@ function App() {
             <Route path="participacion/registrar" element={<RegistroSelectorScreen />} />
             <Route path="participacion/subcampanias/:subcampaniaId/registrar" element={<RegistrarParticipanteScreen />} />
             <Route path="participacion/registros/:registroId" element={<DetallePropioScreen />} />
+            <Route path="participacion/mis-registros" element={<MisRegistrosScreen />} />
             <Route path="collections">
               <Route index element={<RecoleccionesScreen />} />
               <Route path="stock" element={<RecoleccionStockScreen />} />

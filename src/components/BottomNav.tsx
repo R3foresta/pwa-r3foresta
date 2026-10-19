@@ -98,7 +98,7 @@ function BottomNav() {
       <div className="fixed inset-x-0 bottom-0 z-40 mb-3 flex justify-center">
         <nav aria-label="Navegación principal" className="relative flex w-[92%] max-w-md items-end justify-between rounded-3xl bg-brand-600 px-4 py-3 text-white shadow-2xl shadow-brand-900/30">
           {navItems.map((item) => {
-            const isActive = pathname.startsWith(item.path)
+            const isActive = item.path === '/' ? pathname === '/' : pathname.startsWith(item.path)
             return (
               <NavLink
                 key={item.label}

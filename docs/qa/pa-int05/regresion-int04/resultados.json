@@ -1,0 +1,1060 @@
+{
+  "entorno": "SINTETICO_LOCAL_INT02D",
+  "checks": [
+    "Fixture D explícito y sesiones exclusivamente sintéticas",
+    "Preparación, PUT y preview privados confirmados por API real",
+    "Participante opcional del mismo ámbito seleccionado sin duplicar al responsable",
+    "Cancelar diálogo final no envía POST",
+    "Tres pasos: meta superada dentro del saldo y un único POST confirmado",
+    "Recarga del comprobante no crea otro POST",
+    "Autor ve observaciones y participante recibe histórico sin observaciones del autor",
+    "Registro participante sin descargas internas de equipo/lotes/stock",
+    "POST perdido después de commit conserva intención congelada y bloquea edición",
+    "Segunda pestaña detecta revisión local cambiada sin enviar otro POST",
+    "Ambas pestañas concilian por GET y no repiten el efecto",
+    "PostGIS real admite punto exterior y devuelve advertencia del recibo",
+    "Cambio de cuenta en otra pestaña oculta comprobante/fotos/nombres previos",
+    "Volver a la cuenta original recupera el mismo comprobante",
+    "Pérdida de preparación y recarga conservan bytes/comando; GET202 permite captura",
+    "Recuperar preparación evita otro POST de preparación y no crea registro",
+    "Descarte clausura preparación antes de soltar bytes locales",
+    "Pérdida de PUT: recarga lista carga disponible sin segundo PUT",
+    "Plan cambiado: rechazo durable conserva cantidad y fotos sin ajuste silencioso",
+    "Nueva revisión explícita crea otra clave y conserva propuesta/bytes permitidos",
+    "Revisión rechazada exige nueva carga y confirmación; no transfiere evidencia",
+    "503 del evaluador es RECHAZADO durable, conserva borrador y no se presenta incierto",
+    "Preparación de clave ya terminal se discrimina sin reabrir cargas",
+    "SIN_STOCK conserva autorización y se distingue de error o falta de permiso",
+    "URL ajena rechazada sin descargar stock/equipo/lotes internos",
+    "Detalle histórico propio continúa tras retiro sin requerir contexto operativo",
+    "GET de comprobante propio continúa tras retiro",
+    "DB: un recibo/registro/consumo/vínculo por intención confirmada; rechazos sin efectos parciales",
+    "Sin errores JavaScript de navegador",
+    "Vivero conserva exactamente sus filas/saldos"
+  ],
+  "commands": [
+    {
+      "actor": "801",
+      "body": {
+        "comando_id": "7c36bbec-d598-48f5-b8f5-53ab8738dd33",
+        "subcampania_id": "820",
+        "plan_revision_esperada": "0",
+        "fecha_plantacion": "2026-10-18",
+        "latitud": -16.5,
+        "longitud": -68.1,
+        "especies": [
+          {
+            "planta_id": "8",
+            "cantidad": 7
+          }
+        ],
+        "coresponsable_ids": [
+          "802"
+        ],
+        "evidencia_ids": [
+          "900054"
+        ],
+        "observaciones": "Nota privada sintética de INT04",
+        "afiliaciones_declaradas": []
+      }
+    },
+    {
+      "actor": "801",
+      "body": {
+        "comando_id": "8affbde7-3955-4a0a-8cfb-f6d862a0b833",
+        "subcampania_id": "821",
+        "plan_revision_esperada": "0",
+        "fecha_plantacion": "2026-10-18",
+        "latitud": -16.5,
+        "longitud": -67.5,
+        "especies": [
+          {
+            "planta_id": "8",
+            "cantidad": 2
+          }
+        ],
+        "coresponsable_ids": [],
+        "evidencia_ids": [
+          "900055"
+        ],
+        "observaciones": "Exterior y respuesta perdida",
+        "afiliaciones_declaradas": []
+      }
+    },
+    {
+      "actor": "801",
+      "body": {
+        "comando_id": "40ce425c-73e0-4b69-841a-0755af1c6c6e",
+        "subcampania_id": "823",
+        "plan_revision_esperada": "0",
+        "fecha_plantacion": "2026-10-18",
+        "latitud": -16.5,
+        "longitud": -68.1,
+        "especies": [
+          {
+            "planta_id": "8",
+            "cantidad": 3
+          }
+        ],
+        "coresponsable_ids": [],
+        "evidencia_ids": [
+          "900057"
+        ],
+        "observaciones": "Propuesta retenida ante cambio del plan",
+        "afiliaciones_declaradas": []
+      }
+    },
+    {
+      "actor": "801",
+      "body": {
+        "comando_id": "6556d0b8-b0ce-413f-984b-43cf808a6154",
+        "subcampania_id": "823",
+        "plan_revision_esperada": "1",
+        "fecha_plantacion": "2026-10-18",
+        "latitud": -16.5,
+        "longitud": -68.1,
+        "especies": [
+          {
+            "planta_id": "8",
+            "cantidad": 3
+          }
+        ],
+        "coresponsable_ids": [],
+        "evidencia_ids": [
+          "900058"
+        ],
+        "observaciones": "Propuesta retenida ante cambio del plan",
+        "afiliaciones_declaradas": []
+      }
+    },
+    {
+      "actor": "801",
+      "body": {
+        "comando_id": "7e6db7e3-5149-4608-b1aa-916b033abd59",
+        "subcampania_id": "824",
+        "plan_revision_esperada": "0",
+        "fecha_plantacion": "2026-10-18",
+        "latitud": -16.5,
+        "longitud": -68.1,
+        "especies": [
+          {
+            "planta_id": "8",
+            "cantidad": 1
+          }
+        ],
+        "coresponsable_ids": [],
+        "evidencia_ids": [
+          "900059"
+        ],
+        "observaciones": "Propuesta con evaluador indisponible",
+        "afiliaciones_declaradas": []
+      }
+    }
+  ],
+  "errors": [],
+  "network": [
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/820/contexto-registro"
+    },
+    {
+      "actor": "801",
+      "method": "POST",
+      "path": "/api/v1/participacion/comandos/preparaciones"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/comandos/:uuid/cargas"
+    },
+    {
+      "actor": "801",
+      "method": "PUT",
+      "path": "/api/v1/participacion/comandos/:uuid/cargas/:uuid"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/cargas/:uuid/preview"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/820/participantes-seleccionables"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/820/participantes-seleccionables"
+    },
+    {
+      "actor": "801",
+      "method": "POST",
+      "path": "/api/v1/plantaciones/iniciales"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/comandos/:uuid"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/plantaciones/832002/detalle-propio"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/plantaciones/832002/detalle-propio"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/impact/imagenes/900054"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/821/contexto-registro"
+    },
+    {
+      "actor": "801",
+      "method": "POST",
+      "path": "/api/v1/participacion/comandos/preparaciones"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/comandos/:uuid/cargas"
+    },
+    {
+      "actor": "801",
+      "method": "PUT",
+      "path": "/api/v1/participacion/comandos/:uuid/cargas/:uuid"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/cargas/:uuid/preview"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/821/participantes-seleccionables"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/comandos/:uuid"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/comandos/:uuid/cargas"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/821/contexto-registro"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/821/participantes-seleccionables"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/comandos/:uuid"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/comandos/:uuid/cargas"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/821/contexto-registro"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/821/participantes-seleccionables"
+    },
+    {
+      "actor": "801",
+      "method": "POST",
+      "path": "/api/v1/plantaciones/iniciales"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/comandos/:uuid"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/comandos/:uuid"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/821/contexto-registro"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/comandos/:uuid"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/822/contexto-registro"
+    },
+    {
+      "actor": "801",
+      "method": "POST",
+      "path": "/api/v1/participacion/comandos/preparaciones"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/comandos/:uuid"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/comandos/:uuid/cargas"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/822/contexto-registro"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/comandos/:uuid/cargas"
+    },
+    {
+      "actor": "801",
+      "method": "PUT",
+      "path": "/api/v1/participacion/comandos/:uuid/cargas/:uuid"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/cargas/:uuid/preview"
+    },
+    {
+      "actor": "801",
+      "method": "POST",
+      "path": "/api/v1/participacion/comandos/:uuid/descarte-preparacion"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/823/contexto-registro"
+    },
+    {
+      "actor": "801",
+      "method": "POST",
+      "path": "/api/v1/participacion/comandos/preparaciones"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/comandos/:uuid/cargas"
+    },
+    {
+      "actor": "801",
+      "method": "PUT",
+      "path": "/api/v1/participacion/comandos/:uuid/cargas/:uuid"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/comandos/:uuid"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/comandos/:uuid/cargas"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/823/contexto-registro"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/cargas/:uuid/preview"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/823/participantes-seleccionables"
+    },
+    {
+      "actor": "801",
+      "method": "POST",
+      "path": "/api/v1/plantaciones/iniciales"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/823/contexto-registro"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/823/contexto-registro"
+    },
+    {
+      "actor": "801",
+      "method": "POST",
+      "path": "/api/v1/participacion/comandos/preparaciones"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/comandos/:uuid/cargas"
+    },
+    {
+      "actor": "801",
+      "method": "PUT",
+      "path": "/api/v1/participacion/comandos/:uuid/cargas/:uuid"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/cargas/:uuid/preview"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/823/participantes-seleccionables"
+    },
+    {
+      "actor": "801",
+      "method": "POST",
+      "path": "/api/v1/plantaciones/iniciales"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/824/contexto-registro"
+    },
+    {
+      "actor": "801",
+      "method": "POST",
+      "path": "/api/v1/participacion/comandos/preparaciones"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/comandos/:uuid/cargas"
+    },
+    {
+      "actor": "801",
+      "method": "PUT",
+      "path": "/api/v1/participacion/comandos/:uuid/cargas/:uuid"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/cargas/:uuid/preview"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/824/participantes-seleccionables"
+    },
+    {
+      "actor": "801",
+      "method": "POST",
+      "path": "/api/v1/plantaciones/iniciales"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/comandos/:uuid"
+    },
+    {
+      "actor": "801",
+      "method": "POST",
+      "path": "/api/v1/participacion/comandos/preparaciones"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/825/contexto-registro"
+    },
+    {
+      "actor": "804",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "actor": "804",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "actor": "804",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "804",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "804",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "actor": "804",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "actor": "804",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "804",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "804",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "804",
+      "method": "GET",
+      "path": "/api/v1/subcampanias/820/contexto-registro"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/plantaciones/832002/detalle-propio"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/plantaciones/832002/detalle-propio"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/impact/imagenes/900054"
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/comandos/:uuid"
+    }
+  ],
+  "db": [
+    {
+      "fotos": 1,
+      "estado": "CONFIRMADO",
+      "consumo": 7,
+      "registros": 1,
+      "resultado": {
+        "tipo": "PLANTACION_INICIAL",
+        "especies": [
+          {
+            "cantidad": 7,
+            "planta_id": "8"
+          }
+        ],
+        "responsable_id": "801",
+        "subcampania_id": "820",
+        "fecha_plantacion": "2026-10-18",
+        "revision_inicial": "0",
+        "codigo_trazabilidad": "PLT-003-LOCAL-INT03A-820",
+        "gps_dentro_poligono": true,
+        "registro_plantacion_id": "832002",
+        "cantidad_total_plantada": 7,
+        "gps_distancia_a_poligono_m": 0
+      },
+      "comando_id": "7c36bbec-d598-48f5-b8f5-53ab8738dd33",
+      "error_codigo": null
+    },
+    {
+      "fotos": 1,
+      "estado": "CONFIRMADO",
+      "consumo": 2,
+      "registros": 1,
+      "resultado": {
+        "tipo": "PLANTACION_INICIAL",
+        "especies": [
+          {
+            "cantidad": 2,
+            "planta_id": "8"
+          }
+        ],
+        "responsable_id": "801",
+        "subcampania_id": "821",
+        "fecha_plantacion": "2026-10-18",
+        "revision_inicial": "0",
+        "codigo_trazabilidad": "PLT-001-LOCAL-INT03A-821",
+        "gps_dentro_poligono": false,
+        "registro_plantacion_id": "832003",
+        "cantidad_total_plantada": 2,
+        "gps_distancia_a_poligono_m": 53382.02
+      },
+      "comando_id": "8affbde7-3955-4a0a-8cfb-f6d862a0b833",
+      "error_codigo": null
+    },
+    {
+      "fotos": 0,
+      "estado": "RECHAZADO",
+      "consumo": 0,
+      "registros": 0,
+      "resultado": null,
+      "comando_id": "40ce425c-73e0-4b69-841a-0755af1c6c6e",
+      "error_codigo": "PLAN_MODIFICADO"
+    },
+    {
+      "fotos": 1,
+      "estado": "CONFIRMADO",
+      "consumo": 3,
+      "registros": 1,
+      "resultado": {
+        "tipo": "PLANTACION_INICIAL",
+        "especies": [
+          {
+            "cantidad": 3,
+            "planta_id": "8"
+          }
+        ],
+        "responsable_id": "801",
+        "subcampania_id": "823",
+        "fecha_plantacion": "2026-10-18",
+        "revision_inicial": "0",
+        "codigo_trazabilidad": "PLT-001-LOCAL-INT03A-823",
+        "gps_dentro_poligono": true,
+        "registro_plantacion_id": "832004",
+        "cantidad_total_plantada": 3,
+        "gps_distancia_a_poligono_m": 0
+      },
+      "comando_id": "6556d0b8-b0ce-413f-984b-43cf808a6154",
+      "error_codigo": null
+    },
+    {
+      "fotos": 0,
+      "estado": "RECHAZADO",
+      "consumo": 0,
+      "registros": 0,
+      "resultado": null,
+      "comando_id": "7e6db7e3-5149-4608-b1aa-916b033abd59",
+      "error_codigo": "EVALUADOR_NO_DISPONIBLE"
+    }
+  ]
+}

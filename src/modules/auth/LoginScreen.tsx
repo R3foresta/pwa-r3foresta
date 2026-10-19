@@ -82,6 +82,7 @@ function LoginScreen({ initialRegistering = false }: { initialRegistering?: bool
         </div>
 
         <div className="space-y-5 px-5 pb-6 pt-5">
+          <Link to="/impacto" className="block rounded-xl py-2 text-center text-sm font-semibold text-brand-600 underline underline-offset-4">Consultar Impacto público</Link>
           <div className="flex items-center justify-between">
             <div className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-500">
               {isRegistering ? 'Crear cuenta' : 'Iniciar sesión'}

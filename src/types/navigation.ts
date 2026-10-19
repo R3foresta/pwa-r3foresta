@@ -11,6 +11,8 @@ export type Screen =
   | 'profile'
   | 'planting'
   | 'co2'
+  | 'impacto'
+  | 'misRegistros'
 
 export type NavItem<IconKey = string> = {
   label: string

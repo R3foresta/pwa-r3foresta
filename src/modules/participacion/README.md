@@ -28,7 +28,7 @@ Las entradas de registro inicial del módulo interno redirigen al formulario v1.
 | `commands/registrationDraftStore.ts` | Transacciones IndexedDB de borrador, fotos, identidades y terminal. |
 | `registro/` | Pantallas, componentes y contexto del registro participante. |
 
-`AuthContext` mantiene la sesión. Ambos clientes obtienen el Bearer de `WebAuthnService.getToken()` y verifican el actor mediante capacidades del mismo token; `actor_id` es metadato local y no se envía como autoridad. Los datos auxiliares de usuario/`auth_id` no autentican. Las respuestas tardías de otra sesión se descartan.
+`AuthContext` mantiene la sesión. Ambos clientes obtienen el Bearer de `WebAuthnService.getToken()`; los comandos, su recuperación y las lecturas operativas verifican el actor mediante capacidades del mismo token. La lectura histórica `detalle-propio` usa el transporte Bearer directamente sin exigir capacidades: el backend deriva la identidad del token y la respuesta debe incluir al actor como autor o participante. `actor_id` es metadato local y no se envía como autoridad. Los datos auxiliares de usuario/`auth_id` no autentican. Las respuestas tardías de otra sesión se descartan.
 
 El transporte usa `/api/v1`, `cache: 'no-store'`, `credentials: 'omit'` y timeout de 40 segundos que incluye el body. JSON declara su tipo; multipart deja el boundary al navegador. No incorporar API, recibos, fotos privadas ni URLs firmadas al caché público/service worker.
 
@@ -78,10 +78,10 @@ En acceso, `useAccessCommand` conserva sólo metadatos en `r3foresta:participaci
 
 Después de un terminal, `newIntent` requiere acción explícita. Un rechazo ordinario conserva datos/fotos permitidos y reinicia revisión; genera otras identidades de comando/carga y vuelve a subir los bytes. No existe transferencia de cargas entre preparaciones. El descarte clausura por API antes de liberar fotos locales; si hubo POST incierto, primero concilia. Un confirmado o cancelación terminal libera bytes locales conservando su comprobante; las cargas omitidas se limpian mediante backend.
 
-`detalle-propio` representa snapshots, nunca perfiles actuales reconstruidos: autor/participante histórico puede consultar tras retirar permiso operativo; observaciones sólo para autor. Impacto/Mis registros completo sigue siendo INT05 y su consulta pública debe funcionar independientemente de sesión/capacidades.
+`detalle-propio` representa snapshots, nunca perfiles actuales reconstruidos: autor/participante histórico puede consultar tras retirar permiso operativo; observaciones sólo para autor. Su frontera visual incluye cuenta, token y registro para ocultar respuestas de la sesión anterior. [Impacto y Mis registros INT05](../impacto/README.md) agregan consulta pública independiente de sesión/capacidades y una lista propia autenticada, sin cambiar los contratos de los comandos INT04/INT06. El selector de registro conserva borradores tras retirar la habilitación y actualiza la última campaña usada por la misma cuenta.
 
 ## Verificación y límites
 
 Ejecutar `npm run test -- src/modules/participacion`, `npm run lint` y `npm run build` al cambiar estos flujos. Los mocks no acreditan autorización, Storage ni consumo real. El [informe INT06](../../../docs/QA_GESTION_ACCESOS_INT06.md) y el [informe INT04](../../../docs/QA_REGISTRO_PARTICIPANTE_INT04.md) registran versiones, entorno, pruebas y pendientes; esta guía no declara cerrado el QA.
 
-La aplicación/cotejo SQL y Storage remotos, WebAuthn real, revisión humana, QA público completo INT05 y despliegue/piloto INT08 conservan su evidencia separada. El launcher D local usa datos/PostGIS/objetos sintéticos y no habilita participantes reales.
+La aplicación/cotejo SQL y Storage remotos, WebAuthn real, revisión humana y despliegue/piloto INT08 conservan su evidencia separada; la integración pública/propia INT05 se documenta en su [informe de QA](../../../docs/QA_IMPACTO_INT05.md). El launcher D local usa datos/PostGIS/objetos sintéticos y no habilita participantes reales.

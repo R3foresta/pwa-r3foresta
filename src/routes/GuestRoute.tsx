@@ -1,6 +1,6 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { canOpenAppPath } from '../utils/appAccess'
+import { canOpenAppPath, hasInternalAppAccess, isPublicImpactPath } from '../utils/appAccess'
 
 function GuestRoute() {
   const { user, isAuthenticated, hydrated } = useAuth()
@@ -12,9 +12,10 @@ function GuestRoute() {
 
   if (isAuthenticated) {
     const from = (state as { from?: unknown } | null)?.from
-    const destination = typeof from === 'string' && canOpenAppPath(from, user?.rol)
+    const fallback = typeof from === 'string' || hasInternalAppAccess(user?.rol) ? '/app/home' : '/'
+    const destination = typeof from === 'string' && (canOpenAppPath(from, user?.rol) || isPublicImpactPath(from))
       ? from
-      : '/app/home'
+      : fallback
     return <Navigate to={destination} replace />
   }
 

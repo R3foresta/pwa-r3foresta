@@ -67,7 +67,7 @@ Eventos append-only: no editar/borrar ni ocultar historial salvo filtros visuale
 - Incorporar en BORRADOR/ACTIVA; retiros y reemplazos en cerradas/canceladas conforme a capacidades/contrato, sin reapertura. PAUSADA reservada no habilita mutaciones nuevas.
 - Selección masiva: hasta 100 IDs actuales, todo-o-nada; no heredar ámbitos futuros ni ejecutar un POST por ámbito.
 - Conservar UUID/payload/revisiones ante incertidumbre y recuperar con el actor original. El terminal histórico no concede permisos actuales ni un retiro borra registros anteriores.
-- Impacto es público por contrato. Su implementación está pendiente; el mapa interno no debe exponerse para simularla. Registro privado sí requiere sesión y autoridad.
+- Impacto es público por contrato y su proyección/frontend INT05 están verificados localmente; [evidencia y límites](docs/QA_IMPACTO_INT05.md). El mapa interno conserva su audiencia. Registro privado sí requiere sesión y autoridad.
 
 ## Dónde continuar
 

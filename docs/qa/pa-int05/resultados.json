@@ -1,0 +1,652 @@
+{
+  "fecha": "2026-10-18T13:14:02.190Z",
+  "entorno": "SINTETICO_LOCAL_INT05_POST_081",
+  "api": "http://127.0.0.1:3305",
+  "pwa": "http://127.0.0.1:5175",
+  "adaptador_sesion": "Solo perfil de arranque sintético contrastado con capacidades reales del mismo JWT; WebAuthn no ejercido.",
+  "checks": [
+    "HTTP público y RPC081 de solo lectura coinciden: 50 iniciales, 4 reposiciones, 11 bajas, 4 grupos",
+    "Entrada visitante muestra global sin sesión, perfil ni capacidades",
+    "Cuatro páginas reales anexan cuatro registros y mantienen total50/mapa4",
+    "Campaña30 abre detalle público grupal sin gestión interna",
+    "Detalle representa afiliaciones históricas mixtas, seguimiento y foto elegible",
+    "Volver conserva filtro y selección del mapa",
+    "Subcampaña conserva125% y faltantes0 sin truncar texto",
+    "Campaña20 y registro legado mantienen historia no disponible",
+    "Borrador no se expone por enlace directo",
+    "Vacío filtrado es resultado confirmado y distinguible de error",
+    "Fallo503 no muestra total cero",
+    "Reintentar recupera lectura pública real",
+    "VOLUNTARIO ajeno ve el mismo detalle público sin stock/equipo",
+    "Cuenta ajena tiene lista propia vacía y no recibe historia ajena",
+    "Autor retirado conserva autoría y participación histórica deduplicadas",
+    "Detalle propio del autor retirado abre sin contexto operativo",
+    "Participante histórico no recibe observaciones privadas del autor",
+    "ID ajeno privado responde404",
+    "Entrada por defecto revalida última campaña habilitada de la cuenta",
+    "Enlace público directo conserva campaña801 aunque preferencia sea800",
+    "Preferencia de otra cuenta/sin permiso confirmado no autoriza ni elige campaña",
+    "Fallo de capacidades conserva consulta pública y no declara revocación",
+    "Mis registros abre aunque capacidades falle",
+    "Cambio de cuenta entre pestañas oculta registros privados anteriores",
+    "Sesión vencida no bloquea enlace público ni sus fotos",
+    "Foto elegible JPEG sanitizado y pendiente404",
+    "Consulta legible en escritorio y móvil sin desbordamiento horizontal",
+    "Peticiones públicas sin Bearer; no se descargan stock/equipo/perfiles de terceros",
+    "Consultas no emiten escrituras",
+    "Sin errores de ejecución de JavaScript",
+    "Consulta pública/propia no modifica los hechos persistidos"
+  ],
+  "sql": {
+    "indicadores": {
+      "registros": 4,
+      "reposiciones": 4,
+      "bajas_reportadas": 11,
+      "plantacion_inicial": 50
+    },
+    "registros": [
+      "827000",
+      "826001",
+      "826000",
+      "820000"
+    ],
+    "inalterado": true
+  },
+  "network": [
+    {
+      "actor": "VISITANTE",
+      "method": "GET",
+      "path": "/api/v1/impact/global",
+      "bearer": false
+    },
+    {
+      "actor": "VISITANTE",
+      "method": "GET",
+      "path": "/api/v1/impact/global",
+      "bearer": false
+    },
+    {
+      "actor": "VISITANTE",
+      "method": "GET",
+      "path": "/api/v1/impact/global",
+      "bearer": false
+    },
+    {
+      "actor": "VISITANTE",
+      "method": "GET",
+      "path": "/api/v1/impact/global",
+      "bearer": false
+    },
+    {
+      "actor": "VISITANTE",
+      "method": "GET",
+      "path": "/api/v1/impact/global",
+      "bearer": false
+    },
+    {
+      "actor": "VISITANTE",
+      "method": "GET",
+      "path": "/api/v1/impact/global",
+      "bearer": false
+    },
+    {
+      "actor": "VISITANTE",
+      "method": "GET",
+      "path": "/api/v1/impact/global",
+      "bearer": false
+    },
+    {
+      "actor": "VISITANTE",
+      "method": "GET",
+      "path": "/api/v1/impact/campanias/800",
+      "bearer": false
+    },
+    {
+      "actor": "VISITANTE",
+      "method": "GET",
+      "path": "/api/v1/impact/campanias/800",
+      "bearer": false
+    },
+    {
+      "actor": "VISITANTE",
+      "method": "GET",
+      "path": "/api/v1/impact/registros/826000",
+      "bearer": false
+    },
+    {
+      "actor": "VISITANTE",
+      "method": "GET",
+      "path": "/api/v1/impact/registros/826000",
+      "bearer": false
+    },
+    {
+      "actor": "VISITANTE",
+      "method": "GET",
+      "path": "/api/v1/impact/imagenes/900050",
+      "bearer": false
+    },
+    {
+      "actor": "VISITANTE",
+      "method": "GET",
+      "path": "/api/v1/impact/campanias/800",
+      "bearer": false
+    },
+    {
+      "actor": "VISITANTE",
+      "method": "GET",
+      "path": "/api/v1/impact/campanias/800",
+      "bearer": false
+    },
+    {
+      "actor": "VISITANTE",
+      "method": "GET",
+      "path": "/api/v1/impact/subcampanias/826",
+      "bearer": false
+    },
+    {
+      "actor": "VISITANTE",
+      "method": "GET",
+      "path": "/api/v1/impact/subcampanias/826",
+      "bearer": false
+    },
+    {
+      "actor": "VISITANTE",
+      "method": "GET",
+      "path": "/api/v1/impact/campanias/801",
+      "bearer": false
+    },
+    {
+      "actor": "VISITANTE",
+      "method": "GET",
+      "path": "/api/v1/impact/campanias/801",
+      "bearer": false
+    },
+    {
+      "actor": "VISITANTE",
+      "method": "GET",
+      "path": "/api/v1/impact/registros/827000",
+      "bearer": false
+    },
+    {
+      "actor": "VISITANTE",
+      "method": "GET",
+      "path": "/api/v1/impact/registros/827000",
+      "bearer": false
+    },
+    {
+      "actor": "VISITANTE",
+      "method": "GET",
+      "path": "/api/v1/impact/subcampanias/828",
+      "bearer": false
+    },
+    {
+      "actor": "VISITANTE",
+      "method": "GET",
+      "path": "/api/v1/impact/subcampanias/828",
+      "bearer": false
+    },
+    {
+      "actor": "VISITANTE",
+      "method": "GET",
+      "path": "/api/v1/impact/global",
+      "bearer": false
+    },
+    {
+      "actor": "VISITANTE",
+      "method": "GET",
+      "path": "/api/v1/impact/global",
+      "bearer": false
+    },
+    {
+      "actor": "VISITANTE",
+      "method": "GET",
+      "path": "/api/v1/impact/global",
+      "bearer": false
+    },
+    {
+      "actor": "VISITANTE",
+      "method": "GET",
+      "path": "/api/v1/impact/global",
+      "bearer": false
+    },
+    {
+      "actor": "VISITANTE",
+      "method": "GET",
+      "path": "/api/v1/impact/global",
+      "bearer": false
+    },
+    {
+      "actor": "804",
+      "method": "GET",
+      "path": "/api/users/profile",
+      "bearer": true
+    },
+    {
+      "actor": "804",
+      "method": "GET",
+      "path": "/api/users/profile",
+      "bearer": true
+    },
+    {
+      "actor": "804",
+      "method": "GET",
+      "path": "/api/v1/impact/registros/826000",
+      "bearer": false
+    },
+    {
+      "actor": "804",
+      "method": "GET",
+      "path": "/api/v1/impact/registros/826000",
+      "bearer": false
+    },
+    {
+      "actor": "804",
+      "method": "GET",
+      "path": "/api/v1/impact/imagenes/900050",
+      "bearer": false
+    },
+    {
+      "actor": "804",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "bearer": true
+    },
+    {
+      "actor": "804",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "bearer": true
+    },
+    {
+      "actor": "804",
+      "method": "GET",
+      "path": "/api/users/profile",
+      "bearer": true
+    },
+    {
+      "actor": "804",
+      "method": "GET",
+      "path": "/api/users/profile",
+      "bearer": true
+    },
+    {
+      "actor": "804",
+      "method": "GET",
+      "path": "/api/v1/plantaciones/mis-registros",
+      "bearer": true
+    },
+    {
+      "actor": "804",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "bearer": true
+    },
+    {
+      "actor": "804",
+      "method": "GET",
+      "path": "/api/v1/plantaciones/mis-registros",
+      "bearer": true
+    },
+    {
+      "actor": "804",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "bearer": true
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile",
+      "bearer": true
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile",
+      "bearer": true
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/plantaciones/mis-registros",
+      "bearer": true
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "bearer": true
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/plantaciones/mis-registros",
+      "bearer": true
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "bearer": true
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/plantaciones/826000/detalle-propio",
+      "bearer": true
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/plantaciones/826000/detalle-propio",
+      "bearer": true
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "bearer": true
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/impact/imagenes/900050",
+      "bearer": false
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile",
+      "bearer": true
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile",
+      "bearer": true
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "bearer": true
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/impact/campanias/800",
+      "bearer": false
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/impact/campanias/800",
+      "bearer": false
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "bearer": true
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile",
+      "bearer": true
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile",
+      "bearer": true
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "bearer": true
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/impact/global",
+      "bearer": false
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/impact/global",
+      "bearer": false
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "bearer": true
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/impact/campanias/800",
+      "bearer": false
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile",
+      "bearer": true
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile",
+      "bearer": true
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/impact/campanias/801",
+      "bearer": false
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/impact/campanias/801",
+      "bearer": false
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "bearer": true
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "bearer": true
+    },
+    {
+      "actor": "804",
+      "method": "GET",
+      "path": "/api/users/profile",
+      "bearer": true
+    },
+    {
+      "actor": "804",
+      "method": "GET",
+      "path": "/api/users/profile",
+      "bearer": true
+    },
+    {
+      "actor": "804",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "bearer": true
+    },
+    {
+      "actor": "804",
+      "method": "GET",
+      "path": "/api/v1/impact/global",
+      "bearer": false
+    },
+    {
+      "actor": "804",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "bearer": true
+    },
+    {
+      "actor": "804",
+      "method": "GET",
+      "path": "/api/v1/impact/global",
+      "bearer": false
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile",
+      "bearer": true
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile",
+      "bearer": true
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/impact/global",
+      "bearer": false
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "bearer": true
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/impact/global",
+      "bearer": false
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "bearer": true
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile",
+      "bearer": true
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile",
+      "bearer": true
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "bearer": true
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/plantaciones/mis-registros",
+      "bearer": true
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/plantaciones/mis-registros",
+      "bearer": true
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "bearer": true
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/users/profile",
+      "bearer": true
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/plantaciones/mis-registros",
+      "bearer": true
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "bearer": true
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/plantaciones/mis-registros",
+      "bearer": true
+    },
+    {
+      "actor": "801",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades",
+      "bearer": true
+    },
+    {
+      "actor": "VISITANTE",
+      "method": "GET",
+      "path": "/api/users/profile",
+      "bearer": true
+    },
+    {
+      "actor": "VISITANTE",
+      "method": "GET",
+      "path": "/api/users/profile",
+      "bearer": true
+    },
+    {
+      "actor": "VISITANTE",
+      "method": "GET",
+      "path": "/api/v1/impact/registros/826000",
+      "bearer": false
+    },
+    {
+      "actor": "VISITANTE",
+      "method": "GET",
+      "path": "/api/v1/impact/registros/826000",
+      "bearer": false
+    },
+    {
+      "actor": "VISITANTE",
+      "method": "GET",
+      "path": "/api/v1/impact/imagenes/900050",
+      "bearer": false
+    },
+    {
+      "actor": "VISITANTE",
+      "method": "GET",
+      "path": "/api/v1/impact/global",
+      "bearer": false
+    },
+    {
+      "actor": "VISITANTE",
+      "method": "GET",
+      "path": "/api/v1/impact/global",
+      "bearer": false
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,129 @@
+{
+  "tarea": "PA-T-INT05-FE01–FE06",
+  "fecha": "2026-10-18T13:22:58.412519+00:00",
+  "estado": "VERIFICADO_TECNICO_LOCAL_SIN_COMMIT_PUSH_SQL_REMOTO_NI_DESPLIEGUE",
+  "pwa": {
+    "head": "6a2c95508ab902f5d89161dae03f94b21401dd08",
+    "arbol_no_versionado": true,
+    "sha256": {
+      "DOMAIN_INDEX.md": "36860498ffd4324d2458d30e81537c6f753668f378c867afa5b61a2a2cf34e3c",
+      "FRONTEND_AUDIT.md": "99f0e0a2e151f697d1a621c91dc8fd902af1cfdfad98d7a6e6b6f11dac6dbd18",
+      "FRONTEND_GUIDE.md": "17c1d96744242e742de71a15974cb16f2287dc7e0cd7f87b9672798b55020ecd",
+      "docs/PREPARACION_IMPACTO_INT05.md": "f4db03ccbf5a00bd536504359de9cdc946ca3f62f7642d5fd829602496ec8203",
+      "docs/QA_IMPACTO_INT05.md": "08e9f757b05826043ae890a451cb4825b18ecbbc74ac3edc64b3d17af86559c1",
+      "docs/README.md": "7ac81beead1bcce8cee6b0dd7fb833a5d3128520a4d8d0c405857687968937e9",
+      "scripts/qa/pa-int05-browser.cjs": "2313c7e23832c67f984f773f366ed288198b1214d240532b1748bb4304b488c5",
+      "src/App.tsx": "50835e7a861708c6037ceab64d2790a1250b24a34748d7b6e47412bf0747503e",
+      "src/components/BottomNav.tsx": "820fe3238a869c81b7db171e6209641a14c11ae0f7e0e84dab391705cb0e26da",
+      "src/components/MenuLateral.tsx": "0c042d35822a57b273a1762e1aff76d7997bbeded9bea7b7f46a0875f7859e6a",
+      "src/data/navigation.ts": "f86727d4d6dac12f8434b6d8840acf04bcbc97a129195efd48f90ac50b4ad603",
+      "src/modules/auth/LoginScreen.tsx": "3f0d2cc0f5d17bc1bcccc55cfb66fab9cbdba4bd29927e23528fe8a572b4cb61",
+      "src/modules/home/HomeScreen.tsx": "bdd6babf39e3a3b6897208eb8267f8e63520b4dd8fcb332d29991dbfd72937e8",
+      "src/modules/impacto/README.md": "d32f93fdad153509b72cc4ba5adab940fdf18d0cb531778bf79f9df75a84e4da",
+      "src/modules/impacto/api/impacto.api.test.ts": "fba0f3f3ec8188868a86ae7bdc746c7924b46b51b06f8f76b6b8814472d80d96",
+      "src/modules/impacto/api/impacto.api.ts": "8537f2b28f369a4edc88143cb037cc75060fe47d1acd7d37a91f76ddf887e754",
+      "src/modules/impacto/api/impacto.contract.test.ts": "c03af8eb99785d4fe662afb6a24599af2856c9fe5324e9073bdbce8f04721853",
+      "src/modules/impacto/api/impacto.contract.ts": "d0e3825f03bdf977fc234ac60b52defb6f1e0730c872c1ce66a919a846595105",
+      "src/modules/impacto/api/impacto.test-fixtures.json": "6334aaeb521ff8161e1e1be7a1da336c087f076a5feb73f26bf0846891d50fa6",
+      "src/modules/impacto/components/ImpactoActions.test.tsx": "13d53a7a5d551b4a42271661a1d099023e8325d82931098216b480ddbe61e0d6",
+      "src/modules/impacto/components/ImpactoActions.tsx": "ad7713ad089fbb418e94e0611dfc58fe3cffb2df67c44457da3c8b11e0025e4b",
+      "src/modules/impacto/components/ImpactoEntry.test.tsx": "b443652d313c3316f3d0491159b0c3adbcf7cccc771d295024465271cfcb70e9",
+      "src/modules/impacto/components/ImpactoEntry.tsx": "db47e738ac69bc62f902de26031b97e2e9051edaf34f7e7a4c34fe0d2cbd8b93",
+      "src/modules/impacto/components/ImpactoFilters.tsx": "f057d1976eb4339adfb322a9ca84a2cf9721f5b7a9b8af10e9c13c4dc579d35e",
+      "src/modules/impacto/components/ImpactoMap.tsx": "26b2a42186887dbe317e6c61106f77991bc1eae1b43dbdab5f95c857f9400569",
+      "src/modules/impacto/components/ImpactoMapPanel.tsx": "9501419ec7a849857352589e98c51848302add3963f87402fc1071789cbc145a",
+      "src/modules/impacto/components/ImpactoRegistroContent.tsx": "00c0388601ee4f890693bbc23f2ed21a277a6a7e6f43423f56c727f2c424c579",
+      "src/modules/impacto/components/ImpactoShare.tsx": "1aa0a19ac71fcebd08e3127c8656da2a77546ca87dec797c696139969259c406",
+      "src/modules/impacto/components/ImpactoSubcampaniaCard.tsx": "a9b7bf17fe8b5f008d435c4820040812b2d729fae007719424f578e13045eb4a",
+      "src/modules/impacto/hooks/useImpactoConsulta.test.ts": "26949ce74b2fa0ee6dc028b32534aeb377f0fcb3564ddc413da9b5fbcdbad5b7",
+      "src/modules/impacto/hooks/useImpactoConsulta.ts": "4f65de6ef384788acf5a20d3bb0796c7353e8a594248ebac46876e7ed506581a",
+      "src/modules/impacto/pages/ImpactoConsultaScreen.tsx": "4c31d056c22f0a276d2fff6cb3461e216d8235ba5368e5d4c73e7d1754753069",
+      "src/modules/impacto/pages/ImpactoPublicScreens.test.tsx": "a187eb302400def735b3bd02fe78305950b863bfee5c9d48f135734b1433855e",
+      "src/modules/impacto/pages/ImpactoRegistroScreen.tsx": "828d001fe78edeaa80d7e442373c52b9fe87d6c9eaa11166a20525dbfa8f992e",
+      "src/modules/impacto/pages/MisRegistrosScreen.test.tsx": "40f40ef85a1dc3455aee706e02c4bd4c5f5fba992033786658fedb0c310f1738",
+      "src/modules/impacto/pages/MisRegistrosScreen.tsx": "d7b61ec293408e9aee89fbcab6378937dafa505425c270a0c4e43f193ea9f992",
+      "src/modules/impacto/types.ts": "53886c5efea123e3fe538829714f397e9b797bdcd2c0502b7441f44e2324ab4e",
+      "src/modules/impacto/utils/consulta.ts": "dd46e753f32223b7141f938afc6e77f1fe798f27f78b0179f9e5a827a950c94c",
+      "src/modules/impacto/utils/lastCampaign.test.ts": "c577211d973264c79c1db9e380de43d43e06322698732a1c4e7faf789313c661",
+      "src/modules/impacto/utils/lastCampaign.ts": "7eaa453f0cb031b48a8882f8d581c278c2a54cddab284f91bdfbfbc4481009bc",
+      "src/modules/participacion/README.md": "e9565fdf5544217073fc162bec836b94b6caf028a97b0608f50e3e98bda2e07d",
+      "src/modules/participacion/api/registro.api.test.ts": "5c50817aa724cf52ddb665a64a1f2b92d952edd90bbb91863d3dad94a45b6749",
+      "src/modules/participacion/api/registro.api.ts": "b625dc9c07eb2b33b8fee5fde54c9f06cb8119c49d1a045fdc36395ed2634bed",
+      "src/modules/participacion/components/RegistroScopeSelector.tsx": "8f8a644eacae49026bfb1d402f8d4b0e5d07f5263ca0a674c5d550bf7199eaed",
+      "src/modules/participacion/registro/pages/DetallePropioScreen.test.tsx": "4f03ee8195e1d429939cab01eea9e09504000355ab930505b9a1e1efe308bf59",
+      "src/modules/participacion/registro/pages/DetallePropioScreen.tsx": "5130a04fbbc9c1e82ceb3e251f97810172ba2e21c8559ba2ac4c65a1f26191a5",
+      "src/routes/GuestRoute.tsx": "447fcc796c3ccb186d7af9dba8cc1b94444162fc542b24cf59589df21d3cc83b",
+      "src/routes/impactAccess.test.tsx": "a77b47add9570ae851347eccefc71eeaeb83592e8e65df2a02cf3d485f82760e",
+      "src/types/navigation.ts": "658b562cbec24f7fca6e17d04a767aa7494bedfd366e3b741fc4abe9b088b99b",
+      "src/utils/appAccess.ts": "55cf1ef24b4593c2e48c79949fd832bf453765982d98e5fc236f0f8b02d55c9e"
+    }
+  },
+  "backend": {
+    "head": "10e5dc59ee4eec9b94142fa7b2aeadaafc838263",
+    "contrato": "OpenAPI1.3.0/SQL081",
+    "arbol_no_versionado": true,
+    "sha256": {
+      "docs/pa-int05-contrato.md": "46985747cabe2aa725aa4df03b757f5ccab85b7d0c1603d7275182e02a8d74d3",
+      "docs/pa-int05-ejemplos.json": "6334aaeb521ff8161e1e1be7a1da336c087f076a5feb73f26bf0846891d50fa6",
+      "docs/pa-int02c-openapi.json": "d612f22d67399f5ff9cc4bdb0d04ca3d325f31ac878d24da8d8e627e40466756",
+      "migrations/081_pa_int05_consulta.sql": "108d3d9f7d17ef31f09dac79cc4e2fbc7cb0ebdc2b567aa031094b63a49d7233",
+      "src/impact/application/impacto-consulta.service.ts": "20f929a1ce7d39b1f4e5fd2a767bdc76b53061ff11633c40ee6a174ae5bb5e88",
+      "src/impact/domain/policies/impacto-proyeccion.policy.ts": "79da28d5556319775462348be816949f6f2ddb852ecb1ae048b853e23c9961b1"
+    }
+  },
+  "runtime": {
+    "node": "v24.19.0",
+    "npm": "12.0.2",
+    "postgresql": "14.24 (Postgres.app)",
+    "db": "PostGIS/objetos privados del fixture INT05; C usa clúster aparte"
+  },
+  "verificacion": {
+    "tests": {
+      "comando": "TMPDIR=/private/tmp npm run test -- --maxWorkers=2",
+      "suites": 48,
+      "pruebas": 691,
+      "exit_code": 0
+    },
+    "lint": {
+      "comando": "npm run lint",
+      "exit_code": 0
+    },
+    "build": {
+      "comando": "TMPDIR=/private/tmp npm run build",
+      "typescript": true,
+      "pwa_precache_entries": 130,
+      "exit_code": 0
+    },
+    "integrados": {
+      "impacto": 31,
+      "registro": 30,
+      "reposicion": 18,
+      "gestion": 20,
+      "sesion": 8,
+      "sql_recibos": 4,
+      "total": 111
+    },
+    "diff_check": true,
+    "enlaces_locales": 308,
+    "jwt_en_evidencia": false
+  },
+  "entornos": {
+    "impacto": "http://127.0.0.1:3305 / PWA5175; recibido del chat backend, conserva ciclo de vida aparte",
+    "gestion": "API3304/PWA5176; creados para esta regresión",
+    "gestion_cluster_detenido": true,
+    "perfil": "Único adaptador sintético de arranque; capacidades/registro/cargas/recibos/lecturas usan HTTP/SQL reales del fixture",
+    "gestion_directorio_eliminado": true
+  },
+  "incidentes_resueltos": [
+    "TMPDIR heredado sin permiso; se usó /private/tmp.",
+    "Una prueba INT04 agotó5s en corrida concurrente; corrida completa2 workers aprobada.",
+    "Expectativas del runner corregidas para fechas reales/revalidación de preferencia; no se alteraron datos para satisfacerlas."
+  ],
+  "limites": [
+    "Sin commit/push INT05 ni despliegue/piloto.",
+    "SQL081 y antecedentes remotos/Storage/URLs/CDN sin cotejo nuevo.",
+    "WebAuthn real y revisión humana de UX/campo pendientes.",
+    "No se modificó backend desde este chat; fixtures exclusivamente sintéticos.",
+    "Regresiones INT04/reposición cambian el dataset después de verificar la base50."
+  ]
+}

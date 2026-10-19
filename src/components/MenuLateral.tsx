@@ -35,7 +35,11 @@ const FOCUSABLE_ELEMENT_SELECTOR = [
 function MenuLateral({ isOpen, onClose }: Props) {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const items = hasInternalAppAccess(user?.rol) ? ITEMS : []
+  const items: DrawerItem[] = [
+    { label: 'Impacto público', path: '/impacto', icon: 'map' },
+    { label: 'Mis registros', path: '/app/participacion/mis-registros', icon: 'leaf' },
+    ...(hasInternalAppAccess(user?.rol) ? ITEMS : []),
+  ]
   const {
     canInstall,
     install,

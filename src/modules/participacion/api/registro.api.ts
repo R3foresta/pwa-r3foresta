@@ -83,7 +83,8 @@ export class RegistroParticipacionService {
     return terminal(await identityRequest(identity, `/participacion/comandos/${identity.comando_id}?${operationQuery}`, { signal }), identity, true)
   }
   static async detallePropio(actorId: string, registroId: string, signal?: AbortSignal): Promise<DetallePropioRegistroLectura> {
-    return validarDetallePropioRegistro(successful(await actorRequest(actorId, `/plantaciones/${validarId(registroId)}/detalle-propio`, { signal })), actorId, registroId)
+    // La lectura histórica usa la sesión vigente; no depende de capacidades operativas.
+    return validarDetallePropioRegistro(successful(await requestPrivada(`/plantaciones/${validarId(registroId)}/detalle-propio`, { signal })), validarId(actorId), registroId)
   }
   // Endpoint binario público de D: no añadir Bearer ni abrir originales/previews privados.
   static imagenPublicaUrl(evidenciaId: string): string { return `${PARTICIPACION_API_URL}/impact/imagenes/${validarId(evidenciaId)}` }
