@@ -6,6 +6,7 @@ Entrada de trabajo: [README](../README.md). Pendientes vigentes: [auditoría](..
 
 | Área | Informe | Alcance |
 | --- | --- | --- |
+| Correcciones INT07 · preparación | [Cotejo de componentes y contratos](PREPARACION_CORRECCIONES_INT07.md), [bocetos estáticos](bocetos/INT07_CORRECCIONES.html) | Preparación documental del 20 de octubre; backend parcial, sin integración de rutas candidatas. FE01–FE08 pendientes; exige APIs verificadas, ejemplos y fixture reproducible. |
 | Impacto y Mis registros INT05 | [QA y reproducción](QA_IMPACTO_INT05.md), [resultados](qa/pa-int05/resultados.json), [versiones](qa/pa-int05/versiones.json) | Consulta pública/propia, preferencias y regresión integrada local de INT04/INT06; sin despliegue ni piloto. [Cotejo previo](PREPARACION_IMPACTO_INT05.md) conservado como antecedente. |
 | Registro participante INT04 | [QA y reproducción](QA_REGISTRO_PARTICIPANTE_INT04.md), [registro/DB](qa/pa-int04/resultados.json), [reposición](qa/pa-int04/reposicion.json), [fotos](qa/pa-int04/fotos.json), [versiones](qa/pa-int04/versiones.json) | Tres pasos, cargas/recuperación real con D/PostGIS, aislamiento y regresión interna local. |
 | Gestión de acceso INT06 | [QA y reproducción](QA_GESTION_ACCESOS_INT06.md), [resultados](qa/pa-int06/resultados.json), [DB](qa/pa-int06/db.json), [sesión](qa/pa-int06/session.json) | C04–C09 con backend/PostgreSQL sintéticos reales; perfil de arranque adaptado, FE06 parcial. |

@@ -1,6 +1,6 @@
 # Auditoría y pendientes del frontend
 
-Corte: 18 de octubre de 2026. Lista única de deuda frontend. No sustituye el [tablero global](../r3foresta-docs/specs/plantacion/participacion-aliada/implementacion/README.md) ni acredita estado del backend desplegado.
+Corte: 20 de octubre de 2026. Lista única de deuda frontend. No sustituye el [tablero global](../r3foresta-docs/specs/plantacion/participacion-aliada/implementacion/README.md) ni acredita estado del backend desplegado.
 
 El [histórico de auditoría](docs/archivo/FRONTEND_AUDIT_2026-10-15.md) conserva diagnósticos, cierres y resultados anteriores. Se retiraron de esta entrada los checklists repetidos y diagnósticos de módulos que ya no describían su implementación. Un hallazgo abierto se mantiene pendiente hasta verificar su cierre; este ajuste documental no lo resuelve por sí solo.
 
@@ -10,6 +10,7 @@ Entrega INT06 publicada en PWA `62f55dc`: 32 suites/445 tests, lint y build/Type
 
 | Prioridad | ID | Estado | Qué falta |
 | --- | --- | --- | --- |
+| Alta | AUD-022 | PENDIENTE · contrato INT07 | Coordinar schemas cerrados, catálogo de comandos y lecturas por audiencia al recibir APIs verificadas, ejemplos y fixture. Cotejo/bocetos preparados; FE01–FE08 pendientes. |
 | Alta | AUD-021 | PENDIENTE externo | WebAuthn real, entorno externo y QA completo del incremento; Impacto/registro/acceso ya verificados localmente. |
 | Alta | AUD-020 | CERRADO local | Impacto público/Mis registros implementados con proyecciones INT05 y verificación sintética; evidencia externa en AUD-021. |
 | Crítica | AUD-013 | PENDIENTE de verificación externa | Acreditar la publicación/regresión de identidad y autoridad corregidas en backend. |
@@ -24,6 +25,12 @@ Entrega INT06 publicada en PWA `62f55dc`: 32 suites/445 tests, lint y build/Type
 El orden de ejecución entre repositorios se decide en el tablero oficial; esta tabla prioriza riesgos de frontend, no introduce nuevas dependencias de producto.
 
 ## Pendientes y criterio de cierre
+
+### AUD-022 — Compatibilidad de contratos para correcciones INT07
+
+Inspección estática del 20 de octubre, PWA `a3a4b28`: `validarCapacidades` exige ocho acciones/tres capacidades globales; los recibos/stores de acceso e inicial admiten catálogos cerrados. Los detalles INT04/05 exigen relación propia/cantidades positivas y objetos exactos: contexto ajeno, ficha mínima de revertido o snapshots nuevos no son compatibles por un cast. No es una regresión reproducida de la base actual; es un riesgo de la futura integración INT07. [Ubicaciones, contratos y bocetos](docs/PREPARACION_CORRECCIONES_INT07.md).
+
+Cerrar con entrega backend verificada/OpenAPI/ejemplos/fixture reproducible, adaptadores y validadores coordinados, lecturas específicas por audiencia y regresión INT04/05/06. Reutilizar transporte/ciclo/locks; no enviar rutas candidatas ni presentar mocks como correcciones. Backend sigue parcial y FE01–FE08 pendientes; este cotejo no completa ninguna tarea de integración.
 
 ### AUD-021 — QA integrado de gestión contextual
 

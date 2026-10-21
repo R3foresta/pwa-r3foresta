@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; form-action 'none'; base-uri 'none'">
+  <title>INT07 · Bocetos de correcciones excepcionales</title>
+  <style>
+    :root { color-scheme: light; --brand:#164d2f; --soft:#f0f6f2; --line:#d9e8dd; --ink:#17251d; --muted:#52665a; --warning:#fff5d9; --danger:#a42626; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:#f5f7f5; color:var(--ink); font:16px/1.5 system-ui,-apple-system,sans-serif; }
+    header, main, footer { width:min(1200px,100%); margin:auto; padding:28px; }
+    header { padding-bottom:12px; }
+    h1 { font-size:clamp(1.7rem,4vw,2.5rem); letter-spacing:-.04em; line-height:1.15; margin:12px 0; }
+    h2 { font-size:1.28rem; line-height:1.25; margin:8px 0 14px; }
+    h3 { font-size:1rem; margin:20px 0 8px; }
+    p { margin:8px 0 14px; }
+    a { color:var(--brand); text-underline-offset:3px; }
+    a:focus-visible { outline:3px solid #5f9a78; outline-offset:4px; }
+    nav { display:flex; flex-wrap:wrap; gap:8px; margin-top:20px; }
+    nav a { padding:8px 12px; border:1px solid var(--line); background:white; border-radius:12px; text-decoration:none; }
+    main { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:start; gap:24px; }
+    section { scroll-margin-top:20px; min-width:0; }
+    .screen { background:white; border:1px solid var(--line); border-radius:24px; padding:24px; box-shadow:0 10px 30px #00000008; }
+    .wide { grid-column:1/-1; }
+    .overline { font-size:.73rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+    .prototype { padding:8px 10px; margin-bottom:18px; border-left:3px solid #af7b10; background:var(--warning); font-size:.78rem; color:#624a12; }
+    .muted { color:var(--muted); font-size:.9rem; }
+    .badge { display:inline-block; padding:3px 9px; border-radius:999px; background:var(--soft); color:var(--brand); font-weight:700; font-size:.73rem; }
+    .badge.warning { background:var(--warning); color:#795800; }
+    .badge.danger { background:#fff0f0; color:var(--danger); }
+    .row { display:flex; justify-content:space-between; gap:12px; align-items:start; padding:10px 0; border-bottom:1px solid #edf0ed; }
+    .row:last-child { border-bottom:0; }
+    .row > :last-child { text-align:right; }
+    .stack { display:grid; gap:12px; }
+    .split { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+    .box { padding:16px; border:1px solid var(--line); border-radius:16px; background:#fafcfb; min-width:0; }
+    .notice { padding:14px 16px; border-radius:14px; background:var(--soft); margin:14px 0; }
+    .notice.warning { background:var(--warning); }
+    .notice.danger { background:#fff0f0; }
+    .notice p:last-child { margin-bottom:0; }
+    label { display:block; font-size:.88rem; font-weight:650; margin:16px 0 6px; }
+    input:not([type=checkbox]), textarea { display:block; font:inherit; color:var(--ink); width:100%; padding:11px 12px; border:1px solid #b8cbbf; border-radius:12px; background:#fff; }
+    textarea { resize:none; min-height:76px; }
+    input:disabled { color:var(--ink); opacity:1; }
+    input[type=checkbox] { accent-color:var(--brand); margin:4px 8px 0 0; width:17px; height:17px; flex:none; }
+    .check { display:flex; align-items:start; margin:12px 0; font-weight:500; }
+    .actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:20px; }
+    button { font:inherit; font-size:.88rem; font-weight:700; padding:12px 16px; border-radius:14px; border:1px solid var(--brand); background:var(--brand); color:white; }
+    button:disabled { cursor:not-allowed; opacity:.58; }
+    button.secondary { background:white; color:var(--brand); border-color:var(--line); }
+    button.danger { background:var(--danger); border-color:var(--danger); }
+    dl { margin:0; }
+    dt { font-size:.8rem; color:var(--muted); }
+    dd { margin:0 0 12px; font-weight:650; overflow-wrap:anywhere; }
+    table { width:100%; border-collapse:collapse; font-size:.88rem; }
+    th,td { text-align:left; padding:10px 5px; vertical-align:top; border-bottom:1px solid #edf0ed; }
+    th { color:var(--muted); font-size:.75rem; }
+    td.num, th.num { text-align:right; }
+    ol,ul { padding-left:20px; }
+    li { margin:6px 0; }
+    .timeline { border-left:2px solid var(--line); padding-left:16px; }
+    .timeline article { padding:4px 0 10px; }
+    .code { font-family:ui-monospace,monospace; font-size:.78rem; overflow-wrap:anywhere; }
+    .audience { border:2px solid var(--line); border-radius:18px; padding:20px; }
+    footer { color:var(--muted); font-size:.85rem; padding-top:8px; }
+    @media(max-width:760px) { header,main,footer { padding:18px; } main,.split { grid-template-columns:1fr; } .wide { grid-column:auto; } .screen { padding:18px; } h2 { font-size:1.2rem; } nav { gap:6px; } nav a { font-size:.82rem; } }
+    @media print { body { background:white; } nav { display:none; } main { display:block; } .screen { break-inside:avoid; margin-bottom:20px; box-shadow:none; } button { opacity:1!important; } }
+  </style>
+</head>
+<body>
+  <header>
+    <span class="overline">R3foresta · preparación frontend · INT07</span>
+    <h1>Correcciones excepcionales<br>y reversiones auditables</h1>
+    <p>Bocetos estáticos para cotejar componentes y contrato. Todas las personas, identificadores y cifras son sintéticos. No son capturas de la aplicación ni acreditan integración o QA.</p>
+    <div class="notice warning"><strong>Boceto — integración pendiente; FE01–FE08 pendientes.</strong><br>Backend parcial: la integración comenzará con APIs verificadas, ejemplos y fixture reproducible. Los controles de estas pantallas están deshabilitados.</div>
+    <nav aria-label="Bocetos">
+      <a href="#contexto">01 Contexto</a><a href="#cantidad">02 Cantidad</a><a href="#observaciones">03 Observaciones</a><a href="#participantes">04 Participantes</a><a href="#duplicado">05 Duplicado</a><a href="#reversiones">06 Reversiones</a><a href="#confirmacion">07 Confirmación</a><a href="#recuperacion">08 Recuperación</a><a href="#audiencias">09 Audiencias</a><a href="#estados">10 Estados</a>
+    </nav>
+  </header>
+  <main>
+    <section id="contexto" class="screen">
+      <div class="prototype">Boceto — integración pendiente; FE01–FE08 pendientes</div>
+      <span class="overline">01 · revisión privada del ejecutor</span>
+      <h2>Revisar un registro o evento exacto</h2>
+      <label for="objeto">Identificador del registro o evento</label>
+      <input id="objeto" readonly value="Registro 900101">
+      <div class="actions"><button disabled type="button">Consultar contexto</button></div>
+      <p class="muted">El servidor identifica el tipo real y verifica ámbito y autoridad. Esta entrada no abre el detalle propio de otra persona.</p>
+      <div class="row"><strong>Subcampaña sintética Norte</strong><span class="badge">ACTIVA</span></div>
+      <dl><dt>Registro / responsable original</dt><dd>900101 · Persona A</dd><dt>Revisiones consultadas</dt><dd>Registro «2» · grupo «2»</dd></dl>
+      <table><thead><tr><th>Especie</th><th class="num">Original</th><th class="num">Efectiva</th></tr></thead><tbody><tr><td>Especie A</td><td class="num">10</td><td class="num">12</td></tr></tbody></table>
+      <div class="notice">Sin bajas ni reposiciones históricas en este ejemplo. Consultar el contexto no reserva revisión, autoridad o saldo.</div>
+      <h3>Acciones informadas por el servidor</h3>
+      <div class="actions"><button disabled type="button">Corregir cantidad</button><button disabled type="button">Corregir participantes</button><button disabled type="button" class="secondary">Revisar otro caso</button></div>
+      <p class="muted">La disponibilidad y las razones dependen de las capacidades por caso entregadas por backend. No se deducen de ser autor ni de una etiqueta local de rol.</p>
+      <h3>Historial auditable autorizado</h3>
+      <div class="timeline"><article><strong>Cantidad: 10 → 12</strong><br><span class="muted">Persona administradora A · 19/10/2026<br>Motivo sintético: transcripción incompleta de dos plantas.</span></article><article><strong>Registro original: 10 plantas</strong><br><span class="muted">Original y evidencia conservados.</span></article></div>
+    </section>
+
+    <section id="cantidad" class="screen">
+      <div class="prototype">Boceto — integración pendiente; FE01–FE08 pendientes</div>
+      <span class="overline">02 · propuesta por especie</span>
+      <h2>Corregir cantidad</h2>
+      <p class="muted">Registro 900101 · subcampaña sintética Norte · ACTIVA</p>
+      <div class="row"><span>Cantidad original</span><strong>10 plantas</strong></div>
+      <div class="row"><span>Cantidad efectiva actual</span><strong>12 plantas</strong></div>
+      <label for="cantidad-a">Cantidad propuesta · Especie A</label><input id="cantidad-a" readonly value="10">
+      <div class="notice"><strong>Diferencia propuesta: −2 plantas.</strong><br>La reducción liberaría 2 unidades de consumo trazable de la subcampaña, si backend confirma que es reversible. Distribución y saldo final provienen del servidor.</div>
+      <label for="motivo-cantidad">Motivo de corrección</label><textarea id="motivo-cantidad" readonly>Se registraron dos plantas de más; se verificó su disponibilidad física.</textarea>
+      <label class="check"><input type="checkbox" checked disabled><span>Confirmo que la reducción corresponde a un error del registro.</span></label>
+      <label class="check"><input type="checkbox" checked disabled><span>Confirmo que las 2 plantas de diferencia están físicamente disponibles.</span></label>
+      <p class="muted">Mismas especies, cantidades enteras positivas y ausencia de bajas/reposiciones históricas. No hay selector de vivero o asignaciones. Cero no es un ajuste simple.</p>
+      <div class="actions"><button disabled type="button">Revisar corrección</button></div>
+      <div class="box"><strong>Variante de aumento · escenario independiente</strong><p class="muted">Efectiva 10 → propuesta 12; saldo elegible informado por el servidor 5. Efecto esperado tras confirmación: disponible 3. La lectura previa no garantiza que siga disponible al ejecutar.</p></div>
+    </section>
+
+    <section id="observaciones" class="screen">
+      <div class="prototype">Boceto — integración pendiente; FE01–FE08 pendientes</div>
+      <span class="overline">03 · ADMIN global</span>
+      <h2>Corregir observaciones</h2>
+      <p class="muted">Registro 900101 · ACTIVA · solo el campo admitido</p>
+      <div class="box"><strong>Valor efectivo actual</strong><p>Texto sintético: se completó el sector este.</p></div>
+      <label for="texto-observaciones">Observaciones propuestas</label><textarea id="texto-observaciones" readonly>Texto sintético: se completó el sector oeste.</textarea>
+      <label for="motivo-observaciones">Motivo</label><textarea id="motivo-observaciones" readonly>Se corrigió la referencia escrita del sector.</textarea>
+      <div class="notice">Conserva original y valor anterior. No cambia fecha, GPS, responsable, cantidades o stock.</div>
+      <div class="actions"><button disabled type="button">Revisar corrección</button></div>
+      <h3>Variante: administrador contextual</h3>
+      <div class="box"><strong>Observaciones restringidas</strong><p class="muted">No ofrece esta corrección. Su auditoría administrativa puede mostrar caso, actor y fecha; oculta ambos textos y el motivo de esta corrección. No abre fotos privadas ajenas.</p></div>
+    </section>
+
+    <section id="participantes" class="screen">
+      <div class="prototype">Boceto — integración pendiente; FE01–FE08 pendientes</div>
+      <span class="overline">04 · participación real pasada</span>
+      <h2>Corregir participantes</h2>
+      <div class="box"><strong>Responsable original: Persona A</strong><br><span class="muted">Conservado; fuera de la lista editable.</span></div>
+      <label for="buscar-persona">Buscar por ID exacto o nombre</label><input id="buscar-persona" readonly value="Persona D">
+      <p class="muted">Nombre desde 3 caracteres o ID exacto. Búsqueda histórica autorizada, sin directorio abierto o búsqueda por contacto.</p>
+      <div class="row"><span><strong>Persona D</strong><br><span class="muted">Nombre actual · cuenta inactiva</span></span><span class="badge warning">Añadir a propuesta</span></div>
+      <table><thead><tr><th>Lista anterior</th><th>Lista propuesta</th></tr></thead><tbody><tr><td>Persona B<br>Persona C</td><td>Persona B · conservada<br>Persona D · añadir<br>Persona E · restituir</td></tr></tbody></table>
+      <p class="muted">Retirar: Persona C, incluida por error. Restituir Persona E conserva su snapshot histórico. Alta de Persona D conserva procedencia y fecha de captura de la corrección; afiliación histórica no disponible.</p>
+      <label for="motivo-participantes">Motivo</label><textarea id="motivo-participantes" readonly>Se cotejó la participación real del trabajo sintético y se corrigió la lista.</textarea>
+      <div class="notice warning"><strong>Efecto sobre lectura propia</strong><br>Persona C pierde Mis registros, detalle e historial propio si no conserva autoría u otra relación válida. Añadir una cuenta inactiva reconoce historia: no reactiva la cuenta ni concede permiso operativo.</div>
+      <div class="actions"><button disabled type="button">Revisar lista completa</button></div>
+      <p class="muted">No cambia responsable, cantidades o stock. Bajas/reposiciones no bloquean por sí mismas esta corrección.</p>
+    </section>
+
+    <section id="duplicado" class="screen">
+      <div class="prototype">Boceto — integración pendiente; FE01–FE08 pendientes</div>
+      <span class="overline">05 · dos objetos identificados</span>
+      <h2>Revertir un duplicado</h2>
+      <div class="box"><span class="badge danger">Se revierte</span><h3>Registro 900202 · 30 plantas</h3><p class="muted">Persona responsable B · subcampaña sintética Norte</p></div>
+      <label for="vigente">Registro válido que permanece</label><input id="vigente" readonly value="900201">
+      <div class="box"><span class="badge">Permanece vigente</span><h3>Registro 900201 · 30 plantas</h3><p class="muted">Persona responsable A · misma subcampaña, fecha y especies compatibles según backend</p></div>
+      <label for="motivo-duplicado">Motivo y declaración del mismo trabajo</label><textarea id="motivo-duplicado" readonly>Ambos registros sintéticos representan el mismo trabajo. El registro 900201 es el que debe permanecer vigente.</textarea>
+      <div class="notice">Escenario aislado: entrega 100, dos registros de 30. Después de una reversión confirmada: total efectivo 30 y disponible 70. Solo se compensa el consumo efectivo pendiente del duplicado una vez.</div>
+      <p class="muted">Servidor verifica ambos registros, sus revisiones, compatibilidad y dependencias. Sin referencia válida o ante referencia circular, no hay corrección parcial. Ambos originales y evidencias se conservan.</p>
+      <div class="actions"><button disabled type="button" class="danger">Revisar reversión del duplicado</button></div>
+    </section>
+
+    <section id="reversiones" class="screen">
+      <div class="prototype">Boceto — integración pendiente; FE01–FE08 pendientes</div>
+      <span class="overline">06 · confirmaciones diferentes por caso</span>
+      <h2>Revertir un hecho registrado por error</h2>
+      <div class="stack">
+        <div class="box"><h3>La plantación no ocurrió</h3><p>Registro inicial 900301 · 10 plantas efectivas.</p><p class="muted">Excluye el registro del impacto efectivo y compensa su consumo pendiente trazable, si no existen dependencias incompatibles. Conserva original y fotos.</p><button disabled type="button" class="danger">Revisar registro erróneo</button></div>
+        <div class="box"><h3>La baja se registró por error</h3><p>Evento exacto 900401 · 4 plantas.</p><p class="muted"><strong>Revierte solo mortalidad efectiva y recalcula el grupo. No libera stock disponible para plantar.</strong> No anula una muerte real ni ofrece alta de mortandad. El escritor real y sus carreras siguen pendientes en backend.</p><button disabled type="button" class="danger">Revisar baja errónea</button></div>
+        <div class="box"><h3>La reposición se registró por error</h3><p>Registro 900501 · origen 900301 · 5 plantas.</p><p class="muted"><strong>Retira aporte efectivo del grupo y compensa consumo hacia sus asignaciones de REPOSICION.</strong> No lo traslada a stock inicial ni devuelve al vivero. Origen y demás hechos se conservan.</p><button disabled type="button" class="danger">Revisar reposición errónea</button></div>
+      </div>
+      <label for="motivo-reversion">Motivo del caso elegido</label><textarea id="motivo-reversion" readonly>Motivo sintético pendiente de revisar para el objeto exacto.</textarea>
+      <div class="notice warning">Cada caso usa su contexto y revisiones. Una dependencia incompatible rechaza la operación completa. No hay borrado físico, cascada ni reapertura.</div>
+    </section>
+
+    <section id="confirmacion" class="screen">
+      <div class="prototype">Boceto — integración pendiente; FE01–FE08 pendientes</div>
+      <span class="overline">07 · contenido para ConfirmDialog</span>
+      <h2>Confirmar corrección de cantidad</h2>
+      <p>Revisa el objeto y la propuesta antes de confirmar. El backend vuelve a verificar autoridad, revisiones y efectos.</p>
+      <dl><dt>Ámbito y objeto</dt><dd>Subcampaña sintética Norte · registro 900101</dd><dt>Ejecutor / responsable conservado</dt><dd>Persona administradora A / Persona A</dd><dt>Cambio</dt><dd>Especie A · 12 → 10 UNIDAD</dd><dt>Revisiones de la propuesta</dt><dd>Registro «2» · grupo «2»</dd><dt>Motivo</dt><dd>Se registraron dos plantas de más; se verificó su disponibilidad física.</dd><dt>Declaraciones</dt><dd>Error del registro y disponibilidad física de 2 plantas confirmados</dd><dt>Efecto esperado</dt><dd>Reducir consumo trazable en 2; saldo y distribución finales confirmados por servidor</dd><dt>Original y evidencia</dt><dd>Se conservan; este caso no solicita una carga de fotos nueva</dd><dt>Fecha de corrección</dt><dd>Será confirmada por el servidor</dd></dl>
+      <div class="notice warning">Cambiar objeto, caso o contenido invalida esta revisión. Una revisión obsoleta requiere consultar, revisar y confirmar otra vez.</div>
+      <div class="actions"><button disabled type="button" class="secondary">Volver a la propuesta</button><button disabled type="button">Confirmar corrección</button></div>
+      <p class="muted">Cancelar no escribe. Al integrar: conservar foco, Escape y retorno de foco del diálogo existente. Persistir la intención privada e inmutable con UUID antes de enviar.</p>
+    </section>
+
+    <section id="recuperacion" class="screen">
+      <div class="prototype">Boceto — integración pendiente; FE01–FE08 pendientes</div>
+      <span class="overline">08 · mismo intento y cuenta</span>
+      <h2>Resultado no confirmado</h2>
+      <span class="badge warning">Pendiente de conciliación</span>
+      <p>No se pudo confirmar el resultado del intento. Puede haberse guardado. Recupera su resultado antes de intentar otra corrección.</p>
+      <dl><dt>Cuenta original</dt><dd>Persona administradora A</dd><dt>Objeto e intención</dt><dd>Registro 900101 · corregir cantidad</dd><dt>Identidad del comando sintético</dt><dd class="code">00000000-0000-4000-8000-000000009001</dd></dl>
+      <div class="actions"><button disabled type="button">Consultar resultado del mismo intento</button><button disabled type="button" class="secondary">Reenviar mismo intento</button></div>
+      <p class="muted">Reenvío solo según contrato: misma identidad, objeto, payload y revisiones originales. Timeout, 5xx, 202 o 404 inconcluso conservan el intento. No crean otra clave ni afirman rechazo.</p>
+      <div class="box"><h3>Se retiró la autoridad después del envío</h3><p class="muted">La cuenta original activa puede recuperar su recibo histórico. Esto no abre el contexto administrativo ni habilita una escritura nueva. Una cuenta distinta no muestra ni recupera ese pendiente.</p></div>
+      <h3>Variantes de resultado</h3>
+      <div class="stack">
+        <div class="notice"><strong>Corrección confirmada.</strong><p>Recibo terminal validado. Consultar versión efectiva; si falla esa lectura, indicar actualización pendiente sin repetir la escritura.</p></div>
+        <div class="notice"><strong>Sin cambios.</strong><p>Terminal validado sin efecto nuevo, historial nuevo o incremento de versión. No mostrar una corrección creada.</p></div>
+        <div class="notice danger"><strong>Corrección rechazada.</strong><p>Solo tras recibo terminal validado. Conservar propuesta, mostrar razón y exigir revisión explícita antes de una intención nueva.</p></div>
+      </div>
+    </section>
+
+    <section id="audiencias" class="screen wide">
+      <div class="prototype">Boceto — integración pendiente; FE01–FE08 pendientes</div>
+      <span class="overline">09 · contenido separado por audiencia</span>
+      <h2>Una reversión y sus lecturas autorizadas</h2>
+      <div class="split">
+        <div>
+          <h3>Ficha pública mínima</h3>
+          <article class="audience" aria-label="Boceto de ficha pública">
+            <span class="overline">R3foresta · consulta pública</span>
+            <h2>Registro revertido</h2>
+            <p>Este registro ya no forma parte del impacto efectivo.</p>
+            <button disabled type="button" class="secondary">Ver registro vigente</button>
+          </article>
+          <p class="muted">La referencia solo aparece si es duplicado y el registro vigente sigue siendo públicamente elegible. Esta ficha no muestra actor, motivo, historia, fotos, cantidades anteriores, saldos ni contactos.</p>
+        </div>
+        <div>
+          <h3>Detalle propio con relación válida</h3>
+          <article class="audience" aria-label="Boceto de estado propio autorizado">
+            <span class="badge danger">REVERTIDO</span><h2>Registro 900202</h2>
+            <div class="row"><span>Cantidad original</span><strong>30</strong></div><div class="row"><span>Cantidad efectiva</span><strong>0</strong></div>
+            <p>Registro vigente de referencia: 900201</p>
+            <h3>Historial propio reducido</h3><p class="muted">Duplicado · Persona administradora A<br>19/10/2026 · revisión «0» → «1»</p>
+            <p class="muted">El recibo original conserva las 30 plantas confirmadas entonces. No contiene el estado efectivo actual.</p>
+          </article>
+          <p class="muted">La relación autor/participante efectivo se revalida. Una retirada por participación errónea sin otra relación válida elimina este acceso; no se sustituye con acceso administrativo ajeno. Auditoría detallada solo para ejecutor autorizado.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="estados" class="screen wide">
+      <div class="prototype">Boceto — integración pendiente; FE01–FE08 pendientes</div>
+      <span class="overline">10 · estados de lectura y bloqueo</span>
+      <h2>Mensajes que no deben confundirse</h2>
+      <div class="split">
+        <div class="box"><strong>Cargando contexto</strong><p class="muted">Consultando el registro exacto. Sin acciones confirmables hasta tener lectura autorizada y completa.</p></div>
+        <div class="box"><strong>Historial vacío válido</strong><p class="muted">No hay correcciones registradas en la lectura autorizada. Un fallo de red no se presenta como historial vacío.</p></div>
+        <div class="box"><strong>No se pudo consultar</strong><p class="muted">Error recuperable de lectura. Permite volver a consultar; no infiere saldo cero, ausencia de permisos o registro inexistente.</p></div>
+        <div class="box"><strong>Recurso no disponible</strong><p class="muted">Mensaje uniforme para no visible/inexistente. No expone datos de otro ámbito ni abre el detalle propio como alternativa.</p></div>
+        <div class="box"><strong>El contexto cambió</strong><p class="muted">Consultar y revisar nuevamente por cambio de revisión, autoridad, estado o dependencias. Conservar propuesta privada sin renovar silenciosamente el intento antiguo.</p></div>
+        <div class="box"><strong>Caso no soportado: sigue sin resolver</strong><p class="muted">Fecha, GPS, especies, responsable u otro campo no admitido requieren el canal humano acordado. Informarlo no crea corrección, ticket, saldo ni reapertura.</p></div>
+        <div class="box"><strong>Subcampaña cerrada</strong><p class="muted">Contexto/historial solo con autoridad de lectura vigente; acciones de corrección deshabilitadas incluso para ADMIN global. No ofrece reapertura.</p></div>
+        <div class="box"><strong>Almacenamiento o exclusión no disponibles</strong><p class="muted">No confirmar otra escritura si no puede conservarse la intención o coordinar pestañas. No sustituir el motor durable por un botón deshabilitado.</p></div>
+      </div>
+    </section>
+  </main>
+  <footer>
+    <p>Corte de preparación: 20 de octubre de 2026. Las cifras de pantallas independientes son escenarios de diseño, no un fixture ejecutable. Los textos de efecto son expectativas sujetas a la respuesta verificada del backend.</p>
+    <p>Fuentes de diseño: PA-T-INT07; PA-S04; contrato candidato backend §§2, 4, 5 y 5.1. No hay endpoints enlazados, JavaScript, formularios enviables, recursos remotos o persistencia en este archivo. Ningún boceto acredita FE01–FE08.</p>
+  </footer>
+</body>
+</html>
