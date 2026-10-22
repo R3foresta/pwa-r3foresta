@@ -10,6 +10,7 @@ Entrega INT06 publicada en PWA `62f55dc`: 32 suites/445 tests, lint y build/Type
 
 | Prioridad | ID | Estado | Qué falta |
 | --- | --- | --- | --- |
+| Media | AUD-023 | PENDIENTE · aceptación UX | Impacto recompuesto con componentes existentes; completar revisión humana del recorrido público/participante y verificación externa. |
 | Alta | AUD-022 | PENDIENTE · contrato INT07 | Coordinar schemas cerrados, catálogo de comandos y lecturas por audiencia al recibir APIs verificadas, ejemplos y fixture. Cotejo/bocetos preparados; FE01–FE08 pendientes. |
 | Alta | AUD-021 | PENDIENTE externo | WebAuthn real, entorno externo y QA completo del incremento; Impacto/registro/acceso ya verificados localmente. |
 | Alta | AUD-020 | CERRADO local | Impacto público/Mis registros implementados con proyecciones INT05 y verificación sintética; evidencia externa en AUD-021. |
@@ -25,6 +26,10 @@ Entrega INT06 publicada en PWA `62f55dc`: 32 suites/445 tests, lint y build/Type
 El orden de ejecución entre repositorios se decide en el tablero oficial; esta tabla prioriza riesgos de frontend, no introduce nuevas dependencias de producto.
 
 ## Pendientes y criterio de cierre
+
+### AUD-023 — Claridad del recorrido público y participante
+
+El 22 de octubre se constató duplicación de Impacto global, retorno al mismo destino, bloque personal antes de las métricas y exceso de listas/filtros en la portada. Se recompuso con componentes existentes: contador/mapa/carrusel, perfil en esquina, navegación pública, copia directa y orientación para incorporarse. Lint/build y 695 pruebas aprobados; revisión de navegador local visitante en móvil/escritorio. La prueba de registro WebAuthn y la aceptación del diseño por Pablo siguen pendientes. [Detalle y límites](src/modules/impacto/README.md#revisión-uxui--22-de-octubre-de-2026).
 
 ### AUD-022 — Compatibilidad de contratos para correcciones INT07
 

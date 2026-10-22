@@ -81,10 +81,9 @@ describe('Acceso de una cuenta de voluntariado', () => {
     expect(screen.queryByRole('link', { name: 'Recolección' })).toBeNull()
     expect(screen.queryByText('Indicadores clave')).toBeNull()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Abrir menú lateral' }))
     expect(screen.queryByRole('button', { name: 'Organizaciones' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Plantas' })).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: 'Mi perfil' }))
+    fireEvent.click(screen.getByRole('link', { name: 'Ver mi perfil' }))
     expect(screen.getByText('Mi perfil disponible')).toBeTruthy()
   })
 

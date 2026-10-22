@@ -11,7 +11,7 @@ beforeEach(() => { auth.user = null; auth.hydrated = false; auth.isAuthenticated
 describe('entrada principal de Impacto', () => {
   it('consulta público inmediatamente aunque no termine verificación de sesión', () => {
     render(tree())
-    expect(screen.getByText('Impacto público con entrada preferida')).toBeTruthy()
+    expect(screen.getByText('Impacto público directo')).toBeTruthy()
   })
   it('conserva la entrada interna de las cuentas verificadas', async () => {
     auth.user = { rol: 'GENERAL' }
@@ -21,11 +21,11 @@ describe('entrada principal de Impacto', () => {
     expect(await screen.findByText('Inicio interno')).toBeTruthy()
     expect(screen.queryByText(/Impacto público/)).toBeNull()
   })
-  it('un voluntario verificado conserva la consulta pública con preferencia contextual', () => {
+  it('un voluntario verificado conserva la consulta pública sin redirección automática', () => {
     auth.user = { rol: 'VOLUNTARIO' }
     auth.isAuthenticated = true
     auth.hydrated = true
     render(tree())
-    expect(screen.getByText('Impacto público con entrada preferida')).toBeTruthy()
+    expect(screen.getByText('Impacto público directo')).toBeTruthy()
   })
 })

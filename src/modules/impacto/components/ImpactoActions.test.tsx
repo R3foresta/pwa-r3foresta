@@ -44,7 +44,7 @@ describe('acciones separadas de la consulta pública', () => {
     auth.hydrated = false
     render(tree({ defaultEntry: true }))
     expect(screen.getByText('Impacto público disponible')).toBeTruthy()
-    expect(screen.getByRole('link', { name: 'Iniciar sesión para participar' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Crear mi perfil' })).toBeTruthy()
     expect(caps).not.toHaveBeenCalled()
     expect(consult).not.toHaveBeenCalled()
   })
@@ -55,7 +55,7 @@ describe('acciones separadas de la consulta pública', () => {
     render(tree({ defaultEntry: true }))
     await waitFor(() => expect(caps).toHaveBeenCalledTimes(2))
     expect(consult).not.toHaveBeenCalled()
-    expect(screen.getByRole('link', { name: 'Mis registros' })).toBeTruthy()
+    expect(screen.queryByRole('link', { name: 'Mi perfil' })).toBeNull()
     await act(async () => finish(page([scope('8', '12')])))
     await waitFor(() => expect(screen.getByTestId('location').textContent).toBe('/impacto/campanias/7'))
     expect(consult).toHaveBeenCalledWith({ tipo: 'campania', id: '7' }, undefined, expect.any(AbortSignal))
@@ -141,7 +141,7 @@ describe('acciones separadas de la consulta pública', () => {
     render(tree())
     await screen.findByText(/Aún no tienes subcampañas habilitadas/)
     expect(screen.getByRole('link', { name: 'Elegir subcampaña o recuperar borrador' }).getAttribute('href')).toBe('/app/participacion/registrar')
-    expect(screen.getByRole('link', { name: 'Mis registros' })).toBeTruthy()
+    expect(screen.queryByRole('link', { name: 'Mi perfil' })).toBeNull()
     expect(screen.queryByRole('link', { name: /Registrar plantación en/ })).toBeNull()
   })
   it('ofrece varias subcampañas del contexto y mantiene otra campaña en la navegación separada', async () => {

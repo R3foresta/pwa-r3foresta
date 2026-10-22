@@ -29,12 +29,11 @@ export default function ImpactoActions(props: Props) {
   const sharedCapabilities = useContext(CapabilitiesContext)
   const token = localStorage.getItem('authToken')
   return <Card as="section" className="space-y-3" aria-label="Mi participación">
-    <h2 className="text-lg font-bold text-brand-800">Mi participación</h2>
+    <h2 className="text-lg font-bold text-brand-800">{isAuthenticated ? 'Tus próximas plantaciones' : 'Empieza con tu perfil'}</h2>
     {!hydrated || !isAuthenticated || !user || !token ? <>
       <p className="text-sm leading-6 text-neutral-600">Para registrar una plantación necesitas iniciar sesión y estar habilitado en una subcampaña.</p>
-      <Link to="/auth/login" state={{ from: '/app/participacion/registrar' }} className={LINK}>Iniciar sesión para participar</Link>
+      <div className="flex flex-wrap gap-3"><Link to="/auth/register" state={{ from: '/app/home' }} className={LINK}>Crear mi perfil</Link><Link to="/auth/login" state={{ from: '/app/home' }} className={LINK}>Ya tengo una cuenta</Link></div>
     </> : <>
-      <div className="flex flex-wrap gap-3"><Link to="/app/participacion/mis-registros" className={LINK}>Mis registros</Link><Link to="/app/profile" className={LINK}>Mi perfil</Link></div>
       {sharedCapabilities ? <AccountActions {...props} actorId={user.id} /> : <ParticipacionCapabilitiesProvider><AccountActions {...props} actorId={user.id} /></ParticipacionCapabilitiesProvider>}
     </>}
   </Card>

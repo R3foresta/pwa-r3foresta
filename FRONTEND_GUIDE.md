@@ -56,7 +56,7 @@ El perfil visible está ligado al token que lo verificó. Al cambiar token por l
 - `appAccess.ts` conserva la entrada interna de ADMIN/GENERAL/VALIDADOR. Ser administrador contextual no abre esos módulos.
 - Perfil mínimo: nombre. Apellido, documento, wallet y afiliación no deben convertirse en requisitos nuevos de este recorrido.
 - `AppLayout` aporta el provider compartido de capacidades. No reemplazar todas las facultades internas por este DTO limitado al recorrido participante.
-- `src/modules/impacto/` implementa la consulta pública sin esperar sesión/capacidades; sólo sus acciones montan el provider existente para cuentas verificadas. Mis registros/detalle histórico usan Bearer sin exigir capacidad operativa. Rutas, filtros, paginación y preferencia por cuenta: [módulo Impacto](src/modules/impacto/README.md). Evidencia y límites: [QA INT05](docs/QA_IMPACTO_INT05.md).
+- `src/modules/impacto/` implementa la consulta pública sin esperar sesión/capacidades. `AppLayout publicMode` y `BottomNav` conservan navegación pública; `ParticipantHomeScreen` en `/participar` monta las acciones de cuenta con el provider existente. La portada permanece global y la selección de campaña es explícita. Mis registros/detalle histórico usan Bearer sin exigir capacidad operativa. Rutas, filtros, paginación y preferencia por cuenta: [módulo Impacto](src/modules/impacto/README.md). Evidencia y límites: [QA INT05](docs/QA_IMPACTO_INT05.md).
 
 ## Plan de Plantación
 

@@ -18,6 +18,7 @@ const RegistroSelectorScreen = lazy(() => import('./modules/participacion/regist
 const RegistrarParticipanteScreen = lazy(() => import('./modules/participacion/registro/pages/RegistrarParticipanteScreen'))
 const DetallePropioScreen = lazy(() => import('./modules/participacion/registro/pages/DetallePropioScreen'))
 const ImpactoEntry = lazy(() => import('./modules/impacto/components/ImpactoEntry'))
+const ParticipantHomeScreen = lazy(() => import('./modules/home/ParticipantHomeScreen'))
 const ImpactoConsultaScreen = lazy(() => import('./modules/impacto/pages/ImpactoConsultaScreen'))
 const ImpactoRegistroScreen = lazy(() => import('./modules/impacto/pages/ImpactoRegistroScreen'))
 const MisRegistrosScreen = lazy(() => import('./modules/impacto/pages/MisRegistrosScreen'))
@@ -142,17 +143,21 @@ function App() {
     return <AppInitializationScreen message="Aplicando una nueva versión" />
   }
 
-  const installPromptPosition = pathname.startsWith('/app') ? 'bottom-28' : 'bottom-4'
+  const hasBottomNavigation = pathname.startsWith('/app') || pathname === '/' || pathname === '/participar' || pathname.startsWith('/impacto')
+  const installPromptPosition = hasBottomNavigation ? 'bottom-28' : 'bottom-4'
 
   return (
     <>
       <Suspense fallback={<AppInitializationScreen message="Cargando la aplicación" />}>
         <Routes>
+          <Route element={<AppLayout publicMode />}>
           <Route path="/" element={<ImpactoEntry />} />
+          <Route path="/participar" element={<ParticipantHomeScreen />} />
           <Route path="/impacto" element={<ImpactoConsultaScreen />} />
           <Route path="/impacto/campanias/:campaniaId" element={<ImpactoConsultaScreen />} />
           <Route path="/impacto/subcampanias/:subcampaniaId" element={<ImpactoConsultaScreen />} />
           <Route path="/impacto/registros/:registroId" element={<ImpactoRegistroScreen />} />
+          </Route>
 
         <Route element={<GuestRoute />}>
           <Route path="/auth" element={<AuthLayout />}>

@@ -12,7 +12,7 @@ function GuestRoute() {
 
   if (isAuthenticated) {
     const from = (state as { from?: unknown } | null)?.from
-    const fallback = typeof from === 'string' || hasInternalAppAccess(user?.rol) ? '/app/home' : '/'
+    const fallback = typeof from === 'string' || hasInternalAppAccess(user?.rol) ? '/app/home' : '/participar'
     const destination = typeof from === 'string' && (canOpenAppPath(from, user?.rol) || isPublicImpactPath(from))
       ? from
       : fallback

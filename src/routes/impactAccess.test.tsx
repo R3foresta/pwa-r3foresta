@@ -16,6 +16,21 @@ vi.mock('../modules/impacto/pages/ImpactoRegistroScreen', () => ({ default: () =
 beforeEach(() => { auth.user = null; auth.hydrated = false; auth.isAuthenticated = false })
 
 describe('Rutas de consulta pública', () => {
+  it('ofrece navegación al visitante y perfil con destino privado conservado', async () => {
+    render(<MemoryRouter initialEntries={['/impacto']}><App /></MemoryRouter>)
+    await screen.findByText('Consulta pública inmediata')
+    expect(screen.getByRole('link', { name: 'Participar' }).getAttribute('href')).toBe('/participar')
+    expect(screen.getByRole('link', { name: 'Mis registros' }).getAttribute('href')).toBe('/auth/login')
+    expect(screen.getByRole('link', { name: 'Crear mi perfil o iniciar sesión' }).getAttribute('href')).toBe('/auth/login')
+    expect(screen.queryByRole('button', { name: 'Abrir acciones rápidas' })).toBeNull()
+  })
+
+  it('envía la cuenta nueva de voluntariado a Participar cuando no hay destino previo', () => {
+    auth.hydrated = true; auth.isAuthenticated = true; auth.user = { rol: 'VOLUNTARIO' }
+    render(<MemoryRouter initialEntries={['/auth/register']}><Routes><Route element={<GuestRoute />}><Route path="/auth/register" element={<p>Registro</p>} /></Route><Route path="/participar" element={<p>Participación guiada</p>} /></Routes></MemoryRouter>)
+    expect(screen.getByText('Participación guiada')).toBeTruthy()
+  })
+
   it.each(['/', '/impacto', '/impacto/campanias/800', '/impacto/subcampanias/826', '/impacto/registros/826000'])('abre %s sin esperar sesión ni perfil', async path => {
     render(<MemoryRouter initialEntries={[path]}><App /></MemoryRouter>)
     await screen.findByText(path === '/' ? 'Entrada pública inmediata' : path.includes('/registros/') ? 'Registro público inmediato' : 'Consulta pública inmediata')

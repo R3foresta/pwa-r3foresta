@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { Button, Card, PageHeader } from '../../../components/ui'
 import { ImpactoService } from '../api/impacto.api'
-import ImpactoActions from '../components/ImpactoActions'
 import ImpactoRegistroContent from '../components/ImpactoRegistroContent'
 import ImpactoShare from '../components/ImpactoShare'
 import type { ImpactoRegistro } from '../types'
@@ -34,6 +33,6 @@ export default function ImpactoRegistroScreen() {
     <nav aria-label="Consulta pública" className="flex flex-wrap gap-4 text-sm font-bold text-brand-700"><Link to="/impacto" className="underline underline-offset-4">Impacto global</Link><ImpactoShare key={publicPath} path={publicPath} title={data?.codigo_trazabilidad ?? 'Registro público de plantación'} /></nav>
     {invalidQuery ? <Card className="space-y-3"><p role="alert" className="text-sm text-danger-700">El detalle público no admite filtros en el enlace.</p><Link className="text-sm font-bold text-brand-700 underline" to={publicPath} state={location.state}>Abrir enlace sin filtros</Link></Card> : !registroId ? <Card><p role="alert" className="text-sm text-danger-700">El enlace no identifica un registro.</p></Card> : !current ? <Card><p role="status" className="text-sm text-neutral-600">Consultando registro público…</p></Card> : null}
     {current?.error ? <Card className="space-y-3"><h2 className="font-bold text-brand-800">{impactoErrorStatus(current.error) === 404 ? 'Registro público no disponible' : 'No se pudo consultar el registro'}</h2><p role="alert" className="text-sm text-danger-700">{impactoErrorStatus(current.error) === 404 ? 'El registro no existe o no está disponible para consulta pública.' : impactoErrorMessage(current.error)}</p><Button variant="secondary" onClick={() => setRevision((value) => value + 1)}>Reintentar consulta</Button></Card> : null}
-    {data && <><ImpactoActions campaniaId={data.campania_id} subcampaniaId={data.subcampania_id} /><ImpactoRegistroContent data={data} returnTo={publicPath} /></>}
+    {data && <ImpactoRegistroContent data={data} returnTo={publicPath} />}
   </main>
 }

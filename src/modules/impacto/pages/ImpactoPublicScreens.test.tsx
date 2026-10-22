@@ -35,6 +35,32 @@ function renderPublic(path: string, state?: unknown) {
 beforeEach(() => { query.mockReset(); detail.mockReset() })
 
 describe('Impacto público y navegación por ámbitos', () => {
+  it('enfoca una campaña desde su tarjeta sin alterar el total global ni pedir otra consulta', async () => {
+    query.mockResolvedValueOnce(globalResponse())
+    renderPublic('/impacto')
+    expect(await screen.findByText('4 puntos públicos')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Volver' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Ver en el mapa: Campaña segunda INT05' }))
+    expect(screen.getByText('1 puntos públicos')).toBeTruthy()
+    expect(within(screen.getByRole('region', { name: 'Indicadores de impacto' })).getByText('50')).toBeTruthy()
+    expect(query).toHaveBeenCalledTimes(1)
+    fireEvent.click(screen.getByRole('button', { name: 'Ver todas las ubicaciones' }))
+    expect(screen.getByText('4 puntos públicos')).toBeTruthy()
+  })
+
+  it('copia el enlace público directamente aunque el navegador ofrezca compartir', async () => {
+    const copy = vi.fn().mockResolvedValue(undefined), share = vi.fn()
+    vi.stubGlobal('navigator', { clipboard: { writeText: copy }, share })
+    try {
+      query.mockResolvedValueOnce(globalResponse())
+      renderPublic('/impacto')
+      fireEvent.click(screen.getByRole('button', { name: 'Copiar enlace' }))
+      await screen.findByText('Enlace público copiado.')
+      expect(copy).toHaveBeenCalledWith('http://localhost/impacto')
+      expect(share).not.toHaveBeenCalled()
+    } finally { vi.unstubAllGlobals() }
+  })
+
   it.each([
     ['/impacto', { tipo: 'global' }, 'global'],
     ['/impacto/campanias/800', { tipo: 'campania', id: '800' }, 'campania'],
@@ -44,7 +70,7 @@ describe('Impacto público y navegación por ámbitos', () => {
     renderPublic(path)
     await screen.findByRole('region', { name: 'Indicadores de impacto' })
     expect(query).toHaveBeenCalledWith(scope, {}, expect.any(AbortSignal))
-    expect(screen.getByText('Las acciones de cuenta no están disponibles.')).toBeTruthy()
+    expect(screen.queryByText('Las acciones de cuenta no están disponibles.')).toBeNull()
     expect(screen.queryByRole('link', { name: /gestionar|stock/i })).toBeNull()
   })
 
@@ -230,7 +256,7 @@ describe('detalle público de registro grupal', () => {
     detail.mockResolvedValueOnce(recordResponse())
     renderPublic('/impacto/registros/826000', { impactoReturnTo: '/app/participacion/mis-registros' })
     await screen.findByRole('heading', { name: 'INT05-GRUPO-25' })
-    fireEvent.click(screen.getByRole('button', { name: 'Compartir enlace público' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Copiar enlace' }))
     const link = await screen.findByRole('textbox', { name: 'Enlace público' })
     expect((link as HTMLInputElement).value).toBe('http://localhost/impacto/registros/826000')
     expect((link as HTMLInputElement).value).not.toContain('/app/')

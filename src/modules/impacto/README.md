@@ -6,7 +6,8 @@ El módulo presenta la proyección de consulta PA-S02 sin reutilizar respuestas 
 
 | Ruta | Uso |
 | --- | --- |
-| `/` | Entrada por defecto: muestra Impacto global desde el inicio; puede aplicar la preferencia contextual de la cuenta verificada. ADMIN/GENERAL/VALIDADOR conservan `/app/home`. |
+| `/` | Impacto global estable, sin redirección automática a otra campaña. ADMIN/GENERAL/VALIDADOR conservan `/app/home`. |
+| `/participar` | Orientación pública para comenzar; cuenta verificada ve sus acciones y zonas habilitadas. Reutiliza `ParticipantHomeScreen`. |
 | `/impacto` | Global público explícito, sin redirección por preferencia. |
 | `/impacto/campanias/:campaniaId` | Resumen público de campaña y sus subcampañas elegibles. |
 | `/impacto/subcampanias/:subcampaniaId` | Zona, meta vigente, avance inicial y registros del ámbito. |
@@ -26,7 +27,7 @@ El detalle propio conserva `/app/participacion/registros/:registroId` y su contr
 | `pages/ImpactoConsultaScreen.tsx`, `pages/ImpactoRegistroScreen.tsx` | Global/campaña/subcampaña y detalle público reducido. |
 | `pages/MisRegistrosScreen.tsx` | Historial propio separado por cuenta/token y paginado sin depender de capacidades. |
 | `components/ImpactoMapPanel.tsx` | Mapa cargado de forma diferida; listas equivalentes accesibles fuera del mapa. |
-| `components/ImpactoActions.tsx`, `components/ImpactoEntry.tsx` | Acciones autenticadas y resolución exclusiva de la entrada por defecto. |
+| `components/ImpactoActions.tsx`, `components/ImpactoEntry.tsx` | Acciones de Participar y resolución de la entrada pública/interna. |
 | `utils/consulta.ts`, `utils/lastCampaign.ts` | URL/filtros/retorno seguros y preferencia de campaña por cuenta. |
 
 ## Endpoints y filtros
@@ -61,10 +62,22 @@ Mis registros usa Bearer directamente, sin pedir capacidades operativas. La fron
 
 `saveLastCampaign(actorId, campaignId)` guarda sólo el ID bajo `r3foresta:impacto:last-campaign:v1:<actorId>`. No guarda tokens, perfil ni facultades. La selección explícita del registro INT04 también actualiza esa preferencia; `readLastCampaign` admite como respaldo la selección anterior `r3foresta:registro-scope:v1:<actorId>` de esa misma cuenta.
 
-Sólo `/` aplica la preferencia: exige capacidades completas y actuales del actor, una habilitación contextual conservada en la campaña y una consulta pública exitosa de esa campaña antes de redirigir. Sin preferencia, sin habilitación confirmada o ante 404 público se mantiene el global; no se elige otra campaña por afiliación. Un error de capacidades o de consulta pública conserva la preferencia y ofrece el tratamiento de error correspondiente. Cambiar cuenta cancela la comprobación en curso. Abrir `/impacto` o cualquier enlace público directo conserva su destino.
+Desde el ajuste UX del 22 de octubre, `/` y `/impacto` permanecen globales para visitantes y participantes. La campaña se elige explícitamente. La preferencia por cuenta sigue disponible para el selector de registro; no debe redirigir la consulta pública. El código opcional de preferencia en `ImpactoActions` no se monta en las entradas actuales.
 
 ## Interpretación y verificación
 
 Un punto representa un registro grupal; el polígono, una zona de trabajo. Plantación inicial, bajas reportadas y reposiciones se muestran separadas. La meta/faltantes corresponden a cada subcampaña: se presentan los valores del backend, incluido avance superior a 100%; sólo el ancho de la barra se limita. No sumar faltantes en global/campaña ni presentar supervivencia comprobada o composición viva por especie. Afiliación histórica y organizaciones de campaña permanecen separadas; «no declarada» e «histórica no disponible» son casos distintos.
 
 Ejecutar `npm run test -- src/modules/impacto`, `npm run lint` y `npm run build` al cambiar estos recorridos. El [informe INT05](../../../docs/QA_IMPACTO_INT05.md) registra entorno, evidencia integrada y límites. Esta guía describe la implementación frontend; no acredita aplicación SQL remota, WebAuthn real, despliegue, revisión humana ni piloto. Las pruebas con mocks no demuestran por sí solas autorización o sanitización de archivos en el servicio real.
+
+## Revisión UX/UI · 22 de octubre de 2026
+
+Recomposición con componentes existentes: `AppLayout` en modo público (sin provider de capacidades), `BottomNav`, `ParticipantHomeScreen`, `ImpactoActions`, `Card`, `Button`, `PageHeader`, `PublicPhoto` y `ImpactoMapPanel/ImpactoMap`. No se añadieron componentes ni librerías UI.
+
+La portada prioriza el total oficial de plantación inicial del alcance y el mapa OSM. El carrusel ordena campañas por plantas iniciales descendentes; al deslizar o activar «Ver en el mapa» cambia las zonas/puntos representados, conservando el total global explícito. «Conocer campaña» profundiza por ruta pública. Las fotos proceden de evidencias públicas de los registros cargados; su ausencia no se sustituye por una fotografía ficticia. En zonas se prefiere la descripción territorial disponible. El detalle auditable y la consulta avanzada permanecen desplegables.
+
+La navegación pública conserva Impacto / Participar / Mis registros; perfil en la esquina. Perfil y Mis registros invitan a entrar cuando falta sesión y conservan el destino privado. Participar ofrece crear perfil o entrar y explica la habilitación por el equipo; crear cuenta no otorga permiso para registrar. Sin destino previo, el login de un voluntario conduce a Participar. El registro guiado y sus permisos siguen usando los contratos existentes.
+
+Criterios concretos de la revisión (12): jerarquía visual, tarea principal visible, lenguaje cotidiano, divulgación progresiva, consistencia de componentes, navegación predecible, reconocimiento mediante fotos/nombres, control explícito del usuario, respuesta visible al copiar/seleccionar, distinción carga/error/vacío, accesibilidad por teclado y objetivos táctiles, adaptación móvil. Son criterios aplicados a este recorrido; la aceptación visual humana sigue pendiente.
+
+Verificación: lint y build aprobados; suite completa 48 archivos / 695 pruebas. Navegador local en 5173, visitante, móvil 390×844 y escritorio: lectura pública, copia directa, desplazamiento de tarjetas con selección de campaña, entrada a campaña y retorno. No hubo escritura de plantaciones ni pruebas de registro WebAuthn real. El portal de organizaciones/semillas corre en 5174 y se mantiene como producto separado; este cambio modifica únicamente la PWA.

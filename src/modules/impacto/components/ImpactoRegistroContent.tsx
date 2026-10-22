@@ -5,9 +5,9 @@ import { imagenPublicaUrl } from '../api/impacto.api'
 import type { ImpactoRegistro } from '../types'
 import { formatImpactoDate, formatImpactoNumber } from '../utils/consulta'
 
-function PublicPhoto({ id }: { id: string }) {
+export function PublicPhoto({ id, cover = false }: { id: string; cover?: boolean }) {
   const [failed, setFailed] = useState(false)
-  return <figure className="space-y-2">{failed ? <div className="space-y-2 rounded-2xl bg-neutral-50 p-4"><p role="status" className="text-sm text-neutral-600">No se pudo cargar esta foto pública.</p><Button size="sm" variant="secondary" onClick={() => setFailed(false)}>Reintentar foto</Button></div> : <img src={imagenPublicaUrl(id)} alt={`Foto pública del registro, evidencia ${id}`} loading="lazy" onError={() => setFailed(true)} className="max-h-96 w-full rounded-2xl object-contain" />}<figcaption className="text-xs text-neutral-500">Foto pública {id}</figcaption></figure>
+  return <figure className="space-y-2">{failed ? <div className="space-y-2 rounded-2xl bg-neutral-50 p-4"><p role="status" className="text-sm text-neutral-600">No se pudo cargar esta foto pública.</p><Button size="sm" variant="secondary" onClick={() => setFailed(false)}>Reintentar foto</Button></div> : <img src={imagenPublicaUrl(id)} alt={`Foto pública del registro, evidencia ${id}`} loading="lazy" onError={() => setFailed(true)} className={cover ? "h-32 w-full object-cover" : "max-h-96 w-full rounded-2xl object-contain"} />}{!cover && <figcaption className="text-xs text-neutral-500">Foto pública {id}</figcaption>}</figure>
 }
 
 export default function ImpactoRegistroContent({ data, returnTo }: { data: ImpactoRegistro; returnTo: string }) {

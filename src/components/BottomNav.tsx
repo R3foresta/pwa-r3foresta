@@ -21,14 +21,14 @@ type QuickAction = {
 // operativas para registrar plantación (PLT-FE-001).
 type SheetView = 'actions' | 'plantacion'
 
-function BottomNav() {
+function BottomNav({ publicMode = false }: { publicMode?: boolean }) {
   const navigate = useNavigate()
   const { pathname } = useLocation()
-  const { user } = useAuth()
+  const { user, isAuthenticated } = useAuth()
   const [open, setOpen] = useState(false)
   const [sheetView, setSheetView] = useState<SheetView>('actions')
   const [showProfileWarning, setShowProfileWarning] = useState(false)
-  const hasInternalAccess = hasInternalAppAccess(user?.rol)
+  const hasInternalAccess = !publicMode && hasInternalAppAccess(user?.rol)
   const navItems = hasInternalAccess ? NAV_ITEMS : PARTICIPANT_NAV_ITEMS
 
   const quickActions: QuickAction[] = [
@@ -98,11 +98,14 @@ function BottomNav() {
       <div className="fixed inset-x-0 bottom-0 z-40 mb-3 flex justify-center">
         <nav aria-label="Navegación principal" className="relative flex w-[92%] max-w-md items-end justify-between rounded-3xl bg-brand-600 px-4 py-3 text-white shadow-2xl shadow-brand-900/30">
           {navItems.map((item) => {
-            const isActive = item.path === '/' ? pathname === '/' : pathname.startsWith(item.path)
+            const isActive = item.path === '/impacto' ? pathname === '/' || pathname.startsWith('/impacto') : item.path === '/participar' ? pathname === '/participar' || pathname === '/app/home' || pathname.endsWith('/registrar') : pathname.startsWith(item.path)
+            const needsLogin = !isAuthenticated && item.path.startsWith('/app/')
             return (
               <NavLink
                 key={item.label}
-                to={item.path}
+                to={needsLogin ? '/auth/login' : item.path}
+                state={needsLogin ? { from: item.path } : undefined}
+                aria-current={isActive ? 'page' : undefined}
                 className={`flex flex-1 flex-col items-center gap-1 rounded-xl px-1 py-2 text-[11px] font-semibold transition ${
                   isActive ? 'text-white' : 'text-white/70'
                 }`}

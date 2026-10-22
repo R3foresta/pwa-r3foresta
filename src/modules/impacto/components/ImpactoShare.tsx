@@ -1,17 +1,14 @@
 import { useState } from 'react'
 import { Button } from '../../../components/ui'
 
-export default function ImpactoShare({ path, title }: { path: string; title: string }) {
+export default function ImpactoShare({ path }: { path: string; title: string }) {
   const [message, setMessage] = useState<string | null>(null)
   const [fallback, setFallback] = useState(false)
   const url = new URL(path, window.location.origin).href
   async function share() {
     setFallback(false)
     try {
-      if (navigator.share) {
-        await navigator.share({ title, url })
-        setMessage('Enlace compartido.')
-      } else if (navigator.clipboard?.writeText) {
+      if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(url)
         setMessage('Enlace público copiado.')
       } else {
@@ -25,7 +22,7 @@ export default function ImpactoShare({ path, title }: { path: string; title: str
     }
   }
   return <div className="space-y-2">
-    <Button variant="secondary" size="sm" onClick={() => void share()}>Compartir enlace público</Button>
+    <Button variant="ghost" size="sm" onClick={() => void share()}>Copiar enlace</Button>
     {message && <p role="status" className="text-xs text-neutral-600">{message}</p>}
     {fallback && <label className="block text-xs text-neutral-600">Enlace público<input className="mt-1 w-full rounded-xl border border-neutral-200 p-2" readOnly value={url} onFocus={(event) => event.currentTarget.select()} /></label>}
   </div>
