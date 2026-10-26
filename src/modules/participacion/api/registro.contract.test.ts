@@ -52,6 +52,26 @@ describe('registro v1, DTO y datos reales de INT03-A', () => {
     value.data.disponibilidad = 'DISPONIBLE'
     expect(() => validarContextoRegistro(value, '801', '821')).toThrow()
   })
+  it('acepta el avance ampliado completo y mantiene compatible el contexto anterior', () => {
+    const ampliado = structuredClone(context)
+    ampliado.data.especies[0].plantado_inicial = 3
+    ampliado.data.especies[0].pendiente_meta = 0
+    expect(validarContextoRegistro(ampliado, '801', '821')).toEqual(ampliado)
+    expect(validarContextoRegistro(context, '801', '821')).toEqual(context)
+
+    const incompleto = structuredClone(ampliado)
+    delete incompleto.data.especies[0].pendiente_meta
+    expect(() => validarContextoRegistro(incompleto, '801', '821')).toThrow()
+    const inconsistente = structuredClone(ampliado)
+    inconsistente.data.especies[0].pendiente_meta = 1
+    expect(() => validarContextoRegistro(inconsistente, '801', '821')).toThrow()
+    const mezclado = structuredClone(ampliado)
+    mezclado.data.especies.push({ ...context.data.especies[0], planta_id: '9' })
+    expect(() => validarContextoRegistro(mezclado, '801', '821')).toThrow()
+    const negativo = structuredClone(ampliado)
+    negativo.data.especies[0].plantado_inicial = -1
+    expect(() => validarContextoRegistro(negativo, '801', '821')).toThrow()
+  })
   it('contexto vincula cuenta y ámbito y rechaza datos internos, geometría o reglas ajenas', () => {
     expect(() => validarContextoRegistro(context, '802', '821')).toThrow()
     expect(() => validarContextoRegistro(context, '801', '822')).toThrow()

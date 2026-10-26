@@ -217,6 +217,26 @@ describe('Registro participante de tres pasos', () => {
     expect(screen.getByText('Queñua: 15')).toBeTruthy()
   })
 
+  it('muestra el avance previo oficial y distingue la propuesta de lo ya plantado', async () => {
+    vi.mocked(RegistroParticipacionService.contexto).mockImplementation(async (actorId) => {
+      const data = context(actorId)
+      data.especies[0] = { ...data.especies[0], cantidad_objetivo: 10, plantado_inicial: 4, pendiente_meta: 6 }
+      return { data, observado_en: observed }
+    })
+    open()
+    const user = await fillToParticipants()
+    await user.click(screen.getByRole('button', { name: /Volver y corregir especies/ }))
+    expect(screen.getByText('Plantado antes: 4')).toBeTruthy()
+    expect(screen.getByText('Pendiente de meta: 6')).toBeTruthy()
+    expect(screen.getByText('Avance si guardas')).toBeTruthy()
+    expect(screen.getByLabelText('Avance de meta de Queñua').textContent).toBe('11 / 10')
+    expect(screen.getByText(/El avance propuesto supera la meta orientativa/)).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Restar 1 a Queñua' }))
+    expect(screen.getByLabelText('Avance de meta de Queñua').textContent).toBe('10 / 10')
+    expect(screen.queryByText(/El avance propuesto supera la meta orientativa/)).toBeNull()
+    expect(RegistroParticipacionService.enviar).not.toHaveBeenCalled()
+  })
+
   it('tras perder respuesta congela el payload y recarga recupera el mismo intento sin consultar contexto operativo', async () => {
     vi.mocked(RegistroParticipacionService.enviar).mockRejectedValue(new Error('La respuesta se perdió.'))
     const view = open()

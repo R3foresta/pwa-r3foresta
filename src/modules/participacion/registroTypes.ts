@@ -22,7 +22,7 @@ export type ContextoRegistro = {
   subcampania: { id: string; campania_id: string; nombre: string; campania_nombre: string; estado: 'ACTIVA'; plan_revision: string; meta_total_arboles: number; poligono: { type: 'Polygon'; coordinates: [number, number][][] } }
   actor: { usuario_id: string; fuente_autoridad: 'GLOBAL' | 'CONTEXTUAL' }
   disponibilidad: 'DISPONIBLE' | 'SIN_STOCK'
-  especies: { planta_id: string; nombre: string; porcentaje_objetivo: number; cantidad_objetivo: number; saldo_elegible: number }[]
+  especies: { planta_id: string; nombre: string; porcentaje_objetivo: number; cantidad_objetivo: number; saldo_elegible: number; plantado_inicial?: number; pendiente_meta?: number }[]
   reglas: { hoy_operativo: string; fecha_minima_ventana: string; fecha_maxima: string; zona_horaria: 'America/La_Paz'; ventana_retroactiva_dias: 10; fotos_min: 1; fotos_max: 10; exterior_permitido: true }
 }
 export type ContextoRegistroLectura = { data: ContextoRegistro; observado_en: string }

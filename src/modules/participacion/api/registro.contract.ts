@@ -82,7 +82,21 @@ export function validarContextoRegistro(value: unknown, actorId: string, scopeId
     if (ring[0][0] !== ring[ring.length - 1][0] || ring[0][1] !== ring[ring.length - 1][1]) return fail()
     return ring
   }, 1, 10000)
-  const especies = unique(list(data.especies, value => { const item = row(value, ['planta_id', 'nombre', 'porcentaje_objetivo', 'cantidad_objetivo', 'saldo_elegible']); return { planta_id: validarId(item.planta_id), nombre: text(item.nombre), porcentaje_objetivo: number(item.porcentaje_objetivo, 0, 100), cantidad_objetivo: integer(item.cantidad_objetivo), saldo_elegible: integer(item.saldo_elegible) } }, 1), item => item.planta_id)
+  let avancePresente: boolean | null = null
+  const especies = unique(list(data.especies, value => {
+    const item = row(value, ['planta_id', 'nombre', 'porcentaje_objetivo', 'cantidad_objetivo', 'saldo_elegible'], ['plantado_inicial', 'pendiente_meta'])
+    const tienePlantado = Object.hasOwn(item, 'plantado_inicial')
+    const tienePendiente = Object.hasOwn(item, 'pendiente_meta')
+    if (tienePlantado !== tienePendiente || avancePresente !== null && avancePresente !== tienePlantado) return fail()
+    avancePresente = tienePlantado
+    const cantidad_objetivo = integer(item.cantidad_objetivo)
+    const especie = { planta_id: validarId(item.planta_id), nombre: text(item.nombre), porcentaje_objetivo: number(item.porcentaje_objetivo, 0, 100), cantidad_objetivo, saldo_elegible: integer(item.saldo_elegible) }
+    if (!tienePlantado) return especie
+    const plantado_inicial = integer(item.plantado_inicial)
+    const pendiente_meta = integer(item.pendiente_meta)
+    if (pendiente_meta !== Math.max(0, cantidad_objetivo - plantado_inicial)) return fail()
+    return { ...especie, plantado_inicial, pendiente_meta }
+  }, 1), item => item.planta_id)
   const rules = row(data.reglas, ['hoy_operativo', 'fecha_minima_ventana', 'fecha_maxima', 'zona_horaria', 'ventana_retroactiva_dias', 'fotos_min', 'fotos_max', 'exterior_permitido'])
   const hoy_operativo = validarRegistroFecha(rules.hoy_operativo), fecha_minima_ventana = validarRegistroFecha(rules.fecha_minima_ventana), fecha_maxima = validarRegistroFecha(rules.fecha_maxima)
   if (rules.zona_horaria !== 'America/La_Paz' || rules.ventana_retroactiva_dias !== 10 || rules.fotos_min !== 1 || rules.fotos_max !== 10 || rules.exterior_permitido !== true || fecha_maxima !== hoy_operativo || fecha_minima_ventana > fecha_maxima) return fail()
