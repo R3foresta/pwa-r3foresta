@@ -6,12 +6,23 @@ El módulo reúne gestión de permisos C04–C09 (INT06) y registro participante
 
 | Ruta PWA | Uso |
 | --- | --- |
+| `/app/planting/subcampanias/:subcampaniaId` | Detalle común con lecturas autorizadas según audiencia. |
 | `/app/participacion/accesos` | Gestión contextual por persona y ámbitos actuales. |
 | `/app/participacion/registrar` | Selector autorizado y borradores propios conservados. |
 | `/app/participacion/subcampanias/:subcampaniaId/registrar` | Captura de tres pasos y recuperación del mismo comando. |
 | `/app/participacion/registros/:registroId` | Detalle propio persistido, incluso tras retirar acceso operativo. |
 
 Las entradas de registro inicial del módulo interno redirigen al formulario v1. Reposición conserva su cliente interno con `es_reposicion:true`, origen del mismo ámbito y stock REPOSICION; el permiso contextual de inicial no habilita ese recorrido.
+
+`/participar` abre el inicio UX-01: tarjetas agrupadas por campaña, activas primero y otras después, con estado y rol del DTO. Una sola zona también requiere elegirla. `ParticipacionInicioCards` y `ParticipacionInicioMap` comparten ese conjunto completo, incluidos los ámbitos globales sin escrituras. El mapa se abre como diálogo nativo a pantalla completa, con Escape, retorno de foco y selector accesible; no pide GPS. `useParticipacionInicioMap` consulta geometrías públicas por campaña con hasta cuatro lecturas simultáneas y cancelación; los cursores de Impacto paginan registros, no las geometrías. Omite puntos individuales y nunca incorpora zonas públicas ajenas. Ausencia/no publicación de geometría conserva la tarjeta; errores permiten reintentar. No se consultan stock ni miembros desde el inicio.
+
+Los enlaces antiguos `/participar?campania_id=…&subcampania_id=…` validan ambos IDs en capacidades y redirigen a `/app/planting/subcampanias/:id`. Una zona no disponible informa el problema sin sustituirla. Tarjetas y mapa llevan directamente a esa misma ruta. `vista=mapa`/`seleccion` representan el inicio; el regreso usa estado de navegación validado por actor. Cambiar cuenta descarta el contexto anterior desde `AppLayout`, fuera del provider de capacidades.
+
+`SubcampaniaDetailRoute` separa las lecturas antes de montar el detalle. Roles internos conservan su pantalla; el participante usa `ParticipacionSubcampaniaDetail` tras verificar actor y capacidades completas. Ambos reutilizan encabezado fotográfico original, pestañas redondas y tarjeta de especies. Resumen, Equipo y Mapa ajustan contenido y acciones a la autorización. Equipo lee miembros solo para administrador contextual; el plantador ve la limitación pendiente de contrato. Las fechas y fotos de miembros no se inventan. Impacto aporta avance/historial público y el contexto autorizado aporta plan, saldo y polígono. Ausencia pública no significa inexistencia ni habilita consultas internas.
+
+El formulario acepta `state.participacionReturnTo` con la ruta de detalle y sus parámetros permitidos, además del formato antiguo. Conservar/salir y descarte confirmado regresan a ese destino validado. Sin retorno válido se mantiene el selector anterior. No se modifica el envío transaccional ni se acredita con este ajuste toda UX-05.
+
+En móvil, la subcampaña elegida presenta plantación inicial/meta y el acceso al registro antes del mapa. Disponibilidad visible, especies desplegables: la lista de stock no desplaza la acción principal. Cambiar de ámbito descarta el contexto anterior; actualizar stock suspende el acceso hasta confirmar disponibilidad. El resumen de campaña agrega solo metas públicas y se mantiene independiente del stock privado y del alcance visual del mapa.
 
 ## Organización y transporte compartido
 

@@ -80,7 +80,7 @@ const CrearSubcampanaScreen = lazy(
   () => import('./modules/plantacion/screens/CrearSubcampanaScreen'),
 )
 const DetalleSubcampanaScreen = lazy(
-  () => import('./modules/plantacion/screens/DetalleSubcampanaScreen'),
+  () => import('./modules/plantacion/screens/SubcampaniaDetailRoute'),
 )
 const RegistrarPlantacionScreen = lazy(
   () => import('./modules/plantacion/screens/RegistrarPlantacionScreen'),

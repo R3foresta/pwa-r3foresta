@@ -63,6 +63,7 @@ describe('Mis registros por relación histórica', () => {
     view.rerender(tree())
     expect(firstSignal.aborted).toBe(true)
     await screen.findByText(/Todavía no hay registros/)
+    expect(screen.getByRole('link', { name: 'Ver cómo participar' }).getAttribute('href')).toBe('/participar')
     await act(async () => { finish(page([record()])); await Promise.resolve() })
     expect(screen.queryByText('Grupo 22')).toBeNull()
   })

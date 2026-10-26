@@ -1,7 +1,7 @@
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { RegistroParticipacionService } from '../../api/registro.api'
 import { ParticipacionApiError } from '../../api/participacion.api'
 import type { CargaRegistro, ContextoRegistro, IntentoRegistro, ReciboRegistro } from '../../registroTypes'
@@ -49,7 +49,16 @@ beforeEach(() => {
   vi.spyOn(RegistroParticipacionService, 'cancelar').mockImplementation(async (identity) => ({ comando_id: identity.comando_id, operacion: 'REGISTRAR_PLANTACION_INICIAL', finalizado_en: observed, estado: 'RECHAZADO', resultado: null, error: { codigo: 'PREPARACION_CANCELADA', mensaje: 'Preparación cerrada sin registro.', campos: [], ambitos: [], reintento: 'NUEVA_CONFIRMACION' } }))
 })
 
-function open() { return render(<MemoryRouter initialEntries={['/registro/820']}><Routes><Route path="/registro/:subcampaniaId" element={<RegistrarParticipanteScreen />} /></Routes></MemoryRouter>) }
+function ReturnDestination() {
+  const { pathname, search } = useLocation()
+  return <p>Retorno: {pathname}{search}</p>
+}
+function open(state?: unknown) { return render(<MemoryRouter initialEntries={[{ pathname: '/registro/820', state }]}><Routes>
+  <Route path="/registro/:subcampaniaId" element={<RegistrarParticipanteScreen />} />
+  <Route path="/participar" element={<ReturnDestination />} />
+  <Route path="/app/planting/subcampanias/:id" element={<ReturnDestination />} />
+  <Route path="/app/participacion/registrar" element={<ReturnDestination />} />
+</Routes></MemoryRouter>) }
 
 async function fillToParticipants() {
   const user = userEvent.setup()
@@ -70,6 +79,45 @@ async function fillToParticipants() {
 }
 
 describe('Registro participante de tres pasos', () => {
+  it.each(['/participar?campania_id=800&subcampania_id=820', '/app/planting/subcampanias/820', '/app/planting/subcampanias/820?pestana=resumen'])('al conservar el borrador vuelve al detalle de origen: %s', async destination => {
+    open({ participacionReturnTo: destination })
+    const user = userEvent.setup()
+    await screen.findByText('Fotos del trabajo · 0/10')
+    await user.click(screen.getByRole('button', { name: 'Volver' }))
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Conservar borrador y salir' }))
+    expect(await screen.findByText(`Retorno: ${destination}`)).toBeTruthy()
+    expect(RegistroParticipacionService.cancelar).not.toHaveBeenCalled()
+    expect(RegistroParticipacionService.enviar).not.toHaveBeenCalled()
+  })
+
+  it('vuelve al ámbito seleccionado después de confirmar el descarte de la preparación', async () => {
+    open({ participacionReturnTo: '/participar?campania_id=800&subcampania_id=820' })
+    const user = userEvent.setup()
+    await screen.findByText('Fotos del trabajo · 0/10')
+    await user.upload(document.querySelector<HTMLInputElement>('input[type="file"]')!, new File(['jpeg-fake'], 'trabajo.jpg', { type: 'image/jpeg' }))
+    await user.click(await screen.findByRole('button', { name: 'Preparar y subir fotos pendientes' }))
+    await screen.findByText('Disponible · validada por servidor')
+    await user.click(screen.getByRole('button', { name: 'Volver' }))
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Descartar borrador y cerrar preparación' }))
+    expect(await screen.findByText('Retorno: /participar?campania_id=800&subcampania_id=820')).toBeTruthy()
+    expect(RegistroParticipacionService.cancelar).toHaveBeenCalledTimes(1)
+    expect(RegistroParticipacionService.enviar).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    undefined,
+    { participacionReturnTo: 'https://example.test/participar' },
+    { participacionReturnTo: '/participar?campania_id=800&subcampania_id=820&extra=1' },
+    { participacionReturnTo: '/participar?campania_id=0' },
+  ])('sin retorno válido mantiene la salida al selector (%j)', async (state) => {
+    open(state)
+    const user = userEvent.setup()
+    await screen.findByText('Fotos del trabajo · 0/10')
+    await user.click(screen.getByRole('button', { name: 'Volver' }))
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Conservar borrador y salir' }))
+    expect(await screen.findByText('Retorno: /app/participacion/registrar')).toBeTruthy()
+  })
+
   it('usa hoy del servidor, admite superar meta dentro de saldo y conserva datos al volver; sólo confirma al final', async () => {
     const view = open()
     const user = await fillToParticipants()

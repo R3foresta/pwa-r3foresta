@@ -29,17 +29,149 @@ function renderPublic(path: string, state?: unknown) {
     <Route path="/impacto/subcampanias/:subcampaniaId" element={<ImpactoConsultaScreen />} />
     <Route path="/impacto/registros/:registroId" element={<ImpactoRegistroScreen />} />
     <Route path="/app/participacion/mis-registros" element={<h1>Mis registros de prueba</h1>} />
+    <Route path="/participar" element={<h1>Participar de prueba</h1>} />
   </Routes></MemoryRouter>)
 }
 
 beforeEach(() => { query.mockReset(); detail.mockReset() })
 
 describe('Impacto público y navegación por ámbitos', () => {
+  it('vuelve a la campaña y subcampaña del plantador desde un registro público', async () => {
+    detail.mockResolvedValueOnce(recordResponse())
+    renderPublic('/impacto/registros/826000', { impactoReturnTo: '/participar?campania_id=800&subcampania_id=826' })
+    await screen.findByRole('heading', { name: 'Registro público' })
+    fireEvent.click(screen.getByRole('button', { name: 'Volver' }))
+    expect(screen.getByTestId('current-location').textContent).toBe('/participar?campania_id=800&subcampania_id=826')
+    expect(screen.getByRole('heading', { name: 'Participar de prueba' })).toBeTruthy()
+  })
+
+  it('seleccionar en el mapa conserva otras ubicaciones y cambiar tarjeta limpia el resumen anterior', async () => {
+    const response = globalResponse()
+    query.mockResolvedValueOnce(response)
+    renderPublic('/impacto')
+    const mapSelect = await screen.findByRole('button', { name: 'Mapa zona 826' })
+    const mapSection = screen.getByRole('region', { name: 'Aquí estamos plantando' })
+    const scroll = vi.fn()
+    mapSection.scrollIntoView = scroll
+    vi.spyOn(mapSection, 'getBoundingClientRect').mockReturnValue({ top: -400 } as DOMRect)
+    fireEvent.click(mapSelect)
+    expect(scroll).not.toHaveBeenCalled()
+    expect(screen.getByText('4 puntos públicos')).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'Resumen de zona seleccionada' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Campañas' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Ver en el mapa: Campaña segunda INT05' }))
+    expect(screen.queryByRole('region', { name: 'Resumen de zona seleccionada' })).toBeNull()
+    expect(screen.getByTestId('current-location').textContent).toBe('/impacto')
+    expect(screen.getByText('1 puntos públicos')).toBeTruthy()
+    expect(query).toHaveBeenCalledTimes(1)
+  })
+
+  it('un enlace con selección resalta su tarjeta y Ver todas limpia esa selección', async () => {
+    query.mockResolvedValueOnce(globalResponse())
+    renderPublic('/impacto?seleccion=s%3A826')
+    await screen.findByRole('button', { name: 'Subcampañas' })
+    const card = document.querySelector('[data-campaign="826"]') as HTMLElement
+    expect(within(card).getByRole('button').getAttribute('aria-pressed')).toBe('true')
+    fireEvent.click(screen.getByRole('button', { name: 'Ver todas las ubicaciones' }))
+    expect(screen.getByTestId('current-location').textContent).toBe('/impacto')
+    expect(screen.queryByRole('region', { name: 'Resumen de zona seleccionada' })).toBeNull()
+    expect(within(card).getByRole('button').getAttribute('aria-pressed')).toBe('false')
+  })
+
+  it.each(['zona', 'registro'])('seleccionar %s en el mapa activa la tarjeta del nivel visible', async target => {
+    const response = globalResponse()
+    query.mockResolvedValueOnce(response)
+    renderPublic('/impacto')
+    await screen.findByRole('button', { name: 'Subcampañas' })
+    const point = response.data.mapa[0]
+    const zone = response.data.subcampanias.find(item => item.id === point.subcampania_id)!
+    const campaign = response.data.campanias.find(item => item.id === zone.campania_id)!
+    const select = () => fireEvent.click(screen.getByRole('button', { name: target === 'zona' ? `Mapa zona ${zone.id}` : `Mapa registro ${point.registro_id}` }))
+    select()
+    expect(within(document.querySelector(`[data-campaign="${zone.id}"]`) as HTMLElement).getByRole('button').getAttribute('aria-pressed')).toBe('true')
+    fireEvent.click(screen.getByRole('button', { name: 'Campañas' }))
+    select()
+    expect(screen.getByRole('button', { name: `Ver en el mapa: ${campaign.nombre}` }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByTestId('current-location').textContent).toContain(`seleccion=${target === 'zona' ? 's' : 'r'}%3A`)
+    expect(query).toHaveBeenCalledTimes(1)
+  })
+
+  it.each([300, 3000])('el mapa centra la tarjeta solo cuando desborda un ancho de %s', async width => {
+    const offset = vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(240)
+    const client = vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(width)
+    try {
+      query.mockResolvedValueOnce(globalResponse())
+      renderPublic('/impacto')
+      await screen.findByRole('button', { name: 'Subcampañas' })
+      const rail = screen.getByLabelText('Explorar campañas y zonas')
+      await waitFor(() => expect(rail.querySelectorAll('article').length).toBe(globalResponse().data.subcampanias.length * (width === 300 ? 3 : 1)))
+      expect(within(rail).getAllByRole('article')).toHaveLength(globalResponse().data.subcampanias.length)
+      if (width === 300) expect(screen.getByRole('button', { name: 'Tarjeta siguiente' })).toBeTruthy()
+      else expect(screen.queryByRole('button', { name: 'Tarjeta siguiente' })).toBeNull()
+      const scroll = vi.fn()
+      rail.scrollTo = scroll
+      const response = globalResponse().data
+      const zone = response.subcampanias[0]
+      fireEvent.click(screen.getByRole('button', { name: `Mapa zona ${zone.id}` }))
+      if (width === 300) expect(scroll).toHaveBeenCalledOnce()
+      else expect(scroll).not.toHaveBeenCalled()
+      expect([...rail.querySelectorAll(`[data-campaign="${zone.id}"] button`)].every(button => button.getAttribute('aria-pressed') === 'true')).toBe(true)
+    } finally { offset.mockRestore(); client.mockRestore() }
+  })
+
+  it('inicia en subcampañas y permite cambiar de nivel sin consultar otra API', async () => {
+    query.mockResolvedValueOnce(globalResponse())
+    renderPublic('/impacto')
+    const sub = await screen.findByRole('button', { name: 'Subcampañas' })
+    expect(sub.getAttribute('aria-pressed')).toBe('true')
+    expect(screen.queryByRole('heading', { name: 'Campaña local INT03A' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Campañas' }))
+    expect(screen.getByRole('heading', { name: 'Campaña local INT03A' })).toBeTruthy()
+    fireEvent.click(sub)
+    expect(sub.getAttribute('aria-pressed')).toBe('true')
+    expect(query).toHaveBeenCalledTimes(1)
+  })
+
+  it.each(['título', 'foto', 'tarjeta'])('selecciona desde %s y lleva el mapa a la vista sin abrir el detalle', async target => {
+    query.mockResolvedValueOnce(globalResponse())
+    renderPublic('/impacto')
+    fireEvent.click(await screen.findByRole('button', { name: 'Campañas' }))
+    const title = await screen.findByRole('heading', { name: 'Campaña local INT03A' })
+    const card = title.closest('article')!
+    const mapSection = screen.getByRole('region', { name: 'Aquí estamos plantando' })
+    const scroll = vi.fn()
+    mapSection.scrollIntoView = scroll
+    vi.spyOn(mapSection, 'getBoundingClientRect').mockReturnValue({ top: -400 } as DOMRect)
+    fireEvent.click(target === 'título' ? title : target === 'foto' ? within(card).getByRole('img') : card)
+    expect(screen.getByText('3 puntos públicos')).toBeTruthy()
+    expect(within(card).getByRole('button', { name: 'Ver en el mapa: Campaña local INT03A' }).getAttribute('aria-pressed')).toBe('true')
+    expect(within(card).getByText('Viendo en el mapa')).toBeTruthy()
+    expect(scroll).toHaveBeenCalledOnce()
+    expect(screen.getByTestId('current-location').textContent).toBe('/impacto')
+    expect(query).toHaveBeenCalledTimes(1)
+  })
+
+  it('el enlace de una tarjeta abre su campaña sin activar el desplazamiento del mapa', async () => {
+    query.mockResolvedValueOnce(globalResponse()).mockResolvedValueOnce(validarImpactoConsulta(examples.campania, { tipo: 'campania', id: '800' }))
+    renderPublic('/impacto')
+    fireEvent.click(await screen.findByRole('button', { name: 'Campañas' }))
+    const title = await screen.findByRole('heading', { name: 'Campaña local INT03A' })
+    const section = screen.getByRole('region', { name: 'Aquí estamos plantando' })
+    const scroll = vi.fn()
+    section.scrollIntoView = scroll
+    vi.spyOn(section, 'getBoundingClientRect').mockReturnValue({ top: -400 } as DOMRect)
+    fireEvent.click(within(title.closest('article')!).getByRole('link', { name: 'Conocer campaña' }))
+    await waitFor(() => expect(query).toHaveBeenLastCalledWith({ tipo: 'campania', id: '800' }, {}, expect.any(AbortSignal)))
+    expect(screen.getByTestId('current-location').textContent).toBe('/impacto/campanias/800')
+    expect(scroll).not.toHaveBeenCalled()
+  })
+
   it('enfoca una campaña desde su tarjeta sin alterar el total global ni pedir otra consulta', async () => {
     query.mockResolvedValueOnce(globalResponse())
     renderPublic('/impacto')
     expect(await screen.findByText('4 puntos públicos')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Volver' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Campañas' }))
     fireEvent.click(screen.getByRole('button', { name: 'Ver en el mapa: Campaña segunda INT05' }))
     expect(screen.getByText('1 puntos públicos')).toBeTruthy()
     expect(within(screen.getByRole('region', { name: 'Indicadores de impacto' })).getByText('50')).toBeTruthy()
@@ -184,6 +316,69 @@ describe('Impacto público y navegación por ámbitos', () => {
 })
 
 describe('detalle público de registro grupal', () => {
+  it('abre la ubicación desde el registro y permite volver a la misma jornada', async () => {
+    detail.mockResolvedValue(recordResponse())
+    query.mockResolvedValueOnce(subResponse())
+    renderPublic('/impacto/registros/826000')
+    fireEvent.click(await screen.findByRole('link', { name: 'Ver esta plantación en el mapa' }))
+    await screen.findByRole('region', { name: 'Resumen del registro seleccionado' })
+    expect(screen.getByTestId('current-location').textContent).toBe('/impacto/subcampanias/826?seleccion=r%3A826000')
+    expect(query).toHaveBeenLastCalledWith({ tipo: 'subcampania', id: '826' }, {}, expect.any(AbortSignal))
+    expect(screen.queryByRole('link', { name: 'Conocer zona' })).toBeNull()
+    expect(screen.queryByRole('link', { name: 'Abrir subcampaña' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Volver' }))
+    await screen.findByRole('heading', { name: 'INT05-GRUPO-25' })
+    expect(screen.getByTestId('current-location').textContent).toBe('/impacto/registros/826000')
+  })
+
+  it('mantiene la foto recuperable después de un fallo de carga', async () => {
+    detail.mockResolvedValueOnce(recordResponse())
+    renderPublic('/impacto/registros/826000')
+    const photo = await screen.findByRole('img', { name: 'Foto pública del registro, evidencia 900050' })
+    fireEvent.error(photo)
+    expect(screen.getByText('No se pudo cargar esta foto pública.')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Reintentar foto' }))
+    const retry = screen.getByRole('img', { name: 'Foto pública del registro, evidencia 900050' })
+    expect(retry.getAttribute('src')).toBe(photo.getAttribute('src'))
+    fireEvent.load(retry)
+    expect(screen.queryByText('Cargando foto…')).toBeNull()
+    expect(screen.queryByText('No se pudo cargar esta foto pública.')).toBeNull()
+  })
+
+  it('enfoca y selecciona el enlace para copiarlo manualmente si el portapapeles falla', async () => {
+    vi.stubGlobal('navigator', { clipboard: { writeText: vi.fn().mockRejectedValue(new Error('No permitido')) } })
+    try {
+      detail.mockResolvedValueOnce(recordResponse())
+      renderPublic('/impacto/registros/826000')
+      await screen.findByRole('heading', { name: 'INT05-GRUPO-25' })
+      fireEvent.click(screen.getByRole('button', { name: 'Copiar enlace' }))
+      const field = await screen.findByRole('textbox', { name: 'Enlace público' }) as HTMLInputElement
+      expect(document.activeElement).toBe(field)
+      expect(field.selectionStart).toBe(0)
+      expect(field.selectionEnd).toBe(field.value.length)
+      expect(screen.queryByText('Enlace público copiado.')).toBeNull()
+    } finally { vi.unstubAllGlobals() }
+  })
+
+  it('espera a que el portapapeles confirme la copia y evita intentos duplicados', async () => {
+    let finish!: () => void
+    const copy = vi.fn().mockImplementation(() => new Promise<void>(resolve => { finish = resolve }))
+    vi.stubGlobal('navigator', { clipboard: { writeText: copy } })
+    try {
+      detail.mockResolvedValueOnce(recordResponse())
+      renderPublic('/impacto/registros/826000')
+      await screen.findByRole('heading', { name: 'INT05-GRUPO-25' })
+      const button = screen.getByRole('button', { name: 'Copiar enlace' })
+      fireEvent.click(button)
+      fireEvent.click(button)
+      expect(copy).toHaveBeenCalledTimes(1)
+      expect(screen.getByRole('button', { name: 'Copiando…' }).hasAttribute('disabled')).toBe(true)
+      expect(screen.queryByText('Enlace público copiado.')).toBeNull()
+      await act(async () => finish())
+      expect(screen.getByText('Enlace público copiado.')).toBeTruthy()
+    } finally { vi.unstubAllGlobals() }
+  })
+
   it('muestra snapshots mixtos, contexto organizacional separado, GPS y fotos públicas elegibles', async () => {
     const record = recordResponse()
     record.data.personas.push({ nombre: null, es_responsable: false, afiliacion: { estado: 'HISTORICA_NO_DISPONIBLE', tipo: null, nombre: null, organizacion_id: null } })

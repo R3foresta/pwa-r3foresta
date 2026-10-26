@@ -95,10 +95,10 @@ function BottomNav({ publicMode = false }: { publicMode?: boolean }) {
         />
       )}
 
-      <div className="fixed inset-x-0 bottom-0 z-40 mb-3 flex justify-center">
-        <nav aria-label="Navegación principal" className="relative flex w-[92%] max-w-md items-end justify-between rounded-3xl bg-brand-600 px-4 py-3 text-white shadow-2xl shadow-brand-900/30">
+      <div className="fixed inset-x-0 bottom-0 z-40 mb-[max(0.75rem,env(safe-area-inset-bottom))] flex justify-center">
+        <nav aria-label="Navegación principal" className={`relative flex w-[92%] max-w-md items-end justify-between rounded-3xl bg-brand-600 px-4 ${hasInternalAccess ? 'py-3' : 'py-1'} text-white shadow-2xl shadow-brand-900/30`}>
           {navItems.map((item) => {
-            const isActive = item.path === '/impacto' ? pathname === '/' || pathname.startsWith('/impacto') : item.path === '/participar' ? pathname === '/participar' || pathname === '/app/home' || pathname.endsWith('/registrar') : pathname.startsWith(item.path)
+            const isActive = item.path === '/impacto' ? pathname === '/' || pathname.startsWith('/impacto') : item.path === '/participar' ? pathname === '/participar' || pathname === '/app/home' || /^\/app\/planting\/subcampanias\/[1-9]\d*$/.test(pathname) || pathname.endsWith('/registrar') : pathname.startsWith(item.path)
             const needsLogin = !isAuthenticated && item.path.startsWith('/app/')
             return (
               <NavLink
@@ -111,7 +111,7 @@ function BottomNav({ publicMode = false }: { publicMode?: boolean }) {
                 }`}
               >
                 <div
-                  className={`flex h-10 w-10 items-center justify-center rounded-xl ${
+                  className={`flex ${hasInternalAccess ? 'h-10 w-10' : 'h-8 w-8'} items-center justify-center rounded-xl ${
                     isActive ? 'bg-white/20 text-white' : 'text-white/70'
                   }`}
                 >

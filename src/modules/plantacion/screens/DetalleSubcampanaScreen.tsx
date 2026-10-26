@@ -2,11 +2,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import L from 'leaflet'
 import type { LatLngTuple } from 'leaflet'
 import { MapContainer, Polygon, TileLayer, useMap } from 'react-leaflet'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import 'leaflet/dist/leaflet.css'
 import plantacionHero from '../../../assets/home/plantacion.webp'
+import SubcampaniaSpeciesCard from '../components/SubcampaniaSpeciesCard'
+import SubcampaniaDetailHeader from '../components/SubcampaniaDetailHeader'
+import DetailTabs, { type DetailTab } from '../components/SubcampaniaDetailTabs'
 import Icon from '../../../components/Icon'
 import { Button } from '../../../components/ui'
+import { inicioReturnForActor } from '../../participacion/utils/detailNavigation'
 import { useAuth } from '../../../contexts/AuthContext'
 import { getPlantacionErrorStatus, PlantacionService } from '../../../services/plantacion.service'
 import {
@@ -48,7 +52,6 @@ function buildWizardUrl(
   return `/app/planting/campanias/${campaniaId}/subcampanias/new?${params.toString()}`
 }
 
-type DetailTab = 'resumen' | 'equipo' | 'mapa'
 
 type PlanReadError = { status?: number; message: string }
 
@@ -97,35 +100,9 @@ function formatHectareas(value?: number | null): string | null {
   return new Intl.NumberFormat('es-BO', { maximumFractionDigits: 1 }).format(value)
 }
 
-function clampPct(pct: number): number {
-  return Math.max(0, Math.min(100, pct))
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Small visual pieces
 // ─────────────────────────────────────────────────────────────────────────────
-
-function StateBadgeLight({ estado }: { estado: EstadoSubcampania }) {
-  const map: Record<EstadoSubcampania, string> = {
-    BORRADOR: 'bg-warning-400/20 text-warning-100 ring-warning-300/40',
-    ACTIVA: 'bg-success-400/20 text-success-100 ring-success-300/40',
-    COMPLETADA: 'bg-white/15 text-white ring-white/20',
-    FINALIZADA_PARCIAL: 'bg-white/15 text-white ring-white/20',
-    PAUSADA: 'bg-warning-400/20 text-warning-100 ring-warning-300/40',
-    CANCELADA: 'bg-danger-400/20 text-danger-100 ring-danger-300/40',
-  }
-
-  const tone = map[estado] ?? map.COMPLETADA
-
-  return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.14em] ring-1 ${tone}`}
-    >
-      <span className="h-1.5 w-1.5 rounded-full bg-current" />
-      {estado.replace(/_/g, ' ')}
-    </span>
-  )
-}
 
 function FaseBadgeLight({ fase }: { fase: Subcampania['fase_mantenimiento'] }) {
   if (!fase || fase === 'NO_APLICA') return null
@@ -152,93 +129,12 @@ function SubcampanaHeader({
   onMore: () => void
 }) {
   const tipoLabel = sub.tipo ? TIPO_CAMPANIA_LABEL[sub.tipo] : null
-  const plantados = getPlantados(sub)
-  const pct = getAvancePct(sub)
-
-  return (
-    <header className="relative overflow-hidden rounded-b-3xl bg-brand-700 text-white shadow-soft">
-      <img
-        src={plantacionHero}
-        alt=""
-        className="absolute inset-0 h-full w-full object-cover opacity-40"
-      />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/30 to-brand-700/95" />
-      <div className="relative px-5 pb-5 pt-5">
-        <div className="flex items-center justify-between gap-2">
-          <button
-            type="button"
-            onClick={onBack}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 transition hover:bg-white/25"
-            aria-label="Volver"
-          >
-            <Icon name="arrow-left" className="h-5 w-5" />
-          </button>
-          <div className="flex flex-wrap items-center justify-end gap-1.5">
-            <StateBadgeLight estado={sub.estado} />
-            <FaseBadgeLight fase={sub.fase_mantenimiento} />
-            <button
-              type="button"
-              onClick={onMore}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 transition hover:bg-white/25"
-              aria-label="Más opciones"
-            >
-              <Icon name="ellipsis" className="h-5 w-5" />
-            </button>
-          </div>
-        </div>
-
-        {sub.codigo_trazabilidad && (
-          <p className="mt-4 text-[10.5px] font-extrabold uppercase tracking-[0.24em] text-white/85">
-            {sub.codigo_trazabilidad}
-          </p>
-        )}
-        <h1 className="mt-0.5 text-[26px] font-extrabold leading-[1.1] tracking-tight">
-          {sub.nombre}
-        </h1>
-
-        {tipoLabel && (
-          <span className="mt-2 inline-flex rounded-full bg-white/15 px-2.5 py-1 text-[10.5px] font-extrabold uppercase tracking-[0.14em] text-white ring-1 ring-white/20">
-            {tipoLabel}
-          </span>
-        )}
-
-        <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px] font-bold text-white/80">
-          <span className="inline-flex items-center gap-1.5">
-            <Icon name="date" className="h-3.5 w-3.5" />
-            {formatDate(sub.fecha_estimada_inicio)} &rarr; {formatDate(sub.fecha_estimada_fin)}
-          </span>
-          {sub.zona_nombre && (
-            <span className="inline-flex items-center gap-1.5">
-              <Icon name="pin" className="h-3.5 w-3.5" />
-              {sub.zona_nombre}
-            </span>
-          )}
-        </p>
-
-        <div className="mt-4 flex items-end justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-white/80">
-              Plantados / meta
-            </p>
-            <p className="mt-0.5 text-[40px] font-extrabold leading-none tracking-tight tabular-nums">
-              {plantados.toLocaleString('es-BO')}
-              <span className="ml-1 text-base font-extrabold text-white/65">
-                / {sub.meta_total_arboles.toLocaleString('es-BO')}
-              </span>
-            </p>
-          </div>
-          <div className="flex-shrink-0 text-right">
-            <p className="text-[10px] font-bold text-white/70">Avance</p>
-            <p className="text-2xl font-extrabold tabular-nums">{pct}%</p>
-          </div>
-        </div>
-        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/15">
-          <div
-            className="h-full rounded-full bg-success-300"
-            style={{ width: `${clampPct(pct)}%` }}
-          />
-        </div>
-
+  return <SubcampaniaDetailHeader nombre={sub.nombre} estado={sub.estado}
+    eyebrow={sub.codigo_trazabilidad ?? undefined}
+    fechas={`${formatDate(sub.fecha_estimada_inicio)} → ${formatDate(sub.fecha_estimada_fin)}`}
+    zona={sub.zona_nombre} plantados={getPlantados(sub)} meta={sub.meta_total_arboles} porcentaje={getAvancePct(sub)}
+    onBack={onBack} onMore={onMore} tipoLabel={tipoLabel}
+    badges={<FaseBadgeLight fase={sub.fase_mantenimiento} />}>
         {sub.estado === 'FINALIZADA_PARCIAL' && (
           <div className="mt-3 flex items-start gap-2 rounded-2xl bg-warning-400/15 px-3 py-2.5 ring-1 ring-warning-300/40">
             <Icon name="flag" className="mt-0.5 h-4 w-4 flex-shrink-0 text-warning-200" />
@@ -257,9 +153,7 @@ function SubcampanaHeader({
             </p>
           </div>
         )}
-      </div>
-    </header>
-  )
+  </SubcampaniaDetailHeader>
 }
 
 function LoadingHeader({ onBack }: { onBack: () => void }) {
@@ -291,49 +185,6 @@ function LoadingHeader({ onBack }: { onBack: () => void }) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Tab bar
-// ─────────────────────────────────────────────────────────────────────────────
-
-const DETAIL_TABS: Array<{ key: DetailTab; label: string }> = [
-  { key: 'resumen', label: 'Resumen' },
-  { key: 'equipo', label: 'Equipo' },
-  { key: 'mapa', label: 'Mapa' },
-  // TODO(asignaciones): agregar tab "Asignaciones" cuando exista endpoint de
-  // asignaciones de lotes desde esta pantalla. La key sería 'asignaciones'.
-]
-
-function DetailTabs({
-  active,
-  onChange,
-}: {
-  active: DetailTab
-  onChange: (tab: DetailTab) => void
-}) {
-  return (
-    <div className="sticky top-0 z-20 -mx-5 bg-brand-50/95 px-5 pb-2 pt-3 backdrop-blur-sm">
-      <div className="flex rounded-full bg-white p-1 shadow-soft ring-1 ring-black/5">
-        {DETAIL_TABS.map((tab) => {
-          const selected = active === tab.key
-          return (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => onChange(tab.key)}
-              className={`flex-1 rounded-full px-3 py-2 text-[12px] font-extrabold tracking-wide transition ${
-                selected
-                  ? 'bg-brand-600 text-white shadow-soft'
-                  : 'text-brand-700 hover:bg-brand-50'
-              }`}
-            >
-              {tab.label}
-            </button>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Mapa helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -731,75 +582,11 @@ function ResumenTab({
         </div>
       </div>
 
-      {/* Mix de especies (plan de metas) */}
-      {metasPlan.length > 0 && (
-        <section aria-label="Mix de especies planificado" className="overflow-hidden rounded-3xl bg-white shadow-soft ring-1 ring-brand-100">
-          <div className="flex items-center justify-between gap-3 border-b border-brand-100 bg-brand-50/60 p-4">
-            <div className="flex min-w-0 items-center gap-2.5">
-              <div aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-100/70 text-brand-600">
-                <Icon name="leaf" className="h-4 w-4" />
-              </div>
-              <div className="min-w-0">
-                <h2 className="text-sm font-extrabold leading-snug text-brand-800">
-                  Mix de especies planificado
-                </h2>
-                <p className="mt-0.5 text-[11px] font-medium text-neutral-500">
-                  {metasPlan.length} {metasPlan.length === 1 ? 'especie' : 'especies'} en el plan
-                </p>
-              </div>
-            </div>
-            {canEditPlan && (
-              <Button
-                variant="secondary"
-                size="sm"
-                leftIcon="note"
-                className="min-h-11 shrink-0 rounded-xl shadow-none"
-                aria-label="Editar meta y especies"
-                onClick={onEditarPlan}
-              >
-                Editar
-              </Button>
-            )}
-          </div>
-          <ul className="divide-y divide-neutral-100 px-4">
-            {metasPlan.map((meta) => {
-              const nombre = meta.planta?.especie ?? `Planta #${meta.planta_id}`
-              const pctObjetivo = Math.max(0, Math.min(100, meta.porcentaje_objetivo))
-              return (
-                <li key={meta.planta_id} className="py-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="break-words text-sm font-bold text-brand-800">{nombre}</p>
-                      {meta.planta?.nombre_cientifico && (
-                        <p className="mt-0.5 break-words text-[11px] italic leading-relaxed text-neutral-500">
-                          {meta.planta.nombre_cientifico}
-                        </p>
-                      )}
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <p className="text-lg font-extrabold leading-none tabular-nums text-brand-800">
-                        {meta.cantidad_objetivo.toLocaleString('es-BO')}
-                      </p>
-                      <p className="mt-1 text-[10px] font-medium text-neutral-500">árboles</p>
-                    </div>
-                  </div>
-                  <div className="mt-3 flex items-center gap-3">
-                    <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-brand-50">
-                      <div
-                        className="h-full rounded-full bg-brand-500"
-                        style={{ width: `${pctObjetivo}%` }}
-                      />
-                    </div>
-                    <span className="shrink-0 rounded-lg bg-brand-50 px-2 py-1 text-[11px] font-bold tabular-nums text-brand-600">
-                      {pctObjetivo.toLocaleString('es-BO', { maximumFractionDigits: 2 })}%
-                    </span>
-                  </div>
-                </li>
-              )
-            })}
-          </ul>
-        </section>
-      )}
+      {metasPlan.length > 0 && <SubcampaniaSpeciesCard items={metasPlan.map(meta => ({
+        id: String(meta.planta_id), nombre: meta.planta?.especie ?? `Planta #${meta.planta_id}`,
+        nombre_cientifico: meta.planta?.nombre_cientifico, cantidad_objetivo: meta.cantidad_objetivo,
+        porcentaje_objetivo: meta.porcentaje_objetivo,
+      }))} onEdit={canEditPlan ? onEditarPlan : undefined} />}
 
       {/* Descripción (solo si existe) */}
       {sub.descripcion && (
@@ -1118,6 +905,7 @@ function MoreSheet({
 
 function DetalleSubcampanaScreen() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { user, login } = useAuth()
   const { subcampaniaId } = useParams<{ subcampaniaId: string }>()
 
@@ -1211,6 +999,8 @@ function DetalleSubcampanaScreen() {
   }, [hasValidId, numericId, authId, fetchSubcampaniaData])
 
   const goBack = () => {
+    const home = user?.id && subcampaniaId ? inicioReturnForActor(location.state, user.id, subcampaniaId) : null
+    if (home) { navigate(home); return }
     if (sub) {
       navigate(`/app/planting/campanias/${sub.campania_id}`)
     } else {

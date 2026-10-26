@@ -54,7 +54,7 @@ function renderDetail() {
 
 async function openEditor() {
   const user = userEvent.setup()
-  const card = await screen.findByRole('region', { name: 'Mix de especies planificado' })
+  const card = await screen.findByRole('region', { name: 'Especies de plantas' })
   await user.click(within(card).getByRole('button', { name: 'Editar meta y especies' }))
   await screen.findByLabelText(/Meta total propuesta/)
   return user
@@ -89,7 +89,7 @@ describe('revisión del plan desde el detalle de subcampaña', () => {
   it.each(['GENERAL', 'VALIDADOR', 'VOLUNTARIO'])('permite a %s consultar el plan sin pertenecer al equipo', async (rol) => {
     authState.user.rol = rol
     renderDetail()
-    expect(await screen.findByText('Mix de especies planificado')).toBeTruthy()
+    expect(await screen.findByText('Especies de plantas')).toBeTruthy()
     expect(screen.getByText('Aliso')).toBeTruthy()
     expect(PlantacionService.getSubcampaniaPlan).toHaveBeenCalledExactlyOnceWith(54, 'auth-1')
     expect(PlantacionService.getSubcampaniaEquipo).toHaveBeenCalledExactlyOnceWith(54, 'auth-1')
@@ -114,7 +114,7 @@ describe('revisión del plan desde el detalle de subcampaña', () => {
     authState.user.rol = rol
     vi.mocked(PlantacionService.getSubcampania).mockResolvedValue({ ...subcampania, estado })
     renderDetail()
-    const card = await screen.findByRole('region', { name: 'Mix de especies planificado' })
+    const card = await screen.findByRole('region', { name: 'Especies de plantas' })
     expect(Boolean(within(card).queryByRole('button', { name: 'Editar meta y especies' }))).toBe(available)
     await user.click(screen.getByRole('button', { name: 'Más opciones' }))
     const actions = within(screen.getByRole('heading', { name: 'Acciones de subcampaña' }).parentElement!)
@@ -137,7 +137,7 @@ describe('revisión del plan desde el detalle de subcampaña', () => {
     expect(screen.queryByRole('button', { name: /Editar meta y especies/ })).toBeNull()
     await user.click(screen.getByRole('button', { name: /^Cerrar$/ }))
     await user.click(screen.getByRole('button', { name: 'Iniciar sesión' }))
-    expect(await screen.findByText('Mix de especies planificado')).toBeTruthy()
+    expect(await screen.findByText('Especies de plantas')).toBeTruthy()
     expect(screen.queryByText('No se pudo consultar el plan vigente')).toBeNull()
     expect(authState.login).toHaveBeenCalledTimes(1)
     expect(authState.logout).not.toHaveBeenCalled()
@@ -157,7 +157,7 @@ describe('revisión del plan desde el detalle de subcampaña', () => {
     expect(await screen.findByText('Se canceló el inicio de sesión.')).toBeTruthy()
     expect(PlantacionService.getSubcampaniaPlan).toHaveBeenCalledTimes(1)
     await user.click(screen.getByRole('button', { name: 'Iniciar sesión' }))
-    expect(await screen.findByText('Mix de especies planificado')).toBeTruthy()
+    expect(await screen.findByText('Especies de plantas')).toBeTruthy()
     expect(PlantacionService.revisarSubcampaniaPlan).not.toHaveBeenCalled()
   })
 
@@ -169,7 +169,7 @@ describe('revisión del plan desde el detalle de subcampaña', () => {
       view.rerender(<DetailRoute />)
     })
     await userEvent.setup().click(await screen.findByRole('button', { name: 'Iniciar sesión' }))
-    expect(await screen.findByText('Mix de especies planificado')).toBeTruthy()
+    expect(await screen.findByText('Especies de plantas')).toBeTruthy()
     expect(screen.queryByText('Consultando plan…')).toBeNull()
     expect(screen.queryByText('Cargando subcampaña...')).toBeNull()
     expect(PlantacionService.getSubcampania).toHaveBeenLastCalledWith(54, 'auth-2')
@@ -191,7 +191,7 @@ describe('revisión del plan desde el detalle de subcampaña', () => {
     expect(screen.queryByRole('button', { name: /Editar meta y especies/ })).toBeNull()
     await user.click(screen.getByRole('button', { name: /^Cerrar$/ }))
     await user.click(screen.getByRole('button', { name: 'Reintentar consulta del plan' }))
-    expect(await screen.findByText('Mix de especies planificado')).toBeTruthy()
+    expect(await screen.findByText('Especies de plantas')).toBeTruthy()
     expect(authState.login).not.toHaveBeenCalled()
     expect(authState.logout).not.toHaveBeenCalled()
     expect(PlantacionService.revisarSubcampaniaPlan).not.toHaveBeenCalled()
@@ -203,7 +203,7 @@ describe('revisión del plan desde el detalle de subcampaña', () => {
     expect(await screen.findByText('No hay conexión para consultar el plan.')).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Subcampaña Palca', level: 1 })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Reintentar consulta del plan' })).toBeTruthy()
-    expect(screen.queryByText('Mix de especies planificado')).toBeNull()
+    expect(screen.queryByText('Especies de plantas')).toBeNull()
   })
 
   it('actualiza 50/40 a 50/60 tras confirmar y consulta todos los indicadores conservando ACTIVA', async () => {

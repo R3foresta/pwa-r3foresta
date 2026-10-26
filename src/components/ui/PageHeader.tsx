@@ -45,18 +45,18 @@ type InnerProps = Omit<PageHeaderProps, 'variant' | 'backTo'> & { onBack: () => 
 function CompactHeader({ eyebrow = 'Sección', title, subtitle, rightSlot, onBack, className }: InnerProps) {
   return (
     <header className={cn('mb-4 flex items-start justify-between gap-3', className)}>
-      <div className="flex items-start gap-3">
+      <div className="flex min-w-0 flex-1 items-start gap-3">
         <button
           type="button"
           aria-label="Volver"
           onClick={onBack}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/90 text-brand-700 shadow-soft transition hover:bg-white"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/90 text-brand-700 shadow-soft transition hover:bg-white"
         >
           <Icon name="arrow-left" className="h-5 w-5" />
         </button>
-        <div className="flex flex-col">
+        <div className="flex min-w-0 flex-col">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-500">{eyebrow}</p>
-          <h1 className="text-2xl font-semibold tracking-tight text-brand-700">{title}</h1>
+          <h1 className="break-words text-2xl font-semibold tracking-tight text-brand-700">{title}</h1>
           {subtitle && <p className="mt-0.5 text-xs font-medium text-brand-500">{subtitle}</p>}
         </div>
       </div>

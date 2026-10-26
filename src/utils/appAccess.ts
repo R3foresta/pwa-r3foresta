@@ -10,6 +10,7 @@ export function canOpenAppPath(path: string, role: string | null | undefined): b
   if (hasInternalAppAccess(role)) return true
   // La pantalla verifica capacidades del servidor; esta excepción no abre el módulo interno.
   return ['/app', '/app/home', '/app/profile', '/app/edit-profile', '/app/participacion/accesos', '/app/participacion/registrar', '/app/participacion/mis-registros'].includes(pathname)
+    || /^\/app\/planting\/subcampanias\/[1-9]\d*$/.test(pathname)
     || /^\/app\/participacion\/subcampanias\/[1-9]\d*\/registrar$/.test(pathname)
     || /^\/app\/participacion\/registros\/[1-9]\d*$/.test(pathname)
 }

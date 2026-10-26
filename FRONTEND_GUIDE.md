@@ -13,7 +13,7 @@ Guía práctica del código actual. Arranque/comandos: [README](README.md). Regl
 | UI compartida | `src/components/ui/`, `src/components/ConfirmDialog.tsx` |
 | PWA | `src/pwa/`, `vite.config.ts`, `vercel.json` |
 
-Seguir la estructura real del módulo: hay `screens/` y `pages/`, sin necesidad de renombrar carpetas para uniformarlas. Las rutas usan `React.lazy` con imports directos; Leaflet y sus estilos se cargan donde se usan. Las capas compartidas no deben incorporar reglas de una feature.
+Seguir la estructura real del módulo: hay `screens/` y `pages/`, sin necesidad de renombrar carpetas para uniformarlas. Las rutas usan `React.lazy` con imports directos; las librerías de mapas y sus estilos se cargan donde se usan. Impacto utiliza MapLibre GL JS con su worker empaquetado por Vite; los mapas operativos conservan Leaflet. Configuración cartográfica, adaptación GeoJSON e interacción viven dentro de la feature; las capas compartidas no deben incorporar reglas de una feature.
 
 ## Secuencia para un cambio
 
@@ -56,7 +56,7 @@ El perfil visible está ligado al token que lo verificó. Al cambiar token por l
 - `appAccess.ts` conserva la entrada interna de ADMIN/GENERAL/VALIDADOR. Ser administrador contextual no abre esos módulos.
 - Perfil mínimo: nombre. Apellido, documento, wallet y afiliación no deben convertirse en requisitos nuevos de este recorrido.
 - `AppLayout` aporta el provider compartido de capacidades. No reemplazar todas las facultades internas por este DTO limitado al recorrido participante.
-- `src/modules/impacto/` implementa la consulta pública sin esperar sesión/capacidades. `AppLayout publicMode` y `BottomNav` conservan navegación pública; `ParticipantHomeScreen` en `/participar` monta las acciones de cuenta con el provider existente. La portada permanece global y la selección de campaña es explícita. Mis registros/detalle histórico usan Bearer sin exigir capacidad operativa. Rutas, filtros, paginación y preferencia por cuenta: [módulo Impacto](src/modules/impacto/README.md). Evidencia y límites: [QA INT05](docs/QA_IMPACTO_INT05.md).
+- `src/modules/impacto/` implementa la consulta pública sin esperar sesión/capacidades. `AppLayout publicMode` y `BottomNav` conservan navegación pública; `ParticipantHomeScreen` en `/participar` monta `PlantadorWorkspace` con el provider existente (o uno local en la entrada pública autenticada). La portada de Impacto permanece global. Participar muestra tarjetas de todos los ámbitos devueltos por capacidades, agrupadas por campaña y estado activo/otras. No selecciona una zona automáticamente. El mapa de inicio es un diálogo de pantalla completa con geometría pública opcional filtrada por esos ámbitos, sin registros individuales ni GPS; `vista=mapa` y `seleccion` conservan su vista. Los enlaces antiguos con campaña/subcampaña validan el ámbito y redirigen a `/app/planting/subcampanias/:id`; el retorno al inicio conserva modo por estado de navegación ligado al actor. Los enlaces no disponibles no seleccionan otra zona. El stock se consulta sólo dentro del ámbito elegido y autorizado. Mis registros/detalle histórico usan Bearer sin exigir capacidad operativa; su historial sigue siendo de todas las campañas. Rutas, filtros y paginación: [módulo Impacto](src/modules/impacto/README.md). Evidencia y límites: [QA INT05](docs/QA_IMPACTO_INT05.md).
 
 ## Plan de Plantación
 
@@ -104,3 +104,7 @@ npm run build
 El build incluye TypeScript; no hay script `typecheck`. Los tests coexisten con código en `src/**/*.test.ts(x)` y normalmente simulan servicios/HTTP. Añadir pruebas de comportamiento cuando el cambio lo requiera, no pruebas espejo para texto/estilos reversibles.
 
 Para QA real, seguir el [índice de evidencia](docs/README.md) y el runner correspondiente. Registrar revisión, entorno, actor, peticiones, persistencia y límites. Una captura no demuestra atomicidad, un mock no demuestra autorización y un push no demuestra despliegue. Revisar estado, restricciones, cancelación, error, cuenta cambiada y respuesta perdida según el flujo.
+
+### Detalle de subcampaña compartido (25 de octubre de 2026)
+
+`SubcampaniaDetailRoute` resuelve esa URL exacta por audiencia: roles internos conservan `DetalleSubcampanaScreen`; participantes requieren capacidades completas del actor y ámbito antes de montar `ParticipacionSubcampaniaDetail`. El guard admite solamente el detalle, no todo Plantación. Encabezado fotográfico, pestañas redondas y tarjeta de especies reutilizan el diseño interno original. Los participantes consumen Impacto público, contexto de registro autorizado y miembros solo para administración contextual; nunca el servicio interno como fallback. Fechas, fotos de equipo o lecturas no autorizadas se indican como no disponibles. `useParticipacionAccountNavigation` vive en `AppLayout`, fuera del provider que remonta por cuenta/token, para descartar la selección anterior. Retornos al detalle se validan con `safeParticipacionReturn`.

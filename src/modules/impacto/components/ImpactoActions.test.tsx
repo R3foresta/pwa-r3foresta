@@ -38,10 +38,18 @@ beforeEach(() => {
   consult.mockReset().mockResolvedValue({ data: empty })
 })
 describe('acciones separadas de la consulta pública', () => {
+  it('espera la verificación de sesión sin invitar a crear otra cuenta', () => {
+    auth.hydrated = false
+    render(tree())
+    expect(screen.getByRole('status').textContent).toBe('Comprobando tu sesión…')
+    expect(screen.queryByRole('link', { name: 'Crear mi perfil' })).toBeNull()
+    expect(caps).not.toHaveBeenCalled()
+  })
+
   it('no consulta capacidades ni espera perfil para visitantes', () => {
     auth.user = null
     auth.isAuthenticated = false
-    auth.hydrated = false
+    auth.hydrated = true
     render(tree({ defaultEntry: true }))
     expect(screen.getByText('Impacto público disponible')).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Crear mi perfil' })).toBeTruthy()
@@ -64,7 +72,7 @@ describe('acciones separadas de la consulta pública', () => {
     saveLastCampaign('42', '7')
     caps.mockRejectedValueOnce(new Error('Sin conexión'))
     render(tree({ defaultEntry: true }))
-    expect(await screen.findByRole('button', { name: 'Reintentar capacidades' })).toBeTruthy()
+    expect(await screen.findByRole('button', { name: 'Reintentar consulta' })).toBeTruthy()
     expect(screen.queryByText(/Aún no tienes subcampañas/)).toBeNull()
     expect(readLastCampaign('42')).toBe('7')
     expect(consult).not.toHaveBeenCalled()

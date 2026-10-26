@@ -29,7 +29,25 @@ El orden de ejecución entre repositorios se decide en el tablero oficial; esta 
 
 ### AUD-023 — Claridad del recorrido público y participante
 
+25 de octubre: restaurado el diseño original del detalle de subcampaña y unificada su URL para participantes, con autorización por ámbito antes de montar lecturas. Enlaces antiguos y retorno del formulario compatibles; limpieza de selección al cambiar cuenta. Pendientes: verificación visual autenticada (navegador local desactivado en Work), equipo para plantador, fechas/fotos y resumen privado por audiencia. [Informe de restauración](docs/QA_RESTAURACION_DETALLE_SUBCAMPANIA.md).
+
+24 de octubre, UX-01: inicio con tarjetas por campaña, estados y roles por ámbito; mapa de selección a pantalla completa sin registros individuales, selección explícita y regreso al contexto. Accesos globales no se filtran por capacidad de escritura. Enlaces obsoletos informan indisponibilidad sin sustituir zona. Ver [QA UX-01](docs/QA_PARTICIPACION_UX01.md): pruebas locales y revisión móvil sintética; aceptación autenticada de los tres perfiles, escritorio/dispositivo real, geometría no pública (B02) y detalle UX-02 siguen pendientes.
+
+24 de octubre: `/participar` se organiza por campaña, subcampañas propias, mapa colectivo y stock por especie de la zona elegida, reutilizando componentes y contratos vigentes. Segunda pasada solicitada por Pablo: retirado saludo/introducción, selectores compactos, mapa móvil ampliable y gestos cooperativos. Corregidos offset del footer del registro, retorno al ámbito y selección ajena/obsoleta. Pendiente aceptación visual autenticada en teléfono (el navegador local se desactivó en Work) y gestos en dispositivo real; no se ejecutaron escrituras de plantación contra backend.
+
+Tercera pasada: ficha seleccionada antes del mapa, registro antes del stock por especie (desplegable), disponibilidad siempre visible y resumen reutilizable de dos cifras. Campaña muestra plantación inicial oficial y suma de metas públicas conforme a RN-PLA-36, independiente de las zonas propias y la paginación. La revisión de navegador volvió a indicar uso local desactivado en Work; aceptación visual móvil sigue pendiente.
+
+Verificación local hasta la tercera pasada: `npm run test` (51 archivos / 755 pruebas), `npm run lint`, `npm run build` (incluye TypeScript/PWA) y `git diff --check` aprobados. El build conserva el aviso conocido del chunk diferido de MapLibre mayor a 1 MB; falta medirlo en equipos de campo.
+
+Pendiente de contrato para la siguiente mejora: `GET /api/v1/plantaciones/mis-registros` admite únicamente `cursor`/`limite`; su DTO carece de campaña/nombres/coordenadas. Para filtrar el historial y dibujar su mapa se necesitan esos campos/filtros, conservando autor/participante histórico aun con acceso retirado. No derivar esa pertenencia de capacidades actuales ni usar el mapa colectivo como si fuera el historial propio. El recorrido de captura conserva términos técnicos de preparación/cargas; simplificar su presentación requiere mantener intactos recuperación, identidad y confirmación durable.
+
 El 22 de octubre se constató duplicación de Impacto global, retorno al mismo destino, bloque personal antes de las métricas y exceso de listas/filtros en la portada. Se recompuso con componentes existentes: contador/mapa/carrusel, perfil en esquina, navegación pública, copia directa y orientación para incorporarse. Lint/build y 695 pruebas aprobados; revisión de navegador local visitante en móvil/escritorio. La prueba de registro WebAuthn y la aceptación del diseño por Pablo siguen pendientes. [Detalle y límites](src/modules/impacto/README.md#revisión-uxui--22-de-octubre-de-2026).
+
+Revisión del 23 de octubre: se corrigieron resúmenes de selección obsoletos, controles duplicados del carrusel para teclado/lector, subcampañas sin contexto diferenciador y ausencia de un siguiente paso en Mis registros vacío. Se compactó la navegación pública/participante y se distinguió verificación de sesión de visitante confirmado. Suite completa: 48 archivos / 707 pruebas; lint y build aprobados. La aceptación visual de estos ajustes sigue pendiente: la revisión automática rechazó abrir el navegador local por límite de uso. No acredita WebAuthn real, escritura de plantaciones ni integración INT07.
+
+Segunda pasada del mismo día: fotos junto al resumen, estados de carga/reintento, enlace registro → ubicación → registro, eliminación de enlaces a la subcampaña actual y copia manual accesible si falla el portapapeles. Encabezados y acciones ajustados para pantallas estrechas. Suite completa: 48 archivos / 711 pruebas; lint/build aprobados. El último intento de navegador indicó uso local desactivado en Work; se conserva pendiente la aceptación visual.
+
+Migración de Impacto a MapLibre GL JS 6.15.0: resumen y explorador separados de la consulta, componentes UI compartidos, OSM con atribución visible, marcadores por teclado y estados de error/reintento. Verificados lint, TypeScript/build/PWA y 50 archivos / 732 pruebas. Continúan pendientes aceptación visual móvil/escritorio, WebGL2 real y medición de carga en equipos de campo: el chunk diferido del mapa supera 1 MB minificado (aprox. 296 kB gzip), más worker de 517 kB. El navegador local quedó desactivado durante la revisión. [Arquitectura y límites](src/modules/impacto/README.md#motor-cartográfico).
 
 ### AUD-022 — Compatibilidad de contratos para correcciones INT07
 
@@ -82,6 +100,8 @@ Revisar todos los pasos de `CrearSubcampanaScreen.tsx` por URL directa, no sólo
 ### AUD-014 — Dependencias
 
 El análisis del 27 de septiembre registró dos alertas moderadas de React Router y una posible migración mayor. No se repitió `npm audit` en esta limpieza documental; no afirmar que su conteo sigue vigente.
+
+El 23 de octubre, tras autorización para consultar npm, `npm audit --json` confirmó 10 alertas (7 moderadas, 3 altas). Los paquetes señalados son Vite, Vitest/`@vitest/mocker`, `brace-expansion`, `source-map-js`, React Router y la cadena PostCSS/Tailwind. El informe no señala MapLibre 6.15.0 ni sus nuevas dependencias; los paquetes señalados conservan las versiones del lockfile anterior. Queda pendiente corregir y verificar estas alertas en un cambio dedicado: las soluciones propuestas para Router y Tailwind incluyen versiones mayores. No se ejecutó `audit fix`.
 
 Cerrar con diagnóstico actual del lockfile, actualización revisada y pruebas de navegación/guards/redirecciones. Evitar `npm audit fix --force` sin evaluar el cambio de versión principal.
 

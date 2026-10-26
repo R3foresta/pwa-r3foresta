@@ -75,7 +75,7 @@ describe('Acceso de una cuenta de voluntariado', () => {
         </Routes>
       </MemoryRouter>,
     )
-    expect(screen.getByRole('heading', { name: 'Hola, Ana' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Participar' })).toBeTruthy()
     expect(state.stock).not.toHaveBeenCalled()
     expect(screen.queryByRole('button', { name: 'Abrir acciones rápidas' })).toBeNull()
     expect(screen.queryByRole('link', { name: 'Recolección' })).toBeNull()

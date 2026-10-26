@@ -1,3 +1,4 @@
+import { safeParticipacionReturn } from '../../participacion/utils/detailNavigation'
 import type { ImpactoQuery, ImpactoScope } from '../types'
 import { validarImpactoQuery } from '../api/impacto.contract'
 
@@ -41,6 +42,8 @@ export function impactoErrorMessage(error: unknown): string {
 
 export function safeImpactoReturn(value: unknown): string | null {
   if (value === '/app/participacion/mis-registros') return value
+  const participation = safeParticipacionReturn(value)
+  if (participation) return participation
   return typeof value === 'string' && /^\/impacto(?:\/(?:campanias|subcampanias|registros)\/[1-9][0-9]*)?(?:\?[^#]*)?$/.test(value) ? value : null
 }
 
