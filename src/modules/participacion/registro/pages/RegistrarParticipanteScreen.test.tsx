@@ -194,6 +194,10 @@ describe('Registro participante de tres pasos', () => {
     open()
     const user = await fillToParticipants()
     await user.click(screen.getByRole('button', { name: /Volver y corregir especies/ }))
+    expect(screen.getByText('Propuesta frente a meta')).toBeTruthy()
+    expect(screen.getByText(/Avance previo no disponible/)).toBeTruthy()
+    expect(screen.getByLabelText('Avance de meta de Queñua').textContent).toBe('7 / 5')
+    expect(screen.queryByText(/Plantado antes:/)).toBeNull()
     const quantity = screen.getByLabelText('Cantidad de Queñua') as HTMLInputElement
     const add = screen.getByRole('button', { name: 'Sumar 1 a Queñua' }) as HTMLButtonElement
     const subtract = screen.getByRole('button', { name: 'Restar 1 a Queñua' }) as HTMLButtonElement

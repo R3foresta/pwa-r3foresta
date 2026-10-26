@@ -1,4 +1,5 @@
 import Icon from '../../../../components/Icon'
+import RegistroSpeciesProgressBar from './RegistroSpeciesProgressBar'
 
 type Props = {
   nombre: string
@@ -15,9 +16,6 @@ type Props = {
 export default function RegistroSpeciesCounterRow({ nombre, metaOrientativa, disponible, avance, value, cantidad, error, onChange }: Props) {
   const numericValue = (value === '' || /^\d+$/.test(value)) && Number.isSafeInteger(cantidad) && cantidad >= 0
   const propuestaValida = numericValue && !error ? cantidad : 0
-  const avancePropuesto = avance ? avance.plantado + propuestaValida : propuestaValida
-  const porcentajePrevio = avance && metaOrientativa > 0 ? Math.min(100, avance.plantado / metaOrientativa * 100) : 0
-  const porcentajeNuevo = avance && metaOrientativa > 0 ? Math.min(100 - porcentajePrevio, propuestaValida / metaOrientativa * 100) : 0
 
   function step(delta: -1 | 1) {
     if (!numericValue || (delta === 1 && error)) return
@@ -47,25 +45,7 @@ export default function RegistroSpeciesCounterRow({ nombre, metaOrientativa, dis
       </button>
     </div>
 
-    {avance ? <div className="mt-3">
-      <div className="flex items-baseline justify-between gap-2">
-        <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-neutral-500">{propuestaValida > 0 ? 'Avance si guardas' : 'Avance de meta'}</p>
-        <output aria-label={`Avance de meta de ${nombre}`} className="text-[11px] font-extrabold tabular-nums text-brand-700">{avancePropuesto}<span className="text-neutral-400"> / {metaOrientativa}</span></output>
-      </div>
-      <div className="mt-1 flex h-2 w-full overflow-hidden rounded-full bg-neutral-100" aria-hidden="true">
-        <div className="h-full bg-brand-300" style={{ width: `${porcentajePrevio}%` }} />
-        <div className="h-full bg-success-500" style={{ width: `${porcentajeNuevo}%` }} />
-      </div>
-      <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] font-bold text-neutral-500">
-        <span>Plantado antes: {avance.plantado}</span>
-        <span className="text-brand-700">Pendiente de meta: {avance.pendiente}</span>
-        <span className={disponible > 0 ? 'text-success-700' : 'text-danger-600'}>Disponible: {disponible} plantas</span>
-      </div>
-    </div> : <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[11px] font-bold">
-      <span className="text-neutral-600">Meta orientativa: {metaOrientativa}</span>
-      <span className={disponible > 0 ? 'text-success-700' : 'text-danger-600'}>Disponible: {disponible} plantas</span>
-    </div>}
-    {propuestaValida > 0 && avancePropuesto > metaOrientativa && <p className="mt-2 text-xs font-semibold text-brand-700">{avance ? 'El avance propuesto supera la meta orientativa y está dentro del saldo disponible.' : 'La cantidad supera la meta orientativa y está dentro del saldo disponible.'}</p>}
+    <RegistroSpeciesProgressBar nombre={nombre} metaOrientativa={metaOrientativa} disponible={disponible} avance={avance} cantidadPropuesta={propuestaValida} />
     {error && <p role="alert" className="mt-2 text-sm text-danger-700">{error}</p>}
   </div>
 }
