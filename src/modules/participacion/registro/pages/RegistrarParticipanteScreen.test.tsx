@@ -190,6 +190,33 @@ describe('Registro participante de tres pasos', () => {
     expect(RegistroParticipacionService.enviar).toHaveBeenCalledTimes(1)
   })
 
+  it('cuenta plantas con más y menos sin usar la meta como límite', async () => {
+    open()
+    const user = await fillToParticipants()
+    await user.click(screen.getByRole('button', { name: /Volver y corregir especies/ }))
+    const quantity = screen.getByLabelText('Cantidad de Queñua') as HTMLInputElement
+    const add = screen.getByRole('button', { name: 'Sumar 1 a Queñua' }) as HTMLButtonElement
+    const subtract = screen.getByRole('button', { name: 'Restar 1 a Queñua' }) as HTMLButtonElement
+
+    await user.clear(quantity)
+    expect(subtract.disabled).toBe(true)
+    await user.click(add)
+    await user.click(add)
+    expect(quantity.value).toBe('2')
+    await user.click(subtract)
+    await user.click(subtract)
+    expect(quantity.value).toBe('')
+    await waitFor(() => expect((mocks.records.get('801:820') as { draft: { especies: unknown[] } }).draft.especies).toEqual([]))
+
+    await user.type(quantity, '16')
+    expect(add.disabled).toBe(true)
+    await user.click(subtract)
+    expect(quantity.value).toBe('15')
+    expect(screen.getByText(/La cantidad supera la meta orientativa/)).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Continuar a participantes' }))
+    expect(screen.getByText('Queñua: 15')).toBeTruthy()
+  })
+
   it('tras perder respuesta congela el payload y recarga recupera el mismo intento sin consultar contexto operativo', async () => {
     vi.mocked(RegistroParticipacionService.enviar).mockRejectedValue(new Error('La respuesta se perdió.'))
     const view = open()
@@ -264,6 +291,8 @@ describe('Registro participante de tres pasos', () => {
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Comenzar nueva revisión' }))
     await waitFor(() => expect((screen.getByLabelText('Cantidad de Queñua') as HTMLInputElement).value).toBe('7'))
     expect(screen.getByText(/Tu propuesta no se ha reducido/)).toBeTruthy()
+    expect((screen.getByRole('button', { name: 'Sumar 1 a Queñua' }) as HTMLButtonElement).disabled).toBe(true)
+    expect((screen.getByRole('button', { name: 'Restar 1 a Queñua' }) as HTMLButtonElement).disabled).toBe(false)
     expect(RegistroParticipacionService.enviar).toHaveBeenCalledTimes(1)
     const stored = mocks.records.get('801:820') as { draft: { coresponsable_ids: string[]; plan_revision_revisada: string | null } }
     expect(stored.draft.coresponsable_ids).toEqual(['802'])
