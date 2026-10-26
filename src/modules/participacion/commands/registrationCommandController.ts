@@ -1,7 +1,7 @@
 import { ParticipacionApiError } from '../api/participacion.api'
 import { RegistroParticipacionService } from '../api/registro.api'
 import { validarRegistroEntrada } from '../api/registro.contract'
-import type { CargaRegistro, ReciboRegistro, RegistroIdentity, RegistroInicialEntrada } from '../registroTypes'
+import type { CargaRegistro, CargasRegistroLectura, ReciboRegistro, RegistroIdentity, RegistroInicialEntrada } from '../registroTypes'
 import { CommandLifecycle, type CommandOperation } from './commandLifecycle'
 import {
   indexedRegistrationStorage, newRegistrationDraft, readRegistrationDraft, RegistrationChangedError,
@@ -17,11 +17,22 @@ export type RegistroCommandSnapshot = {
   draft: RegistroDraft
   files: RegistrationFile[]
   pending: RegistroIdentity | null
+  cancelRequested: boolean
   receipt: ReciboRegistro | null
   error: string | null
 }
 type Api = Pick<typeof RegistroParticipacionService, 'preparar' | 'recuperar' | 'listarCargas' | 'subirCarga' | 'cancelar' | 'enviar'>
-function errorMessage(error: unknown): string { return error instanceof Error ? error.message : 'No se pudo confirmar el resultado. Conserva el comando original y vuelve a consultar.' }
+function errorMessage(error: unknown, capture = false): string {
+  if (capture && error instanceof ParticipacionApiError && error.codigo === 'COMANDO_NO_ENCONTRADO') return 'No pudimos conectar la carga de fotos. Tu captura sigue guardada en este dispositivo; vuelve a intentar.'
+  return error instanceof Error ? error.message : 'No se pudo confirmar el resultado. Conserva el comando original y vuelve a consultar.'
+}
+function recoveryMessage(error: unknown, record: RegistrationDraftRecord | null): string {
+  if (error instanceof ParticipacionApiError && [202, 404].includes(error.status) && ['COMANDO_NO_CONFIRMADO', 'COMANDO_NO_ENCONTRADO'].includes(error.codigo)) {
+    if (record?.cancelacion_solicitada) return 'Aún no se confirmó el descarte. Conservamos esta captura; reintenta el descarte con la misma clave.'
+    if (record?.payload) return 'Aún no se confirmó si esta plantación se guardó. Conservamos el envío original para comprobarlo o reintentarlo sin crear otra intención.'
+  }
+  return errorMessage(error, Boolean(record && !record.payload && !record.cancelacion_solicitada && !record.terminal))
+}
 function identity(record: RegistrationDraftRecord): RegistroIdentity {
   if (!record.comando_id) throw new RegistrationStorageError('La preparación aún no tiene una identidad conservada.')
   return { actor_id: record.actor_id, subcampania_id: record.subcampania_id, comando_id: record.comando_id, ...(record.payload ? { payload: record.payload } : {}) }
@@ -50,7 +61,7 @@ export class RegistrationCommandController extends CommandLifecycle<RegistroComm
 
   constructor(actorId: string | null, scopeId: string | null, storage = indexedRegistrationStorage, api: Api = RegistroParticipacionService) {
     const initial = actorId && scopeId ? newRegistrationDraft(actorId, scopeId).draft : newRegistrationDraft('1', '1').draft
-    super({ state: 'loading', busy: true, draft: initial, files: [], pending: null, receipt: null, error: null })
+    super({ state: 'loading', busy: true, draft: initial, files: [], pending: null, cancelRequested: false, receipt: null, error: null })
     this.actorId = actorId; this.scopeId = scopeId; this.storage = storage; this.api = api
   }
   start = (): (() => void) => {
@@ -60,7 +71,7 @@ export class RegistrationCommandController extends CommandLifecycle<RegistroComm
   }
   private show(record: RegistrationDraftRecord, state: RegistroCommandState, error: string | null = null, receipt: ReciboRegistro | null = null): void {
     this.record = record
-    if (this.active) this.update({ state, busy: this.running, draft: record.draft, files: record.files.filter((photo) => !photo.omitted), pending: record.comando_id ? identity(record) : null, receipt, error })
+    if (this.active) this.update({ state, busy: this.running, draft: record.draft, files: record.files.filter((photo) => !photo.omitted), pending: record.comando_id ? identity(record) : null, cancelRequested: record.cancelacion_solicitada, receipt, error })
   }
   private async persist(record: RegistrationDraftRecord): Promise<RegistrationDraftRecord> {
     this.record = await saveRegistrationDraft(record, this.storage)
@@ -98,8 +109,11 @@ export class RegistrationCommandController extends CommandLifecycle<RegistroComm
       })
     } catch (error) {
       if (operation.current()) {
-        const state = error instanceof ParticipacionApiError && error.status === 401 ? 'sessionExpired' : 'unconfirmed'
-        if (this.record) this.show(this.record, state, errorMessage(error))
+        const canResumeCapture = Boolean(this.record && !this.record.payload && !this.record.cancelacion_solicitada && !this.record.terminal && !(error instanceof RegistrationStorageError))
+        let state: RegistroCommandState = 'unconfirmed'
+        if (error instanceof ParticipacionApiError && error.status === 401) state = 'sessionExpired'
+        else if (canResumeCapture) state = this.record!.preparado ? 'prepared' : 'draft'
+        if (this.record) this.show(this.record, state, recoveryMessage(error, this.record))
         else this.update({ ...this.snapshot, state, error: errorMessage(error) })
       }
     } finally {
@@ -170,18 +184,31 @@ export class RegistrationCommandController extends CommandLifecycle<RegistroComm
     await this.prepareRecord(record, operation)
   })
   private async syncFiles(record: RegistrationDraftRecord, operation: CommandOperation): Promise<RegistrationDraftRecord> {
-    const listed = await this.api.listarCargas(identity(record), operation.signal)
+    let current = record
+    let listed: CargasRegistroLectura
+    try {
+      listed = await this.api.listarCargas(identity(current), operation.signal)
+    } catch (error) {
+      if (!(error instanceof ParticipacionApiError) || error.status !== 404 || error.codigo !== 'COMANDO_NO_ENCONTRADO' || current.payload || current.cancelacion_solicitada) throw error
+      // El listado acredita que no existe esta preparación. Rehacerla con la
+      // misma clave conserva los bytes locales y evita crear otra intención.
+      current = await this.persist({ ...current, preparado: false })
+      current = await this.prepareRecord(current, operation)
+      if (current.terminal || !operation.current()) return current
+      listed = await this.api.listarCargas(identity(current), operation.signal)
+    }
     if (!operation.current()) return record
-    const known = new Set(record.files.map((file) => file.carga_id))
+    const known = new Set(current.files.map((file) => file.carga_id))
     if (listed.data.some((carga) => !known.has(carga.carga_id))) throw new RegistrationStorageError('Hay cargas del comando que no coinciden con las fotos conservadas en este dispositivo. Recupera su resultado antes de confirmar.')
     const byId = new Map(listed.data.map((carga) => [carga.carga_id, carga]))
-    return this.persist({ ...record, files: record.files.map((file) => ({ ...file, carga: byId.get(file.carga_id) ?? null, error: null })) })
+    return this.persist({ ...current, files: current.files.map((file) => ({ ...file, carga: byId.get(file.carga_id) ?? null, error: null })) })
   }
   upload = async (): Promise<void> => this.work('uploading', async (record, operation) => {
     this.assertEditable(record)
     let next = record.preparado ? record : await this.prepareRecord(record, operation)
     if (next.terminal || this.snapshot.receipt || !operation.current()) return
     next = await this.syncFiles(next, operation)
+    if (next.terminal || this.snapshot.receipt || !operation.current()) return
     const pending = next.files.filter((file) => !file.omitted && !fileAvailable(file))
     for (let index = 0; index < pending.length; index += 2) {
       if (!operation.current()) return
@@ -197,7 +224,7 @@ export class RegistrationCommandController extends CommandLifecycle<RegistroComm
         const carga = result.status === 'fulfilled' ? result.value.data : file.carga
         const error = result.status === 'rejected' ? result.reason : carga?.estado !== 'DISPONIBLE' && carga?.estado !== 'VINCULADA' ? new Error('La foto sigue pendiente de confirmación. Puedes reintentar sin volver a seleccionarla.') : null
         if (error && !(failure instanceof ParticipacionApiError && failure.status === 401)) failure = error
-        next = await this.persist({ ...next, files: next.files.map((item) => item.carga_id === file.carga_id ? { ...item, carga, error: error ? errorMessage(error) : null } : item) })
+        next = await this.persist({ ...next, files: next.files.map((item) => item.carga_id === file.carga_id ? { ...item, carga, error: error ? errorMessage(error, true) : null } : item) })
       }
       this.show(next, 'uploading')
       if (failure) {
@@ -219,13 +246,13 @@ export class RegistrationCommandController extends CommandLifecycle<RegistroComm
       if (error instanceof ParticipacionApiError && error.status === 202 && !record.payload && !record.cancelacion_solicitada) {
         const prepared = await this.persist({ ...record, preparado: true })
         const next = await this.syncFiles(prepared, operation)
-        if (operation.current()) this.show(next, 'prepared')
-      } else if (error instanceof ParticipacionApiError && error.status === 404 && !record.payload && !record.cancelacion_solicitada) {
+        if (operation.current() && !next.terminal) this.show(next, 'prepared')
+      } else if (error instanceof ParticipacionApiError && error.status === 404 && ['COMANDO_NO_ENCONTRADO', 'COMANDO_NO_CONFIRMADO'].includes(error.codigo) && error.reintento === 'MISMA_CLAVE' && !record.payload && !record.cancelacion_solicitada) {
         // El dispositivo acredita que aún no hubo POST final. 404 no prueba
         // ausencia de la preparación: permite continuar captura/repreparar
         // exclusivamente la MISMA clave, nunca una intención nueva.
         const next = await this.persist({ ...record, preparado: false })
-        if (operation.current()) this.show(next, 'draft', 'La preparación no está confirmada. Al continuar se recuperará con la misma clave conservada.')
+        if (operation.current()) this.show(next, 'draft')
       } else throw error
     }
   }
@@ -261,7 +288,7 @@ export class RegistrationCommandController extends CommandLifecycle<RegistroComm
     let cancelled = false
     await this.work('sending', async (record, operation) => {
       if (!record.comando_id) {
-        const next = await this.persist({ ...record, files: [] })
+        const next = await this.persist({ ...newRegistrationDraft(record.actor_id, record.subcampania_id), revision_local: record.revision_local })
         this.show(next, 'draft'); cancelled = true; return
       }
       if (record.payload && !this.snapshot.receipt) {
@@ -271,7 +298,16 @@ export class RegistrationCommandController extends CommandLifecycle<RegistroComm
         if (!record.terminal) return
       }
       const next = await this.persist({ ...record, cancelacion_solicitada: true })
-      const receipt = await this.api.cancelar(identity(next), operation.signal)
+      let receipt: ReciboRegistro
+      try {
+        receipt = await this.api.cancelar(identity(next), operation.signal)
+      } catch (error) {
+        if (!(error instanceof ParticipacionApiError) || error.status !== 404 || error.codigo !== 'COMANDO_NO_ENCONTRADO' || error.reintento !== 'MISMA_CLAVE') throw error
+        // Un descarte iniciado antes de que existiera la preparación se cierra
+        // creando esa misma clave y descartándola. Nunca genera otra intención.
+        const prepared = await this.api.preparar(identity(next), operation.signal)
+        receipt = 'estado' in prepared ? prepared : await this.api.cancelar(identity(next), operation.signal)
+      }
       await this.settle(next, receipt, operation)
       cancelled = receipt.estado === 'RECHAZADO'
     })

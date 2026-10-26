@@ -34,7 +34,7 @@ export type RegistrationDraftRecord = {
   cancelacion_solicitada: boolean
   terminal: ReciboRegistro | null
 }
-export type RegistrationDraftSummary = Pick<RegistrationDraftRecord, 'subcampania_id' | 'comando_id' | 'actualizado_en'> & { estado: 'BORRADOR' | 'PREPARADO' | 'RESULTADO_NO_CONFIRMADO' | 'CONFIRMADO' | 'RECHAZADO' }
+export type RegistrationDraftSummary = Pick<RegistrationDraftRecord, 'subcampania_id' | 'comando_id' | 'actualizado_en'> & { estado: 'BORRADOR' | 'PREPARADO' | 'RESULTADO_NO_CONFIRMADO' | 'DESCARTE_PENDIENTE' | 'CONFIRMADO' | 'RECHAZADO' | 'DESCARTADO' }
 
 // El adaptador puede inyectarse en pruebas; producción siempre usa transacciones
 // IndexedDB completas, incluidas las fotos, antes de iniciar una petición.
@@ -162,7 +162,7 @@ export async function listRegistrationDrafts(actorId: string, storage = indexedR
   return values.map((value) => {
     if (!isObject(value) || typeof value.subcampania_id !== 'string') throw new RegistrationStorageError()
     const record = validateRegistrationDraft(value, actorId, value.subcampania_id)
-    return { subcampania_id: record.subcampania_id, comando_id: record.comando_id, actualizado_en: record.actualizado_en, estado: record.terminal?.estado ?? (record.payload || record.cancelacion_solicitada ? 'RESULTADO_NO_CONFIRMADO' : record.comando_id ? 'PREPARADO' : 'BORRADOR') }
+    return { subcampania_id: record.subcampania_id, comando_id: record.comando_id, actualizado_en: record.actualizado_en, estado: record.terminal?.estado === 'RECHAZADO' && record.terminal.error.codigo === 'PREPARACION_CANCELADA' ? 'DESCARTADO' : record.terminal?.estado ?? (record.cancelacion_solicitada ? 'DESCARTE_PENDIENTE' : record.payload ? 'RESULTADO_NO_CONFIRMADO' : record.comando_id ? 'PREPARADO' : 'BORRADOR') }
   })
 }
 export async function withRegistrationLock<T>(actorId: string, scopeId: string, callback: () => Promise<T> | T): Promise<T> {

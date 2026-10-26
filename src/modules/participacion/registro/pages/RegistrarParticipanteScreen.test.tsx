@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { RegistroParticipacionService } from '../../api/registro.api'
 import { ParticipacionApiError } from '../../api/participacion.api'
+import { newRegistrationDraft } from '../../commands/registrationDraftStore'
 import type { CargaRegistro, ContextoRegistro, IntentoRegistro, ReciboRegistro } from '../../registroTypes'
 import RegistrarParticipanteScreen from './RegistrarParticipanteScreen'
 
@@ -79,6 +80,80 @@ async function fillToParticipants() {
 }
 
 describe('Registro participante de tres pasos', () => {
+  it('explica cuándo el contexto de la subcampaña requiere una corrección administrativa', async () => {
+    vi.mocked(RegistroParticipacionService.contexto).mockRejectedValueOnce(new ParticipacionApiError(422, { codigo: 'CONTEXTO_INCOMPLETO', mensaje: 'El plan, polígono o día de entrega requiere conciliación.', campos: [], ambitos: [], reintento: 'NO_APLICA' }))
+    open()
+    expect(await screen.findByText('La subcampaña necesita una corrección antes de registrar plantaciones.')).toBeTruthy()
+    expect(screen.getByText(/El equipo responsable debe revisar el plan de especies/)).toBeTruthy()
+    expect(screen.queryByText('El plan, polígono o día de entrega requiere conciliación.')).toBeNull()
+  })
+
+  it('explica un rechazo durable por contexto incompleto antes de una nueva propuesta', async () => {
+    vi.mocked(RegistroParticipacionService.enviar).mockImplementationOnce(async (identity) => ({ comando_id: identity.comando_id, operacion: 'REGISTRAR_PLANTACION_INICIAL', estado: 'RECHAZADO', resultado: null, finalizado_en: observed, error: { codigo: 'CONTEXTO_INCOMPLETO', mensaje: 'El plan, polígono o día de entrega requiere conciliación.', campos: [], ambitos: [], reintento: 'NUEVA_CONFIRMACION' } }))
+    open()
+    const user = await fillToParticipants()
+    await user.click(screen.getByRole('button', { name: 'Confirmar plantación' }))
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Confirmar y guardar plantación' }))
+    await screen.findByText('Plantación rechazada por el servidor')
+    expect(screen.getByText('La subcampaña necesita una corrección antes de registrar plantaciones.')).toBeTruthy()
+    expect(screen.getByText(/El equipo responsable debe revisar el plan de especies/)).toBeTruthy()
+    expect(screen.queryByText('El plan, polígono o día de entrega requiere conciliación.')).toBeNull()
+  })
+
+  it('permite reintentar un descarte pendiente con la misma clave desde el formulario', async () => {
+    const original = crypto.randomUUID()
+    mocks.records.set('801:820', { ...newRegistrationDraft('801', '820'), comando_id: original, cancelacion_solicitada: true })
+    vi.mocked(RegistroParticipacionService.recuperar).mockRejectedValueOnce(new ParticipacionApiError(404, { codigo: 'COMANDO_NO_CONFIRMADO', mensaje: 'No hay un resultado confirmado para esta clave.', campos: [], ambitos: [], reintento: 'MISMA_CLAVE' }))
+    vi.mocked(RegistroParticipacionService.cancelar).mockRejectedValueOnce(new ParticipacionApiError(404, { codigo: 'COMANDO_NO_ENCONTRADO', mensaje: 'No se encontró la preparación propia.', campos: [], ambitos: [], reintento: 'MISMA_CLAVE' }))
+    open()
+    const user = userEvent.setup()
+    await screen.findByRole('heading', { name: 'Descarte pendiente', level: 1 })
+    expect(screen.getByText(/Aún no se confirmó el descarte/)).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: 'Fotos del trabajo' })).toBeNull()
+    await user.click(screen.getByRole('button', { name: 'Reintentar descarte' }))
+    await screen.findByText('Preparación cancelada')
+    expect(RegistroParticipacionService.preparar).toHaveBeenCalledWith(expect.objectContaining({ comando_id: original }), expect.any(AbortSignal))
+    expect(RegistroParticipacionService.enviar).not.toHaveBeenCalled()
+  })
+
+  it('recupera una preparación ausente sin bloquear fotos ni ubicación', async () => {
+    const original = crypto.randomUUID()
+    mocks.records.set('801:820', { ...newRegistrationDraft('801', '820'), comando_id: original, preparado: true })
+    vi.mocked(RegistroParticipacionService.listarCargas).mockRejectedValueOnce(new ParticipacionApiError(404, { codigo: 'COMANDO_NO_ENCONTRADO', mensaje: 'No se encontró la preparación propia.', campos: [], ambitos: [], reintento: 'MISMA_CLAVE' }))
+    open()
+    const user = userEvent.setup()
+    await screen.findByRole('heading', { name: 'Fotos del trabajo' })
+    await waitFor(() => expect(RegistroParticipacionService.preparar).toHaveBeenCalledWith(expect.objectContaining({ comando_id: original }), expect.any(AbortSignal)))
+    expect(screen.queryByText('No se encontró la preparación propia.')).toBeNull()
+    expect((screen.getByRole('button', { name: 'Marcar punto en el mapa' }) as HTMLButtonElement).disabled).toBe(false)
+    expect((document.querySelector<HTMLInputElement>('input[type="file"]')!).disabled).toBe(false)
+    await user.upload(document.querySelector<HTMLInputElement>('input[type="file"]')!, new File(['foto'], 'campo.jpg', { type: 'image/jpeg' }))
+    await screen.findByText('Foto lista')
+    await user.click(screen.getByRole('button', { name: 'Editar coordenadas manualmente' }))
+    await user.type(screen.getByLabelText('Latitud'), '-16.8')
+    await user.type(screen.getByLabelText('Longitud'), '-68.4')
+    await user.click(screen.getByRole('button', { name: 'Continuar' }))
+    await screen.findByLabelText('Cantidad de Queñua')
+    expect(RegistroParticipacionService.enviar).not.toHaveBeenCalled()
+  })
+
+  it('un fallo de preparación deja marcar ubicación y añadir fotos antes del envío final', async () => {
+    mocks.records.set('801:820', { ...newRegistrationDraft('801', '820'), comando_id: crypto.randomUUID(), preparado: true })
+    vi.mocked(RegistroParticipacionService.listarCargas).mockRejectedValueOnce(new ParticipacionApiError(404, { codigo: 'COMANDO_NO_ENCONTRADO', mensaje: 'No se encontró la preparación propia.', campos: [], ambitos: [], reintento: 'MISMA_CLAVE' }))
+    vi.mocked(RegistroParticipacionService.preparar).mockRejectedValueOnce(new ParticipacionApiError(503, { codigo: 'RESULTADO_NO_DETERMINADO', mensaje: 'La carga no respondió.', campos: [], ambitos: [], reintento: 'MISMA_CLAVE' }))
+    open()
+    const user = userEvent.setup()
+    await screen.findByText('Puedes continuar la captura')
+    expect(screen.getByText('La carga no respondió.')).toBeTruthy()
+    expect((screen.getByRole('button', { name: 'Marcar punto en el mapa' }) as HTMLButtonElement).disabled).toBe(false)
+    expect((document.querySelector<HTMLInputElement>('input[type="file"]')!).disabled).toBe(false)
+    await user.click(screen.getByRole('button', { name: 'Editar coordenadas manualmente' }))
+    await user.type(screen.getByLabelText('Latitud'), '-16.8')
+    await user.type(screen.getByLabelText('Longitud'), '-68.4')
+    await waitFor(() => expect(mocks.records.get('801:820')).toMatchObject({ draft: { latitud: -16.8, longitud: -68.4 } }))
+    expect(RegistroParticipacionService.enviar).not.toHaveBeenCalled()
+  })
+
   it('captura GPS al entrar y conserva su respuesta mientras la foto se sube automáticamente', async () => {
     let locate!: PositionCallback
     const gps = vi.fn((success: PositionCallback) => { locate = success })
@@ -274,7 +349,7 @@ describe('Registro participante de tres pasos', () => {
     const user = await fillToParticipants()
     await user.click(screen.getByRole('button', { name: 'Confirmar plantación' }))
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Confirmar y guardar plantación' }))
-    await screen.findByText('Resultado pendiente de confirmar')
+    await screen.findByText('Guardado pendiente de confirmar')
     expect(screen.queryByLabelText('Cantidad de Queñua')).toBeNull()
     const original = vi.mocked(RegistroParticipacionService.enviar).mock.calls[0][0]
     const contextCalls = vi.mocked(RegistroParticipacionService.contexto).mock.calls.length
@@ -298,7 +373,7 @@ describe('Registro participante de tres pasos', () => {
     const original = vi.mocked(RegistroParticipacionService.enviar).mock.calls[0][0]
     vi.mocked(RegistroParticipacionService.recuperar).mockRejectedValue(new ParticipacionApiError(202, { codigo: 'COMANDO_NO_CONFIRMADO', mensaje: 'Todavía no hay resultado de guardado.', campos: [], ambitos: [], reintento: 'MISMA_CLAVE' }))
     await user.click(screen.getByRole('button', { name: 'Comprobar guardado' }))
-    await screen.findByText('Todavía no hay resultado de guardado.')
+    await screen.findByText(/Aún no se confirmó si esta plantación se guardó/)
     expect(RegistroParticipacionService.enviar).toHaveBeenCalledTimes(1)
     await user.click(screen.getByRole('button', { name: 'Reintentar envío' }))
     await screen.findByRole('dialog', { name: 'Plantación registrada' })
@@ -336,7 +411,7 @@ describe('Registro participante de tres pasos', () => {
     await user.click(screen.getByRole('button', { name: 'Confirmar plantación' }))
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Confirmar y guardar plantación' }))
     await screen.findByText('Plantación rechazada por el servidor')
-    expect(screen.queryByText('Resultado pendiente de confirmar')).toBeNull()
+    expect(screen.queryByText('Guardado pendiente de confirmar')).toBeNull()
     vi.mocked(RegistroParticipacionService.contexto).mockImplementation(async (actorId) => { const data = context(actorId); data.especies[0].saldo_elegible = 2; return { data, observado_en: observed } })
     await user.click(screen.getByRole('button', { name: 'Revisar borrador para una intención nueva' }))
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Comenzar nueva revisión' }))
@@ -392,7 +467,7 @@ describe('Registro participante de tres pasos', () => {
     const user = userEvent.setup()
     await screen.findByRole('heading', { name: 'Fotos del trabajo' })
     await user.upload(document.querySelector<HTMLInputElement>('input[type="file"]')!, new File(['bytes-no-validos'], 'fallida.jpg', { type: 'image/jpeg' }))
-      await screen.findByText('No se pudo completar la carga')
+      await screen.findByText('Puedes continuar la captura')
     expect(screen.getByRole('img', { name: 'Foto 1 del trabajo' })).toBeTruthy()
     expect(screen.getAllByText('La foto no pudo decodificarse.').length).toBeGreaterThan(0)
     expect(screen.queryByText('Foto lista')).toBeNull()

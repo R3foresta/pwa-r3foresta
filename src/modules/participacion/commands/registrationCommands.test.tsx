@@ -113,7 +113,7 @@ describe('captura persistida y preparación compartida', () => {
     vi.mocked(Api.subirCarga).mockRejectedValueOnce(uncertain()).mockImplementationOnce(async (_identity, id) => ({ data: carga(id), observado_en: date }))
     vi.mocked(Api.listarCargas).mockResolvedValueOnce({ data: [], observado_en: date }).mockResolvedValue({ data: [carga(ids[1])], observado_en: date })
     await act(() => hook.result.current.upload())
-    expect(hook.result.current.state).toBe('unconfirmed')
+    expect(hook.result.current.state).toBe('prepared')
     expect(hook.result.current.files[1].carga?.estado).toBe('DISPONIBLE')
     expect(hook.result.current.files[0].error).toBeTruthy()
     expect(Api.subirCarga).toHaveBeenCalledTimes(2)
@@ -175,11 +175,27 @@ describe('captura persistida y preparación compartida', () => {
     vi.mocked(Api.recuperar).mockRejectedValueOnce(uncertain(404))
     const next = renderHook(() => useRegistroCommand('7', '11', storage))
     await waitFor(() => expect(next.result.current.state).toBe('draft'))
-    expect(next.result.current.error).toContain('no está confirmada')
+    expect(next.result.current.error).toBeNull()
     await act(() => next.result.current.upload())
     expect(next.result.current.pending!.comando_id).toBe(original)
     expect(crypto.randomUUID).toHaveBeenCalledTimes(2)
     expect(Api.preparar).toHaveBeenCalledWith(expect.objectContaining({ comando_id: original }), expect.any(AbortSignal))
+  })
+
+  it('rehace con la misma clave una preparación ausente al listar cargas y conserva las fotos locales', async () => {
+    const hook = await setup()
+    await act(() => hook.result.current.addFiles([file()]))
+    await act(() => hook.result.current.prepare())
+    const original = hook.result.current.pending!.comando_id
+    vi.mocked(Api.listarCargas).mockRejectedValueOnce(new ParticipacionApiError(404, { codigo: 'COMANDO_NO_ENCONTRADO', mensaje: 'No se encontró la preparación propia.', campos: [], ambitos: [], reintento: 'MISMA_CLAVE' }))
+    await act(() => hook.result.current.recover())
+    expect(hook.result.current.state).toBe('prepared')
+    expect(hook.result.current.pending!.comando_id).toBe(original)
+    expect(Api.preparar).toHaveBeenCalledTimes(2)
+    expect(vi.mocked(Api.preparar).mock.calls[1][0].comando_id).toBe(original)
+    await act(() => hook.result.current.upload())
+    expect(hook.result.current.files[0].carga?.estado).toBe('DISPONIBLE')
+    expect(Api.enviar).not.toHaveBeenCalled()
   })
 
   it('pérdida de respuesta PUT se concilia por listado sin subir otra foto ni cambiar su UUID', async () => {
@@ -188,7 +204,7 @@ describe('captura persistida y preparación compartida', () => {
     const cargaId = hook.result.current.files[0].carga_id
     vi.mocked(Api.subirCarga).mockRejectedValueOnce(uncertain())
     await act(() => hook.result.current.upload())
-    expect(hook.result.current.state).toBe('unconfirmed')
+    expect(hook.result.current.state).toBe('prepared')
     hook.unmount()
     vi.mocked(Api.listarCargas).mockResolvedValue({ data: [carga(cargaId)], observado_en: date })
     const next = renderHook(() => useRegistroCommand('7', '11', storage))
@@ -369,6 +385,38 @@ describe('confirmación, incertidumbre y terminales', () => {
     await act(() => hook.result.current.recover())
     expect(hook.result.current.receipt?.error?.codigo).toBe('PREPARACION_CANCELADA')
     expect(hook.result.current.files).toHaveLength(0)
+  })
+
+  it('un descarte pendiente con GET404 se reintenta con la misma clave y queda clausurado', async () => {
+    const hook = await setup()
+    await act(() => hook.result.current.addFiles([file()]))
+    const original = hook.result.current.pending!.comando_id
+    vi.mocked(Api.cancelar).mockRejectedValueOnce(uncertain())
+    await act(() => hook.result.current.cancel())
+    expect(hook.result.current.cancelRequested).toBe(true)
+    hook.unmount()
+    vi.mocked(Api.recuperar).mockRejectedValueOnce(uncertain(404))
+    const resumed = renderHook(() => useRegistroCommand('7', '11', storage))
+    await waitFor(() => expect(resumed.result.current.state).toBe('unconfirmed'))
+    expect(resumed.result.current.error).toContain('Aún no se confirmó el descarte')
+    expect(await listRegistrationDrafts('7', storage)).toEqual([expect.objectContaining({ estado: 'DESCARTE_PENDIENTE' })])
+    vi.mocked(Api.cancelar).mockRejectedValueOnce(new ParticipacionApiError(404, { codigo: 'COMANDO_NO_ENCONTRADO', mensaje: 'No se encontró la preparación propia.', campos: [], ambitos: [], reintento: 'MISMA_CLAVE' }))
+    await act(() => resumed.result.current.cancel())
+    expect(resumed.result.current.receipt?.error?.codigo).toBe('PREPARACION_CANCELADA')
+    expect(resumed.result.current.pending?.comando_id).toBe(original)
+    expect(vi.mocked(Api.preparar).mock.calls.at(-1)?.[0].comando_id).toBe(original)
+    expect(await listRegistrationDrafts('7', storage)).toEqual([expect.objectContaining({ estado: 'DESCARTADO' })])
+    expect(Api.enviar).not.toHaveBeenCalled()
+  })
+
+  it('descartar una captura sin preparación elimina sus datos locales', async () => {
+    const hook = await setup()
+    await act(() => hook.result.current.updateDraft({ observaciones: 'No se enviará', latitud: -16.5, longitud: -68.1 }))
+    let cancelled = false
+    await act(async () => { cancelled = await hook.result.current.cancel() })
+    expect(cancelled).toBe(true)
+    expect((await readRegistrationDraft('7', '11', storage))?.draft).toEqual(newRegistrationDraft('7', '11').draft)
+    expect(Api.cancelar).not.toHaveBeenCalled()
   })
 
   it('no elimina incertidumbre ni bytes al pasar30 días; sólo limpia tras terminal conciliado', async () => {

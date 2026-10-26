@@ -51,7 +51,7 @@ function RegistrarParticipante({ actorId, scopeId }: { actorId: string | null; s
   const { user, login } = useAuth()
   const command = useRegistroCommand(actorId, scopeId)
   const editableStage = ['draft', 'prepared', 'preparing', 'uploading'].includes(command.state)
-  const captureStage = editableStage || (['unconfirmed', 'loading'].includes(command.state) && Boolean(command.pending) && !command.pending?.payload && !command.receipt)
+  const captureStage = editableStage && !command.cancelRequested && !command.pending?.payload && !command.receipt
   const contextState = useRegistroContext(actorId, scopeId, captureStage && !command.receipt && !command.pending?.payload)
   const context = contextState.context
   const { draft, files } = command
@@ -138,12 +138,12 @@ function RegistrarParticipante({ actorId, scopeId }: { actorId: string | null; s
   }
 
   return <div className="mx-auto min-h-dvh max-w-3xl">
-    <WizardHeader paso={draft.step} totalPasos={3} title={command.receipt ? 'Resultado de la plantación' : titles[draft.step]} onBack={back} subcampaniaNombre={context?.subcampania.nombre ?? `Subcampaña ${scopeId}`} subcampaniaDetalle={context?.subcampania.campania_nombre} />
+    <WizardHeader paso={draft.step} totalPasos={3} title={command.receipt ? 'Resultado de la plantación' : command.cancelRequested ? 'Descarte pendiente' : command.pending?.payload ? 'Guardado pendiente' : titles[draft.step]} onBack={back} subcampaniaNombre={context?.subcampania.nombre ?? `Subcampaña ${scopeId}`} subcampaniaDetalle={context?.subcampania.campania_nombre} />
     <div className="space-y-4 px-5 pt-5">
-      <RegistroCommandStatus state={command.state} pending={command.pending} receipt={command.receipt} busy={command.busy} error={command.error} onRecover={() => { autoUpload.current = null; void command.recover() }} onRetry={() => void command.retrySame()} onNewIntent={() => setNewIntentOpen(true)} onLogin={() => void recoverSession()} />
+      <RegistroCommandStatus state={command.state} pending={command.pending} cancelRequested={command.cancelRequested} receipt={command.receipt} busy={command.busy} error={command.error} fileCount={files.length} onRecover={() => { autoUpload.current = null; void command.recover() }} onUpload={() => void command.upload()} onRetry={() => void command.retrySame()} onRetryCancel={() => void command.cancel()} onNewIntent={() => setNewIntentOpen(true)} onLogin={() => void recoverSession()} />
       {localError && <p role="alert" className="text-sm text-danger-700">{localError}</p>}
       {contextState.loading && <Card><p role="status" className="text-sm text-neutral-600">Consultando contexto autorizado de esta subcampaña…</p></Card>}
-      {contextState.error && <Card className="space-y-3"><p role="alert" className="text-sm text-danger-700">{contextState.error}</p><p className="text-xs text-neutral-600">No se interpretó el error como falta de stock. El borrador y el comando conservan su identidad.</p><Button variant="secondary" onClick={() => { if (contextState.sessionExpired) void recoverSession(); else contextState.refresh() }}>{contextState.sessionExpired ? 'Recuperar sesión con passkey' : 'Volver a consultar contexto'}</Button><Button variant="ghost" onClick={() => setExitOpen(true)}>Salir conservando el borrador</Button></Card>}
+      {contextState.error && <Card className="space-y-3"><p role="alert" className="text-sm text-danger-700">{contextState.error}</p>{contextState.errorCode === 'CONTEXTO_INCOMPLETO' ? <p className="text-sm text-neutral-700">El equipo responsable debe revisar el plan de especies, el polígono y la fecha operativa de entrega del stock de esta subcampaña. No sabemos cuál de esos datos falta. Tu borrador permanece en este dispositivo; cuando lo corrijan, vuelve a consultar.</p> : <p className="text-xs text-neutral-600">No se interpretó el error como falta de stock. El borrador y el comando conservan su identidad.</p>}<Button variant="secondary" onClick={() => { if (contextState.sessionExpired) void recoverSession(); else contextState.refresh() }}>{contextState.sessionExpired ? 'Recuperar sesión con passkey' : 'Volver a consultar contexto'}</Button><Button variant="ghost" onClick={() => setExitOpen(true)}>Salir conservando el borrador</Button></Card>}
       {context?.disponibilidad === 'SIN_STOCK' && <Card className="space-y-3"><h2 className="font-bold text-brand-800">Sin stock disponible para plantación inicial</h2><p className="text-sm text-neutral-700">Tu autorización se conserva. No hay saldo elegible disponible en esta subcampaña.</p><Button variant="secondary" onClick={contextState.refresh}>Consultar disponibilidad otra vez</Button></Card>}
       {context && !command.receipt && captureStage && <>
         {draft.step === 1 && <>
