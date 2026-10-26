@@ -6,19 +6,7 @@ type Props = { state: string; pending: RegistroIdentity | null; receipt: ReciboR
 
 export default function RegistroCommandStatus({ state, pending, receipt, busy, error, onRecover, onRetry, onNewIntent, onLogin }: Props) {
   const cancelled = receipt?.estado === 'RECHAZADO' && receipt.error.codigo === 'PREPARACION_CANCELADA'
-  if (receipt?.estado === 'CONFIRMADO') {
-    const result = receipt.resultado
-    return <Card as="section" className="space-y-3 border border-success-200" aria-live="polite">
-      <h1 className="text-xl font-extrabold text-success-800">Plantación guardada</h1>
-      <p className="break-all font-bold text-brand-800">{result.codigo_trazabilidad}</p>
-      <dl className="space-y-1 text-sm text-neutral-700"><div><dt className="inline font-bold">Registro: </dt><dd className="inline">{result.registro_plantacion_id}</dd></div><div><dt className="inline font-bold">Subcampaña: </dt><dd className="inline">{result.subcampania_id}</dd></div><div><dt className="inline font-bold">Fecha: </dt><dd className="inline">{result.fecha_plantacion}</dd></div><div><dt className="inline font-bold">Total: </dt><dd className="inline">{result.cantidad_total_plantada} plantas</dd></div><div><dt className="inline font-bold">Responsable: </dt><dd className="inline">Cuenta {result.responsable_id}</dd></div></dl>
-      <p className="text-sm text-neutral-700">{result.gps_dentro_poligono ? 'Ubicación evaluada dentro del polígono.' : 'Ubicación exterior aceptada y evaluada por el servidor.'}</p>
-      <p className="text-xs text-neutral-500">Este comprobante conserva lo confirmado entonces. El detalle muestra los datos propios persistidos.</p>
-      {error && <p role="alert" className="text-sm text-danger-700">{error}</p>}
-      <div className="flex flex-col gap-3 text-sm font-bold text-brand-700"><Link className="underline" to={`/app/participacion/registros/${result.registro_plantacion_id}`}>Ver detalle propio</Link><Link className="underline" to="/app/home">Volver a mi participación</Link></div>
-      <Button variant="secondary" disabled={busy} onClick={onNewIntent}>Preparar otra plantación</Button>
-    </Card>
-  }
+  if (receipt?.estado === 'CONFIRMADO') return null
   if (receipt?.estado === 'RECHAZADO') return <Card as="section" className="space-y-3" aria-live="polite">
     <h2 className="font-bold text-brand-800">{cancelled ? 'Preparación cancelada' : 'Plantación rechazada por el servidor'}</h2>
     <p role="alert" className="text-sm text-danger-700">{receipt.error.mensaje}</p><p className="text-xs text-neutral-500">Código: {receipt.error.codigo} · Comando {receipt.comando_id}</p>

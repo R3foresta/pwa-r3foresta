@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import ConfirmDialog from '../../../../components/ConfirmDialog'
+import SuccessModal from '../../../../components/SuccessModal'
 import { Button, Card } from '../../../../components/ui'
 import { useAuth } from '../../../../contexts/AuthContext'
 import StepFooter from '../../../plantacion/components/registro/StepFooter'
@@ -15,7 +16,7 @@ import RegistroPhotos from '../components/RegistroPhotos'
 import RegistroSpeciesStep from '../components/RegistroSpeciesStep'
 import RegistroSummary from '../components/RegistroSummary'
 import { useRegistroContext } from '../hooks/useRegistroContext'
-import { safeParticipacionReturn } from '../../utils/detailNavigation'
+import { safeParticipacionReturn, subcampaniaDetailPath } from '../../utils/detailNavigation'
 import type { PersonaMinima } from '../../types'
 
 const titles = { 1: 'Fotos y ubicación', 2: 'Especies y cantidades', 3: 'Participantes y confirmación' }
@@ -28,6 +29,12 @@ function registrationReturnTo(state: unknown): string {
     if (destination) return destination
   }
   return '/app/participacion/registrar'
+}
+function registrationSuccessReturnTo(returnTo: string, scopeId: string): string {
+  const detail = subcampaniaDetailPath(scopeId)
+  if (returnTo === detail || returnTo.startsWith(`${detail}?`)) return returnTo
+  if (returnTo.startsWith('/participar?') && new URLSearchParams(returnTo.slice('/participar?'.length)).get('subcampania_id') === scopeId) return returnTo
+  return detail
 }
 
 export default function RegistrarParticipanteScreen() {
@@ -113,6 +120,21 @@ function RegistrarParticipante({ actorId, scopeId }: { actorId: string | null; s
     const valid = selected.filter((file) => file.size >= 1 && file.size <= 10 * 1024 * 1024)
     setLocalError(valid.length !== selected.length ? 'Cada foto debe pesar entre 1 byte y 10 MiB. Los archivos fuera del límite no se agregaron.' : null)
     if (valid.length) void command.addFiles(valid)
+  }
+
+  if (command.receipt?.estado === 'CONFIRMADO') {
+    const total = command.receipt.resultado.cantidad_total_plantada
+    return <SuccessModal
+      title="Plantación registrada"
+      description="Tu plantación se guardó correctamente."
+      summaryText={`${total} ${total === 1 ? 'planta registrada' : 'plantas registradas'}`}
+      primaryLabel="Volver a la campaña"
+      secondaryLabel="Registrar otra plantación"
+      onPrimaryAction={() => navigate(registrationSuccessReturnTo(returnTo, scopeId), { replace: true })}
+      onSecondaryAction={() => void newIntent()}
+      loading={command.busy}
+      errorMessage={command.error}
+    />
   }
 
   return <div className="mx-auto min-h-dvh max-w-3xl">

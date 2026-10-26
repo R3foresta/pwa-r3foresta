@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Icon from "../../components/Icon";
-import RecoleccionSuccessModal from "./RecoleccionSuccessModal";
+import SuccessModal from "../../components/SuccessModal";
 import { useRecoleccionForm } from "./useRecoleccionForm";
 import { useAuth } from "../../contexts/AuthContext";
 import { RecoleccionesService, type TipoMaterialCanonico } from "../../services/recolecciones.service";
@@ -540,7 +540,7 @@ function RecoleccionFormResumenScreen() {
       </div>
 
       {showSuccess && (
-        <RecoleccionSuccessModal
+        <SuccessModal
           title={successTitle}
           description={successDescription}
           summaryText={summaryText}

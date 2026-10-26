@@ -43,6 +43,7 @@ UI en español, Tailwind y primitivas de `src/components/ui/`. Componentes enfoc
 - Estados/saldos/restricciones visibles. Diferenciar material en proceso, plantas vivas, campos editables, calculados e historial.
 - Antes de una operación definitiva, `ConfirmDialog`: persona/lote, ámbitos/evento, cantidad/unidad si aplica, fecha, responsable, evidencia y consecuencia. Cancelar el diálogo no escribe.
 - El diálogo existente contiene foco, admite Escape y devuelve foco al cerrar. Reutilizarlo.
+- Tras una operación confirmada por el servidor, `SuccessModal` presenta el resultado breve y las siguientes acciones. No mostrarlo durante un resultado incierto o rechazado.
 - En evidencias mostrar preview seguro y metadatos recibidos; `bucket`/`ruta_archivo` no son URLs públicas.
 - Eventos/movimientos append-only: historial completo, sin editar/borrar; filtros sólo visuales.
 

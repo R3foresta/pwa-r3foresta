@@ -158,7 +158,8 @@ describe('Registro participante de tres pasos', () => {
   })
 
   it('usa hoy del servidor, admite superar meta dentro de saldo y conserva datos al volver; sólo confirma al final', async () => {
-    const view = open()
+    const origin = '/app/planting/subcampanias/820?pestana=resumen'
+    const view = open({ participacionReturnTo: origin })
     const user = await fillToParticipants()
     expect(screen.getByText('Paso 3 de 3')).toBeTruthy()
     expect(screen.getByText('Responsable: Carlos Pérez (tu cuenta)')).toBeTruthy()
@@ -178,16 +179,42 @@ describe('Registro participante de tres pasos', () => {
     expect(RegistroParticipacionService.enviar).not.toHaveBeenCalled()
     await user.click(screen.getByRole('button', { name: 'Confirmar plantación' }))
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Confirmar y guardar plantación' }))
-    await screen.findByText('Plantación guardada')
+    await screen.findByRole('dialog', { name: 'Plantación registrada' })
     expect(RegistroParticipacionService.enviar).toHaveBeenCalledTimes(1)
     const attempt = vi.mocked(RegistroParticipacionService.enviar).mock.calls[0][0]
     const uploadedIdentity = vi.mocked(RegistroParticipacionService.subirCarga).mock.calls[0][0]
     expect(attempt.comando_id).toBe(uploadedIdentity.comando_id)
     expect(attempt.payload).toEqual({ comando_id: uploadedIdentity.comando_id, subcampania_id: '820', plan_revision_esperada: '9007199254740997', fecha_plantacion: today, latitud: -16.8, longitud: -68.4, especies: [{ planta_id: '9007199254740995', cantidad: 9 }], coresponsable_ids: ['802'], evidencia_ids: ['901'], observaciones: 'Se plantó junto al sendero', afiliaciones_declaradas: [] })
-    expect(screen.getByRole('link', { name: 'Ver detalle propio' }).getAttribute('href')).toBe('/app/participacion/registros/9007199254740999')
-    view.unmount(); open()
-    await screen.findByText('PLT-REAL-001')
+    expect(screen.getByText('9 plantas registradas')).toBeTruthy()
+    expect(screen.queryByText('PLT-REAL-001')).toBeNull()
+    expect(screen.queryByText('Responsable:')).toBeNull()
+    view.unmount(); open({ participacionReturnTo: origin })
+    await screen.findByRole('dialog', { name: 'Plantación registrada' })
     expect(RegistroParticipacionService.enviar).toHaveBeenCalledTimes(1)
+    await user.click(screen.getByRole('button', { name: 'Volver a la campaña' }))
+    expect(await screen.findByText(`Retorno: ${origin}`)).toBeTruthy()
+  })
+
+  it('permite iniciar otra plantación sólo después del éxito confirmado', async () => {
+    open()
+    const user = await fillToParticipants()
+    await user.click(screen.getByRole('button', { name: 'Confirmar plantación' }))
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Confirmar y guardar plantación' }))
+    await screen.findByRole('dialog', { name: 'Plantación registrada' })
+    await user.click(screen.getByRole('button', { name: 'Registrar otra plantación' }))
+    await screen.findByRole('heading', { name: 'Fotos del trabajo' })
+    expect(screen.queryByRole('dialog', { name: 'Plantación registrada' })).toBeNull()
+    expect(RegistroParticipacionService.enviar).toHaveBeenCalledTimes(1)
+  })
+
+  it('sin origen de navegación vuelve al detalle de la misma subcampaña', async () => {
+    open()
+    const user = await fillToParticipants()
+    await user.click(screen.getByRole('button', { name: 'Confirmar plantación' }))
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Confirmar y guardar plantación' }))
+    await screen.findByRole('dialog', { name: 'Plantación registrada' })
+    await user.click(screen.getByRole('button', { name: 'Volver a la campaña' }))
+    expect(await screen.findByText('Retorno: /app/planting/subcampanias/820')).toBeTruthy()
   })
 
   it('cuenta plantas con más y menos sin usar la meta como límite', async () => {
@@ -252,7 +279,7 @@ describe('Registro participante de tres pasos', () => {
     const original = vi.mocked(RegistroParticipacionService.enviar).mock.calls[0][0]
     const contextCalls = vi.mocked(RegistroParticipacionService.contexto).mock.calls.length
     view.unmount(); open()
-    await screen.findByText('Plantación guardada')
+    await screen.findByRole('dialog', { name: 'Plantación registrada' })
     expect(RegistroParticipacionService.recuperar).toHaveBeenLastCalledWith(expect.objectContaining({ comando_id: original.comando_id, payload: original.payload }), expect.any(AbortSignal))
     expect(RegistroParticipacionService.contexto).toHaveBeenCalledTimes(contextCalls)
     expect(RegistroParticipacionService.enviar).toHaveBeenCalledTimes(1)
@@ -266,7 +293,7 @@ describe('Registro participante de tres pasos', () => {
     await user.click(screen.getByRole('button', { name: 'Confirmar plantación' }))
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Confirmar y guardar plantación' }))
     await screen.findByText(paused)
-    expect(screen.queryByText('Plantación guardada')).toBeNull()
+    expect(screen.queryByRole('dialog', { name: 'Plantación registrada' })).toBeNull()
     expect(screen.getByText(/«Comprobar guardado» solo consulta el estado/)).toBeTruthy()
     const original = vi.mocked(RegistroParticipacionService.enviar).mock.calls[0][0]
     vi.mocked(RegistroParticipacionService.recuperar).mockRejectedValue(new ParticipacionApiError(202, { codigo: 'COMANDO_NO_CONFIRMADO', mensaje: 'Todavía no hay resultado de guardado.', campos: [], ambitos: [], reintento: 'MISMA_CLAVE' }))
@@ -274,7 +301,7 @@ describe('Registro participante de tres pasos', () => {
     await screen.findByText('Todavía no hay resultado de guardado.')
     expect(RegistroParticipacionService.enviar).toHaveBeenCalledTimes(1)
     await user.click(screen.getByRole('button', { name: 'Reintentar envío' }))
-    await screen.findByText('Plantación guardada')
+    await screen.findByRole('dialog', { name: 'Plantación registrada' })
     expect(RegistroParticipacionService.recuperar).toHaveBeenCalledTimes(2)
     expect(vi.mocked(RegistroParticipacionService.enviar).mock.calls[1][0]).toEqual(original)
   })
