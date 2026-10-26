@@ -10,7 +10,7 @@ import RegistrarParticipanteScreen from './RegistrarParticipanteScreen'
 
 const mocks = vi.hoisted(() => {
   const records = new Map<string, unknown>()
-  return { actorId: '801', records, login: vi.fn(), storage: { read: async (key: string) => records.get(key) ?? null, write: async (record: { key: string }) => { records.set(record.key, record) }, list: async () => [...records.values()] } }
+  return { actorId: '801', records, login: vi.fn(), storage: { read: async (key: string) => records.get(key) ?? null, write: async (record: { key: string }) => { records.set(record.key, record) }, delete: async (key: string) => { records.delete(key) }, list: async () => [...records.values()] } }
 })
 vi.mock('../../../../contexts/AuthContext', () => ({ useAuth: () => ({ user: { id: mocks.actorId, nombre: 'Carlos', apellido: 'Pérez', username: 'Carlos' }, login: mocks.login }) }))
 vi.mock('../../commands/useRegistroCommand', async (importOriginal) => {

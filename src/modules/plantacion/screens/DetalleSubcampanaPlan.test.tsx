@@ -44,7 +44,7 @@ const saved: RevisarPlanData = {
 }
 function DetailRoute() {
   return <MemoryRouter initialEntries={['/subcampanias/54']}>
-    <Routes><Route path="/subcampanias/:subcampaniaId" element={<DetalleSubcampanaScreen />} /></Routes>
+    <Routes><Route path="/subcampanias/:subcampaniaId" element={<DetalleSubcampanaScreen />} /><Route path="/app/participacion/borradores" element={<p>Pantalla de borradores</p>} /></Routes>
   </MemoryRouter>
 }
 
@@ -86,6 +86,17 @@ beforeEach(() => {
 })
 
 describe('revisión del plan desde el detalle de subcampaña', () => {
+  it('abre los borradores desde el botón secundario bajo registrar plantación', async () => {
+    renderDetail()
+    const register = await screen.findByRole('button', { name: 'Registrar plantación' })
+    const drafts = screen.getByRole('button', { name: 'Plantaciones en Borrador' })
+    expect(Boolean(register.compareDocumentPosition(drafts) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true)
+    expect(drafts.className).toContain('bg-white')
+    expect(drafts.className).toContain('border-brand-600')
+    await userEvent.click(drafts)
+    expect(screen.getByText('Pantalla de borradores')).toBeTruthy()
+  })
+
   it.each(['GENERAL', 'VALIDADOR', 'VOLUNTARIO'])('permite a %s consultar el plan sin pertenecer al equipo', async (rol) => {
     authState.user.rol = rol
     renderDetail()

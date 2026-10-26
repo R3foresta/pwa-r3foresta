@@ -19,6 +19,7 @@ class MemoryStorage implements RegistrationStorage {
   fail = false
   async read(key: string) { const value = this.records.get(key); return value ? copyRecord(value) : null }
   async write(record: RegistrationDraftRecord) { if (this.fail) throw new Error('Cuota agotada'); this.records.set(record.key, copyRecord(record)) }
+  async delete(key: string) { if (this.fail) throw new Error('Cuota agotada'); this.records.delete(key) }
   async list(actorId: string) { return [...this.records.values()].filter((record) => record.actor_id === actorId).map(copyRecord) }
 }
 function deferred<T>() { let resolve!: (value: T) => void; const promise = new Promise<T>((yes) => { resolve = yes }); return { promise, resolve } }
@@ -449,7 +450,7 @@ describe('aislamiento, concurrencia y fallos locales', () => {
   it('lista borradores sólo de su actor sin datos de fotos o texto', async () => {
     const hook = await capture()
     expect(await listRegistrationDrafts('8', storage)).toEqual([])
-    expect(await listRegistrationDrafts('7', storage)).toEqual([{ subcampania_id: '11', comando_id: hook.result.current.pending?.comando_id, actualizado_en: expect.any(Number), estado: 'PREPARADO' }])
+    expect(await listRegistrationDrafts('7', storage)).toEqual([{ subcampania_id: '11', comando_id: hook.result.current.pending?.comando_id, actualizado_en: expect.any(Number), revision_local: expect.any(Number), estado: 'PREPARADO' }])
     expect(JSON.stringify(await listRegistrationDrafts('7', storage))).not.toContain('Registro observado')
   })
 

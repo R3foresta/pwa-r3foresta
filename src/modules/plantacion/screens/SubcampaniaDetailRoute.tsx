@@ -32,6 +32,5 @@ function ParticipantDetail({ actorId, scopeId }: { actorId: string; scopeId: str
     {ready && <Card><p role="status">La subcampaña del enlace no está disponible para esta cuenta. Elige una de tus subcampañas o consulta Impacto público.</p></Card>}
     <Link to="/participar" className="inline-flex min-h-11 items-center font-bold underline">Volver a mis subcampañas</Link>
     <Link to="/impacto" className="block py-3 font-semibold underline">Explorar impacto público</Link>
-    <Link to="/app/participacion/registrar" className="block py-3 font-semibold underline">Recuperar un borrador</Link>
   </main>
 }

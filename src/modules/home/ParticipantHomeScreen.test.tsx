@@ -130,7 +130,13 @@ describe('UX-01: selección de subcampaña', () => {
     expect(context).not.toHaveBeenCalled()
     expect(impact).not.toHaveBeenCalled()
     fireEvent.click(within(group).getByRole('button', { name: 'Entrar a la subcampaña: Zona 12' }))
-    expect((await screen.findByRole('link', { name: 'Registrar plantación' })).getAttribute('href')).toContain('/12/registrar')
+    const register = await screen.findByRole('link', { name: 'Registrar plantación' })
+    const drafts = screen.getByRole('link', { name: 'Plantaciones en Borrador' })
+    expect(register.getAttribute('href')).toContain('/12/registrar')
+    expect(drafts.getAttribute('href')).toBe('/app/participacion/borradores')
+    expect(Boolean(register.compareDocumentPosition(drafts) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true)
+    expect(drafts.className).toContain('bg-white')
+    expect(drafts.className).toContain('border-brand-600')
     expect(screen.getByTestId('location').textContent).toBe('/app/planting/subcampanias/12')
     fireEvent.click(screen.getByRole('button', { name: /^Volver(?: a mis subcampañas)?$/ }))
     expect(screen.getByTestId('location').textContent).toContain('seleccion=12')
@@ -215,7 +221,7 @@ describe('UX-01: selección de subcampaña', () => {
     expect(screen.getAllByRole('button', { name: /Entrar a la subcampaña:/ })).toHaveLength(3)
   })
 
-  it('distingue error de capacidades de vacío y conserva recuperación propia sin ámbitos', async () => {
+  it('distingue error de capacidades de vacío sin otro acceso a borradores', async () => {
     capabilities.mockRejectedValueOnce(new Error('Sin conexión')).mockResolvedValueOnce(page([]))
     localStorage.setItem('r3foresta:participacion:acceso:v1:42', 'pendiente')
     render(tree(['/participar']))
@@ -224,7 +230,7 @@ describe('UX-01: selección de subcampaña', () => {
     expect(screen.getByRole('link', { name: 'Recuperar envío pendiente de esta cuenta' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Reintentar campañas' }))
     expect(await screen.findByText('Todavía no tienes subcampañas asignadas')).toBeTruthy()
-    expect(screen.getByRole('link', { name: 'Recuperar un borrador' })).toBeTruthy()
+    expect(screen.queryByRole('link', { name: 'Recuperar un borrador' })).toBeNull()
     expect(screen.getByRole('link', { name: 'Ver todo mi historial' })).toBeTruthy()
     expect(impact).not.toHaveBeenCalled()
   })

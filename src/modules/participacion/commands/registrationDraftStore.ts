@@ -34,13 +34,14 @@ export type RegistrationDraftRecord = {
   cancelacion_solicitada: boolean
   terminal: ReciboRegistro | null
 }
-export type RegistrationDraftSummary = Pick<RegistrationDraftRecord, 'subcampania_id' | 'comando_id' | 'actualizado_en'> & { estado: 'BORRADOR' | 'PREPARADO' | 'RESULTADO_NO_CONFIRMADO' | 'DESCARTE_PENDIENTE' | 'CONFIRMADO' | 'RECHAZADO' | 'DESCARTADO' }
+export type RegistrationDraftSummary = Pick<RegistrationDraftRecord, 'subcampania_id' | 'comando_id' | 'actualizado_en' | 'revision_local'> & { estado: 'BORRADOR' | 'PREPARADO' | 'RESULTADO_NO_CONFIRMADO' | 'DESCARTE_PENDIENTE' | 'CONFIRMADO' | 'RECHAZADO' | 'DESCARTADO' }
 
 // El adaptador puede inyectarse en pruebas; producción siempre usa transacciones
 // IndexedDB completas, incluidas las fotos, antes de iniciar una petición.
 export interface RegistrationStorage {
   read(key: string): Promise<unknown | null>
   write(record: RegistrationDraftRecord): Promise<void>
+  delete(key: string): Promise<void>
   list(actorId: string): Promise<unknown[]>
 }
 export class RegistrationStorageError extends Error {
@@ -94,6 +95,7 @@ async function transaction<T>(mode: IDBTransactionMode, execute: (store: IDBObje
 export const indexedRegistrationStorage: RegistrationStorage = {
   read: async (key) => (await transaction('readonly', (store) => store.get(key))) ?? null,
   write: async (record) => { await transaction('readwrite', (store) => store.put(record)) },
+  delete: async (key) => { await transaction('readwrite', (store) => store.delete(key)) },
   list: (actorId) => transaction('readonly', (store) => store.index('actor_id').getAll(IDBKeyRange.only(actorId))),
 }
 
@@ -156,13 +158,18 @@ export async function saveRegistrationDraft(record: RegistrationDraftRecord, sto
   notifyRegistrationChange(record.actor_id, record.subcampania_id)
   return next
 }
+export async function deleteRegistrationDraft(actorId: string, scopeId: string, storage = indexedRegistrationStorage): Promise<void> {
+  try { await storage.delete(registrationDraftKey(actorId, scopeId)) }
+  catch (error) { throw new RegistrationStorageError('No se pudo eliminar la captura de este dispositivo. Reintenta la limpieza local.', error) }
+  notifyRegistrationChange(actorId, scopeId)
+}
 export async function listRegistrationDrafts(actorId: string, storage = indexedRegistrationStorage): Promise<RegistrationDraftSummary[]> {
   validarId(actorId)
   const values = await storage.list(actorId)
   return values.map((value) => {
     if (!isObject(value) || typeof value.subcampania_id !== 'string') throw new RegistrationStorageError()
     const record = validateRegistrationDraft(value, actorId, value.subcampania_id)
-    return { subcampania_id: record.subcampania_id, comando_id: record.comando_id, actualizado_en: record.actualizado_en, estado: record.terminal?.estado === 'RECHAZADO' && record.terminal.error.codigo === 'PREPARACION_CANCELADA' ? 'DESCARTADO' : record.terminal?.estado ?? (record.cancelacion_solicitada ? 'DESCARTE_PENDIENTE' : record.payload ? 'RESULTADO_NO_CONFIRMADO' : record.comando_id ? 'PREPARADO' : 'BORRADOR') }
+    return { subcampania_id: record.subcampania_id, comando_id: record.comando_id, actualizado_en: record.actualizado_en, revision_local: record.revision_local, estado: record.terminal?.estado === 'RECHAZADO' && record.terminal.error.codigo === 'PREPARACION_CANCELADA' ? 'DESCARTADO' : record.terminal?.estado ?? (record.cancelacion_solicitada ? 'DESCARTE_PENDIENTE' : record.payload ? 'RESULTADO_NO_CONFIRMADO' : record.comando_id ? 'PREPARADO' : 'BORRADOR') }
   })
 }
 export async function withRegistrationLock<T>(actorId: string, scopeId: string, callback: () => Promise<T> | T): Promise<T> {

@@ -44,7 +44,7 @@ function AccountSelector({ actorId, login, onRegistrar, onVer }: Props & { actor
     <p role="alert" className="text-sm text-danger-700">{error} No pudimos confirmar los permisos de tu cuenta.</p>
     <Button onClick={() => { void (status === 'sessionExpired' ? login().catch(() => undefined) : refresh()) }}>{status === 'sessionExpired' ? 'Recuperar sesión' : 'Reintentar capacidades'}</Button>
   </div>
-  if (!scopes.length) return <p className="text-sm leading-6">No tienes subcampañas activas habilitadas para registrar. Coordina tu acceso con el equipo responsable. Puedes recuperar los borradores de esta cuenta que aparecen arriba.</p>
+  if (!scopes.length) return <p className="text-sm leading-6">No tienes subcampañas activas habilitadas para registrar. Coordina tu acceso con el equipo responsable.</p>
   return <div className="space-y-4">
     <label className="block text-sm font-semibold">Campaña
       <select value={selectedCampaign} onChange={event => { const scope = scopes.find(item => item.campania_id === event.target.value); if (scope) remember(scope) }} className="mt-2 w-full rounded-2xl border border-neutral-200 bg-white p-3">

@@ -15,6 +15,7 @@ import {
 
 const HomeScreen = lazy(() => import('./modules/home/HomeScreen'))
 const RegistroSelectorScreen = lazy(() => import('./modules/participacion/registro/pages/RegistroSelectorScreen'))
+const RegistroDraftsScreen = lazy(() => import('./modules/participacion/registro/pages/RegistroDraftsScreen'))
 const RegistrarParticipanteScreen = lazy(() => import('./modules/participacion/registro/pages/RegistrarParticipanteScreen'))
 const DetallePropioScreen = lazy(() => import('./modules/participacion/registro/pages/DetallePropioScreen'))
 const ImpactoEntry = lazy(() => import('./modules/impacto/components/ImpactoEntry'))
@@ -178,6 +179,7 @@ function App() {
             <Route path="home" element={<HomeScreen />} />
             <Route path="participacion/accesos" element={<GestionAccesosScreen />} />
             <Route path="participacion/registrar" element={<RegistroSelectorScreen />} />
+            <Route path="participacion/borradores" element={<RegistroDraftsScreen />} />
             <Route path="participacion/subcampanias/:subcampaniaId/registrar" element={<RegistrarParticipanteScreen />} />
             <Route path="participacion/registros/:registroId" element={<DetallePropioScreen />} />
             <Route path="participacion/mis-registros" element={<MisRegistrosScreen />} />

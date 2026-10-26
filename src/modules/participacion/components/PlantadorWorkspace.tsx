@@ -64,7 +64,6 @@ export default function PlantadorWorkspace({ actorId }: { actorId: string }) {
     </>}
     <nav aria-label="Más opciones de participación" className="flex flex-wrap gap-x-5 gap-y-2 text-sm font-semibold text-brand-700">
       <Link to="/app/participacion/mis-registros" className="inline-flex min-h-11 items-center underline underline-offset-4">Ver todo mi historial</Link>
-      <Link to="/app/participacion/registrar" className="inline-flex min-h-11 items-center underline underline-offset-4">Recuperar un borrador</Link>
       {!detail && scopes.some(canManage) && <Link to="/app/participacion/accesos" className="inline-flex min-h-11 items-center underline underline-offset-4">Gestionar plantadores</Link>}
       {pendingAccess && <Link to="/app/participacion/accesos" className="inline-flex min-h-11 items-center underline underline-offset-4">Recuperar envío pendiente de esta cuenta</Link>}
     </nav>

@@ -16,8 +16,9 @@ export default function PlantadorScopePanel({ scope, zone, returnTo, registratio
   const allowed = Boolean(scope && canRegisterPlantacion(scope))
   const { context, loading, error, sessionExpired, refresh } = registration
   const hasStock = context?.disponibilidad === 'DISPONIBLE'
+  const draftsButton = <Link to="/app/participacion/borradores" state={{ participacionReturnTo: returnTo }} className="flex min-h-12 items-center justify-center rounded-2xl border border-brand-600 bg-white px-4 py-3 text-center text-base font-bold text-brand-700 shadow-soft hover:bg-brand-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2">Plantaciones en Borrador</Link>
   return <div className="space-y-3">
-    {!allowed ? <p className="text-sm leading-6 text-neutral-600">{scope ? 'El registro de plantaciones no está habilitado en esta subcampaña. Puedes consultar su avance e historial.' : 'Esta subcampaña pertenece a la campaña, pero tu cuenta no está habilitada para registrar aquí.'}</p> : <>
+    {!allowed ? <><p className="text-sm leading-6 text-neutral-600">{scope ? 'El registro de plantaciones no está habilitado en esta subcampaña. Puedes consultar su avance e historial.' : 'Esta subcampaña pertenece a la campaña, pero tu cuenta no está habilitada para registrar aquí.'}</p>{draftsButton}</> : <>
       {hasStock && scope ? (
         <Link to={`/app/participacion/subcampanias/${scope.subcampania_id}/registrar`} state={{ participacionReturnTo: returnTo }} className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-brand-600 px-4 py-3 text-center text-base font-bold text-white shadow-soft hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2">
           <span aria-hidden="true"><Icon name="plus" className="h-5 w-5 shrink-0" /></span>
@@ -28,6 +29,7 @@ export default function PlantadorScopePanel({ scope, zone, returnTo, registratio
           {context ? 'Sin stock para registrar' : 'Registrar plantación'}
         </Button>
       )}
+      {draftsButton}
       {loading && <p role="status" className="text-sm text-neutral-600">Consultando stock de esta subcampaña…</p>}
       {error && <div className="space-y-2"><p role="alert" className="text-sm text-danger-700">No pudimos comprobar el stock. {error}</p><Button variant="secondary" onClick={() => { if (sessionExpired) void login().then(refresh).catch(() => undefined); else refresh() }}>{sessionExpired ? 'Recuperar sesión' : 'Reintentar stock'}</Button></div>}
       {context && <>

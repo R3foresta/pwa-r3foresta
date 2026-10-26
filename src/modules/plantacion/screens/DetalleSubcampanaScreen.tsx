@@ -401,6 +401,7 @@ function ResumenTab({
   onTabMapa,
   onActivated,
   onRegistrarPlantacion,
+  onVerBorradores,
 }: {
   sub: Subcampania
   equipo: EquipoMember[]
@@ -411,6 +412,7 @@ function ResumenTab({
   onTabMapa: () => void
   onActivated: (data: ActivarSubcampaniaData) => void
   onRegistrarPlantacion: () => void
+  onVerBorradores: () => void
 }) {
   const coordinador = equipo.find((m) => m.rol === 'COORDINADOR')
   const isBorrador = sub.estado === 'BORRADOR'
@@ -443,6 +445,9 @@ function ResumenTab({
           Registrar plantación
         </Button>
       )}
+      <Button variant="secondary" fullWidth className="border border-brand-600 ring-0" onClick={onVerBorradores}>
+        Plantaciones en Borrador
+      </Button>
 
       {/* Stats grid 2x2 */}
       <div className="grid grid-cols-2 gap-2">
@@ -1299,6 +1304,9 @@ function DetalleSubcampanaScreen() {
                   onActivated={handleActivated}
                   onRegistrarPlantacion={() =>
                     navigate(`/app/planting/subcampanias/${sub.id}/plantaciones/new`)
+                  }
+                  onVerBorradores={() =>
+                    navigate('/app/participacion/borradores', { state: { participacionReturnTo: location.pathname + location.search } })
                   }
                 />
               )}

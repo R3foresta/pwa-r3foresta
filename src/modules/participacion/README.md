@@ -8,7 +8,8 @@ El módulo reúne gestión de permisos C04–C09 (INT06) y registro participante
 | --- | --- |
 | `/app/planting/subcampanias/:subcampaniaId` | Detalle común con lecturas autorizadas según audiencia. |
 | `/app/participacion/accesos` | Gestión contextual por persona y ámbitos actuales. |
-| `/app/participacion/registrar` | Selector autorizado y borradores propios conservados. |
+| `/app/participacion/registrar` | Selector autorizado para iniciar una plantación. |
+| `/app/participacion/borradores` | Capturas propias locales editables o pendientes de resolver; acceso desde el detalle de subcampaña. |
 | `/app/participacion/subcampanias/:subcampaniaId/registrar` | Captura de tres pasos y recuperación del mismo comando. |
 | `/app/participacion/registros/:registroId` | Detalle propio persistido, incluso tras retirar acceso operativo. |
 
@@ -22,7 +23,9 @@ Los enlaces antiguos `/participar?campania_id=…&subcampania_id=…` validan am
 
 El formulario acepta `state.participacionReturnTo` con la ruta de detalle y sus parámetros permitidos, además del formato antiguo. Conservar/salir y descarte confirmado regresan a ese destino validado. Sin retorno válido se mantiene el selector anterior. Tras un recibo `CONFIRMADO`, el modal compartido `SuccessModal` sustituye el antiguo comprobante largo: permite volver al detalle de esa misma subcampaña (y a la pestaña de origen cuando es válida) o iniciar otra captura con un comando nuevo. Si el formulario se abrió directamente, el retorno de éxito va al detalle de su subcampaña. El recibo durable se conserva para recuperarse al recargar; un resultado incierto o rechazado nunca muestra éxito. No se modifica el envío transaccional ni se acredita con este ajuste toda UX-05.
 
-El selector de capturas lee IndexedDB privado de la cuenta y el dispositivo, no un listado de registros guardados en el servidor. Un envío final pendiente conserva payload y fotos congelados: consultar sólo lee el resultado, y reintentar usa el mismo UUID y payload. Un descarte pendiente ofrece consulta o reintento de descarte con la misma clave; si la preparación no llegó al servidor, esa clave se prepara y se cancela para obtener un terminal durable. Una captura sin envío final sigue editable tras fallos recuperables de preparación/carga. `CONTEXTO_INCOMPLETO` requiere corregir el plan, el polígono o la fecha operativa de entrega de stock en el ámbito; la respuesta no identifica cuál falta.
+«Plantaciones en Borrador» lee IndexedDB privado de la cuenta y el dispositivo, no un listado de registros guardados en el servidor. Un envío final pendiente conserva payload y fotos congelados: consultar sólo lee el resultado, y reintentar usa el mismo UUID y payload. Un descarte pendiente ofrece consulta o reintento de descarte con la misma clave; si la preparación no llegó al servidor, esa clave se prepara y se cancela para obtener un terminal durable. Una captura sin envío final sigue editable tras fallos recuperables de preparación/carga. `CONTEXTO_INCOMPLETO` requiere corregir el plan, el polígono o la fecha operativa de entrega de stock en el ámbito; la respuesta no identifica cuál falta.
+
+La eliminación desde esa lista pide confirmación, clausura la preparación remota con el comando conservado y después borra campos y archivos del IndexedDB local. Un borrador sin comando se elimina localmente. Un envío final incierto debe conciliarse antes de eliminar y una plantación CONFIRMADA no puede borrarse como borrador. El recibo de descarte marca cargas no vinculadas para limpieza asíncrona en Storage; no confirma el borrado físico inmediato de originales y derivados.
 
 En móvil, la subcampaña elegida presenta plantación inicial/meta y el acceso al registro antes del mapa. Disponibilidad visible, especies desplegables: la lista de stock no desplaza la acción principal. Cambiar de ámbito descarta el contexto anterior; actualizar stock suspende el acceso hasta confirmar disponibilidad. El resumen de campaña agrega solo metas públicas y se mantiene independiente del stock privado y del alcance visual del mapa.
 
@@ -99,7 +102,7 @@ En acceso, `useAccessCommand` conserva sólo metadatos en `r3foresta:participaci
 
 Después de un terminal, `newIntent` requiere acción explícita. Un rechazo ordinario conserva datos/fotos permitidos y reinicia revisión; genera otras identidades de comando/carga y vuelve a subir los bytes. No existe transferencia de cargas entre preparaciones. El descarte clausura por API antes de liberar fotos locales; si hubo POST incierto, primero concilia. Un confirmado o cancelación terminal libera bytes locales conservando su comprobante; las cargas omitidas se limpian mediante backend.
 
-`detalle-propio` representa snapshots, nunca perfiles actuales reconstruidos: autor/participante histórico puede consultar tras retirar permiso operativo; observaciones sólo para autor. Su frontera visual incluye cuenta, token y registro para ocultar respuestas de la sesión anterior. [Impacto y Mis registros INT05](../impacto/README.md) agregan consulta pública independiente de sesión/capacidades y una lista propia autenticada, sin cambiar los contratos de los comandos INT04/INT06. El selector de registro conserva borradores tras retirar la habilitación y actualiza la última campaña usada por la misma cuenta.
+`detalle-propio` representa snapshots, nunca perfiles actuales reconstruidos: autor/participante histórico puede consultar tras retirar permiso operativo; observaciones sólo para autor. Su frontera visual incluye cuenta, token y registro para ocultar respuestas de la sesión anterior. [Impacto y Mis registros INT05](../impacto/README.md) agregan consulta pública independiente de sesión/capacidades y una lista propia autenticada, sin cambiar los contratos de los comandos INT04/INT06. La captura privada conserva borradores tras retirar la habilitación. El selector para iniciar una plantación actualiza la última campaña usada por la misma cuenta.
 
 ## Verificación y límites
 

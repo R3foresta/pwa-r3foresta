@@ -41,6 +41,7 @@ describe('Rutas de consulta pública', () => {
     render(<MemoryRouter initialEntries={['/app/participacion/mis-registros']}><App /></MemoryRouter>)
     await screen.findByRole('button', { name: 'Entrar con mi llave de acceso' })
     expect(canOpenAppPath('/app/participacion/mis-registros', 'VOLUNTARIO')).toBe(true)
+    expect(canOpenAppPath('/app/participacion/borradores', 'VOLUNTARIO')).toBe(true)
     expect(canOpenAppPath('/app/participacion/mis-registros/ajeno', 'VOLUNTARIO')).toBe(false)
   })
   it('un enlace público se conserva después del login', () => {
