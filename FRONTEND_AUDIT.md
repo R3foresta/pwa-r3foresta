@@ -10,6 +10,7 @@ Entrega INT06 publicada en PWA `62f55dc`: 32 suites/445 tests, lint y build/Type
 
 | Prioridad | ID | Estado | Qué falta |
 | --- | --- | --- | --- |
+| Alta | AUD-024 | CERRADO en localhost | Lectura de Equipo verificada con VOLUNTARIO/PLANTADOR y Supabase real; publicación externa se sigue en AUD-021. |
 | Media | AUD-023 | PENDIENTE · aceptación UX | Impacto recompuesto con componentes existentes; completar revisión humana del recorrido público/participante y verificación externa. |
 | Alta | AUD-022 | PENDIENTE · contrato INT07 | Coordinar schemas cerrados, catálogo de comandos y lecturas por audiencia al recibir APIs verificadas, ejemplos y fixture. Cotejo/bocetos preparados; FE01–FE08 pendientes. |
 | Alta | AUD-021 | PENDIENTE externo | WebAuthn real, entorno externo y QA completo del incremento; Impacto/registro/acceso ya verificados localmente. |
@@ -26,6 +27,10 @@ Entrega INT06 publicada en PWA `62f55dc`: 32 suites/445 tests, lint y build/Type
 El orden de ejecución entre repositorios se decide en el tablero oficial; esta tabla prioriza riesgos de frontend, no introduce nuevas dependencias de producto.
 
 ## Pendientes y criterio de cierre
+
+### AUD-024 — Lectura del equipo para el voluntario plantador
+
+26 de octubre: `ParticipacionDetalleEquipo` monta la lectura de miembros para PLANTADOR y oculta el enlace de gestión. También se oculta el acceso de gestión en el inicio del plantador aunque un DTO anuncie una acción por error. La revisión anterior pasó 56 suites/826 pruebas; después de este ajuste, la prueba focal pasó 36/36, lint y build/TypeScript. La migración aditiva backend 087, limitada al GET de miembros, pasó 37/37 comprobaciones HTTP en PostgreSQL aislado; backend build y 72 suites/1002 unitarias también pasaron. Tras aplicarla al proyecto Supabase configurado, una comprobación RPC de solo lectura con un VOLUNTARIO/PLANTADOR activo obtuvo 200 en su ámbito, 403 en otro ámbito, 403 en búsqueda privada y 401 con identidad inválida. `localhost:5173` sirvió el componente actualizado y el backend local respondió 200 en salud; la persona usuaria comprobó con su sesión VOLUNTARIO/PLANTADOR que Equipo muestra miembros sin controles de modificación. [Contrato y verificación](docs/BACKEND_TAREA_LECTURA_EQUIPO_PLANTADOR.md). Este cierre acredita el entorno local con Supabase configurado; no acredita una publicación externa de la PWA.
 
 ### AUD-023 — Claridad del recorrido público y participante
 

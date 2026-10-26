@@ -447,9 +447,21 @@ describe('Participar centrado en campañas y subcampañas habilitadas', () => {
 
 
 describe('UX-02: detalle compartido', () => {
+  it('mantiene oculta la gestión para un plantador aunque reciba una acción de gestión', async () => {
+    const area = scope()
+    area.acciones.incorporar_plantador = true
+    capabilities.mockResolvedValue(page([area]))
+    render(tree(['/participar']))
+    await screen.findByRole('button', { name: 'Entrar a la subcampaña: Zona 11' })
+    expect(screen.queryByRole('link', { name: 'Gestionar plantadores' })).toBeNull()
+  })
+
   it.each(['plantador', 'contextual'])('comparte encabezado y secciones para %s sin cargar el equipo al entrar', async profile => {
     const area = scope()
-    if (profile === 'contextual') area.permiso_contextual = 'ADMINISTRADOR_SUBCAMPANIA'
+    if (profile === 'contextual') {
+      area.permiso_contextual = 'ADMINISTRADOR_SUBCAMPANIA'
+      area.acciones.incorporar_plantador = true
+    }
     const response = page([area])
     if (profile === 'global') response.data.actor.rol_global = 'ADMIN'
     capabilities.mockResolvedValue(response)
@@ -463,13 +475,9 @@ describe('UX-02: detalle compartido', () => {
     expect(members).not.toHaveBeenCalled()
     expect(Boolean(screen.queryByRole('link', { name: 'Abrir gestión interna y plan' }))).toBe(profile === 'global')
     fireEvent.click(screen.getByRole('button', { name: 'Equipo' }))
-    if (profile === 'plantador') {
-      expect(screen.getByText(/La consulta del equipo todavía no está disponible/)).toBeTruthy()
-      expect(members).not.toHaveBeenCalled()
-    } else {
-      await screen.findByText('No hay miembros en esta consulta.')
-      expect(members).toHaveBeenCalledExactlyOnceWith('11', { limite: 20 }, expect.any(AbortSignal))
-    }
+    await screen.findByText('No hay miembros en esta consulta.')
+    expect(members).toHaveBeenCalledExactlyOnceWith('11', { limite: 20 }, expect.any(AbortSignal))
+    expect(Boolean(screen.queryByRole('link', { name: 'Gestionar permisos de participación' }))).toBe(profile === 'contextual')
     fireEvent.click(screen.getByRole('button', { name: 'Resumen' }))
     expect(screen.getByRole('link', { name: 'Registrar plantación' })).toBeTruthy()
   })
@@ -524,7 +532,7 @@ describe('UX-02: detalle compartido', () => {
     expect(members.mock.calls[2][1]).toEqual({ limite: 20, cursor: '50' })
   })
 
-  it('cancela miembros al salir del ámbito y no los muestra al entrar como plantador', async () => {
+  it('cancela miembros al salir del ámbito y consulta por separado el equipo del plantador', async () => {
     const area = scope()
     area.permiso_contextual = 'ADMINISTRADOR_SUBCAMPANIA'
     capabilities.mockResolvedValue(page([area, scope('12')]))
@@ -540,7 +548,8 @@ describe('UX-02: detalle compartido', () => {
     expect(signal.aborted).toBe(true)
     fireEvent.click(screen.getByRole('button', { name: 'Equipo' }))
     await act(async () => pending.resolve({ data: [], siguiente_cursor: null, observado_en: '2026-10-24T12:00:00Z' }))
-    expect(members).toHaveBeenCalledTimes(1)
-    expect(screen.getByText(/La consulta del equipo todavía no está disponible/)).toBeTruthy()
+    await screen.findByText('No hay miembros en esta consulta.')
+    expect(members).toHaveBeenCalledTimes(2)
+    expect(members.mock.calls[1][0]).toBe('12')
   })
 })

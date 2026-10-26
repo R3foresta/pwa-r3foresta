@@ -6,13 +6,17 @@ import type { CapacidadSubcampania, MiembrosLectura } from '../types'
 import { accessError, permissionLabel } from './accessPresentation'
 
 export default function ParticipacionDetalleEquipo({ scope, globalAdmin }: { scope: CapacidadSubcampania; globalAdmin: boolean }) {
-  const allowed = globalAdmin || scope.permiso_contextual === 'ADMINISTRADOR_SUBCAMPANIA'
+  const allowed = globalAdmin || scope.permiso_contextual === 'ADMINISTRADOR_SUBCAMPANIA' || scope.permiso_contextual === 'PLANTADOR'
+  const canManage = (globalAdmin || scope.permiso_contextual === 'ADMINISTRADOR_SUBCAMPANIA') && (
+    scope.acciones.incorporar_plantador || scope.acciones.retirar_plantador || scope.acciones.designar_administrador ||
+    scope.acciones.cambiar_administrador || scope.acciones.retirar_administrador || scope.acciones.reemplazar_administrador
+  )
   return <Card as="section" className="space-y-3"><h2 className="text-lg font-bold">Equipo de la subcampaña</h2>
-    {allowed ? <Members key={scope.subcampania_id} scope={scope} /> : <p className="text-sm leading-6 text-neutral-600">La consulta del equipo todavía no está disponible para tu cuenta. Puedes seguir consultando el resumen y registrando cuando esté habilitado.</p>}
+    {allowed ? <Members key={scope.subcampania_id} scope={scope} canManage={canManage} /> : <p className="text-sm leading-6 text-neutral-600">La consulta del equipo no está disponible para tu cuenta.</p>}
   </Card>
 }
 
-function Members({ scope }: { scope: CapacidadSubcampania }) {
+function Members({ scope, canManage }: { scope: CapacidadSubcampania; canManage: boolean }) {
   const [page, setPage] = useState<MiembrosLectura | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -38,9 +42,9 @@ function Members({ scope }: { scope: CapacidadSubcampania }) {
     } catch (reason) { if (!controller.signal.aborted) setError(accessError(reason)) }
     finally { if (!controller.signal.aborted) setLoading(false) }
   }
-  const canManage = scope.acciones.incorporar_plantador || scope.acciones.retirar_plantador || scope.acciones.designar_administrador || scope.acciones.cambiar_administrador || scope.acciones.retirar_administrador || scope.acciones.reemplazar_administrador
   return <div className="space-y-3">
     <p className="text-sm text-neutral-600">Permisos de participación y responsabilidades logísticas. Las fotos del equipo todavía no están disponibles.</p>
+    {!canManage && page && !error && <p className="text-xs text-neutral-600">Puedes consultar el equipo de esta subcampaña. Los cambios de acceso están reservados a sus administradores.</p>}
     {loading && <p role="status">Consultando equipo…</p>}
     {error && <div className="space-y-2"><p role="alert" className="text-sm text-danger-700">{error}</p><Button variant="secondary" onClick={() => void loadMore(page?.siguiente_cursor ?? undefined)}>Reintentar equipo</Button></div>}
     {!loading && !error && page?.data.length === 0 && <p>No hay miembros en esta consulta.</p>}

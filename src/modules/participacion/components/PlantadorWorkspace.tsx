@@ -9,6 +9,7 @@ import ParticipacionInicioCards from './ParticipacionInicioCards'
 import ParticipacionInicioMap from './ParticipacionInicioMap'
 
 function canManage(scope: CapacidadSubcampania) {
+  if (scope.fuente_autoridad !== 'GLOBAL' && scope.permiso_contextual !== 'ADMINISTRADOR_SUBCAMPANIA') return false
   const actions = scope.acciones
   return actions.incorporar_plantador || actions.retirar_plantador || actions.designar_administrador || actions.cambiar_administrador || actions.retirar_administrador || actions.reemplazar_administrador
 }
