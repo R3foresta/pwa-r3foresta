@@ -6,7 +6,7 @@ import type {
 } from '../registroTypes'
 import { verificarActorParticipacion } from './participacion.api'
 import { ParticipacionContratoError, validarId, validarPagina, validarPersonas } from './participacion.contract'
-import { outsideError, PARTICIPACION_API_URL, requestPrivada, successful, type RespuestaPrivada } from './participacion.transport'
+import { outsideError, PARTICIPACION_API_URL, ParticipacionApiError, requestPrivada, successful, type RespuestaPrivada } from './participacion.transport'
 import {
   validarCargaRegistro, validarCargasRegistro, validarContextoRegistro, validarDetallePropioRegistro,
   validarPreparacionRegistro, validarPreviewRegistro, validarReciboRegistro, validarRegistroComandoId,
@@ -22,7 +22,14 @@ async function actorRequest(actorId: string, path: string, init: RequestInit = {
   return requestPrivada(path, init, token)
 }
 function terminal(response: RespuestaPrivada, identity: RegistroIdentity, get = false): ReciboRegistro {
-  if (response.status === 202) { validarRegistroSinResultado(response.body, identity); throw outsideError(response) }
+  if (response.status === 202) {
+    validarRegistroSinResultado(response.body, identity)
+    throw new ParticipacionApiError(202, {
+      codigo: 'COMANDO_NO_CONFIRMADO',
+      mensaje: 'El servidor todavía no tiene un resultado de guardado para este intento. Puedes reintentar el envío con los datos conservados.',
+      campos: [], ambitos: [], reintento: 'MISMA_CLAVE',
+    }, response.retryAfter)
+  }
   if (!isTerminal(response.body) || (get ? response.status !== 200 : ![200, 403, 404, 409, 422, 503].includes(response.status))) throw outsideError(response)
   const receipt = validarReciboRegistro(response.body, identity)
   if (receipt.estado === 'CONFIRMADO' && response.status !== 200 || response.status === 503 && (receipt.estado !== 'RECHAZADO' || receipt.error.codigo !== 'EVALUADOR_NO_DISPONIBLE')) throw outsideError(response)

@@ -32,6 +32,8 @@ export type PhotoUploaderProps = {
   disabled?: boolean
   /** Omite el encabezado cuando la sección contenedora ya tiene título y contador. */
   headerless?: boolean
+  /** Selector pequeño cuando la pantalla ya muestra sus propias miniaturas. */
+  compact?: boolean
 }
 
 function PhotoUploader({
@@ -46,6 +48,7 @@ function PhotoUploader({
   errorMessage,
   disabled = false,
   headerless = false,
+  compact = false,
 }: PhotoUploaderProps) {
   const [fileError, setFileError] = useState<string | null>(null)
 
@@ -126,7 +129,16 @@ function PhotoUploader({
 
       {empty ? (
         <label
-          className={`flex min-h-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed px-4 py-5 text-center text-brand-700 transition ${
+          role="button"
+          tabIndex={disabled ? -1 : 0}
+          aria-disabled={disabled}
+          onKeyDown={(event) => {
+            if (!disabled && (event.key === 'Enter' || event.key === ' ')) {
+              event.preventDefault()
+              event.currentTarget.querySelector('input')?.click()
+            }
+          }}
+          className={`flex cursor-pointer items-center justify-center gap-2 rounded-2xl border-2 border-dashed px-4 text-center text-brand-700 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 ${compact ? 'min-h-12 py-2' : 'min-h-32 flex-col py-5'} ${
             showError
               ? 'border-danger-300 bg-danger-50'
               : 'border-brand-200 bg-brand-50/60 hover:border-brand-300 hover:bg-brand-50'
@@ -134,9 +146,9 @@ function PhotoUploader({
         >
           <Icon name="photo" className="h-7 w-7" />
           <span className="text-sm font-extrabold">Añadir fotos</span>
-          <span className="text-[11px] font-semibold text-brand-500">
+          {!compact && <span className="text-[11px] font-semibold text-brand-500">
             JPG, PNG, WEBP, HEIC o HEIF · hasta {max} archivos
-          </span>
+          </span>}
           {fileInput}
         </label>
       ) : (

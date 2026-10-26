@@ -182,20 +182,32 @@ export class RegistrationCommandController extends CommandLifecycle<RegistroComm
     let next = record.preparado ? record : await this.prepareRecord(record, operation)
     if (next.terminal || this.snapshot.receipt || !operation.current()) return
     next = await this.syncFiles(next, operation)
-    for (const file of next.files) {
+    const pending = next.files.filter((file) => !file.omitted && !fileAvailable(file))
+    for (let index = 0; index < pending.length; index += 2) {
       if (!operation.current()) return
-      if (file.omitted || fileAvailable(file)) continue
-      // Listado previo al primer PUT y a cada reintento. RESERVADA se reenvía
-      // sólo con la misma clave/bytes; el servidor concilia su lease/generación.
-      try {
-        const result = await this.api.subirCarga(identity(next), file.carga_id, file.file, operation.signal)
+      // Dos archivos independientes por tanda. El lock abarca ambas peticiones;
+      // la persistencia sigue siendo serial y conserva también éxitos parciales.
+      const batch = pending.slice(index, index + 2)
+      const results = await Promise.allSettled(batch.map((file) => this.api.subirCarga(identity(next), file.carga_id, file.file, operation.signal)))
+      if (!operation.current()) return
+      let failure: unknown = null
+      for (const [offset, result] of results.entries()) {
         if (!operation.current()) return
-        next = await this.persist({ ...next, files: next.files.map((item) => item.carga_id === file.carga_id ? { ...item, carga: result.data, error: null } : item) })
-        this.show(next, 'uploading')
-        if (result.data.estado !== 'DISPONIBLE' && result.data.estado !== 'VINCULADA') throw new Error('La carga sigue pendiente de confirmar. Consulta sus fotos antes de volver a intentar.')
-      } catch (error) {
-        if (operation.current()) await this.persist({ ...next, files: next.files.map((item) => item.carga_id === file.carga_id ? { ...item, error: errorMessage(error) } : item) })
-        throw error
+        const file = batch[offset]
+        const carga = result.status === 'fulfilled' ? result.value.data : file.carga
+        const error = result.status === 'rejected' ? result.reason : carga?.estado !== 'DISPONIBLE' && carga?.estado !== 'VINCULADA' ? new Error('La foto sigue pendiente de confirmación. Puedes reintentar sin volver a seleccionarla.') : null
+        if (error && !(failure instanceof ParticipacionApiError && failure.status === 401)) failure = error
+        next = await this.persist({ ...next, files: next.files.map((item) => item.carga_id === file.carga_id ? { ...item, carga, error: error ? errorMessage(error) : null } : item) })
+      }
+      this.show(next, 'uploading')
+      if (failure) {
+        if (failure instanceof ParticipacionApiError && failure.status === 401) throw failure
+        // Una lectura automática resuelve respuestas perdidas sin repetir PUT.
+        const errors = new Map(next.files.map((file) => [file.carga_id, file.error]))
+        next = await this.syncFiles(next, operation)
+        if (!operation.current()) return
+        next = await this.persist({ ...next, files: next.files.map((file) => ({ ...file, error: fileAvailable(file) ? null : errors.get(file.carga_id) ?? null })) })
+        if (batch.some((file) => !next.files.some((current) => current.carga_id === file.carga_id && fileAvailable(current)))) throw failure
       }
     }
     this.show(next, 'prepared')
@@ -233,6 +245,16 @@ export class RegistrationCommandController extends CommandLifecycle<RegistroComm
   retrySame = async (): Promise<void> => this.work('sending', async (record, operation) => {
     if (!record.payload || record.cancelacion_solicitada || record.terminal) throw new Error('No hay un envío final incierto que pueda repetirse. Recupera la preparación original.')
     const payload = immutablePayload(validarRegistroEntrada(record.payload, record.actor_id))
+    // Consultar primero evita otro POST cuando la respuesta se perdió después
+    // del guardado. Un resultado inconcluso sólo permite repetir el contenido
+    // congelado si el contrato indica MISMA_CLAVE; nunca crear otro intento.
+    let recovered: ReciboRegistro | null = null
+    try { recovered = await this.api.recuperar(identity(record), operation.signal) }
+    catch (error) {
+      if (!(error instanceof ParticipacionApiError) || error.reintento !== 'MISMA_CLAVE' || error.status === 401 || error.status === 403) throw error
+    }
+    if (!operation.current()) return
+    if (recovered) { await this.settle(record, recovered, operation); return }
     await this.settle(record, await this.api.enviar({ ...identity(record), payload }, operation.signal), operation)
   })
   cancel = async (): Promise<boolean> => {

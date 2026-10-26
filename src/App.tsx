@@ -23,6 +23,7 @@ const ImpactoConsultaScreen = lazy(() => import('./modules/impacto/pages/Impacto
 const ImpactoRegistroScreen = lazy(() => import('./modules/impacto/pages/ImpactoRegistroScreen'))
 const MisRegistrosScreen = lazy(() => import('./modules/impacto/pages/MisRegistrosScreen'))
 const GestionAccesosScreen = lazy(() => import('./modules/participacion/pages/GestionAccesosScreen'))
+const CorreccionesScreen = lazy(() => import('./modules/participacion/correcciones/pages/CorreccionesScreen'))
 const LoginScreen = lazy(() => import('./modules/auth/LoginScreen'))
 const RegisterScreen = lazy(() => import('./modules/auth/RegisterScreen'))
 const RecoverScreen = lazy(() => import('./modules/auth/RecoverScreen'))
@@ -180,6 +181,8 @@ function App() {
             <Route path="participacion/subcampanias/:subcampaniaId/registrar" element={<RegistrarParticipanteScreen />} />
             <Route path="participacion/registros/:registroId" element={<DetallePropioScreen />} />
             <Route path="participacion/mis-registros" element={<MisRegistrosScreen />} />
+            <Route path="participacion/correcciones" element={<CorreccionesScreen />} />
+            <Route path="participacion/correcciones/:registroId" element={<CorreccionesScreen />} />
             <Route path="collections">
               <Route index element={<RecoleccionesScreen />} />
               <Route path="stock" element={<RecoleccionStockScreen />} />

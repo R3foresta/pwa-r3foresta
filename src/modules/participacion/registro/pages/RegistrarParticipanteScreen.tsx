@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import ConfirmDialog from '../../../../components/ConfirmDialog'
 import { Button, Card } from '../../../../components/ui'
@@ -43,7 +43,8 @@ function RegistrarParticipante({ actorId, scopeId }: { actorId: string | null; s
   const returnTo = registrationReturnTo(useLocation().state)
   const { user, login } = useAuth()
   const command = useRegistroCommand(actorId, scopeId)
-  const captureStage = ['draft', 'prepared', 'preparing', 'uploading'].includes(command.state)
+  const editableStage = ['draft', 'prepared', 'preparing', 'uploading'].includes(command.state)
+  const captureStage = editableStage || (['unconfirmed', 'loading'].includes(command.state) && Boolean(command.pending) && !command.pending?.payload && !command.receipt)
   const contextState = useRegistroContext(actorId, scopeId, captureStage && !command.receipt && !command.pending?.payload)
   const context = contextState.context
   const { draft, files } = command
@@ -54,7 +55,7 @@ function RegistrarParticipante({ actorId, scopeId }: { actorId: string | null; s
   const [exitOpen, setExitOpen] = useState(false)
   const [newIntentOpen, setNewIntentOpen] = useState(false)
   const [removePhoto, setRemovePhoto] = useState<string | null>(null)
-  const disabled = command.busy || !captureStage || !context || context.disponibilidad === 'SIN_STOCK'
+  const disabled = command.busy || !editableStage || !context || context.disponibilidad === 'SIN_STOCK'
   const readyPhotos = files.filter((photo) => (photo.carga?.estado === 'DISPONIBLE' || photo.carga?.estado === 'VINCULADA') && photo.carga.evidencia_id !== null).length
   const validCoordinates = draft.latitud !== null && draft.longitud !== null && Number.isFinite(draft.latitud) && Number.isFinite(draft.longitud) && Math.abs(draft.latitud) <= 90 && Math.abs(draft.longitud) <= 180
   const responsible = [user?.nombre, user?.apellido].filter(Boolean).join(' ') || user?.username || `Cuenta ${actorId}`
@@ -64,6 +65,15 @@ function RegistrarParticipante({ actorId, scopeId }: { actorId: string | null; s
   const canConfirm = !disabled && draft.gps_confirmado && validCoordinates && quantitiesValid && dateValid && reviewedCurrentPlan && readyPhotos > 0 && readyPhotos === files.length && readyPhotos <= 10 && (draft.observaciones?.length ?? 0) <= 2000
 
   const updateDraft = command.updateDraft
+  const upload = command.upload
+  const autoUpload = useRef<string | null>(null)
+  useEffect(() => {
+    if (disabled || files.length === 0 || readyPhotos === files.length || files.some((photo) => photo.error)) return
+    const selection = files.map((photo) => photo.carga_id).join(',')
+    if (autoUpload.current === selection) return
+    autoUpload.current = selection
+    void upload()
+  }, [disabled, files, readyPhotos, upload])
   useEffect(() => {
     if (context && draft.fecha_plantacion === '' && captureStage && !command.busy) void updateDraft({ fecha_plantacion: context.reglas.hoy_operativo })
   }, [context, draft.fecha_plantacion, captureStage, command.busy, updateDraft])
@@ -77,7 +87,7 @@ function RegistrarParticipante({ actorId, scopeId }: { actorId: string | null; s
   function nextFromLocation() {
     if (disabled) return
     if (!validCoordinates) { setLocalError('Indica una coordenada válida antes de confirmar la ubicación.'); return }
-    if (files.length < 1 || readyPhotos !== files.length) { setLocalError('Sube y comprueba al menos una foto válida antes de continuar.'); return }
+    if (files.length < 1 || readyPhotos !== files.length) { setLocalError('Añade al menos una foto y espera a que termine de subir.'); return }
     update({ gps_confirmado: true, step: 2 })
   }
   async function confirm() {
@@ -108,18 +118,16 @@ function RegistrarParticipante({ actorId, scopeId }: { actorId: string | null; s
   return <div className="mx-auto min-h-dvh max-w-3xl">
     <WizardHeader paso={draft.step} totalPasos={3} title={command.receipt ? 'Resultado de la plantación' : titles[draft.step]} onBack={back} subcampaniaNombre={context?.subcampania.nombre ?? `Subcampaña ${scopeId}`} subcampaniaDetalle={context?.subcampania.campania_nombre} />
     <div className="space-y-4 px-5 pt-5">
-      <RegistroCommandStatus state={command.state} pending={command.pending} receipt={command.receipt} busy={command.busy} error={command.error} onRecover={() => void command.recover()} onRetry={() => void command.retrySame()} onNewIntent={() => setNewIntentOpen(true)} onLogin={() => void recoverSession()} />
-      {command.state === 'unconfirmed' && !command.pending?.payload && files.length > 0 && <Card className="space-y-2"><h2 className="font-bold text-brand-800">Fotos conservadas para comprobar</h2>{files.map((photo) => <div key={photo.carga_id} className="rounded-xl bg-neutral-50 p-3 text-sm"><p className="break-all font-bold text-brand-800">{photo.file.name}</p><p className="text-neutral-600">{photo.carga?.estado ?? 'Archivo local sin carga confirmada'}</p>{photo.error && <p role="alert" className="text-danger-700">{photo.error}</p>}</div>)}</Card>}
+      <RegistroCommandStatus state={command.state} pending={command.pending} receipt={command.receipt} busy={command.busy} error={command.error} onRecover={() => { autoUpload.current = null; void command.recover() }} onRetry={() => void command.retrySame()} onNewIntent={() => setNewIntentOpen(true)} onLogin={() => void recoverSession()} />
       {localError && <p role="alert" className="text-sm text-danger-700">{localError}</p>}
       {contextState.loading && <Card><p role="status" className="text-sm text-neutral-600">Consultando contexto autorizado de esta subcampaña…</p></Card>}
       {contextState.error && <Card className="space-y-3"><p role="alert" className="text-sm text-danger-700">{contextState.error}</p><p className="text-xs text-neutral-600">No se interpretó el error como falta de stock. El borrador y el comando conservan su identidad.</p><Button variant="secondary" onClick={() => { if (contextState.sessionExpired) void recoverSession(); else contextState.refresh() }}>{contextState.sessionExpired ? 'Recuperar sesión con passkey' : 'Volver a consultar contexto'}</Button><Button variant="ghost" onClick={() => setExitOpen(true)}>Salir conservando el borrador</Button></Card>}
       {context?.disponibilidad === 'SIN_STOCK' && <Card className="space-y-3"><h2 className="font-bold text-brand-800">Sin stock disponible para plantación inicial</h2><p className="text-sm text-neutral-700">Tu autorización se conserva. No hay saldo elegible disponible en esta subcampaña.</p><Button variant="secondary" onClick={contextState.refresh}>Consultar disponibilidad otra vez</Button></Card>}
       {context && !command.receipt && captureStage && <>
-        <Card><p className="text-sm text-brand-800"><strong>Responsable:</strong> {responsible} (tu cuenta, no editable)</p></Card>
         {draft.step === 1 && <>
-          <RegistroPhotos identity={command.pending} files={files} disabled={disabled} busy={command.busy} onAdd={addFiles} onRemove={setRemovePhoto} onUpload={() => void command.upload()} onRecover={() => void command.recover()} />
+          <RegistroPhotos identity={command.pending} files={files} disabled={disabled} busy={command.busy} onAdd={addFiles} onRemove={setRemovePhoto} onUpload={() => void command.upload()} />
           <RegistroLocation context={context} latitude={draft.latitud} longitude={draft.longitud} disabled={disabled} onChange={(latitude, longitude) => update({ latitud: latitude, longitud: longitude, gps_confirmado: false })} />
-          <StepFooter label="Confirmar ubicación y continuar" disabled={disabled} onClick={nextFromLocation} hint="Revisa las fotos y confirma dónde plantaste." />
+          <StepFooter label={command.busy && files.length > 0 ? 'Subiendo fotos…' : 'Continuar'} disabled={disabled} onClick={nextFromLocation} hint={command.busy ? 'Tus fotos se están cargando automáticamente.' : 'Confirma que el punto corresponde al lugar donde plantaste.'} />
         </>}
         {draft.step === 2 && <RegistroSpeciesStep key={context.subcampania.plan_revision} context={context} values={draft} disabled={disabled} onChange={update} onBack={() => update({ step: 1 })} onNext={() => update({ step: 3, plan_revision_revisada: context.subcampania.plan_revision })} />}
         {draft.step === 3 && <>

@@ -1,5 +1,9 @@
 # INT07 — Cotejo frontend de componentes, contratos y bocetos
 
+## Actualización 2026-10-22
+
+El backend verificado permite iniciar `CORREGIR_OBSERVACIONES_PLANTACION` (OBS084). La pantalla implementada mantiene un recorrido compacto: localizar por ID, consultar contexto, comparar original y efectivo, proponer observaciones con motivo y confirmar. Participantes queda pendiente de evidencia HTTP exitosa de 085; cantidades y reversiones siguen fuera del incremento. FE01–FE08 continúan pendientes de cierre.
+
 **Corte:** 20 de octubre de 2026, America/La_Paz. **Preparación documental; FE01–FE08 pendientes.** Este documento y los [bocetos estáticos](bocetos/INT07_CORRECCIONES.html) no implementan correcciones ni acreditan APIs, fixtures HTTP o QA de INT07.
 
 Fuentes: [encargo INT07](../../r3foresta-docs/specs/plantacion/participacion-aliada/implementacion/pa-t-int07.md), [PA-S04 spec](../../r3foresta-docs/specs/plantacion/participacion-aliada/04-correccion-excepcional/spec.md), [plan](../../r3foresta-docs/specs/plantacion/participacion-aliada/04-correccion-excepcional/plan.md), [tareas](../../r3foresta-docs/specs/plantacion/participacion-aliada/04-correccion-excepcional/tasks.md) y [contrato backend INT07](../../Backend-r3foresta/docs/pa-int07-contrato.md), especialmente §§2–5.1 y 7–9. Los [ejemplos candidatos](../../Backend-r3foresta/docs/pa-int07-ejemplos-candidatos.json) ilustran diseño; no son respuestas verificadas de endpoints.

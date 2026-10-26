@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
@@ -29,15 +29,16 @@ function receipt(identity: IntentoRegistro): ReciboRegistro {
 
 beforeEach(() => {
   mocks.actorId = '801'; mocks.records.clear(); uploaded = new Map()
+  Object.defineProperty(navigator, 'geolocation', { configurable: true, value: undefined })
   Object.defineProperty(navigator, 'locks', { configurable: true, value: { request: vi.fn(async (_key: string, _options: unknown, callback: () => Promise<unknown>) => callback()) } })
   vi.stubGlobal('URL', class extends URL { static createObjectURL = vi.fn(() => 'blob:local-photo'); static revokeObjectURL = vi.fn() })
   vi.spyOn(RegistroParticipacionService, 'contexto').mockImplementation(async (actorId) => ({ data: context(actorId), observado_en: observed }))
   vi.spyOn(RegistroParticipacionService, 'participantes').mockResolvedValue({ data: [{ usuario_id: '802', nombre: 'Ana', organizacion: null }], observado_en: observed, siguiente_cursor: null })
   vi.spyOn(RegistroParticipacionService, 'preparar').mockImplementation(async (identity) => ({ data: { comando_id: identity.comando_id, subcampania_id: identity.subcampania_id, operacion: 'REGISTRAR_PLANTACION_INICIAL', estado: 'PREPARADO' }, observado_en: observed }))
-  vi.spyOn(RegistroParticipacionService, 'listarCargas').mockImplementation(async () => ({ data: [...uploaded.values()], observado_en: observed }))
+  vi.spyOn(RegistroParticipacionService, 'listarCargas').mockImplementation(async (identity) => ({ data: [...uploaded.entries()].filter(([key]) => key.startsWith(`${identity.comando_id}:`)).map(([, value]) => value), observado_en: observed }))
   vi.spyOn(RegistroParticipacionService, 'subirCarga').mockImplementation(async (_identity, cargaId) => {
     const carga: CargaRegistro = { carga_id: cargaId, estado: 'DISPONIBLE', evidencia_id: '901', creado_en: observed, expira_en: '2026-03-03T16:00:00Z' }
-    uploaded.set(cargaId, carga)
+    uploaded.set(`${_identity.comando_id}:${cargaId}`, carga)
     return { data: carga, observado_en: observed }
   })
   vi.spyOn(RegistroParticipacionService, 'preview').mockResolvedValue({ data: { url: 'https://preview.example.test/foto.jpg', expira_en: '2026-03-02T16:05:00Z' }, observado_en: observed })
@@ -62,15 +63,14 @@ function open(state?: unknown) { return render(<MemoryRouter initialEntries={[{ 
 
 async function fillToParticipants() {
   const user = userEvent.setup()
-  await screen.findByText('Fotos del trabajo · 0/10')
+  await screen.findByRole('heading', { name: 'Fotos del trabajo' })
   const input = document.querySelector<HTMLInputElement>('input[type="file"]')!
   await user.upload(input, new File(['jpeg-fake'], 'trabajo.jpg', { type: 'image/jpeg' }))
-  await user.click(await screen.findByRole('button', { name: 'Preparar y subir fotos pendientes' }))
-  await screen.findByText('Disponible · validada por servidor')
+  await screen.findByText('Foto lista')
   await user.click(screen.getByRole('button', { name: /Editar coordenadas manualmente/ }))
   await user.type(screen.getByLabelText('Latitud'), '-16.8')
   await user.type(screen.getByLabelText('Longitud'), '-68.4')
-  await user.click(screen.getByRole('button', { name: 'Confirmar ubicación y continuar' }))
+  await user.click(screen.getByRole('button', { name: 'Continuar' }))
   await user.type(await screen.findByLabelText('Cantidad de Queñua'), '7')
   await user.type(screen.getByLabelText('Observaciones (opcional)'), 'Se plantó junto al sendero')
   await user.click(screen.getByRole('button', { name: 'Continuar a participantes' }))
@@ -79,10 +79,50 @@ async function fillToParticipants() {
 }
 
 describe('Registro participante de tres pasos', () => {
+  it('captura GPS al entrar y conserva su respuesta mientras la foto se sube automáticamente', async () => {
+    let locate!: PositionCallback
+    const gps = vi.fn((success: PositionCallback) => { locate = success })
+    Object.defineProperty(navigator, 'geolocation', { configurable: true, value: { getCurrentPosition: gps } })
+    let complete!: () => void
+    vi.mocked(RegistroParticipacionService.subirCarga).mockImplementationOnce(async (_identity, cargaId) => {
+      await new Promise<void>((resolve) => { complete = resolve })
+      return { data: { carga_id: cargaId, estado: 'DISPONIBLE', evidencia_id: '901', creado_en: observed, expira_en: null }, observado_en: observed }
+    })
+    open()
+    const user = userEvent.setup()
+    await waitFor(() => expect(gps).toHaveBeenCalledTimes(1))
+    await user.upload(document.querySelector<HTMLInputElement>('input[type="file"]')!, new File(['foto'], 'campo.jpg', { type: 'image/jpeg' }))
+    await waitFor(() => expect(RegistroParticipacionService.subirCarga).toHaveBeenCalledTimes(1))
+    await act(async () => locate({ coords: { latitude: -16.5, longitude: -68.1, accuracy: 5 } } as GeolocationPosition))
+    expect((screen.getByRole('button', { name: 'Subiendo fotos…' }) as HTMLButtonElement).disabled).toBe(true)
+    await act(async () => complete())
+    await screen.findByText('Foto lista')
+    await waitFor(() => expect(mocks.records.get('801:820')).toMatchObject({ draft: { latitud: -16.5, longitud: -68.1 } }))
+    await user.click(screen.getByRole('button', { name: 'Continuar' }))
+    await screen.findByLabelText('Cantidad de Queñua')
+    expect(gps).toHaveBeenCalledTimes(1)
+    expect(RegistroParticipacionService.preview).not.toHaveBeenCalled()
+    expect(RegistroParticipacionService.enviar).not.toHaveBeenCalled()
+  })
+
+  it('una corrección manual prevalece sobre una respuesta GPS tardía', async () => {
+    let locate!: PositionCallback
+    Object.defineProperty(navigator, 'geolocation', { configurable: true, value: { getCurrentPosition: vi.fn((success: PositionCallback) => { locate = success }) } })
+    open()
+    const user = userEvent.setup()
+    await screen.findByText('Obteniendo tu ubicación…')
+    await user.click(screen.getByRole('button', { name: 'Editar coordenadas manualmente' }))
+    await user.type(screen.getByLabelText('Latitud'), '-16.8')
+    await user.type(screen.getByLabelText('Longitud'), '-68.4')
+    await act(async () => locate({ coords: { latitude: -16.5, longitude: -68.1, accuracy: 5 } } as GeolocationPosition))
+    expect((screen.getByLabelText('Latitud') as HTMLInputElement).value).toBe('-16.8')
+    await waitFor(() => expect(mocks.records.get('801:820')).toMatchObject({ draft: { latitud: -16.8, longitud: -68.4 } }))
+  })
+
   it.each(['/participar?campania_id=800&subcampania_id=820', '/app/planting/subcampanias/820', '/app/planting/subcampanias/820?pestana=resumen'])('al conservar el borrador vuelve al detalle de origen: %s', async destination => {
     open({ participacionReturnTo: destination })
     const user = userEvent.setup()
-    await screen.findByText('Fotos del trabajo · 0/10')
+    await screen.findByRole('heading', { name: 'Fotos del trabajo' })
     await user.click(screen.getByRole('button', { name: 'Volver' }))
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Conservar borrador y salir' }))
     expect(await screen.findByText(`Retorno: ${destination}`)).toBeTruthy()
@@ -93,10 +133,9 @@ describe('Registro participante de tres pasos', () => {
   it('vuelve al ámbito seleccionado después de confirmar el descarte de la preparación', async () => {
     open({ participacionReturnTo: '/participar?campania_id=800&subcampania_id=820' })
     const user = userEvent.setup()
-    await screen.findByText('Fotos del trabajo · 0/10')
+    await screen.findByRole('heading', { name: 'Fotos del trabajo' })
     await user.upload(document.querySelector<HTMLInputElement>('input[type="file"]')!, new File(['jpeg-fake'], 'trabajo.jpg', { type: 'image/jpeg' }))
-    await user.click(await screen.findByRole('button', { name: 'Preparar y subir fotos pendientes' }))
-    await screen.findByText('Disponible · validada por servidor')
+      await screen.findByText('Foto lista')
     await user.click(screen.getByRole('button', { name: 'Volver' }))
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Descartar borrador y cerrar preparación' }))
     expect(await screen.findByText('Retorno: /participar?campania_id=800&subcampania_id=820')).toBeTruthy()
@@ -112,7 +151,7 @@ describe('Registro participante de tres pasos', () => {
   ])('sin retorno válido mantiene la salida al selector (%j)', async (state) => {
     open(state)
     const user = userEvent.setup()
-    await screen.findByText('Fotos del trabajo · 0/10')
+    await screen.findByRole('heading', { name: 'Fotos del trabajo' })
     await user.click(screen.getByRole('button', { name: 'Volver' }))
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Conservar borrador y salir' }))
     expect(await screen.findByText('Retorno: /app/participacion/registrar')).toBeTruthy()
@@ -168,6 +207,27 @@ describe('Registro participante de tres pasos', () => {
     expect(RegistroParticipacionService.enviar).toHaveBeenCalledTimes(1)
   })
 
+  it('explica una pausa del servidor y reintenta el mismo registro después de comprobarlo', async () => {
+    const paused = 'El registro está pausado temporalmente. Conserve la misma clave.'
+    vi.mocked(RegistroParticipacionService.enviar).mockRejectedValueOnce(new ParticipacionApiError(503, { codigo: 'RESULTADO_NO_DETERMINADO', mensaje: paused, campos: [], ambitos: [], reintento: 'MISMA_CLAVE' }))
+    open()
+    const user = await fillToParticipants()
+    await user.click(screen.getByRole('button', { name: 'Confirmar plantación' }))
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Confirmar y guardar plantación' }))
+    await screen.findByText(paused)
+    expect(screen.queryByText('Plantación guardada')).toBeNull()
+    expect(screen.getByText(/«Comprobar guardado» solo consulta el estado/)).toBeTruthy()
+    const original = vi.mocked(RegistroParticipacionService.enviar).mock.calls[0][0]
+    vi.mocked(RegistroParticipacionService.recuperar).mockRejectedValue(new ParticipacionApiError(202, { codigo: 'COMANDO_NO_CONFIRMADO', mensaje: 'Todavía no hay resultado de guardado.', campos: [], ambitos: [], reintento: 'MISMA_CLAVE' }))
+    await user.click(screen.getByRole('button', { name: 'Comprobar guardado' }))
+    await screen.findByText('Todavía no hay resultado de guardado.')
+    expect(RegistroParticipacionService.enviar).toHaveBeenCalledTimes(1)
+    await user.click(screen.getByRole('button', { name: 'Reintentar envío' }))
+    await screen.findByText('Plantación guardada')
+    expect(RegistroParticipacionService.recuperar).toHaveBeenCalledTimes(2)
+    expect(vi.mocked(RegistroParticipacionService.enviar).mock.calls[1][0]).toEqual(original)
+  })
+
   it('recarga durante captura conserva fotos, nombres seleccionados y revisión del plan hasta revisar otra vez', async () => {
     const view = open()
     const user = await fillToParticipants()
@@ -214,19 +274,18 @@ describe('Registro participante de tres pasos', () => {
     Object.defineProperty(navigator, 'geolocation', { configurable: true, value: { getCurrentPosition: vi.fn((_success: unknown, error: () => void) => error()) } })
     open()
     const user = userEvent.setup()
-    await screen.findByText('Fotos del trabajo · 0/10')
-    await user.click(screen.getByRole('button', { name: 'Capturar' }))
-    await screen.findByText('Sin señal GPS')
+    await screen.findByRole('heading', { name: 'Fotos del trabajo' })
+    await screen.findByText(/No pudimos obtener tu ubicación/)
     await user.click(screen.getByRole('button', { name: /Editar coordenadas manualmente/ }))
     await user.type(screen.getByLabelText('Latitud'), '-16.5')
     await user.type(screen.getByLabelText('Longitud'), '-68.1')
-    expect(screen.queryByText('Sin señal GPS')).toBeNull()
+    expect(screen.queryByText(/No pudimos obtener tu ubicación/)).toBeNull()
     const file = new File(['x'], 'grande.jpg', { type: 'image/jpeg' })
     Object.defineProperty(file, 'size', { value: 10 * 1024 * 1024 + 1 })
     await user.upload(document.querySelector<HTMLInputElement>('input[type="file"]')!, file)
     expect(screen.getByText(/Los archivos fuera del límite no se agregaron/)).toBeTruthy()
-    await user.click(screen.getByRole('button', { name: 'Confirmar ubicación y continuar' }))
-    expect(screen.getByText(/Sube y comprueba al menos una foto válida/)).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Continuar' }))
+    expect(screen.getByText(/Añade al menos una foto y espera/)).toBeTruthy()
     expect(RegistroParticipacionService.subirCarga).not.toHaveBeenCalled()
     expect(RegistroParticipacionService.enviar).not.toHaveBeenCalled()
   })
@@ -235,15 +294,14 @@ describe('Registro participante de tres pasos', () => {
     Object.defineProperty(navigator, 'geolocation', { configurable: true, value: { getCurrentPosition: vi.fn((success: (position: { coords: { latitude: number; longitude: number; accuracy: number } }) => void) => success({ coords: { latitude: -16.5123456789, longitude: -68.1123456789, accuracy: 3 } })) } })
     open()
     const user = userEvent.setup()
-    await screen.findByText('Fotos del trabajo · 0/10')
-    await user.click(screen.getByRole('button', { name: 'Capturar' }))
+    await screen.findByRole('heading', { name: 'Fotos del trabajo' })
     await user.click(screen.getByRole('button', { name: /Editar coordenadas manualmente/ }))
     expect((screen.getByLabelText('Latitud') as HTMLInputElement).value).toBe('-16.512346')
     expect((screen.getByLabelText('Longitud') as HTMLInputElement).value).toBe('-68.112346')
     await user.clear(screen.getByLabelText('Latitud'))
     await user.type(screen.getByLabelText('Latitud'), '-16.1234567')
     expect(screen.getByText(/Usa como máximo 6 decimales/)).toBeTruthy()
-    await user.click(screen.getByRole('button', { name: 'Confirmar ubicación y continuar' }))
+    await user.click(screen.getByRole('button', { name: 'Continuar' }))
     expect(screen.getByText(/Indica una coordenada válida/)).toBeTruthy()
     expect(RegistroParticipacionService.enviar).not.toHaveBeenCalled()
   })
@@ -252,28 +310,27 @@ describe('Registro participante de tres pasos', () => {
     vi.mocked(RegistroParticipacionService.subirCarga).mockRejectedValue(new Error('La foto no pudo decodificarse.'))
     open()
     const user = userEvent.setup()
-    await screen.findByText('Fotos del trabajo · 0/10')
+    await screen.findByRole('heading', { name: 'Fotos del trabajo' })
     await user.upload(document.querySelector<HTMLInputElement>('input[type="file"]')!, new File(['bytes-no-validos'], 'fallida.jpg', { type: 'image/jpeg' }))
-    await user.click(await screen.findByRole('button', { name: 'Preparar y subir fotos pendientes' }))
-    await screen.findByText('Fotos conservadas para comprobar')
-    expect(screen.getByText('fallida.jpg')).toBeTruthy()
+      await screen.findByText('No se pudo completar la carga')
+    expect(screen.getByRole('img', { name: 'Foto 1 del trabajo' })).toBeTruthy()
     expect(screen.getAllByText('La foto no pudo decodificarse.').length).toBeGreaterThan(0)
-    expect(screen.queryByText('Disponible · validada por servidor')).toBeNull()
+    expect(screen.queryByText('Foto lista')).toBeNull()
     expect(RegistroParticipacionService.enviar).not.toHaveBeenCalled()
   })
 
   it('otra cuenta no ve ni concilia el comando y las fotos conservados por el actor anterior', async () => {
     const view = open()
     const user = userEvent.setup()
-    await screen.findByText('Fotos del trabajo · 0/10')
+    await screen.findByRole('heading', { name: 'Fotos del trabajo' })
     await user.upload(document.querySelector<HTMLInputElement>('input[type="file"]')!, new File(['jpeg'], 'privada-del-actor.jpg', { type: 'image/jpeg' }))
-    await screen.findByText('privada-del-actor.jpg')
+    await screen.findByText('Foto lista')
     const original = mocks.records.get('801:820') as { comando_id: string }
     mocks.actorId = '804'
     vi.mocked(RegistroParticipacionService.contexto).mockRejectedValue(new Error('Esta cuenta no tiene contexto autorizado.'))
     view.rerender(<MemoryRouter initialEntries={['/registro/820']}><Routes><Route path="/registro/:subcampaniaId" element={<RegistrarParticipanteScreen />} /></Routes></MemoryRouter>)
     await screen.findByText('Esta cuenta no tiene contexto autorizado.')
-    expect(screen.queryByText('privada-del-actor.jpg')).toBeNull()
+    expect(screen.queryByRole('img', { name: 'Foto 1 del trabajo' })).toBeNull()
     expect(screen.queryByText(original.comando_id, { exact: false })).toBeNull()
     expect(RegistroParticipacionService.recuperar).not.toHaveBeenCalled()
     expect(mocks.records.has('801:820')).toBe(true)
@@ -296,13 +353,12 @@ describe('Registro participante de tres pasos', () => {
   it('salir o quitar una foto exige confirmación y no descarta ciegamente una preparación', async () => {
     open()
     const user = userEvent.setup()
-    await screen.findByText('Fotos del trabajo · 0/10')
+    await screen.findByRole('heading', { name: 'Fotos del trabajo' })
     await user.upload(document.querySelector<HTMLInputElement>('input[type="file"]')!, new File(['jpeg-fake'], 'trabajo.jpg', { type: 'image/jpeg' }))
-    await user.click(await screen.findByRole('button', { name: 'Preparar y subir fotos pendientes' }))
-    await screen.findByText('Disponible · validada por servidor')
-    await user.click(screen.getByRole('button', { name: 'Quitar trabajo.jpg' }))
+      await screen.findByText('Foto lista')
+    await user.click(screen.getByRole('button', { name: 'Quitar foto 1' }))
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancelar' }))
-    expect(screen.getByText('trabajo.jpg')).toBeTruthy()
+    expect(screen.getByRole('img', { name: 'Foto 1 del trabajo' })).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Volver' }))
     expect(within(screen.getByRole('dialog')).getByRole('button', { name: 'Conservar borrador y salir' })).toBeTruthy()
     expect(RegistroParticipacionService.cancelar).not.toHaveBeenCalled()

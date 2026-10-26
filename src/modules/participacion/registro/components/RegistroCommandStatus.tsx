@@ -30,11 +30,11 @@ export default function RegistroCommandStatus({ state, pending, receipt, busy, e
 
   if (state !== 'unconfirmed' && state !== 'sessionExpired' && state !== 'sending' && state !== 'loading' && !error) return null
   return <Card as="section" className="space-y-3" aria-live="polite">
-    <h2 className="font-bold text-brand-800">{state === 'sending' ? 'Guardando o comprobando el intento…' : state === 'loading' ? 'Recuperando el borrador de esta cuenta…' : state === 'sessionExpired' ? 'Se necesita la sesión original' : pending?.payload ? 'Resultado pendiente de confirmar' : 'Preparación o carga pendiente de comprobar'}</h2>
+    <h2 className="font-bold text-brand-800">{state === 'sending' ? 'Guardando o comprobando el intento…' : state === 'loading' ? 'Recuperando el borrador de esta cuenta…' : state === 'sessionExpired' ? 'Se necesita la sesión original' : pending?.payload ? 'Resultado pendiente de confirmar' : 'No se pudo completar la carga'}</h2>
     {error && <p role="alert" className="text-sm text-danger-700">{error}</p>}
-    {pending && <p className="break-all text-xs text-neutral-500">Comando {pending.comando_id}</p>}
-    {pending?.payload && !busy && <p className="text-sm text-neutral-700">La respuesta no acredita éxito ni ausencia de efectos. Conservamos el contenido exacto. Comprueba el mismo intento antes de otra plantación.</p>}
+    {pending && <details className="text-xs text-neutral-500"><summary className="cursor-pointer">Detalles para soporte</summary><p className="mt-2 break-all">Comando {pending.comando_id}</p></details>}
+    {pending?.payload && !busy && <div className="space-y-2 text-sm text-neutral-700"><p>Conservamos tus datos y fotos. Al reintentar, buscaremos primero el comprobante de guardado antes de reenviar los mismos datos.</p><p>«Comprobar guardado» solo consulta el estado. Si el servidor indica que el registro está pausado, el equipo debe habilitarlo antes de que puedas completar el envío.</p></div>}
     {state === 'sessionExpired' && <><p className="text-sm text-neutral-700">Ingresa con la cuenta que preparó este comando. Otra cuenta no puede consultarlo ni ver su borrador.</p><Button disabled={busy} variant="secondary" onClick={onLogin}>Recuperar sesión con passkey</Button></>}
-    {!busy && state !== 'loading' && <div className="flex flex-wrap gap-2"><Button variant="secondary" onClick={onRecover}>{pending?.payload ? 'Comprobar guardado' : 'Comprobar preparación y cargas'}</Button>{pending?.payload && state !== 'sessionExpired' && <Button variant="ghost" onClick={onRetry}>Reenviar el mismo intento</Button>}</div>}
+    {!busy && state !== 'loading' && state !== 'sessionExpired' && <div className="flex flex-wrap gap-2">{pending?.payload && <Button onClick={onRetry}>Reintentar envío</Button>}<Button variant="secondary" onClick={onRecover}>{pending?.payload ? 'Comprobar guardado' : 'Reintentar carga de fotos'}</Button></div>}
   </Card>
 }

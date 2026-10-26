@@ -105,7 +105,7 @@ describe('registro API sobre transporte privado compartido', () => {
   it('GET202 discrimina PREPARADO sin fingir guardado y mantiene Retry-After', async () => {
     const fetch = await prime(); const pending = { comando_id: capture.comando_id, operacion: 'REGISTRAR_PLANTACION_INICIAL', estado: 'SIN_RESULTADO', resultado: null, error: null, finalizado_en: null }
     fetch.mockResolvedValue(response(pending, 202))
-    await expect(Service.recuperar(capture)).rejects.toMatchObject({ status: 202, retryAfter: 2, resultado_concluyente: false })
+    await expect(Service.recuperar(capture)).rejects.toMatchObject({ status: 202, codigo: 'COMANDO_NO_CONFIRMADO', message: expect.stringContaining('todavía no tiene un resultado de guardado'), retryAfter: 2, resultado_concluyente: false })
     fetch.mockResolvedValue(response({ ...pending, comando_id: cargaId }, 202))
     await expect(Service.recuperar(capture)).rejects.toMatchObject({ name: 'ParticipacionContratoError' })
   })

@@ -65,6 +65,64 @@ async function capture() {
 }
 
 describe('captura persistida y preparación compartida', () => {
+  it('sube diez fotos con un máximo de dos en vuelo y conserva cada resultado antes del siguiente par', async () => {
+    const hook = await setup()
+    await act(() => hook.result.current.addFiles(Array.from({ length: 10 }, file)))
+    const gates: Array<ReturnType<typeof deferred<void>>> = []
+    let inFlight = 0
+    let peak = 0
+    vi.mocked(Api.subirCarga).mockImplementation(async (_identity, id) => {
+      inFlight += 1; peak = Math.max(peak, inFlight)
+      const gate = deferred<void>(); gates.push(gate)
+      await gate.promise
+      inFlight -= 1
+      return { data: carga(id), observado_en: date }
+    })
+    let uploading!: Promise<void>
+    act(() => { uploading = hook.result.current.upload() })
+    for (let batch = 0; batch < 5; batch += 1) {
+      await waitFor(() => expect(gates).toHaveLength((batch + 1) * 2))
+      expect(hook.result.current.files.filter((photo) => photo.carga?.estado === 'DISPONIBLE')).toHaveLength(batch * 2)
+      await act(async () => { gates[batch * 2].resolve(); gates[batch * 2 + 1].resolve() })
+    }
+    await act(() => uploading)
+    expect(peak).toBe(2)
+    expect(hook.result.current.state).toBe('prepared')
+    expect(hook.result.current.files.every((photo) => photo.carga?.estado === 'DISPONIBLE')).toBe(true)
+    expect((await readRegistrationDraft('7', '11', storage))?.files).toHaveLength(10)
+    expect(Api.enviar).not.toHaveBeenCalled()
+  })
+
+  it('comprueba automáticamente una respuesta perdida sin repetir el PUT', async () => {
+    const hook = await setup()
+    await act(() => hook.result.current.addFiles([file()]))
+    const id = hook.result.current.files[0].carga_id
+    vi.mocked(Api.subirCarga).mockRejectedValueOnce(uncertain())
+    vi.mocked(Api.listarCargas).mockResolvedValueOnce({ data: [], observado_en: date }).mockResolvedValueOnce({ data: [carga(id)], observado_en: date })
+    await act(() => hook.result.current.upload())
+    expect(hook.result.current.state).toBe('prepared')
+    expect(hook.result.current.files[0].error).toBeNull()
+    expect(Api.subirCarga).toHaveBeenCalledTimes(1)
+    expect(crypto.randomUUID).toHaveBeenCalledTimes(2)
+  })
+
+  it('conserva el éxito del segundo archivo cuando el primero falla y detiene el resto', async () => {
+    const hook = await setup()
+    await act(() => hook.result.current.addFiles([file(), file(), file()]))
+    const ids = hook.result.current.files.map((photo) => photo.carga_id)
+    vi.mocked(Api.subirCarga).mockRejectedValueOnce(uncertain()).mockImplementationOnce(async (_identity, id) => ({ data: carga(id), observado_en: date }))
+    vi.mocked(Api.listarCargas).mockResolvedValueOnce({ data: [], observado_en: date }).mockResolvedValue({ data: [carga(ids[1])], observado_en: date })
+    await act(() => hook.result.current.upload())
+    expect(hook.result.current.state).toBe('unconfirmed')
+    expect(hook.result.current.files[1].carga?.estado).toBe('DISPONIBLE')
+    expect(hook.result.current.files[0].error).toBeTruthy()
+    expect(Api.subirCarga).toHaveBeenCalledTimes(2)
+    await act(() => hook.result.current.recover())
+    await act(() => hook.result.current.upload())
+    expect(vi.mocked(Api.subirCarga).mock.calls.filter((call) => call[1] === ids[1])).toHaveLength(1)
+    expect(Api.enviar).not.toHaveBeenCalled()
+  })
+
   it('persiste UUID de comando antes de preparar y UUID/bytes de cada foto antes de PUT', async () => {
     const hook = await setup()
     await act(() => hook.result.current.addFiles([file()]))
@@ -175,6 +233,53 @@ describe('confirmación, incertidumbre y terminales', () => {
     expect(hook.result.current.state).toBe('confirmed')
     expect(vi.mocked(Api.enviar).mock.calls[1][0]).toMatchObject({ comando_id: command, payload: saved.payload })
     expect(crypto.randomUUID).toHaveBeenCalledTimes(2)
+  })
+
+  it.each([0, 202, 404, 500, 503])('reintento consulta GET %i antes de repetir el payload original con MISMA_CLAVE', async (status) => {
+    const hook = await capture()
+    vi.mocked(Api.enviar).mockRejectedValueOnce(uncertain())
+    await act(() => hook.result.current.confirm(input))
+    const original = hook.result.current.pending!
+    vi.mocked(Api.recuperar).mockRejectedValueOnce(uncertain(status))
+    await act(() => hook.result.current.retrySame())
+    expect(Api.recuperar).toHaveBeenCalledWith(original, expect.any(AbortSignal))
+    expect(vi.mocked(Api.recuperar).mock.invocationCallOrder.at(-1)).toBeLessThan(vi.mocked(Api.enviar).mock.invocationCallOrder.at(-1)!)
+    expect(vi.mocked(Api.enviar).mock.calls[1][0]).toEqual(original)
+    expect(hook.result.current.state).toBe('confirmed')
+    expect(crypto.randomUUID).toHaveBeenCalledTimes(2)
+  })
+
+  it.each([undefined, 'REVISION_OBSOLETA'])('reintento recupera terminal %s sin repetir POST', async (rejection) => {
+    const hook = await capture()
+    vi.mocked(Api.enviar).mockRejectedValueOnce(uncertain())
+    await act(() => hook.result.current.confirm(input))
+    vi.mocked(Api.recuperar).mockResolvedValueOnce(receipt(hook.result.current.pending!, rejection))
+    await act(() => hook.result.current.retrySame())
+    expect(hook.result.current.state).toBe(rejection ? 'rejected' : 'confirmed')
+    expect(Api.enviar).toHaveBeenCalledTimes(1)
+  })
+
+  it.each([401, 403])('no reenvía si la comprobación falla por sesión/permisos HTTP %i', async (status) => {
+    const hook = await capture()
+    vi.mocked(Api.enviar).mockRejectedValueOnce(uncertain())
+    await act(() => hook.result.current.confirm(input))
+    const original = await readRegistrationDraft('7', '11', storage)
+    vi.mocked(Api.recuperar).mockRejectedValueOnce(uncertain(status))
+    await act(() => hook.result.current.retrySame())
+    expect(Api.enviar).toHaveBeenCalledTimes(1)
+    expect((await readRegistrationDraft('7', '11', storage))?.payload).toEqual(original?.payload)
+    expect(hook.result.current.files).toHaveLength(1)
+    expect(hook.result.current.receipt).toBeNull()
+  })
+
+  it('un 404 de recurso no visible no autoriza repetir el envío', async () => {
+    const hook = await capture()
+    vi.mocked(Api.enviar).mockRejectedValueOnce(uncertain())
+    await act(() => hook.result.current.confirm(input))
+    vi.mocked(Api.recuperar).mockRejectedValueOnce(new ParticipacionApiError(404, { codigo: 'RECURSO_NO_VISIBLE', mensaje: 'No disponible.', campos: [], ambitos: [], reintento: 'NO_APLICA' }))
+    await act(() => hook.result.current.retrySame())
+    expect(Api.enviar).toHaveBeenCalledTimes(1)
+    expect(hook.result.current.state).toBe('unconfirmed')
   })
 
   it.each([202, 404, 500])('GET %i después de POST final conserva payload y bytes sin volver a captura', async (status) => {
