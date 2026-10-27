@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ParticipacionService } from '../api/participacion.api'
+import { validarReciboAcceso } from '../api/participacion.contract'
 import type { CapacidadSubcampania, IntentoAcceso, MiembrosLectura, PersonaMinima, ReciboAcceso } from '../types'
 import ParticipacionDetalleEquipo from './ParticipacionDetalleEquipo'
 
@@ -17,6 +18,10 @@ const scope: CapacidadSubcampania = {
   permiso_contextual: 'PLANTADOR', revision_permiso: '2', fuente_autoridad: 'CONTEXTUAL',
   acciones: { preparar_registro: true, registrar_inicial: true, incorporar_plantador: false, retirar_plantador: false, designar_administrador: false, cambiar_administrador: false, retirar_administrador: false, reemplazar_administrador: false },
 }
+const globalScope: CapacidadSubcampania = {
+  ...scope, permiso_contextual: null, fuente_autoridad: 'GLOBAL',
+  acciones: { ...scope.acciones, incorporar_plantador: true, designar_administrador: true, cambiar_administrador: true },
+}
 const members: MiembrosLectura = {
   observado_en: observed, siguiente_cursor: null,
   data: [{ usuario_id: '42', nombre: 'Ana Pérez', organizacion: null, permiso_contextual: 'ADMINISTRADOR_SUBCAMPANIA', revision_permiso: '3', acceso_global: false, etiqueta_acceso_global: null, responsabilidad_logistica: null }],
@@ -24,7 +29,24 @@ const members: MiembrosLectura = {
 const navigatorLocks = Object.getOwnPropertyDescriptor(navigator, 'locks')
 
 function receipt(attempt: IntentoAcceso): ReciboAcceso {
-  return { comando_id: attempt.payload.comando_id, operacion: attempt.operacion, finalizado_en: observed, estado: 'CONFIRMADO', error: null, resultado: { tipo: 'ACCESO', cambios: [{ subcampania_id: '51', usuarios: [{ usuario_id: person.usuario_id, permiso_anterior: null, permiso_nuevo: attempt.operacion === 'DESIGNAR_ADMINISTRADOR' ? 'ADMINISTRADOR_SUBCAMPANIA' : 'PLANTADOR', revision_anterior: '9007199254740997', revision_nueva: '9007199254740998', cambio: 'CAMBIO_APLICADO', conserva_acceso_global: false }] }] } }
+  return validarReciboAcceso({
+    comando_id: attempt.payload.comando_id, operacion: attempt.operacion, finalizado_en: observed,
+    estado: 'CONFIRMADO', error: null,
+    resultado: { tipo: 'ACCESO', cambios: [{ subcampania_id: '51', usuarios: [{
+      usuario_id: person.usuario_id,
+      permiso_anterior: attempt.operacion === 'CAMBIAR_ADMINISTRADOR_A_PLANTADOR' ? 'ADMINISTRADOR_SUBCAMPANIA' : null,
+      permiso_nuevo: attempt.operacion === 'DESIGNAR_ADMINISTRADOR' ? 'ADMINISTRADOR_SUBCAMPANIA' : 'PLANTADOR',
+      revision_anterior: '9007199254740997', revision_nueva: '9007199254740998',
+      cambio: 'CAMBIO_APLICADO', conserva_acceso_global: false,
+    }] }] },
+  }, attempt)
+}
+
+function reviewAdmin(globalAccess = false) {
+  vi.mocked(ParticipacionService.revisar).mockResolvedValue({
+    data: { usuario: person, ambitos: [{ subcampania_id: '51', permiso_contextual: 'ADMINISTRADOR_SUBCAMPANIA', revision_permiso: '9007199254740997', acceso_global: globalAccess }] },
+    observado_en: observed,
+  })
 }
 
 function open(current: CapacidadSubcampania, globalAdmin = false, canDesignateAdmins = globalAdmin, includeLogistics = true) {
@@ -168,6 +190,134 @@ describe('Equipo en el detalle de subcampaña', () => {
     open({ ...scope, permiso_contextual: null, fuente_autoridad: 'GLOBAL', acciones: { ...scope.acciones, incorporar_plantador: true, designar_administrador: true } }, true, false)
     await userEvent.setup().click(screen.getByRole('button', { name: 'Agregar participante' }))
     expect(screen.queryByRole('combobox', { name: 'Permiso' })).toBeNull()
+  })
+
+  it('cambia un administrador a plantador con C07 y la revisión consultada, tras explicar la pérdida de administración', async () => {
+    reviewAdmin()
+    open(globalScope, true)
+    const user = userEvent.setup()
+    await choosePerson(user)
+    await user.click(screen.getByRole('button', { name: 'Revisar asignación' }))
+    const dialog = within(await screen.findByRole('dialog'))
+    expect(dialog.getByText('Administrador de subcampaña')).toBeTruthy()
+    expect(dialog.getByText('Deja de administrar y conserva el permiso contextual para plantar. Debe permanecer otro administrador vigente.')).toBeTruthy()
+    expect(ParticipacionService.enviar).not.toHaveBeenCalled()
+    await user.click(dialog.getByRole('button', { name: 'Confirmar asignación' }))
+    await screen.findByText('Resultado confirmado por el servidor')
+    expect(ParticipacionService.enviar).toHaveBeenCalledTimes(1)
+    expect(vi.mocked(ParticipacionService.enviar).mock.calls[0][0]).toMatchObject({
+      actor_id: '42', operacion: 'CAMBIAR_ADMINISTRADOR_A_PLANTADOR',
+      payload: { usuario_destino_id: person.usuario_id, ambitos: [{ subcampania_id: '51', revision_esperada: '9007199254740997' }] },
+    })
+    expect(screen.getByText('Cambiar administrador a plantador · 1 subcampaña(s)')).toBeTruthy()
+    await waitFor(() => expect(mocks.refresh).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(ParticipacionService.miembros).toHaveBeenCalledTimes(2))
+  })
+
+  it.each([
+    { label: 'administrador contextual', globalAdmin: false, canDesignate: false, current: { ...globalScope, permiso_contextual: 'ADMINISTRADOR_SUBCAMPANIA' as const } },
+    { label: 'sin capacidad global', globalAdmin: true, canDesignate: false, current: globalScope },
+    { label: 'sin capacidad del ámbito', globalAdmin: true, canDesignate: true, current: { ...globalScope, acciones: { ...globalScope.acciones, cambiar_administrador: false } } },
+  ])('bloquea el cambio de administrador para $label sin enviar C04 ni C07', async ({ globalAdmin, canDesignate, current }) => {
+    reviewAdmin()
+    open(current, globalAdmin, canDesignate)
+    const user = userEvent.setup()
+    await choosePerson(user)
+    await user.click(screen.getByRole('button', { name: 'Revisar asignación' }))
+    const dialog = within(await screen.findByRole('dialog'))
+    expect(dialog.getByText('Esta persona ya administra la subcampaña. No tienes autorización para cambiarla a plantador.')).toBeTruthy()
+    const confirm = dialog.getByRole('button', { name: 'Confirmar asignación' }) as HTMLButtonElement
+    expect(confirm.disabled).toBe(true)
+    await user.click(confirm)
+    expect(ParticipacionService.enviar).not.toHaveBeenCalled()
+    await user.click(dialog.getByRole('button', { name: 'Cancelar' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('advierte que el cambio contextual conserva el acceso global del destinatario', async () => {
+    reviewAdmin(true)
+    open(globalScope, true)
+    const user = userEvent.setup()
+    await choosePerson(user)
+    await user.click(screen.getByRole('button', { name: 'Revisar asignación' }))
+    const dialog = within(await screen.findByRole('dialog'))
+    expect(dialog.getByText('Conserva su acceso global de administrador.')).toBeTruthy()
+    await user.click(dialog.getByRole('button', { name: 'Cancelar' }))
+    expect(ParticipacionService.enviar).not.toHaveBeenCalled()
+  })
+
+  it('consulta de nuevo tras cancelar y usa C04 si la persona ya es plantador', async () => {
+    reviewAdmin()
+    open(globalScope, true)
+    const user = userEvent.setup()
+    await choosePerson(user)
+    await user.click(screen.getByRole('button', { name: 'Revisar asignación' }))
+    await user.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Cancelar' }))
+    vi.mocked(ParticipacionService.revisar).mockResolvedValueOnce({
+      data: { usuario: person, ambitos: [{ subcampania_id: '51', permiso_contextual: 'PLANTADOR', revision_permiso: '9007199254740999', acceso_global: false }] },
+      observado_en: observed,
+    })
+    vi.mocked(ParticipacionService.enviar).mockImplementationOnce(async attempt => validarReciboAcceso({
+      comando_id: attempt.payload.comando_id, operacion: attempt.operacion, finalizado_en: observed,
+      estado: 'CONFIRMADO', error: null,
+      resultado: { tipo: 'ACCESO', cambios: [{ subcampania_id: '51', usuarios: [{
+        usuario_id: person.usuario_id, permiso_anterior: 'PLANTADOR', permiso_nuevo: 'PLANTADOR',
+        revision_anterior: '9007199254740999', revision_nueva: '9007199254740999',
+        cambio: 'SIN_CAMBIOS', conserva_acceso_global: false,
+      }] }] },
+    }, attempt))
+    await user.click(screen.getByRole('button', { name: 'Revisar asignación' }))
+    const dialog = within(await screen.findByRole('dialog'))
+    expect(dialog.queryByText(/Deja de administrar/)).toBeNull()
+    expect(ParticipacionService.enviar).not.toHaveBeenCalled()
+    await user.click(dialog.getByRole('button', { name: 'Confirmar asignación' }))
+    await screen.findByText('Resultado confirmado por el servidor')
+    expect(screen.getByText('SIN CAMBIOS: el permiso ya coincidía')).toBeTruthy()
+    expect(ParticipacionService.revisar).toHaveBeenCalledTimes(2)
+    expect(ParticipacionService.enviar).toHaveBeenCalledTimes(1)
+    expect(vi.mocked(ParticipacionService.enviar).mock.calls[0][0]).toMatchObject({
+      operacion: 'OTORGAR_PLANTADOR', payload: { ambitos: [{ subcampania_id: '51', revision_esperada: '9007199254740999' }] },
+    })
+  })
+
+  it.each([
+    { codigo: 'ULTIMO_ADMINISTRADOR_CONTEXTUAL', mensaje: 'Debe permanecer un administrador contextual activo.' },
+    { codigo: 'REVISION_OBSOLETA', mensaje: 'El permiso cambió después de la revisión.' },
+  ])('respeta el rechazo $codigo de C07 sin intentar otro comando', async ({ codigo, mensaje }) => {
+    reviewAdmin()
+    vi.mocked(ParticipacionService.enviar).mockImplementation(async attempt => validarReciboAcceso({
+      comando_id: attempt.payload.comando_id, operacion: attempt.operacion, finalizado_en: observed,
+      estado: 'RECHAZADO', resultado: null, error: { codigo, mensaje, campos: [], ambitos: ['51'], reintento: 'NUEVA_CONFIRMACION' },
+    }, attempt))
+    open(globalScope, true)
+    const user = userEvent.setup()
+    await choosePerson(user)
+    await user.click(screen.getByRole('button', { name: 'Revisar asignación' }))
+    await user.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Confirmar asignación' }))
+    await screen.findByText('Selección rechazada: no se aplicó ningún cambio')
+    expect(screen.getByText(mensaje)).toBeTruthy()
+    expect(screen.getByText(`Código: ${codigo}`)).toBeTruthy()
+    expect(ParticipacionService.enviar).toHaveBeenCalledTimes(1)
+    expect(vi.mocked(ParticipacionService.enviar).mock.calls[0][0].operacion).toBe('CAMBIAR_ADMINISTRADOR_A_PLANTADOR')
+    expect(screen.queryByText('Resultado confirmado por el servidor')).toBeNull()
+    expect(mocks.refresh).not.toHaveBeenCalled()
+  })
+
+  it('recupera el C07 original tras respuesta perdida, sin convertirlo en un otorgamiento', async () => {
+    reviewAdmin()
+    vi.mocked(ParticipacionService.enviar).mockRejectedValueOnce(new Error('Se perdió la respuesta.'))
+    open(globalScope, true)
+    const user = userEvent.setup()
+    await choosePerson(user)
+    await user.click(screen.getByRole('button', { name: 'Revisar asignación' }))
+    await user.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Confirmar asignación' }))
+    await screen.findByText('Resultado no confirmado')
+    const original = vi.mocked(ParticipacionService.enviar).mock.calls[0][0]
+    expect(original.operacion).toBe('CAMBIAR_ADMINISTRADOR_A_PLANTADOR')
+    await user.click(screen.getByRole('button', { name: 'Consultar resultado original' }))
+    await screen.findByText('Resultado confirmado por el servidor')
+    expect(vi.mocked(ParticipacionService.recuperar).mock.calls[0][0]).toEqual(original)
+    expect(ParticipacionService.enviar).toHaveBeenCalledTimes(1)
   })
 
   it('conserva el comando original si se pierde la respuesta y lo recupera antes de otra asignación', async () => {

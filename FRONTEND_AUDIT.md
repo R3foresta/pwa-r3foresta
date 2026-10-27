@@ -10,6 +10,7 @@ Entrega INT06 publicada en PWA `62f55dc`: 32 suites/445 tests, lint y build/Type
 
 | Prioridad | ID | Estado | Qué falta |
 | --- | --- | --- | --- |
+| Alta | AUD-026 | CORREGIDO local · confirmación real pendiente | Equipo resuelve Administrador → Plantador con C07; acreditar el terminal autenticado real y la actualización de permisos de ambas cuentas. |
 | Media | AUD-025 | PENDIENTE · QA de campo | Verificar Liberty en los mapas operativos con dispositivos reales y conectividad variable; comprobar WebGL2, carga, atribución y manejo de fallo del fondo. |
 | Alta | AUD-024 | CERRADO en localhost | Lectura de Equipo verificada con VOLUNTARIO/PLANTADOR y Supabase real; publicación externa se sigue en AUD-021. |
 | Media | AUD-023 | PENDIENTE · aceptación UX | Impacto recompuesto con componentes existentes; completar revisión humana del recorrido público/participante y verificación externa. |
@@ -28,6 +29,12 @@ Entrega INT06 publicada en PWA `62f55dc`: 32 suites/445 tests, lint y build/Type
 El orden de ejecución entre repositorios se decide en el tablero oficial; esta tabla prioriza riesgos de frontend, no introduce nuevas dependencias de producto.
 
 ## Pendientes y criterio de cierre
+
+### AUD-026 — Cambio de administrador a plantador desde Equipo
+
+27 de octubre: el usuario reportó `409 TIPO_PERMISO_INCOMPATIBLE` al cambiar a Andy LOCAL 2da Cuenta General en Laguna de Cotacota. `AgregarParticipanteEquipo` mostraba el cambio de permiso, pero enviaba C04 `otorgar-plantador`, que rechaza administradores por contrato. Ahora la revisión vigente resuelve C07 `administrador-a-plantador`, conserva persona/ámbito/revisión exactos y explica la pérdida de administración y continuidad requerida. Bloquea confirmar sin ADMIN global, capacidad global de gestión y `cambiar_administrador` del ámbito. C04/C06 conservan sus casos; el backend mantiene la validación del último administrador.
+
+Verificación: 40 pruebas focales y suite completa de 863 pruebas en 59 archivos, lint y build aprobados; aviso conocido de tamaño de MapLibre. Se actualizaron dos expectativas antiguas del estado vacío de Equipo que provocaban tres fallos en la suite completa. En navegador autenticado real se buscó la cuenta exacta, se consultó su permiso y se verificó el diálogo corregido; luego se canceló. No se envió el cambio de acceso. Cerrar tras acreditar C07 confirmado, miembros/capacidades actualizados y pérdida de administración contextual en la cuenta destinataria; despliegue externo permanece en AUD-021. [Evidencia y alcance](docs/QA_CAMBIO_ADMINISTRADOR_PLANTADOR.md).
 
 ### AUD-025 — Base vectorial Liberty en mapas operativos
 

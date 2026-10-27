@@ -40,6 +40,20 @@ describe('cliente privado de participación', () => {
     await expect(ParticipacionService.enviar(intento)).rejects.toMatchObject({ status: 401, resultado_concluyente: false })
     expect(fetch).not.toHaveBeenCalled()
   })
+  it('envía el cambio de administrador a plantador a su endpoint específico y recupera la misma operación', async () => {
+    const fetch = await prime()
+    const change: IntentoAcceso = { ...intento, operacion: 'CAMBIAR_ADMINISTRADOR_A_PLANTADOR' }
+    fetch.mockResolvedValue(response({
+      ...receipt, operacion: change.operacion,
+      resultado: { tipo: 'ACCESO', cambios: [{ ...receipt.resultado.cambios[0], usuarios: [{ ...receipt.resultado.cambios[0].usuarios[0], permiso_anterior: 'ADMINISTRADOR_SUBCAMPANIA' }] }] },
+    }))
+    await ParticipacionService.enviar(change)
+    expect(fetch.mock.calls[0][0]).toBe(`${api}/participacion/accesos/administrador-a-plantador`)
+    expect(JSON.parse(fetch.mock.calls[0][1].body)).toEqual(change.payload)
+    await ParticipacionService.recuperar(change)
+    expect(fetch.mock.calls[1][0]).toBe(`${api}/participacion/comandos/${command}?operacion=CAMBIAR_ADMINISTRADOR_A_PLANTADOR`)
+    expect(fetch.mock.calls[1][1]).not.toHaveProperty('body')
+  })
   it('liga el actor a capacidades del Bearer actual antes de recuperar y no consulta el comando de otra cuenta', async () => {
     const fetch = vi.fn().mockResolvedValue(response({ ...capacidades, data: { ...capacidades.data, actor: { usuario_id: '601', rol_global: 'ADMIN' } } })); vi.stubGlobal('fetch', fetch)
     await expect(ParticipacionService.recuperar(intento)).rejects.toMatchObject({ status: 401, reintento: 'RECUPERAR_SESION' })

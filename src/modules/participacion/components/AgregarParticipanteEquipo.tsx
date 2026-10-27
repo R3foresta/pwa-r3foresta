@@ -21,6 +21,7 @@ type Props = {
 
 const PLANTADOR = 'OTORGAR_PLANTADOR' as const
 const ADMINISTRADOR = 'DESIGNAR_ADMINISTRADOR' as const
+const CAMBIAR_ADMINISTRADOR = 'CAMBIAR_ADMINISTRADOR_A_PLANTADOR' as const
 type OperacionAlta = typeof PLANTADOR | typeof ADMINISTRADOR
 
 export default function AgregarParticipanteEquipo({ scope, actorId, globalAdmin, canDesignateAdmins, heading, onConfirmed }: Props) {
@@ -40,6 +41,11 @@ export default function AgregarParticipanteEquipo({ scope, actorId, globalAdmin,
   if (canAddAdmin) available.push(ADMINISTRADOR)
   const currentOperation = available.includes(operation) ? operation : available[0] ?? PLANTADOR
   const review = useAccessReview({ operation: currentOperation, scopeIds: [scope.subcampania_id], person, replacement: null, treatment: 'SIN_ACCESO', version })
+  const reviewedScope = review.review?.target.data.ambitos.find(item => item.subcampania_id === scope.subcampania_id)
+  // El selector expresa el permiso solicitado; C04 no permite degradar un administrador.
+  const changingAdmin = currentOperation === PLANTADOR && reviewedScope?.permiso_contextual === 'ADMINISTRADOR_SUBCAMPANIA'
+  const assignmentOperation = changingAdmin ? CAMBIAR_ADMINISTRADOR : currentOperation
+  const canAssign = !changingAdmin || (globalAdmin && canDesignateAdmins && scope.acciones.cambiar_administrador)
   const locked = command.state !== 'idle'
   const canReview = open && !locked && available.includes(currentOperation) && person !== null
 
@@ -73,10 +79,10 @@ export default function AgregarParticipanteEquipo({ scope, actorId, globalAdmin,
 
   async function confirm() {
     const draft = review.buildDraft()
-    if (!draft || !canReview) return
+    if (!draft || !canReview || !canAssign) return
     setDialogOpen(false)
     setRefreshError(null)
-    await command.confirm(draft)
+    await command.confirm(changingAdmin && draft.operacion === PLANTADOR ? { ...draft, operacion: CAMBIAR_ADMINISTRADOR } : draft)
   }
 
   async function resetTerminal() {
@@ -110,13 +116,15 @@ export default function AgregarParticipanteEquipo({ scope, actorId, globalAdmin,
       {person && <Button fullWidth disabled={!canReview} loading={review.loading} onClick={() => { setDialogOpen(true); void review.read() }}>Revisar asignación</Button>}
     </section>}
     <ConfirmDialog open={dialogOpen && Boolean(review.review) && canReview} title="Confirmar asignación" description="Esta acción cambia el permiso de participación en la subcampaña indicada." confirmLabel="Confirmar asignación"
+      confirmDisabled={!canAssign} errorMessage={canAssign ? null : 'Esta persona ya administra la subcampaña. No tienes autorización para cambiarla a plantador.'}
       onConfirm={() => void confirm()} onCancel={() => { setDialogOpen(false); setVersion((value) => value + 1) }}>
       {review.review && <div className="mt-3 space-y-2 rounded-2xl bg-brand-50 p-3 text-sm text-brand-800">
         <p><strong>Persona:</strong> {review.review.target.data.usuario.nombre}</p>
         <p><strong>Subcampaña:</strong> {scope.nombre}</p>
-        <p><strong>Permiso actual:</strong> {permissionLabel(review.review.target.data.ambitos[0]?.permiso_contextual ?? null)}</p>
+        <p><strong>Permiso actual:</strong> {permissionLabel(reviewedScope?.permiso_contextual ?? null)}</p>
         <p><strong>Permiso solicitado:</strong> {currentOperation === ADMINISTRADOR ? 'Administrador de subcampaña' : 'Plantador'}</p>
-        <p className="text-xs text-neutral-600">{actionDefinition(currentOperation).consequence}</p>
+        <p className="text-xs text-neutral-600">{actionDefinition(assignmentOperation).consequence}</p>
+        {reviewedScope?.acceso_global && <p className="text-xs font-bold text-warning-800">Conserva su acceso global de administrador.</p>}
       </div>}
     </ConfirmDialog>
   </div>
