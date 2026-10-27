@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Icon from "../../components/Icon";
 import SuccessModal from "../../components/SuccessModal";
+import { Button } from "../../components/ui";
 import { useRecoleccionForm } from "./useRecoleccionForm";
 import { useAuth } from "../../contexts/AuthContext";
 import { RecoleccionesService, type TipoMaterialCanonico } from "../../services/recolecciones.service";
@@ -497,43 +498,29 @@ function RecoleccionFormResumenScreen() {
             </div>
 
             <div className="flex flex-col gap-3">
-              <button
+              <Button
                 type="button"
+                variant="primary"
+                size="lg"
+                fullWidth
                 onClick={() => void handleGuardar(true)}
                 disabled={loadingType !== null}
-                className="w-full rounded-2xl bg-brand-500 py-4 text-center text-lg font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                loading={loadingType === 'validacion'}
               >
-                {loadingType === 'validacion' ? (
-                  <>
-                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    <span>Enviando a validación...</span>
-                  </>
-                ) : (
-                  'Enviar a Validación'
-                )}
-              </button>
+                {loadingType === 'validacion' ? 'Enviando a validación...' : 'Enviar a Validación'}
+              </Button>
 
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                size="lg"
+                fullWidth
                 onClick={() => void handleGuardar(false)}
                 disabled={loadingType !== null}
-                className="w-full rounded-2xl border-2 border-brand-500 bg-white py-4 text-center text-lg font-extrabold text-brand-600 shadow-soft transition hover:bg-brand-50 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                loading={loadingType === 'borrador'}
               >
-                {loadingType === 'borrador' ? (
-                  <>
-                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    <span>Guardando borrador...</span>
-                  </>
-                ) : (
-                  'Guardar Borrador'
-                )}
-              </button>
+                {loadingType === 'borrador' ? 'Guardando borrador...' : 'Guardar Borrador'}
+              </Button>
             </div>
           </div>
         </div>

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { obtenerComunidad } from '../../api/comunidades.api'
 import Icon from '../../components/Icon'
+import { Button } from '../../components/ui'
 import SelectorComunidad from '../comunidades/SelectorComunidad'
 import { useViveros } from '../../hooks/useViveros'
 import { UbicacionesService, type PaisCatalogo } from '../../services/ubicaciones.service'
@@ -576,16 +577,20 @@ function RecoleccionFormUbicacionScreen() {
             </div>
           </div>
 
-          <button
+          <Button
             type="button"
             disabled={submitting}
+            loading={submitting}
+            variant="primary"
+            size="lg"
+            fullWidth
             onClick={() => {
               void handleContinue()
             }}
-            className="mb-8 w-full rounded-2xl bg-brand-500 py-4 text-center text-lg font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
+            className="mb-8"
           >
             {submitting ? 'Guardando ubicacion...' : 'Continuar'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

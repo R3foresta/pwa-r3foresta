@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Icon from "../../components/Icon";
+import { Button } from "../../components/ui";
 import type { MaterialType, Unit } from "./recoleccionTypes";
 import { useRecoleccionForm } from "./useRecoleccionForm";
 import { RecoleccionesService } from "../../services/recolecciones.service";
@@ -514,13 +515,16 @@ function RecoleccionFormDatosScreen() {
             />
           </div>
 
-          <button
+          <Button
             type="button"
+            variant="primary"
+            size="lg"
+            fullWidth
             onClick={handleContinue}
-            className="mb-8 w-full rounded-2xl bg-brand-500 py-4 text-center text-lg font-extrabold text-white shadow-soft transition hover:bg-brand-600 active:scale-[0.99]"
+            className="mb-8"
           >
             Continuar
-          </button>
+          </Button>
         </div>
       </div>
 
