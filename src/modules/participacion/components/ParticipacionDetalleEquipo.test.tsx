@@ -19,7 +19,7 @@ const scope: CapacidadSubcampania = {
 }
 const members: MiembrosLectura = {
   observado_en: observed, siguiente_cursor: null,
-  data: [{ usuario_id: '42', nombre: 'Ana Pérez', organizacion: null, permiso_contextual: 'ADMINISTRADOR_SUBCAMPANIA', revision_permiso: '3', acceso_global: false, etiqueta_acceso_global: null, responsabilidad_logistica: 'COORDINADOR' }],
+  data: [{ usuario_id: '42', nombre: 'Ana Pérez', organizacion: null, permiso_contextual: 'ADMINISTRADOR_SUBCAMPANIA', revision_permiso: '3', acceso_global: false, etiqueta_acceso_global: null, responsabilidad_logistica: null }],
 }
 const navigatorLocks = Object.getOwnPropertyDescriptor(navigator, 'locks')
 
@@ -27,8 +27,8 @@ function receipt(attempt: IntentoAcceso): ReciboAcceso {
   return { comando_id: attempt.payload.comando_id, operacion: attempt.operacion, finalizado_en: observed, estado: 'CONFIRMADO', error: null, resultado: { tipo: 'ACCESO', cambios: [{ subcampania_id: '51', usuarios: [{ usuario_id: person.usuario_id, permiso_anterior: null, permiso_nuevo: attempt.operacion === 'DESIGNAR_ADMINISTRADOR' ? 'ADMINISTRADOR_SUBCAMPANIA' : 'PLANTADOR', revision_anterior: '9007199254740997', revision_nueva: '9007199254740998', cambio: 'CAMBIO_APLICADO', conserva_acceso_global: false }] }] } }
 }
 
-function open(current: CapacidadSubcampania, globalAdmin = false, canDesignateAdmins = globalAdmin) {
-  return render(<MemoryRouter><ParticipacionDetalleEquipo scope={current} globalAdmin={globalAdmin} canDesignateAdmins={canDesignateAdmins} actorId="42" /></MemoryRouter>)
+function open(current: CapacidadSubcampania, globalAdmin = false, canDesignateAdmins = globalAdmin, includeLogistics = true) {
+  return render(<MemoryRouter><ParticipacionDetalleEquipo scope={current} globalAdmin={globalAdmin} canDesignateAdmins={canDesignateAdmins} actorId="42" includeLogistics={includeLogistics} /></MemoryRouter>)
 }
 
 async function choosePerson(user: ReturnType<typeof userEvent.setup>) {
@@ -62,9 +62,69 @@ describe('Equipo en el detalle de subcampaña', () => {
     open({ ...scope, acciones: { ...scope.acciones, incorporar_plantador: true } })
     expect(await screen.findByText('Ana Pérez')).toBeTruthy()
     expect(read).toHaveBeenCalledWith('51', { limite: 20 }, expect.any(AbortSignal))
-    expect(screen.getByText('Administrador de subcampaña')).toBeTruthy()
+    expect(screen.getByText('Administrador')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Agregar participante' })).toBeNull()
     expect(screen.queryByRole('link', { name: 'Retirar o cambiar otros permisos' })).toBeNull()
+  })
+
+  it('separa al coordinador, oculta globales y deja los permisos contextuales en verde', async () => {
+    vi.mocked(ParticipacionService.miembros).mockResolvedValueOnce({
+      ...members,
+      data: [
+        ...members.data,
+        { usuario_id: '43', nombre: 'Andy Local', organizacion: null, permiso_contextual: null, revision_permiso: '1', acceso_global: true, etiqueta_acceso_global: 'Administrador · Acceso global', responsabilidad_logistica: null },
+        { usuario_id: '44', nombre: 'Beatriz Rojas', organizacion: 'ONG de Prueba', permiso_contextual: 'PLANTADOR', revision_permiso: '1', acceso_global: false, etiqueta_acceso_global: null, responsabilidad_logistica: null },
+        { usuario_id: '45', nombre: 'Pablo Andres', organizacion: null, permiso_contextual: null, revision_permiso: '1', acceso_global: true, etiqueta_acceso_global: 'Administrador · Acceso global', responsabilidad_logistica: 'COORDINADOR' },
+        { usuario_id: '46', nombre: 'Jhami', organizacion: null, permiso_contextual: null, revision_permiso: '1', acceso_global: false, etiqueta_acceso_global: null, responsabilidad_logistica: 'OPERARIO' },
+      ],
+    })
+    open(scope)
+    expect(await screen.findByText('Pablo Andres')).toBeTruthy()
+    expect(screen.queryByText('Andy Local')).toBeNull()
+    expect(screen.getByText('4 miembros')).toBeTruthy()
+    const adminCategory = screen.getByRole('button', { name: /Administradores.*1 asignado/i })
+    const contextualCard = screen.getByText('Ana Pérez').closest('li') as HTMLLIElement
+    const coordinatorCard = screen.getByText('Pablo Andres').closest('section') as HTMLElement
+    expect(within(contextualCard).getByText('Administrador').className).toContain('bg-brand-50')
+    expect(within(coordinatorCard).getByText('Coordinador').className).toContain('bg-warning-50')
+    expect(within(screen.getByText('Beatriz Rojas').closest('li') as HTMLLIElement).getByText('Plantador').className).toContain('bg-brand-50')
+    expect(within(screen.getByText('Jhami').closest('li') as HTMLLIElement).getByText('Operario').className).toContain('bg-brand-50')
+    expect(adminCategory.getAttribute('aria-expanded')).toBe('true')
+    await userEvent.setup().click(adminCategory)
+    expect(adminCategory.getAttribute('aria-expanded')).toBe('false')
+    expect(screen.queryByText('Ana Pérez')).toBeNull()
+    expect(screen.getByText('Pablo Andres')).toBeTruthy()
+    expect(screen.getByText('Beatriz Rojas')).toBeTruthy()
+    await userEvent.setup().click(adminCategory)
+    expect(screen.getByText('Ana Pérez')).toBeTruthy()
+  })
+
+  it('permite continuar la paginación si la primera página solo contiene globales ocultos', async () => {
+    vi.mocked(ParticipacionService.miembros).mockResolvedValueOnce({
+      observado_en: observed,
+      siguiente_cursor: 'otra-pagina',
+      data: [{ usuario_id: '43', nombre: 'Andy Local', organizacion: null, permiso_contextual: null, revision_permiso: '1', acceso_global: true, etiqueta_acceso_global: 'Administrador · Acceso global', responsabilidad_logistica: null }],
+    }).mockResolvedValueOnce(members)
+    open(scope)
+    expect(await screen.findByText('Aún no hay miembros de esta subcampaña entre las personas cargadas.')).toBeTruthy()
+    expect(screen.queryByText('Andy Local')).toBeNull()
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Cargar más personas' }))
+    expect(await screen.findByText('Ana Pérez')).toBeTruthy()
+    expect(screen.getByText('1 miembro')).toBeTruthy()
+  })
+
+  it('no duplica al coordinador en la sección de participación del equipo interno', async () => {
+    vi.mocked(ParticipacionService.miembros).mockResolvedValueOnce({
+      ...members,
+      data: [
+        { ...members.data[0], responsabilidad_logistica: 'COORDINADOR' },
+        { ...members.data[0], usuario_id: '47', nombre: 'Beatriz Admin' },
+      ],
+    })
+    open(scope, false, false, false)
+    expect(await screen.findByText('Beatriz Admin')).toBeTruthy()
+    expect(screen.queryByText('Ana Pérez')).toBeNull()
+    expect(screen.getByText('1 miembro')).toBeTruthy()
   })
 
   it('el administrador contextual incorpora una cuenta existente como plantador solo en la subcampaña abierta', async () => {

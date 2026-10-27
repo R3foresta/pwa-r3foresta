@@ -5,7 +5,7 @@ import { UsersService } from '../../../services/users.service'
 import type { UsuarioResumen } from '../../../types/users'
 import type { EquipoMember, Subcampania } from '../types/contracts'
 import { formatDate } from '../utils/subcampaniaFormatters'
-import { EquipoActionButton, EquipoMemberCard, EquipoSearchField, EquipoSectionHeading } from './EquipoVisual'
+import { EquipoActionButton, EquipoCollapsibleCategory, EquipoMemberCard, EquipoSearchField } from './EquipoVisual'
 import { UserAvatar } from './UserAvatar'
 
 const SEARCH_DEBOUNCE_MS = 300
@@ -221,47 +221,47 @@ export function SubcampaniaEquipoManager({
       )}
 
       {/* Operarios */}
-      <EquipoSectionHeading title="Operarios" aside={`${operarios.length} asignado${operarios.length !== 1 ? 's' : ''}`} />
-
-      {operarios.length === 0 ? (
-        <section className="rounded-2xl bg-white p-5 text-center shadow-soft ring-1 ring-black/5">
-          <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-neutral-50 text-neutral-400">
-            <Icon name="user" className="h-5 w-5" />
-          </div>
-          <p className="mt-2 text-sm font-extrabold text-brand-800">
-            Sin operarios asignados
-          </p>
-          {canManage && !editing && (
-            <p className="mt-1 text-[11.5px] font-semibold leading-relaxed text-neutral-500">
-              Tocá “Editar equipo” para agregar operarios.
+      <EquipoCollapsibleCategory title="Operarios" aside={`${operarios.length} asignado${operarios.length !== 1 ? 's' : ''}`}>
+        {operarios.length === 0 ? (
+          <section className="rounded-2xl bg-white p-5 text-center shadow-soft ring-1 ring-black/5">
+            <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-neutral-50 text-neutral-400">
+              <Icon name="user" className="h-5 w-5" />
+            </div>
+            <p className="mt-2 text-sm font-extrabold text-brand-800">
+              Sin operarios asignados
             </p>
-          )}
-        </section>
-      ) : (
-        <ul className="space-y-2">
-          {operarios.map((operario) => (
-            <EquipoMemberCard key={operario.id} nombre={operario.nombre_usuario ?? `Usuario #${operario.usuario_id}`}
-              fotoUrl={operario.foto_perfil_url} rol="Operario"
-              subtitle={operario.agregado_at ? `Desde ${formatDate(operario.agregado_at.slice(0, 10))}` : undefined}
-              action={editing && canManage ? (
-                <button
-                  type="button"
-                  onClick={() => void handleRemoveOperario(operario.usuario_id)}
-                  disabled={busy}
-                  aria-label={`Quitar operario ${operario.nombre_usuario ?? operario.usuario_id}`}
-                  className="flex shrink-0 items-center gap-1 rounded-full bg-danger-50 px-2.5 py-1 text-[10.5px] font-extrabold text-danger-700 transition hover:bg-danger-100 disabled:cursor-wait disabled:opacity-50"
-                >
-                  {removingId === operario.usuario_id ? (
-                    <Spinner className="h-3 w-3 animate-spin" />
-                  ) : (
-                    <Icon name="trash" className="h-3 w-3" />
-                  )}
-                  {removingId === operario.usuario_id ? 'Quitando…' : 'Quitar'}
-                </button>
-              ) : undefined} />
-          ))}
-        </ul>
-      )}
+            {canManage && !editing && (
+              <p className="mt-1 text-[11.5px] font-semibold leading-relaxed text-neutral-500">
+                Tocá “Editar equipo” para agregar operarios.
+              </p>
+            )}
+          </section>
+        ) : (
+          <ul className="space-y-2">
+            {operarios.map((operario) => (
+              <EquipoMemberCard key={operario.id} nombre={operario.nombre_usuario ?? `Usuario #${operario.usuario_id}`}
+                fotoUrl={operario.foto_perfil_url} rol="Operario"
+                subtitle={operario.agregado_at ? `Desde ${formatDate(operario.agregado_at.slice(0, 10))}` : undefined}
+                action={editing && canManage ? (
+                  <button
+                    type="button"
+                    onClick={() => void handleRemoveOperario(operario.usuario_id)}
+                    disabled={busy}
+                    aria-label={`Quitar operario ${operario.nombre_usuario ?? operario.usuario_id}`}
+                    className="flex shrink-0 items-center gap-1 rounded-full bg-danger-50 px-2.5 py-1 text-[10.5px] font-extrabold text-danger-700 transition hover:bg-danger-100 disabled:cursor-wait disabled:opacity-50"
+                  >
+                    {removingId === operario.usuario_id ? (
+                      <Spinner className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Icon name="trash" className="h-3 w-3" />
+                    )}
+                    {removingId === operario.usuario_id ? 'Quitando…' : 'Quitar'}
+                  </button>
+                ) : undefined} />
+            ))}
+          </ul>
+        )}
+      </EquipoCollapsibleCategory>
 
       {/* Buscador para agregar operarios (solo en modo edición) */}
       {editing && canManage && (

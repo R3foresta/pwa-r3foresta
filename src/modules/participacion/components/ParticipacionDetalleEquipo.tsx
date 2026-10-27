@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Button } from '../../../components/ui'
-import { EquipoMemberCard, EquipoSectionHeading } from '../../plantacion/components/EquipoVisual'
+import { EquipoCollapsibleCategory, EquipoMemberCard } from '../../plantacion/components/EquipoVisual'
 import { ParticipacionService } from '../api/participacion.api'
 import { useParticipacionCapabilities } from '../hooks/useParticipacionCapabilities'
 import type { CapacidadSubcampania, MiembroParticipacion, MiembrosLectura } from '../types'
@@ -23,7 +23,7 @@ export default function ParticipacionDetalleEquipo({ scope, globalAdmin, actorId
 }
 
 function memberRole(member: MiembroParticipacion): string {
-  if (member.acceso_global) return member.etiqueta_acceso_global ?? 'Administrador global'
+  if (member.permiso_contextual === 'ADMINISTRADOR_SUBCAMPANIA') return 'Administrador'
   if (member.permiso_contextual) return permissionLabel(member.permiso_contextual)
   if (member.responsabilidad_logistica === 'COORDINADOR') return 'Coordinador'
   if (member.responsabilidad_logistica === 'OPERARIO') return 'Operario'
@@ -38,11 +38,10 @@ function memberSubtitle(member: MiembroParticipacion): string | undefined {
 
 function MemberGroup({ title, members }: { title: string; members: MiembroParticipacion[] }) {
   if (members.length === 0) return null
-  return <div className="space-y-2">
-    <EquipoSectionHeading title={title} aside={`${members.length} ${members.length === 1 ? 'asignado' : 'asignados'}`} />
+  return <EquipoCollapsibleCategory title={title} aside={`${members.length} ${members.length === 1 ? 'asignado' : 'asignados'}`}>
     <ul className="space-y-2">{members.map(member => <EquipoMemberCard key={member.usuario_id} nombre={member.nombre} rol={memberRole(member)}
-      subtitle={memberSubtitle(member)} tone={member.acceso_global || member.permiso_contextual === 'ADMINISTRADOR_SUBCAMPANIA' || member.responsabilidad_logistica === 'COORDINADOR' ? 'warning' : 'brand'} />)}</ul>
-  </div>
+      subtitle={memberSubtitle(member)} />)}</ul>
+  </EquipoCollapsibleCategory>
 }
 
 function Members({ scope, globalAdmin, actorId, canManage, canDesignateAdmins = false, includeLogistics }: Props & { canManage: boolean }) {
@@ -83,18 +82,27 @@ function Members({ scope, globalAdmin, actorId, canManage, canDesignateAdmins = 
     if (members.status !== 'fulfilled' || !members.value || permissions.status !== 'fulfilled') throw new Error('Reintenta la lectura para ver los permisos vigentes.')
   }
 
-  const admins = page?.data.filter(member => member.acceso_global || member.permiso_contextual === 'ADMINISTRADOR_SUBCAMPANIA') ?? []
-  const plantadores = page?.data.filter(member => !member.acceso_global && member.permiso_contextual === 'PLANTADOR') ?? []
-  const logistics = page?.data.filter(member => !member.acceso_global && !member.permiso_contextual) ?? []
-  const visibleCount = admins.length + plantadores.length + (includeLogistics ? logistics.length : 0)
+  // La coordinación se muestra una sola vez, fuera de las categorías. En la
+  // vista interna ya está representada por el equipo logístico original.
+  const coordinador = includeLogistics ? page?.data.find(member => member.responsabilidad_logistica === 'COORDINADOR') : undefined
+  const admins = page?.data.filter(member => !member.acceso_global && member.responsabilidad_logistica !== 'COORDINADOR' && member.permiso_contextual === 'ADMINISTRADOR_SUBCAMPANIA') ?? []
+  const plantadores = page?.data.filter(member => !member.acceso_global && member.responsabilidad_logistica !== 'COORDINADOR' && member.permiso_contextual === 'PLANTADOR') ?? []
+  const logistics = page?.data.filter(member => !member.acceso_global && member.responsabilidad_logistica === 'OPERARIO' && !member.permiso_contextual) ?? []
+  const visibleCount = (coordinador ? 1 : 0) + admins.length + plantadores.length + (includeLogistics ? logistics.length : 0)
   const heading = page?.siguiente_cursor ? 'Miembros del equipo' : `${visibleCount} ${visibleCount === 1 ? 'miembro' : 'miembros'}`
 
   return <div className="space-y-4">
     <AgregarParticipanteEquipo scope={scope} actorId={actorId} globalAdmin={globalAdmin} canDesignateAdmins={canDesignateAdmins} heading={heading} onConfirmed={refreshAfterConfirmed} />
     {loading && <p role="status" className="text-sm font-semibold text-neutral-500">Consultando equipo…</p>}
     {error && <div className="space-y-2"><p role="alert" className="text-sm text-danger-700">{error}</p><Button variant="secondary" onClick={() => void load()}>Reintentar equipo</Button></div>}
-    {!loading && !error && page && visibleCount === 0 && <div className="rounded-2xl bg-white p-5 text-center shadow-soft ring-1 ring-black/5"><p className="text-sm font-extrabold text-brand-800">Todavía no hay participantes</p><p className="mt-1 text-xs text-neutral-500">Las cuentas autorizadas aparecerán aquí.</p></div>}
-    {page && !error && <div className="space-y-4"><MemberGroup title="Administradores" members={admins} /><MemberGroup title="Plantadores" members={plantadores} />{includeLogistics && <MemberGroup title="Equipo logístico" members={logistics} />}</div>}
+    {!loading && !error && page && !page.siguiente_cursor && visibleCount === 0 && <div className="rounded-2xl bg-white p-5 text-center shadow-soft ring-1 ring-black/5"><p className="text-sm font-extrabold text-brand-800">Todavía no hay participantes asignados</p><p className="mt-1 text-xs text-neutral-500">Los miembros de esta subcampaña aparecerán aquí.</p></div>}
+    {!loading && !error && page?.siguiente_cursor && visibleCount === 0 && <p className="text-xs font-semibold text-neutral-500">Aún no hay miembros de esta subcampaña entre las personas cargadas.</p>}
+    {page && !error && <div className="space-y-4">
+      {coordinador && <EquipoMemberCard as="section" nombre={coordinador.nombre} rol="Coordinador" tone="warning" subtitle={coordinador.organizacion ?? undefined} />}
+      <MemberGroup title="Administradores" members={admins} />
+      <MemberGroup title="Plantadores" members={plantadores} />
+      {includeLogistics && <MemberGroup title="Operarios" members={logistics} />}
+    </div>}
     {page?.siguiente_cursor && !error && <Button variant="secondary" loading={loading} onClick={() => void load(page.siguiente_cursor!)}>Cargar más personas</Button>}
     {canManage && <Link to="/app/participacion/accesos" className="inline-flex min-h-11 items-center text-xs font-semibold text-brand-700 underline">Retirar o cambiar otros permisos</Link>}
   </div>
