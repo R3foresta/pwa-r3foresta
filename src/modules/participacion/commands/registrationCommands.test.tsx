@@ -403,11 +403,46 @@ describe('confirmación, incertidumbre y terminales', () => {
     expect(await listRegistrationDrafts('7', storage)).toEqual([expect.objectContaining({ estado: 'DESCARTE_PENDIENTE' })])
     vi.mocked(Api.cancelar).mockRejectedValueOnce(new ParticipacionApiError(404, { codigo: 'COMANDO_NO_ENCONTRADO', mensaje: 'No se encontró la preparación propia.', campos: [], ambitos: [], reintento: 'MISMA_CLAVE' }))
     await act(() => resumed.result.current.cancel())
-    expect(resumed.result.current.receipt?.error?.codigo).toBe('PREPARACION_CANCELADA')
-    expect(resumed.result.current.pending?.comando_id).toBe(original)
+    expect(resumed.result.current.state).toBe('discarded')
+    expect(resumed.result.current.pending).toBeNull()
     expect(vi.mocked(Api.preparar).mock.calls.at(-1)?.[0].comando_id).toBe(original)
-    expect(await listRegistrationDrafts('7', storage)).toEqual([expect.objectContaining({ estado: 'DESCARTADO' })])
+    expect(await listRegistrationDrafts('7', storage)).toEqual([])
     expect(Api.enviar).not.toHaveBeenCalled()
+  })
+
+  it('el botón de descarte elimina la preparación confirmada y sus fotos locales', async () => {
+    const hook = await capture()
+    let cancelled = false
+    await act(async () => { cancelled = await hook.result.current.cancel() })
+    expect(cancelled).toBe(true)
+    expect(Api.cancelar).toHaveBeenCalledTimes(1)
+    expect(hook.result.current.files).toHaveLength(0)
+    expect(await readRegistrationDraft('7', '11', storage)).toBeNull()
+    expect(await listRegistrationDrafts('7', storage)).toEqual([])
+  })
+
+  it('un rechazo diferente al descarte conserva la captura y no autoriza salir como descartada', async () => {
+    const hook = await capture()
+    vi.mocked(Api.cancelar).mockImplementationOnce(async (identity) => receipt(identity, 'REVISION_OBSOLETA'))
+    let cancelled = true
+    await act(async () => { cancelled = await hook.result.current.cancel() })
+    expect(cancelled).toBe(false)
+    expect(hook.result.current.receipt?.error?.codigo).toBe('REVISION_OBSOLETA')
+    expect(await readRegistrationDraft('7', '11', storage)).not.toBeNull()
+  })
+
+  it('si falla la limpieza local tras cancelar, conserva la clave para reintentar', async () => {
+    const hook = await capture()
+    const original = hook.result.current.pending!.comando_id
+    vi.mocked(Api.cancelar).mockImplementationOnce(async (identity) => { storage.fail = true; return receipt(identity, 'PREPARACION_CANCELADA') })
+    let cancelled = true
+    await act(async () => { cancelled = await hook.result.current.cancel() })
+    expect(cancelled).toBe(false)
+    expect((await readRegistrationDraft('7', '11', storage))?.comando_id).toBe(original)
+    storage.fail = false
+    await act(async () => { cancelled = await hook.result.current.cancel() })
+    expect(cancelled).toBe(true)
+    expect(await readRegistrationDraft('7', '11', storage)).toBeNull()
   })
 
   it('descartar una captura sin preparación elimina sus datos locales', async () => {
@@ -416,8 +451,38 @@ describe('confirmación, incertidumbre y terminales', () => {
     let cancelled = false
     await act(async () => { cancelled = await hook.result.current.cancel() })
     expect(cancelled).toBe(true)
-    expect((await readRegistrationDraft('7', '11', storage))?.draft).toEqual(newRegistrationDraft('7', '11').draft)
+    expect(await readRegistrationDraft('7', '11', storage)).toBeNull()
+    expect(await listRegistrationDrafts('7', storage)).toEqual([])
     expect(Api.cancelar).not.toHaveBeenCalled()
+  })
+
+  it('conservar espera una edición pendiente antes de salir y guarda el último valor', async () => {
+    const hook = await setup()
+    const gate = deferred<void>()
+    const write = storage.write.bind(storage)
+    vi.spyOn(storage, 'write').mockImplementation(async (record) => { await gate.promise; await write(record) })
+    let saved = false
+    let saving!: Promise<boolean>
+    act(() => {
+      void hook.result.current.updateDraft({ observaciones: 'Último cambio' })
+      saving = hook.result.current.saveDraft().then((result) => { saved = result; return result })
+    })
+    await Promise.resolve()
+    expect(saved).toBe(false)
+    gate.resolve()
+    await act(() => saving)
+    expect(saved).toBe(true)
+    expect((await readRegistrationDraft('7', '11', storage))?.draft.observaciones).toBe('Último cambio')
+  })
+
+  it('no confirma la conservación si falla el almacenamiento local', async () => {
+    const hook = await setup()
+    storage.fail = true
+    let saved = true
+    await act(async () => { saved = await hook.result.current.saveDraft() })
+    expect(saved).toBe(false)
+    expect(hook.result.current.error).toContain('Cuota agotada')
+    expect(await readRegistrationDraft('7', '11', storage)).toBeNull()
   })
 
   it('no elimina incertidumbre ni bytes al pasar30 días; sólo limpia tras terminal conciliado', async () => {

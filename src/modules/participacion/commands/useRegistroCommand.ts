@@ -9,5 +9,5 @@ export function useRegistroCommand(actorId: string | null, scopeId: string | nul
   const controller = useMemo(() => new RegistrationCommandController(actorId, scopeId, storage), [actorId, scopeId, storage])
   const snapshot = useSyncExternalStore(controller.subscribe, controller.getSnapshot)
   useEffect(() => controller.start(), [controller])
-  return { ...snapshot, updateDraft: controller.updateDraft, addFiles: controller.addFiles, removeFile: controller.removeFile, prepare: controller.prepare, upload: controller.upload, recover: controller.recover, confirm: controller.confirm, retrySame: controller.retrySame, cancel: controller.cancel, newIntent: controller.newIntent }
+  return { ...snapshot, updateDraft: controller.updateDraft, saveDraft: controller.saveDraft, addFiles: controller.addFiles, removeFile: controller.removeFile, prepare: controller.prepare, upload: controller.upload, recover: controller.recover, confirm: controller.confirm, retrySame: controller.retrySame, cancel: controller.cancel, newIntent: controller.newIntent }
 }

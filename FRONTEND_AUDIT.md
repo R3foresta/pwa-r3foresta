@@ -1,6 +1,6 @@
 # Auditoría y pendientes del frontend
 
-Corte: 20 de octubre de 2026. Lista única de deuda frontend. No sustituye el [tablero global](../r3foresta-docs/specs/plantacion/participacion-aliada/implementacion/README.md) ni acredita estado del backend desplegado.
+Corte: 27 de octubre de 2026. Lista única de deuda frontend. No sustituye el [tablero global](../r3foresta-docs/specs/plantacion/participacion-aliada/implementacion/README.md) ni acredita estado del backend desplegado.
 
 El [histórico de auditoría](docs/archivo/FRONTEND_AUDIT_2026-10-15.md) conserva diagnósticos, cierres y resultados anteriores. Se retiraron de esta entrada los checklists repetidos y diagnósticos de módulos que ya no describían su implementación. Un hallazgo abierto se mantiene pendiente hasta verificar su cierre; este ajuste documental no lo resuelve por sí solo.
 
@@ -10,6 +10,7 @@ Entrega INT06 publicada en PWA `62f55dc`: 32 suites/445 tests, lint y build/Type
 
 | Prioridad | ID | Estado | Qué falta |
 | --- | --- | --- | --- |
+| Media | AUD-030 | PENDIENTE · navegación del navegador | El botón Volver del formulario abre el diálogo de conservar/descartar; Atrás del navegador o el gesto del sistema lo omite y conserva el borrador. Definir y verificar un bloqueo de navegación compatible con `BrowserRouter` si se requiere el mismo diálogo para esos gestos. |
 | Alta | AUD-029 | CERRADO en localhost | Lectura reparada con 088; VOLUNTARIO plantador, admin plantador y «Participé» confirmados en la pantalla real. |
 | Alta | AUD-028 | PENDIENTE · contrato administrativo | Historial privado completo de plantaciones por subcampaña y lectura de stock administrativo fuera de ACTIVA; el detalle ADMIN muestra por ahora stock elegible de inicial y registros publicados. |
 | Media | AUD-027 | CORREGIDO local · aceptación visual pendiente | Plan, stock y registro priorizan común/científico; catálogo real cotejado y backend local recargado. Falta aceptación autenticada de ambas audiencias y publicación externa. |

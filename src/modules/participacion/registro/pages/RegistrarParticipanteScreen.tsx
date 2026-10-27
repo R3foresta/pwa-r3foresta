@@ -23,17 +23,12 @@ const titles = { 1: 'Fotos y ubicación', 2: 'Especies y cantidades', 3: 'Partic
 function validScopeId(value: string | undefined): string | null {
   try { return value ? validarId(value) : null } catch { return null }
 }
-function registrationReturnTo(state: unknown): string {
+function registrationReturnTo(state: unknown, scopeId: string): string {
+  const detail = subcampaniaDetailPath(scopeId)
   if (state && typeof state === 'object' && 'participacionReturnTo' in state) {
     const destination = safeParticipacionReturn(state.participacionReturnTo)
-    if (destination) return destination
+    if (destination === detail || destination?.startsWith(`${detail}?`)) return destination
   }
-  return '/app/participacion/registrar'
-}
-function registrationSuccessReturnTo(returnTo: string, scopeId: string): string {
-  const detail = subcampaniaDetailPath(scopeId)
-  if (returnTo === detail || returnTo.startsWith(`${detail}?`)) return returnTo
-  if (returnTo.startsWith('/participar?') && new URLSearchParams(returnTo.slice('/participar?'.length)).get('subcampania_id') === scopeId) return returnTo
   return detail
 }
 function startsNewRegistration(state: unknown): boolean {
@@ -51,7 +46,7 @@ export default function RegistrarParticipanteScreen() {
 function RegistrarParticipante({ actorId, scopeId }: { actorId: string | null; scopeId: string }) {
   const navigate = useNavigate()
   const location = useLocation()
-  const returnTo = registrationReturnTo(location.state)
+  const returnTo = registrationReturnTo(location.state, scopeId)
   const newRegistrationEntry = startsNewRegistration(location.state)
   const { user, login } = useAuth()
   const command = useRegistroCommand(actorId, scopeId)
@@ -65,6 +60,7 @@ function RegistrarParticipante({ actorId, scopeId }: { actorId: string | null; s
   const [localError, setLocalError] = useState<string | null>(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [exitOpen, setExitOpen] = useState(false)
+  const [exiting, setExiting] = useState(false)
   const [newIntentOpen, setNewIntentOpen] = useState(false)
   const [removePhoto, setRemovePhoto] = useState<string | null>(null)
   const disabled = command.busy || !editableStage || !context || context.disponibilidad === 'SIN_STOCK'
@@ -134,9 +130,16 @@ function RegistrarParticipante({ actorId, scopeId }: { actorId: string | null; s
     contextState.refresh()
   }
   async function discard() {
-    setExitOpen(false)
+    setExiting(true)
     const cancelled = await command.cancel()
-    if (cancelled) navigate(returnTo)
+    setExiting(false)
+    if (cancelled) { setExitOpen(false); navigate(returnTo, { replace: true }) }
+  }
+  async function keepDraft() {
+    setExiting(true)
+    const saved = await command.saveDraft()
+    setExiting(false)
+    if (saved) { setExitOpen(false); navigate(returnTo, { replace: true }) }
   }
   function addFiles(selected: File[]) {
     const valid = selected.filter((file) => file.size >= 1 && file.size <= 10 * 1024 * 1024)
@@ -156,7 +159,7 @@ function RegistrarParticipante({ actorId, scopeId }: { actorId: string | null; s
       summaryText={`${total} ${total === 1 ? 'planta registrada' : 'plantas registradas'}`}
       primaryLabel="Volver a la campaña"
       secondaryLabel="Registrar otra plantación"
-      onPrimaryAction={() => navigate(registrationSuccessReturnTo(returnTo, scopeId), { replace: true })}
+      onPrimaryAction={() => navigate(returnTo, { replace: true })}
       onSecondaryAction={() => void newIntent()}
       loading={command.busy}
       errorMessage={command.error}
@@ -166,7 +169,7 @@ function RegistrarParticipante({ actorId, scopeId }: { actorId: string | null; s
   return <div className="mx-auto min-h-dvh max-w-3xl">
     <WizardHeader paso={draft.step} totalPasos={3} title={command.receipt ? 'Resultado de la plantación' : command.cancelRequested ? 'Descarte pendiente' : command.pending?.payload ? 'Guardado pendiente' : titles[draft.step]} onBack={back} subcampaniaNombre={context?.subcampania.nombre ?? `Subcampaña ${scopeId}`} subcampaniaDetalle={context?.subcampania.campania_nombre} />
     <div className="space-y-4 px-5 pt-5">
-      <RegistroCommandStatus state={command.state} pending={command.pending} cancelRequested={command.cancelRequested} receipt={command.receipt} busy={command.busy} error={command.error} fileCount={files.length} onRecover={() => { autoUpload.current = null; void command.recover() }} onUpload={() => void command.upload()} onRetry={() => void command.retrySame()} onRetryCancel={() => void command.cancel()} onNewIntent={() => setNewIntentOpen(true)} onLogin={() => void recoverSession()} />
+      <RegistroCommandStatus state={command.state} pending={command.pending} cancelRequested={command.cancelRequested} receipt={command.receipt} busy={command.busy} error={command.error} fileCount={files.length} onRecover={() => { autoUpload.current = null; void command.recover() }} onUpload={() => void command.upload()} onRetry={() => void command.retrySame()} onRetryCancel={() => void discard()} onNewIntent={() => setNewIntentOpen(true)} onLogin={() => void recoverSession()} />
       {localError && <p role="alert" className="text-sm text-danger-700">{localError}</p>}
       {contextState.loading && <Card><p role="status" className="text-sm text-neutral-600">Consultando contexto autorizado de esta subcampaña…</p></Card>}
       {contextState.error && <Card className="space-y-3"><p role="alert" className="text-sm text-danger-700">{contextState.error}</p>{contextState.errorCode === 'CONTEXTO_INCOMPLETO' ? <p className="text-sm text-neutral-700">El equipo responsable debe revisar el plan de especies, el polígono y la fecha operativa de entrega del stock de esta subcampaña. No sabemos cuál de esos datos falta. Tu borrador permanece en este dispositivo; cuando lo corrijan, vuelve a consultar.</p> : <p className="text-xs text-neutral-600">No se interpretó el error como falta de stock. El borrador y el comando conservan su identidad.</p>}<Button variant="secondary" onClick={() => { if (contextState.sessionExpired) void recoverSession(); else contextState.refresh() }}>{contextState.sessionExpired ? 'Recuperar sesión con passkey' : 'Volver a consultar contexto'}</Button><Button variant="ghost" onClick={() => setExitOpen(true)}>Salir conservando el borrador</Button></Card>}
@@ -191,8 +194,8 @@ function RegistrarParticipante({ actorId, scopeId }: { actorId: string | null; s
     <ConfirmDialog open={confirmOpen && Boolean(canConfirm)} title="Confirmar plantación" description="Se guardará el registro y consumirá el stock de esta subcampaña en una sola operación. Revisa antes de confirmar." confirmLabel="Confirmar y guardar plantación" loading={command.busy} onConfirm={() => void confirm()} onCancel={() => setConfirmOpen(false)}>
       <p className="mt-3 text-sm text-neutral-700">{context?.subcampania.campania_nombre} · {context?.subcampania.nombre}<br />Responsable: {responsible}<br />Fecha: {draft.fecha_plantacion}<br />{draft.especies.reduce((sum, species) => sum + species.cantidad, 0)} plantas · {readyPhotos} fotos · {draft.coresponsable_ids.length} participantes adicionales<br />Ubicación: {draft.latitud}, {draft.longitud}</p>
     </ConfirmDialog>
-    <ConfirmDialog open={exitOpen} title="Salir de la captura" description="Puedes conservar el borrador privado para retomarlo con esta misma cuenta. Un resultado pendiente conserva su comando y no se descarta al salir." confirmLabel="Conservar borrador y salir" onConfirm={() => navigate(returnTo)} onCancel={() => setExitOpen(false)} loading={command.busy}>
-      {!command.pending?.payload && !command.receipt && <div className="mt-3"><Button fullWidth variant="danger" disabled={command.busy} onClick={() => void discard()}>Descartar borrador y cerrar preparación</Button><p className="mt-2 text-xs text-neutral-600">El descarte de una preparación debe quedar confirmado por el servidor antes de eliminar sus fotos locales.</p></div>}
+    <ConfirmDialog open={exitOpen} title="Salir de la captura" description="Puedes conservar el borrador privado para retomarlo con esta misma cuenta. Un resultado pendiente conserva su comando y no se descarta al salir." confirmLabel="Conservar borrador y salir" onConfirm={() => void keepDraft()} onCancel={() => setExitOpen(false)} loading={command.busy || exiting} errorMessage={command.error}>
+      {!command.pending?.payload && !command.receipt && <div className="mt-3"><Button fullWidth variant="danger" disabled={command.busy || exiting} onClick={() => void discard()}>Descartar borrador y cerrar preparación</Button><p className="mt-2 text-xs text-neutral-600">El descarte de una preparación debe quedar confirmado por el servidor antes de eliminar sus fotos locales.</p></div>}
     </ConfirmDialog>
     <ConfirmDialog open={newIntentOpen} title="Revisar una nueva intención" description="Se conservarán los datos y fotos permitidos para revisarlos. La nueva preparación utilizará otras identidades de comando y carga; deberás comprobar el contexto y confirmar otra vez." confirmLabel="Comenzar nueva revisión" onConfirm={() => void newIntent()} onCancel={() => setNewIntentOpen(false)} loading={command.busy} />
     <ConfirmDialog open={removePhoto !== null} title="Quitar foto de esta propuesta" description="La foto quedará fuera del envío. Las cargas omitidas se limpian mediante el mecanismo del servidor; no se borran evidencias vinculadas." confirmLabel="Quitar de la propuesta" variant="danger" onConfirm={() => { if (removePhoto) void command.removeFile(removePhoto); setRemovePhoto(null) }} onCancel={() => setRemovePhoto(null)} />

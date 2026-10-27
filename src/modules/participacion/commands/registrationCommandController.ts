@@ -4,12 +4,12 @@ import { validarRegistroEntrada } from '../api/registro.contract'
 import type { CargaRegistro, CargasRegistroLectura, ReciboRegistro, RegistroIdentity, RegistroInicialEntrada } from '../registroTypes'
 import { CommandLifecycle, type CommandOperation } from './commandLifecycle'
 import {
-  indexedRegistrationStorage, newRegistrationDraft, readRegistrationDraft, RegistrationChangedError,
+  deleteRegistrationDraft, indexedRegistrationStorage, newRegistrationDraft, readRegistrationDraft, RegistrationChangedError,
   RegistrationStorageError, saveRegistrationDraft, withRegistrationLock,
   type RegistrationDraftRecord, type RegistrationFile, type RegistrationStorage, type RegistroDraft,
 } from './registrationDraftStore'
 
-export type RegistroCommandState = 'loading' | 'draft' | 'preparing' | 'uploading' | 'sending' | 'unconfirmed' | 'prepared' | 'confirmed' | 'rejected' | 'sessionExpired'
+export type RegistroCommandState = 'loading' | 'draft' | 'preparing' | 'uploading' | 'sending' | 'unconfirmed' | 'prepared' | 'confirmed' | 'rejected' | 'discarded' | 'sessionExpired'
 export type RegistroConfirmDraft = Omit<RegistroInicialEntrada, 'comando_id' | 'subcampania_id' | 'evidencia_ids'>
 export type RegistroCommandSnapshot = {
   state: RegistroCommandState
@@ -141,6 +141,23 @@ export class RegistrationCommandController extends CommandLifecycle<RegistroComm
     })
     this.mutations = job.catch(() => {})
     return job.catch(() => {})
+  }
+  saveDraft = async (): Promise<boolean> => {
+    await this.mutations
+    if (!this.actorId || !this.scopeId || !this.active || this.running) return false
+    try {
+      await withRegistrationLock(this.actorId, this.scopeId, async () => {
+        const record = await this.currentRecord()
+        if (!record.payload && !record.terminal && !record.cancelacion_solicitada) {
+          await this.persist({ ...record, draft: this.snapshot.draft })
+        }
+      })
+      this.update({ ...this.snapshot, error: null })
+      return true
+    } catch (error) {
+      this.update({ ...this.snapshot, error: errorMessage(error) })
+      return false
+    }
   }
   addFiles = async (files: File[]): Promise<void> => this.work('uploading', async (record) => {
     this.assertEditable(record)
@@ -287,15 +304,26 @@ export class RegistrationCommandController extends CommandLifecycle<RegistroComm
   cancel = async (): Promise<boolean> => {
     let cancelled = false
     await this.work('sending', async (record, operation) => {
+      const clearDiscarded = async () => {
+        await deleteRegistrationDraft(record.actor_id, record.subcampania_id, this.storage)
+        this.show(newRegistrationDraft(record.actor_id, record.subcampania_id), 'discarded')
+        cancelled = true
+      }
       if (!record.comando_id) {
-        const next = await this.persist({ ...newRegistrationDraft(record.actor_id, record.subcampania_id), revision_local: record.revision_local })
-        this.show(next, 'draft'); cancelled = true; return
+        await clearDiscarded()
+        return
+      }
+      if (record.terminal) {
+        if (record.terminal.estado === 'RECHAZADO' && record.terminal.error.codigo === 'PREPARACION_CANCELADA') await clearDiscarded()
+        else this.show(record, record.terminal.estado === 'CONFIRMADO' ? 'confirmed' : 'rejected', null, record.terminal)
+        return
       }
       if (record.payload && !this.snapshot.receipt) {
         // No deducir abandono de un POST incierto. Primero obtener su terminal.
         await this.recoverRecord(record, operation)
         record = this.record!
-        if (!record.terminal) return
+        if (record.terminal?.estado === 'RECHAZADO' && record.terminal.error.codigo === 'PREPARACION_CANCELADA') await clearDiscarded()
+        return
       }
       const next = await this.persist({ ...record, cancelacion_solicitada: true })
       let receipt: ReciboRegistro
@@ -309,7 +337,7 @@ export class RegistrationCommandController extends CommandLifecycle<RegistroComm
         receipt = 'estado' in prepared ? prepared : await this.api.cancelar(identity(next), operation.signal)
       }
       await this.settle(next, receipt, operation)
-      cancelled = receipt.estado === 'RECHAZADO'
+      if (receipt.estado === 'RECHAZADO' && receipt.error.codigo === 'PREPARACION_CANCELADA') await clearDiscarded()
     })
     return cancelled
   }

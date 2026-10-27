@@ -8,6 +8,7 @@ export default function RegistroCommandStatus({ state, pending, cancelRequested,
   const cancelled = receipt?.estado === 'RECHAZADO' && receipt.error.codigo === 'PREPARACION_CANCELADA'
   const incompleteContext = receipt?.estado === 'RECHAZADO' && receipt.error.codigo === 'CONTEXTO_INCOMPLETO'
   const canCapture = state === 'draft' || state === 'prepared'
+  if (state === 'discarded') return <Card as="section"><p role="status" className="text-sm text-neutral-700">Borrador eliminado. Volviendo a la subcampaña…</p></Card>
   if (receipt?.estado === 'RECHAZADO') return <Card as="section" className="space-y-3" aria-live="polite">
     <h2 className="font-bold text-brand-800">{cancelled ? 'Preparación cancelada' : 'Plantación rechazada por el servidor'}</h2>
     <p role="alert" className="text-sm text-danger-700">{incompleteContext ? 'La subcampaña necesita una corrección antes de registrar plantaciones.' : receipt.error.mensaje}</p><p className="text-xs text-neutral-500">Código: {receipt.error.codigo} · Comando {receipt.comando_id}</p>

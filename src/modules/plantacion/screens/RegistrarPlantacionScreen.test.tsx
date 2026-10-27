@@ -5,7 +5,7 @@ import RegistrarPlantacionScreen from './RegistrarPlantacionScreen'
 
 function Destination() {
   const { state } = useLocation()
-  return <p>Comando v1 de {useParams().subcampaniaId} · {state?.registroIntent}</p>
+  return <p>Comando v1 de {useParams().subcampaniaId} · {state?.registroIntent} · {state?.participacionReturnTo}</p>
 }
 describe('Entrada interna del registro inicial', () => {
   it('conserva el ámbito BIGINT exacto y abre el mismo formulario participante', async () => {
@@ -13,13 +13,13 @@ describe('Entrada interna del registro inicial', () => {
       <Route path="/app/planting/subcampanias/:subcampaniaId/plantaciones/new" element={<RegistrarPlantacionScreen />} />
       <Route path="/app/participacion/subcampanias/:subcampaniaId/registrar" element={<Destination />} />
     </Routes></MemoryRouter>)
-    expect(await screen.findByText('Comando v1 de 9007199254740993 · nuevo')).toBeTruthy()
+    expect(await screen.findByText('Comando v1 de 9007199254740993 · nuevo · /app/planting/subcampanias/9007199254740993')).toBeTruthy()
   })
-  it('manda un ámbito inválido al selector sin llamar al contrato retirado', async () => {
+  it('manda un ámbito inválido al inicio de campañas', async () => {
     render(<MemoryRouter initialEntries={['/old/abc']}><Routes>
       <Route path="/old/:subcampaniaId" element={<RegistrarPlantacionScreen />} />
-      <Route path="/app/participacion/registrar" element={<p>Elegir subcampaña</p>} />
+      <Route path="/participar" element={<p>Mis campañas</p>} />
     </Routes></MemoryRouter>)
-    expect(await screen.findByText('Elegir subcampaña')).toBeTruthy()
+    expect(await screen.findByText('Mis campañas')).toBeTruthy()
   })
 })

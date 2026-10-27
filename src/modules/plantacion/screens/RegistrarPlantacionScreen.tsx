@@ -1,9 +1,9 @@
 import { Navigate, useParams } from 'react-router-dom'
+import { subcampaniaDetailPath } from '../../participacion/utils/detailNavigation'
 
 // Los enlaces internos de inicial conservan su entrada y usan el comando v1 compartido.
 export default function RegistrarPlantacionScreen() {
   const { subcampaniaId } = useParams<{ subcampaniaId: string }>()
-  return <Navigate replace to={subcampaniaId && /^[1-9]\d*$/.test(subcampaniaId)
-    ? `/app/participacion/subcampanias/${subcampaniaId}/registrar`
-    : '/app/participacion/registrar'} state={{ registroIntent: 'nuevo' }} />
+  if (!subcampaniaId || !/^[1-9]\d*$/.test(subcampaniaId)) return <Navigate replace to="/participar" />
+  return <Navigate replace to={`/app/participacion/subcampanias/${subcampaniaId}/registrar`} state={{ registroIntent: 'nuevo', participacionReturnTo: subcampaniaDetailPath(subcampaniaId) }} />
 }

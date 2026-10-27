@@ -6,6 +6,7 @@ import { NAV_ITEMS, PARTICIPANT_NAV_ITEMS } from '../data/navigation'
 import { useAuth } from '../contexts/AuthContext'
 import { ProfileService } from '../modules/user_profile/profile.service'
 import { hasInternalAppAccess } from '../utils/appAccess'
+import { subcampaniaDetailPath } from '../modules/participacion/utils/detailNavigation'
 
 const SubcampaniasOperativasSheet = lazy(
   () => import('../modules/plantacion/components/SubcampaniasOperativasSheet'),
@@ -181,6 +182,7 @@ function BottomNav({ publicMode = false }: { publicMode?: boolean }) {
                     closeSheet()
                     navigate(
                       `/app/participacion/subcampanias/${subcampaniaId}/registrar`,
+                      { state: { registroIntent: 'nuevo', participacionReturnTo: subcampaniaDetailPath(subcampaniaId) } },
                     )
                   }}
                 />
