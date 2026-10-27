@@ -121,11 +121,10 @@ describe('registro API sobre transporte privado compartido', () => {
     await expect(Service.cancelar(capture)).resolves.toEqual(receipt)
     expect(JSON.parse(fetch.mock.calls[0][1].body)).toEqual({ operacion: 'REGISTRAR_PLANTACION_INICIAL' })
   })
-  it('detalle propio no vuelve a exigir contexto tras retiro; foto pública usa endpoint binario D', async () => {
+  it('detalle propio no vuelve a exigir contexto tras retiro', async () => {
     const fetch = await prime(); fetch.mockResolvedValue(response(detail))
     await expect(Service.detallePropio('801', '21')).resolves.toEqual(detail)
     expect(fetch.mock.calls[0][0]).toBe(`${api}/plantaciones/21/detalle-propio`)
-    expect(Service.imagenPublicaUrl('9007199254740993')).toBe(`${api}/impact/imagenes/9007199254740993`)
     expect(fetch).toHaveBeenCalledTimes(1)
   })
   it('detalle histórico abre con JWT vigente aunque no se puedan consultar capacidades', async () => {

@@ -6,7 +6,7 @@ import type {
 } from '../registroTypes'
 import { verificarActorParticipacion } from './participacion.api'
 import { ParticipacionContratoError, validarId, validarPagina, validarPersonas } from './participacion.contract'
-import { outsideError, PARTICIPACION_API_URL, ParticipacionApiError, requestPrivada, successful, type RespuestaPrivada } from './participacion.transport'
+import { outsideError, ParticipacionApiError, requestPrivada, successful, type RespuestaPrivada } from './participacion.transport'
 import {
   validarCargaRegistro, validarCargasRegistro, validarContextoRegistro, validarDetallePropioRegistro,
   validarPreparacionRegistro, validarPreviewRegistro, validarReciboRegistro, validarRegistroComandoId,
@@ -93,6 +93,4 @@ export class RegistroParticipacionService {
     // La lectura histórica usa la sesión vigente; no depende de capacidades operativas.
     return validarDetallePropioRegistro(successful(await requestPrivada(`/plantaciones/${validarId(registroId)}/detalle-propio`, { signal })), validarId(actorId), registroId)
   }
-  // Endpoint binario público de D: no añadir Bearer ni abrir originales/previews privados.
-  static imagenPublicaUrl(evidenciaId: string): string { return `${PARTICIPACION_API_URL}/impact/imagenes/${validarId(evidenciaId)}` }
 }

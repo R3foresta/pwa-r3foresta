@@ -61,7 +61,7 @@ async function requestPublica(path: string, signal?: AbortSignal): Promise<unkno
   }
 }
 /** Una evidencia propia puede pertenecer a un registro no público; nunca se carga con `<img>` sin Bearer. */
-export async function imagenPropia(registroId: string, evidenciaId: string, signal?: AbortSignal): Promise<Blob> {
+async function imagenPropia(registroId: string, evidenciaId: string, signal?: AbortSignal): Promise<Blob> {
   const path = `/plantaciones/${validarImpactoId(registroId)}/imagenes/${validarImpactoId(evidenciaId)}`
   const token = tokenActual()
   const controller = new AbortController()
@@ -118,6 +118,5 @@ export class ImpactoService {
       return validarMisRegistros(response.body, options)
     } catch (error) { return readingError(error) }
   }
-  static imagenPublicaUrl = imagenPublicaUrl
   static imagenPropia = imagenPropia
 }
