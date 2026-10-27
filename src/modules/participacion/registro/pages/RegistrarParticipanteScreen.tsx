@@ -36,6 +36,9 @@ function registrationSuccessReturnTo(returnTo: string, scopeId: string): string 
   if (returnTo.startsWith('/participar?') && new URLSearchParams(returnTo.slice('/participar?'.length)).get('subcampania_id') === scopeId) return returnTo
   return detail
 }
+function startsNewRegistration(state: unknown): boolean {
+  return Boolean(state && typeof state === 'object' && 'registroIntent' in state && state.registroIntent === 'nuevo')
+}
 
 export default function RegistrarParticipanteScreen() {
   const { user } = useAuth()
@@ -47,7 +50,9 @@ export default function RegistrarParticipanteScreen() {
 
 function RegistrarParticipante({ actorId, scopeId }: { actorId: string | null; scopeId: string }) {
   const navigate = useNavigate()
-  const returnTo = registrationReturnTo(useLocation().state)
+  const location = useLocation()
+  const returnTo = registrationReturnTo(location.state)
+  const newRegistrationEntry = startsNewRegistration(location.state)
   const { user, login } = useAuth()
   const command = useRegistroCommand(actorId, scopeId)
   const editableStage = ['draft', 'prepared', 'preparing', 'uploading'].includes(command.state)
@@ -73,7 +78,24 @@ function RegistrarParticipante({ actorId, scopeId }: { actorId: string | null; s
 
   const updateDraft = command.updateDraft
   const upload = command.upload
+  const { busy: commandBusy, state: commandState, receipt: commandReceipt, newIntent: beginNewIntent } = command
   const autoUpload = useRef<string | null>(null)
+  const entryHandled = useRef(false)
+  useEffect(() => {
+    if (!newRegistrationEntry) { entryHandled.current = false; return }
+    if (commandBusy || commandState === 'loading') return
+    if (!entryHandled.current) {
+      entryHandled.current = true
+      if (commandReceipt?.estado === 'CONFIRMADO') {
+        void beginNewIntent()
+        return
+      }
+    }
+    navigate(`${location.pathname}${location.search}${location.hash}`, {
+      replace: true,
+      state: { participacionReturnTo: returnTo },
+    })
+  }, [commandBusy, commandState, commandReceipt, beginNewIntent, location.pathname, location.search, location.hash, navigate, newRegistrationEntry, returnTo])
   useEffect(() => {
     if (disabled || files.length === 0 || readyPhotos === files.length || files.some((photo) => photo.error)) return
     const selection = files.map((photo) => photo.carga_id).join(',')
@@ -120,6 +142,10 @@ function RegistrarParticipante({ actorId, scopeId }: { actorId: string | null; s
     const valid = selected.filter((file) => file.size >= 1 && file.size <= 10 * 1024 * 1024)
     setLocalError(valid.length !== selected.length ? 'Cada foto debe pesar entre 1 byte y 10 MiB. Los archivos fuera del límite no se agregaron.' : null)
     if (valid.length) void command.addFiles(valid)
+  }
+
+  if (newRegistrationEntry && command.receipt?.estado === 'CONFIRMADO') {
+    return <div role="status" className="p-5 text-sm text-neutral-600">Iniciando otra plantación…</div>
   }
 
   if (command.receipt?.estado === 'CONFIRMADO') {

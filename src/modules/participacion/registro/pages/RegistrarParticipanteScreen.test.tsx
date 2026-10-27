@@ -1,7 +1,7 @@
 import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
+import { MemoryRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { RegistroParticipacionService } from '../../api/registro.api'
 import { ParticipacionApiError } from '../../api/participacion.api'
 import { newRegistrationDraft } from '../../commands/registrationDraftStore'
@@ -53,7 +53,11 @@ beforeEach(() => {
 
 function ReturnDestination() {
   const { pathname, search } = useLocation()
-  return <p>Retorno: {pathname}{search}</p>
+  const navigate = useNavigate()
+  return <>
+    <p>Retorno: {pathname}{search}</p>
+    <button type="button" onClick={() => navigate('/registro/820', { state: { registroIntent: 'nuevo', participacionReturnTo: `${pathname}${search}` } })}>Registrar plantación desde la campaña</button>
+  </>
 }
 function open(state?: unknown) { return render(<MemoryRouter initialEntries={[{ pathname: '/registro/820', state }]}><Routes>
   <Route path="/registro/:subcampaniaId" element={<RegistrarParticipanteScreen />} />
@@ -290,6 +294,29 @@ describe('Registro participante de tres pasos', () => {
     await screen.findByRole('dialog', { name: 'Plantación registrada' })
     await user.click(screen.getByRole('button', { name: 'Volver a la campaña' }))
     expect(await screen.findByText('Retorno: /app/planting/subcampanias/820')).toBeTruthy()
+  })
+
+  it('al volver desde la campaña inicia otra captura sin repetir el éxito anterior', async () => {
+    open()
+    const user = await fillToParticipants()
+    await user.click(screen.getByRole('button', { name: 'Confirmar plantación' }))
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Confirmar y guardar plantación' }))
+    await screen.findByRole('dialog', { name: 'Plantación registrada' })
+    const previousCommand = vi.mocked(RegistroParticipacionService.enviar).mock.calls[0][0].comando_id
+    await user.click(screen.getByRole('button', { name: 'Volver a la campaña' }))
+    await user.click(screen.getByRole('button', { name: 'Registrar plantación desde la campaña' }))
+    await screen.findByRole('heading', { name: 'Fotos del trabajo' })
+    expect(screen.queryByRole('dialog', { name: 'Plantación registrada' })).toBeNull()
+    expect(RegistroParticipacionService.enviar).toHaveBeenCalledTimes(1)
+    const next = mocks.records.get('801:820') as { comando_id: string; terminal: ReciboRegistro | null }
+    expect(next.comando_id).not.toBe(previousCommand)
+    expect(next.terminal).toBeNull()
+
+    await fillToParticipants()
+    await user.click(screen.getByRole('button', { name: 'Confirmar plantación' }))
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Confirmar y guardar plantación' }))
+    await screen.findByRole('dialog', { name: 'Plantación registrada' })
+    expect(RegistroParticipacionService.enviar).toHaveBeenCalledTimes(2)
   })
 
   it('cuenta plantas con más y menos sin usar la meta como límite', async () => {

@@ -20,7 +20,7 @@ export default function PlantadorScopePanel({ scope, zone, returnTo, registratio
   return <div className="space-y-3">
     {!allowed ? <><p className="text-sm leading-6 text-neutral-600">El registro de plantaciones no está habilitado en esta subcampaña. Puedes consultar su avance e historial.</p>{draftsButton}</> : <>
       {hasStock ? (
-        <Link to={`/app/participacion/subcampanias/${scope.subcampania_id}/registrar`} state={{ participacionReturnTo: returnTo }} className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-brand-600 px-4 py-3 text-center text-base font-bold text-white shadow-soft hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2">
+        <Link to={`/app/participacion/subcampanias/${scope.subcampania_id}/registrar`} state={{ participacionReturnTo: returnTo, registroIntent: 'nuevo' }} className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-brand-600 px-4 py-3 text-center text-base font-bold text-white shadow-soft hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2">
           <span aria-hidden="true"><Icon name="plus" className="h-5 w-5 shrink-0" /></span>
           Registrar plantación
         </Link>

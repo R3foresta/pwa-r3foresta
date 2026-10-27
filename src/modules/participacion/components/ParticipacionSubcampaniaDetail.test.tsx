@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CapacidadSubcampania } from '../types'
 import type { ContextoRegistro } from '../registroTypes'
@@ -29,7 +29,20 @@ function open(permission: CapacidadSubcampania['permiso_contextual'] = 'PLANTADO
   return render(<MemoryRouter><ParticipacionSubcampaniaDetail actorId="801" scope={{ ...scope, permiso_contextual: permission }} onBack={vi.fn()} /></MemoryRouter>)
 }
 
+function RegistrationDestination() {
+  const location = useLocation()
+  return <p>Intención de registro: {location.state?.registroIntent}</p>
+}
+
 describe('especies compartidas en el detalle participante', () => {
+  it.each(['PLANTADOR', 'ADMINISTRADOR_SUBCAMPANIA'] as const)('abre una captura nueva desde el detalle para %s', permission => {
+    render(<MemoryRouter initialEntries={['/app/planting/subcampanias/821']}><Routes>
+      <Route path="/app/planting/subcampanias/:subcampaniaId" element={<ParticipacionSubcampaniaDetail actorId="801" scope={{ ...scope, permiso_contextual: permission }} onBack={vi.fn()} />} />
+      <Route path="/app/participacion/subcampanias/:subcampaniaId/registrar" element={<RegistrationDestination />} />
+    </Routes></MemoryRouter>)
+    fireEvent.click(screen.getByRole('link', { name: 'Registrar plantación' }))
+    expect(screen.getByText('Intención de registro: nuevo')).toBeTruthy()
+  })
   it.each(['PLANTADOR', 'ADMINISTRADOR_SUBCAMPANIA'] as const)('muestra nombre/foto/metas para %s sin ofrecer edición interna', permission => {
     open(permission)
     const card = screen.getByRole('region', { name: 'Especies de plantas' })
