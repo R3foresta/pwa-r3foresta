@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 import L from 'leaflet'
 import type { LatLngTuple } from 'leaflet'
 import { MapContainer, Polygon, useMap } from 'react-leaflet'
-import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import 'leaflet/dist/leaflet.css'
 import OpenFreeMapBaseLayer from '../../../components/map/OpenFreeMapBaseLayer'
 import plantacionHero from '../../../assets/home/plantacion.webp'
@@ -33,6 +34,9 @@ import CerrarSubcampaniaModal from '../components/CerrarSubcampaniaModal'
 import EditarPlanSubcampania from '../components/EditarPlanSubcampania'
 import { SubcampaniaEquipoManager } from '../components/SubcampaniaEquipoManager'
 import ParticipacionEquipoInterno from '../../participacion/components/ParticipacionEquipoInterno'
+import SubcampaniaAdminStock from '../components/SubcampaniaAdminStock'
+import SubcampaniaAdminActividad from '../components/SubcampaniaAdminActividad'
+import { useRegistroContext } from '../../participacion/registro/hooks/useRegistroContext'
 
 // Estados en los que un ADMIN puede gestionar el equipo (agregar/quitar
 // operarios) desde el detalle. La gestión de equipo va por su propio servicio y
@@ -404,6 +408,8 @@ function ResumenTab({
   onActivated,
   onRegistrarPlantacion,
   onVerBorradores,
+  stock,
+  poligonoConsulta,
 }: {
   sub: Subcampania
   equipo: EquipoMember[]
@@ -415,10 +421,12 @@ function ResumenTab({
   onActivated: (data: ActivarSubcampaniaData) => void
   onRegistrarPlantacion: () => void
   onVerBorradores: () => void
+  stock?: ReactNode
+  poligonoConsulta?: GeoJsonPolygon | null
 }) {
   const coordinador = equipo.find((m) => m.rol === 'COORDINADOR')
   const isBorrador = sub.estado === 'BORRADOR'
-  const displayPoligono = sub.poligono ?? localPoligonoFallback
+  const displayPoligono = sub.poligono ?? poligonoConsulta ?? localPoligonoFallback
   const polygonPositions = useMemo(
     () => getPolygonPositions(displayPoligono),
     [displayPoligono],
@@ -450,6 +458,8 @@ function ResumenTab({
       <Button variant="secondary" fullWidth className="border border-brand-600 ring-0" onClick={onVerBorradores}>
         Plantaciones en Borrador
       </Button>
+
+      {stock}
 
       {/* Stats grid 2x2 */}
       <div className="grid grid-cols-2 gap-2">
@@ -922,7 +932,14 @@ function DetalleSubcampanaScreen() {
   const [error, setError] = useState<string | null>(
     hasValidId ? null : 'ID de subcampaña inválido.',
   )
-  const [activeTab, setActiveTab] = useState<DetailTab>('resumen')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const requestedTab = searchParams.get('pestana')
+  const activeTab: DetailTab = requestedTab === 'equipo' || requestedTab === 'mapa' ? requestedTab : 'resumen'
+  const setActiveTab = (tab: DetailTab) => {
+    const next = new URLSearchParams(searchParams)
+    next.set('pestana', tab)
+    setSearchParams(next, { replace: true, state: location.state })
+  }
   const [moreOpen, setMoreOpen] = useState(false)
   const [planEditorOpen, setPlanEditorOpen] = useState(false)
   const [planRefreshWarning, setPlanRefreshWarning] = useState<string | null>(null)
@@ -937,6 +954,7 @@ function DetalleSubcampanaScreen() {
 
   const authId = user?.auth_id
   const isAdmin = (user?.rol ?? '').toUpperCase() === 'ADMIN'
+  const registration = useRegistroContext(user?.id ?? null, sub?.id === numericId ? String(sub.id) : null, isAdmin && sub?.estado === 'ACTIVA')
   const displayedPlan = plan?.subcampania_id === numericId ? plan : null
   const requestRef = useRef(0)
 
@@ -1098,6 +1116,7 @@ function DetalleSubcampanaScreen() {
     } : current)
     setActivationNotice('Plan actualizado. Los registros de plantación y el stock físico se conservan.')
     setPlanRefreshWarning(null)
+    registration.refresh()
     await refreshPlanIndicators()
   }
 
@@ -1302,6 +1321,8 @@ function DetalleSubcampanaScreen() {
                   onVerBorradores={() =>
                     navigate('/app/participacion/borradores', { state: { participacionReturnTo: location.pathname + location.search } })
                   }
+                  stock={isAdmin && user?.id ? <SubcampaniaAdminStock subcampania={sub} registration={registration} /> : null}
+                  poligonoConsulta={registration.context?.subcampania.poligono}
                 />
               )}
 
@@ -1315,13 +1336,16 @@ function DetalleSubcampanaScreen() {
                 />
               )}
 
-              {activeTab === 'mapa' && (
+              {activeTab === 'mapa' && !isAdmin && (
                 <MapaTab
                   sub={sub}
                   campania_id={sub.campania_id}
                   localPoligonoFallback={localPoligonoFallback}
                 />
               )}
+
+              {isAdmin && user?.id && <SubcampaniaAdminActividad key={`${user.id}:${sub.id}:${sub.estado}`} subcampania={sub}
+                poligono={sub.poligono ?? registration.context?.subcampania.poligono ?? null} tab={activeTab} />}
             </>
           )}
         </main>

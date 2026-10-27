@@ -10,6 +10,7 @@ Entrega INT06 publicada en PWA `62f55dc`: 32 suites/445 tests, lint y build/Type
 
 | Prioridad | ID | Estado | Qué falta |
 | --- | --- | --- | --- |
+| Alta | AUD-028 | PENDIENTE · contrato administrativo | Historial privado completo de plantaciones por subcampaña y lectura de stock administrativo fuera de ACTIVA; el detalle ADMIN muestra por ahora stock elegible de inicial y registros publicados. |
 | Alta | AUD-026 | CORREGIDO local · confirmación real pendiente | Equipo resuelve Administrador → Plantador con C07; acreditar el terminal autenticado real y la actualización de permisos de ambas cuentas. |
 | Media | AUD-025 | PENDIENTE · QA de campo | Verificar Liberty en los mapas operativos con dispositivos reales y conectividad variable; comprobar WebGL2, carga, atribución y manejo de fallo del fondo. |
 | Alta | AUD-024 | CERRADO en localhost | Lectura de Equipo verificada con VOLUNTARIO/PLANTADOR y Supabase real; publicación externa se sigue en AUD-021. |
@@ -29,6 +30,16 @@ Entrega INT06 publicada en PWA `62f55dc`: 32 suites/445 tests, lint y build/Type
 El orden de ejecución entre repositorios se decide en el tablero oficial; esta tabla prioriza riesgos de frontend, no introduce nuevas dependencias de producto.
 
 ## Pendientes y criterio de cierre
+
+### AUD-028 — Alcance de información para ADMIN en Plantación
+
+27 de octubre: el detalle interno de ADMIN incorpora stock elegible por especie mediante `GET /api/v1/subcampanias/:id/contexto-registro`, mapa compartido con las plantaciones publicadas e historial visualmente ampliado. Stock y participante reutilizan presentación/transporte; mapa e historial comparten la lectura de Impacto y filtran su ámbito. El mapa permanece de consulta y «Asignar stock» está deshabilitado, sin escritura.
+
+El contexto solo permite ACTIVA y saldo elegible para inicial: no acredita stock de reposición ni inventario total o de subcampañas cerradas. La lectura de Impacto no enumera registros no publicados ni entrega observaciones privadas, consumos/asignaciones o revisiones. No se encontró un endpoint administrativo de listado completo en el checkout backend consultado; las lecturas de corrección por un registro conocido no resuelven esa enumeración y no se incorporan como fallback. La UI indica esas limitaciones y distingue error/no disponible de saldo cero o historial vacío.
+
+Cerrar con contrato/backend verificable de listado administrativo paginado por subcampaña y lectura de stock para los estados autorizados, DTOs/validadores coordinados y regresión de permisos, paginación, cambio de cuenta y ámbito. Hasta entonces no presentar esta vista como auditoría privada completa. La edición del polígono no forma parte de esta entrega.
+
+Verificación de la consulta implementada: 61 archivos/883 pruebas aprobadas con `npm run test -- --maxWorkers=2`, lint, build/TypeScript/PWA y diff-check aprobados. Veinte pruebas nuevas cubren historial detallado, stock sin membresía, estados/roles, errores independientes, polígono del contexto, respuestas tardías y regreso ficha → mapa con selección exacta. Navegador local con sesión ADMIN mostró stock, registros e interacción con el mapa de la subcampaña 51; no se realizaron escrituras. Se conserva el aviso conocido de tamaño del chunk MapLibre. Esta evidencia no acredita el contrato privado pendiente ni despliegue.
 
 ### AUD-026 — Cambio de administrador a plantador desde Equipo
 
