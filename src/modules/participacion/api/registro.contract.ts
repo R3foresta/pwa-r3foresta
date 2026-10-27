@@ -84,13 +84,13 @@ export function validarContextoRegistro(value: unknown, actorId: string, scopeId
   }, 1, 10000)
   let avancePresente: boolean | null = null
   const especies = unique(list(data.especies, value => {
-    const item = row(value, ['planta_id', 'nombre', 'porcentaje_objetivo', 'cantidad_objetivo', 'saldo_elegible'], ['plantado_inicial', 'pendiente_meta'])
+    const item = row(value, ['planta_id', 'nombre', 'porcentaje_objetivo', 'cantidad_objetivo', 'saldo_elegible'], ['plantado_inicial', 'pendiente_meta', 'imagen_url'])
     const tienePlantado = Object.hasOwn(item, 'plantado_inicial')
     const tienePendiente = Object.hasOwn(item, 'pendiente_meta')
     if (tienePlantado !== tienePendiente || avancePresente !== null && avancePresente !== tienePlantado) return fail()
     avancePresente = tienePlantado
     const cantidad_objetivo = integer(item.cantidad_objetivo)
-    const especie = { planta_id: validarId(item.planta_id), nombre: text(item.nombre), porcentaje_objetivo: number(item.porcentaje_objetivo, 0, 100), cantidad_objetivo, saldo_elegible: integer(item.saldo_elegible) }
+    const especie = { planta_id: validarId(item.planta_id), nombre: text(item.nombre), ...(Object.hasOwn(item, 'imagen_url') ? { imagen_url: nullableText(item.imagen_url) } : {}), porcentaje_objetivo: number(item.porcentaje_objetivo, 0, 100), cantidad_objetivo, saldo_elegible: integer(item.saldo_elegible) }
     if (!tienePlantado) return especie
     const plantado_inicial = integer(item.plantado_inicial)
     const pendiente_meta = integer(item.pendiente_meta)

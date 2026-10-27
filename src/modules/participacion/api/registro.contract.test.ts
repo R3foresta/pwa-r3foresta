@@ -52,6 +52,16 @@ describe('registro v1, DTO y datos reales de INT03-A', () => {
     value.data.disponibilidad = 'DISPONIBLE'
     expect(() => validarContextoRegistro(value, '801', '821')).toThrow()
   })
+  it.each([null, 'https://example.com/plantas/tara.jpg'])('conserva la foto opcional %s sin cambiar nombres, stock o revisión', imagen_url => {
+    const value = structuredClone(context)
+    value.data.especies[0].imagen_url = imagen_url
+    expect(validarContextoRegistro(value, '801', '821')).toEqual(value)
+    expect(validarContextoRegistro(context, '801', '821')).toEqual(context)
+  })
+  it.each([42, {}, '', false])('rechaza una foto fuera del tipo acordado: %s', imagen_url => {
+    const value = { ...context, data: { ...context.data, especies: [{ ...context.data.especies[0], imagen_url }] } }
+    expect(() => validarContextoRegistro(value, '801', '821')).toThrow()
+  })
   it('acepta el avance ampliado completo y mantiene compatible el contexto anterior', () => {
     const ampliado = structuredClone(context)
     ampliado.data.especies[0].plantado_inicial = 3

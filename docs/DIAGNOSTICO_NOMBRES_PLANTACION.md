@@ -2,6 +2,23 @@
 
 Fecha: 27 de octubre de 2026. Hallazgo: **AUD-027**. El primer análisis fue documental; la continuación implementó la corrección de nombres en frontend/backend y cotejó el catálogo Supabase configurado. Estado: corregido localmente; aceptación visual autenticada y publicación externa pendientes.
 
+## Fotos compartidas con voluntarios — continuación del 27 de octubre
+
+El usuario aceptó con captura la tarjeta ADMIN y solicitó la misma presentación para voluntarios. Ambas pantallas ya utilizaban `src/modules/plantacion/components/SubcampaniaSpeciesCard.tsx`; la diferencia estaba en los datos recibidos:
+
+| Audiencia | Pantalla | Fuente de especies |
+| --- | --- | --- |
+| Interna/ADMIN | `src/modules/plantacion/screens/DetalleSubcampanaScreen.tsx`, sección Resumen | `GET /api/subcampanias/:id/plan`, que ya incluía nombres y `planta.imagen_url`. Pasa `onEdit` sólo si puede editar. |
+| Voluntario/administrador contextual | `src/modules/participacion/components/ParticipacionSubcampaniaDetail.tsx`, sección Resumen | `GET /api/v1/subcampanias/:id/contexto-registro`; entregaba nombre/metas sin foto. Ahora admite y pasa `especies[].imagen_url` a la misma tarjeta, sin `onEdit`. |
+
+`SubcampaniaDetailRoute.tsx` selecciona la pantalla según audiencia en la misma URL de detalle. No se creó otra tarjeta ni se duplicaron estilos. Se amplió el contexto v1 con `imagen_url` opcional/nullable y se coordinó `registroTypes.ts`, `registro.contract.ts`, el servicio backend y OpenAPI. Backend usa la foto que ya obtuvo al resolver los nombres, únicamente de las plantas del contexto autorizado; omite el campo cuando no hay foto. No se consulta el catálogo interno desde el navegador participante. Stock, permisos, revisión, payloads y snapshots conservan su comportamiento. La foto del catálogo es ilustrativa, no evidencia de plantación.
+
+La tarjeta compartida ya maneja ausencia/error de foto conservando nombre y objetivos. Las regresiones nuevas cubren PLANTADOR y ADMINISTRADOR_SUBCAMPANIA con la tarjeta real, recepción de la foto, foto fallida/ausente/null, ausencia de edición, contexto no disponible y compatibilidad del validador con/sin imagen. Backend verifica nombre/foto para ADMIN y VOLUNTARIO sin lecturas adicionales de catálogo.
+
+Verificación: frontend `npm run test -- --maxWorkers=2` (**64 archivos/888 pruebas**), `npm run lint`, `npm run build` (TypeScript/PWA); backend `npm run test:unit -- --runInBand` (**74 suites/1013 pruebas**), `npm run build`, lint focal de los dos TS modificados, generador OpenAPI y `--check` (**39 rutas/84 schemas**). Diff-check aprobado. El primer build backend falló con ENOTEMPTY al limpiar `dist`; la repetición pasó sin cambios de fuente. El build frontend conserva el aviso de tamaño de MapLibre.
+
+Orden de publicación: frontend que acepta el campo opcional, después backend que lo emite y recarga de la PWA; no asumir que un cliente anterior con validación cerrada admite campos nuevos. Se recarga el backend local para servir la extensión, sin aplicar SQL ni registrar plantaciones. La revisión visual autenticada del voluntario sigue pendiente porque Work informa que el uso del navegador está deshabilitado. Esta continuación no acredita despliegue externo.
+
 ## Implementación y verificación de la continuación
 
 - El catálogo real confirma: ID 42 `especie=Buddlejaceae`, común **Kiswara**; 49 `Azollaceae`, **Helecho de agua**; 50 `Araceae`, **Lechuga de agua**; 55 `Magnoliopsida`, **Ruda**. Las cuatro tienen `imagen_url`. Consulta de sólo lectura por el endpoint local de plantas y por el nuevo lector contra Supabase; no se inventaron equivalencias ni cambiaron datos de catálogo.
