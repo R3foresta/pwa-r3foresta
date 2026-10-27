@@ -20,7 +20,6 @@ vi.mock('../../../services/plantacion.service', () => ({
 vi.mock('react-leaflet', () => ({
   MapContainer: () => null,
   Polygon: () => null,
-  TileLayer: () => null,
   useMap: () => ({ fitBounds: vi.fn() }),
 }))
 

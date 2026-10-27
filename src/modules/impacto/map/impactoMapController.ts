@@ -3,9 +3,12 @@ import type { ErrorEvent, GeoJSONSource, MapLayerMouseEvent, MapSourceDataEvent 
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import { getImpactoGroupSelection } from './impactoMapData'
 import type { ImpactoMapData } from './impactoMapData'
-import { OPENFREEMAP_LIBERTY_STYLE_URL, ZONE_FILL, ZONE_SOURCE } from './impactoMapStyle'
+import { OPENFREEMAP_LIBERTY_STYLE_URL } from '../../../config/map'
 
 setWorkerUrl(workerUrl)
+
+const ZONE_SOURCE = 'impacto-zones'
+const ZONE_FILL = 'impacto-zones-fill'
 
 export type ImpactoMapSnapshot = { data: ImpactoMapData; onSelect: (value: string) => void; focusRevision?: number }
 export type ImpactoMapPopup = { groupId: string; container: HTMLDivElement }
