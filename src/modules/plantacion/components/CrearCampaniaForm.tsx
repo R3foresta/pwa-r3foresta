@@ -5,6 +5,7 @@ import { Button } from '../../../components/ui'
 import {
   TIPO_CAMPANIA_DESCRIPTION,
   TIPO_CAMPANIA_LABEL,
+  TIPO_CAMPANIA_VALUES,
   TIPO_ORGANIZACION_LABEL,
   type Organizacion,
   type TipoCampania,
@@ -12,11 +13,8 @@ import {
 import type { CrearCampaniaFormValues } from '../utils/crearCampaniaForm'
 import { getInitials } from '../utils/userAvatar'
 
-// Orden visual del selector — Arborización primero por producto.
-// El array de validación vive en `plantacion.service.ts` (`TIPOS_CAMPANIA`) con
-// el orden del enum del backend. Los elementos deben coincidir en set; solo
-// difiere el orden. Ver AUD-005 en FRONTEND_AUDIT.md.
-const CAMPANIA_TYPES: TipoCampania[] = ['ARBORIZACION', 'REFORESTACION', 'FORESTACION']
+// Conserva Arborización primero y toma el resto del catálogo canónico.
+const CAMPANIA_TYPES: TipoCampania[] = ['ARBORIZACION', ...TIPO_CAMPANIA_VALUES.filter(tipo => tipo !== 'ARBORIZACION')]
 const CAMPANIA_TYPE_ICONS: Record<TipoCampania, typeof Trees> = {
   REFORESTACION: Trees,
   ARBORIZACION: Building2,

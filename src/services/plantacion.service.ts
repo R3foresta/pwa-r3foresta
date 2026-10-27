@@ -22,13 +22,13 @@ import {
   patchSubcampaniaApi,
   postSubcampaniaEquipoApi,
   previewDesactivacionCampaniaApi,
-  putSubcampaniaPlanApi,
   revisarSubcampaniaPlanApi,
   setSubcampaniaPoligonoApi,
   uploadEvidenciasPendientesPlantacionApi,
 } from '../api/plantacion.api'
 import { getImageFileValidationError } from '../utils/imageValidation'
 import { OrganizacionesService } from './organizaciones.service'
+import { TIPO_CAMPANIA_VALUES } from '../modules/plantacion/types/contracts'
 import type {
   ActivarSubcampaniaData,
   ApiEnvelope,
@@ -53,15 +53,12 @@ import type {
   EquipoMemberInput,
   GeoJsonPolygon,
   GetPlanData,
-  PlanEspecieMetaInput,
-  PutPlanData,
   RevisarPlanData,
   RevisarPlanInput,
   RolEnSubcampania,
   SetEquipoData,
   SetSubcampaniaPoligonoData,
   Subcampania,
-  TipoCampania,
   UpdateCampaniaInput,
   UpdateSubcampaniaInput,
 } from '../modules/plantacion/types/contracts'
@@ -70,7 +67,6 @@ import type {
   Organizacion,
 } from '../modules/organizaciones/types'
 
-const TIPOS_CAMPANIA: TipoCampania[] = ['REFORESTACION', 'ARBORIZACION', 'FORESTACION']
 const ROLES_SUBCAMPANIA: RolEnSubcampania[] = ['COORDINADOR', 'OPERARIO']
 
 /**
@@ -175,7 +171,7 @@ function validateCampaniaInput(input: CreateCampaniaInput): CreateCampaniaInput 
   if (nombre.length < 3) {
     throw new Error('El nombre de la campaña debe tener al menos 3 caracteres.')
   }
-  if (!TIPOS_CAMPANIA.includes(input.tipo)) {
+  if (!TIPO_CAMPANIA_VALUES.includes(input.tipo)) {
     throw new Error('Selecciona un tipo de campaña válido.')
   }
   if (
@@ -598,30 +594,6 @@ export class PlantacionService {
     return payload.data
   }
 
-  static async putSubcampaniaPlan(
-    subcampaniaId: number,
-    metas: PlanEspecieMetaInput[],
-    authId?: string,
-  ): Promise<PutPlanData> {
-    if (!Number.isFinite(subcampaniaId) || subcampaniaId <= 0) {
-      throw new Error('ID de subcampaña inválido.')
-    }
-    const cleanMetas = validatePlanMetas(metas)
-    const response = await putSubcampaniaPlanApi(
-      subcampaniaId,
-      { metas: cleanMetas },
-      authId,
-    )
-    const payload = await parseJsonResponse<ApiEnvelope<PutPlanData>>(
-      response,
-      'Error al guardar el plan de metas.',
-    )
-    if (!payload.data) {
-      throw new Error('No se recibió confirmación del plan guardado.')
-    }
-    return payload.data
-  }
-
   static async revisarSubcampaniaPlan(
     subcampaniaId: number,
     input: RevisarPlanInput,
@@ -719,32 +691,8 @@ export class PlantacionService {
   }
 
   // -------------------------------------------------------------------------
-  // Registro de plantación inicial (PLT-EPIC-01)
+  // Reposición interna: conserva su contrato separado del registro inicial v1.
   // -------------------------------------------------------------------------
-
-  /**
-   * Subcampañas ACTIVAS donde el usuario pertenece al equipo operativo
-   * (COORDINADOR u OPERARIO). Mientras backend no exponga un listado dedicado,
-   * se filtra client-side sobre `GET /subcampanias?estado=ACTIVA` usando el
-   * campo `equipo[]` del payload enriquecido.
-   */
-  static async listSubcampaniasOperativas(
-    usuarioId: number,
-    authId?: string,
-  ): Promise<Subcampania[]> {
-    if (!Number.isFinite(usuarioId) || usuarioId <= 0) {
-      throw new Error('Usuario inválido para listar subcampañas operativas.')
-    }
-    const response = await listSubcampaniasApi('ACTIVA', authId)
-    const payload = await parseJsonResponse<ApiEnvelope<Subcampania[]>>(
-      response,
-      'Error al cargar tus subcampañas operativas.',
-    )
-    const subcampanias = Array.isArray(payload.data) ? payload.data : []
-    return subcampanias.filter((sub) =>
-      (sub.equipo ?? []).some((member) => member.usuario_id === usuarioId),
-    )
-  }
 
   static async uploadEvidenciasPendientesPlantacion(
     input: UploadEvidenciasPlantacionInput,
@@ -945,7 +893,7 @@ function validateUpdateCampaniaInput(input: UpdateCampaniaInput): UpdateCampania
     cleanInput.nombre = nombre
   }
   if (input.tipo !== undefined) {
-    if (!TIPOS_CAMPANIA.includes(input.tipo)) {
+    if (!TIPO_CAMPANIA_VALUES.includes(input.tipo)) {
       throw new Error('Selecciona un tipo de campaña válido.')
     }
     cleanInput.tipo = input.tipo
@@ -1068,40 +1016,6 @@ function validateUpdateSubcampaniaInput(
   }
 
   return cleanInput
-}
-
-function validatePlanMetas(metas: PlanEspecieMetaInput[]): PlanEspecieMetaInput[] {
-  if (!Array.isArray(metas) || metas.length === 0) {
-    throw new Error('Agrega al menos una especie al plan de metas.')
-  }
-
-  const seen = new Set<number>()
-
-  return metas.map((meta) => {
-    const plantaId = Number(meta.planta_id)
-    const pct = Number(meta.porcentaje_objetivo)
-    const cantidad = Number(meta.cantidad_objetivo)
-
-    if (!Number.isFinite(plantaId) || plantaId <= 0) {
-      throw new Error('Especie inválida en el plan de metas.')
-    }
-    if (seen.has(plantaId)) {
-      throw new Error('No se puede repetir una especie en el plan de metas.')
-    }
-    seen.add(plantaId)
-    if (!Number.isFinite(pct) || pct <= 0 || pct > 100) {
-      throw new Error('El porcentaje por especie debe estar entre 1 y 100.')
-    }
-    if (!Number.isFinite(cantidad) || cantidad <= 0) {
-      throw new Error('La cantidad por especie debe ser mayor a 0.')
-    }
-
-    return {
-      planta_id: plantaId,
-      porcentaje_objetivo: pct,
-      cantidad_objetivo: Math.floor(cantidad),
-    }
-  })
 }
 
 function validateRevisionPlanInput(input: RevisarPlanInput): void {

@@ -462,9 +462,7 @@ describe('UX-02: detalle compartido', () => {
       area.permiso_contextual = 'ADMINISTRADOR_SUBCAMPANIA'
       area.acciones.incorporar_plantador = true
     }
-    const response = page([area])
-    if (profile === 'global') response.data.actor.rol_global = 'ADMIN'
-    capabilities.mockResolvedValue(response)
+    capabilities.mockResolvedValue(page([area]))
     render(tree())
     await screen.findByRole('link', { name: 'Registrar plantación' })
     const heading = screen.getByRole('heading', { name: 'Zona 11' })
@@ -473,7 +471,7 @@ describe('UX-02: detalle compartido', () => {
     expect(screen.getByRole('region', { name: 'Especies de plantas' }).textContent).toContain('en el plan')
     expect(screen.getByText('Disponibles para registrar').closest('details')?.open).toBe(false)
     expect(members).not.toHaveBeenCalled()
-    expect(Boolean(screen.queryByRole('link', { name: 'Abrir gestión interna y plan' }))).toBe(profile === 'global')
+    expect(screen.queryByRole('link', { name: 'Abrir gestión interna y plan' })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Equipo' }))
     await screen.findByText('Todavía no hay participantes asignados')
     expect(members).toHaveBeenCalledExactlyOnceWith('11', { limite: 20 }, expect.any(AbortSignal))

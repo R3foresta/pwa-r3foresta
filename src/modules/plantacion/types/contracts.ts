@@ -245,25 +245,16 @@ export type GetPlanData = {
   metas: PlanEspecieMeta[]
 }
 
-export type PutPlanInput = {
-  metas: PlanEspecieMetaInput[]
-}
-
 // PUT /subcampanias/:id/plan: revisión coherente y protegida contra concurrencia.
-export type RevisarPlanInput = PutPlanInput & {
+export type RevisarPlanInput = {
   meta_total_arboles: number
+  metas: PlanEspecieMetaInput[]
   revision_esperada: number
 }
 
 export type RevisarPlanData = GetPlanData & {
   plan_revision: number
   message?: string
-}
-
-export type PutPlanData = {
-  message?: string
-  subcampania_id: number
-  metas: PlanEspecieMetaInput[]
 }
 
 export type CancelarSubcampaniaInput = {

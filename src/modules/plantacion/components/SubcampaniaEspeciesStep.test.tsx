@@ -11,7 +11,7 @@ vi.mock('../../../contexts/AuthContext', () => ({ useAuth: () => authState }))
 vi.mock('../../../services/plantacion.service', () => ({ PlantacionService: {
   getSubcampaniaPlan: vi.fn(), updateSubcampania: vi.fn(), createSubcampania: vi.fn(),
   getSubcampaniaEquipo: vi.fn(), removeSubcampaniaEquipoMember: vi.fn(), setSubcampaniaEquipo: vi.fn(),
-  putSubcampaniaPlan: vi.fn(), revisarSubcampaniaPlan: vi.fn(),
+  revisarSubcampaniaPlan: vi.fn(),
 }, getPlantacionErrorStatus: (reason: unknown) => reason && typeof reason === 'object' && 'status' in reason ? reason.status : undefined }))
 vi.mock('./CatalogoEspeciesPicker', () => ({ default: ({ open, onConfirm }: {
   open: boolean; onConfirm: (items: Array<{ planta_id: number; especie: string; nombre_cientifico: string; saldo_disponible: number }>) => void
@@ -46,7 +46,6 @@ beforeEach(() => {
     ...plan, subcampania_id: id, meta_total_arboles: input.meta_total_arboles,
     metas: input.metas, plan_revision: input.revision_esperada + 1,
   }))
-  vi.mocked(PlantacionService.putSubcampaniaPlan).mockReset().mockResolvedValue({ subcampania_id: 54, metas: plan.metas })
   saveSubcampaniaBaseDraft(draft)
 })
 
@@ -71,7 +70,6 @@ describe('Plan coherente del asistente de subcampaña', () => {
       meta_total_arboles: 60, revision_esperada: 3,
       metas: [{ planta_id: 1, cantidad_objetivo: 60, porcentaje_objetivo: 100 }],
     }, 'auth-1')
-    expect(PlantacionService.putSubcampaniaPlan).not.toHaveBeenCalled()
     vi.mocked(PlantacionService.getSubcampaniaPlan).mockResolvedValue({ ...plan, meta_total_arboles: 60, plan_revision: 4 })
     await user.click(screen.getByRole('button', { name: 'Siguiente' }))
     await waitFor(() => expect(onNext).toHaveBeenCalledTimes(2))
@@ -91,7 +89,6 @@ describe('Plan coherente del asistente de subcampaña', () => {
     await waitFor(() => expect(onDraftSaved).toHaveBeenCalledOnce())
     expect(PlantacionService.updateSubcampania).not.toHaveBeenCalled()
     expect(PlantacionService.revisarSubcampaniaPlan).not.toHaveBeenCalled()
-    expect(PlantacionService.putSubcampaniaPlan).not.toHaveBeenCalled()
     expect(loadSubcampaniaBaseDraft(20, 'draft-54')).toMatchObject({ meta_total_arboles: 60, especies: [{ planta_id: 1, pct: 95 }] })
     unmount()
     renderStep()
@@ -153,7 +150,6 @@ describe('Plan coherente del asistente de subcampaña', () => {
       meta_total_arboles: 40, revision_esperada: 0, metas: plan.metas.map(({ planta_id, cantidad_objetivo, porcentaje_objetivo }) => ({ planta_id, cantidad_objetivo, porcentaje_objetivo })),
     }, 'auth-1')
     expect(PlantacionService.updateSubcampania).not.toHaveBeenCalled()
-    expect(PlantacionService.putSubcampaniaPlan).not.toHaveBeenCalled()
   })
 
   it('bloquea todos los cambios remotos si el estado cambia a ACTIVA antes de guardar', async () => {
@@ -298,7 +294,6 @@ describe('Plan coherente del asistente de subcampaña', () => {
     expect(loadSubcampaniaBaseDraft(20, 'draft-54')).toMatchObject({ meta_total_arboles: 60 })
     expect(PlantacionService.updateSubcampania).not.toHaveBeenCalled()
     expect(PlantacionService.setSubcampaniaEquipo).not.toHaveBeenCalled()
-    expect(PlantacionService.putSubcampaniaPlan).not.toHaveBeenCalled()
     expect(PlantacionService.revisarSubcampaniaPlan).not.toHaveBeenCalled()
   })
 
@@ -356,7 +351,6 @@ describe('Plan coherente del asistente de subcampaña', () => {
     expect(loadSubcampaniaBaseDraft(20, 'draft-54')).toMatchObject({ meta_total_arboles: 60 })
     expect(PlantacionService.updateSubcampania).not.toHaveBeenCalled()
     expect(PlantacionService.setSubcampaniaEquipo).not.toHaveBeenCalled()
-    expect(PlantacionService.putSubcampaniaPlan).not.toHaveBeenCalled()
     expect(PlantacionService.revisarSubcampaniaPlan).not.toHaveBeenCalled()
     expect(onNext).not.toHaveBeenCalled()
   })

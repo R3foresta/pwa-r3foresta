@@ -62,19 +62,6 @@ describe('Revisión atómica del plan de subcampaña', () => {
     })
   })
 
-  it('conserva la compatibilidad del guardado del wizard BORRADOR con solo metas', async () => {
-    const metas = makeInput().metas
-    const data = { subcampania_id: 54, metas }
-    const fetchMock = mockResponse(data)
-    expect(await PlantacionService.putSubcampaniaPlan(54, metas, 'auth-1')).toEqual(data)
-    expect(fetchMock).toHaveBeenCalledExactlyOnceWith(expect.stringContaining('/api/subcampanias/54/plan'), {
-      method: 'PUT',
-      headers: { Authorization: 'Bearer jwt', 'Content-Type': 'application/json' },
-      body: expect.any(String),
-    })
-    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ metas })
-  })
-
   it('acepta porcentajes positivos menores de 1 con hasta dos decimales y versión inicial cero', async () => {
     const input: RevisarPlanInput = {
       meta_total_arboles: 10000,
@@ -255,12 +242,6 @@ const planRequests: PlanRequest[] = [
     method: 'PUT',
     invoke: (input, authId) => PlantacionService.revisarSubcampaniaPlan(54, input, authId),
     body: (input) => input,
-  },
-  {
-    name: 'guardado histórico PUT',
-    method: 'PUT',
-    invoke: (input, authId) => PlantacionService.putSubcampaniaPlan(54, input.metas, authId),
-    body: (input) => ({ metas: input.metas }),
   },
 ]
 

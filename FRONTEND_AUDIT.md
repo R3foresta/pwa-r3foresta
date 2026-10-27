@@ -25,13 +25,15 @@ Entrega INT06 publicada en PWA `62f55dc`: 32 suites/445 tests, lint y build/Type
 | Media | AUD-018 | PENDIENTE | Guarda ADMIN de todos los pasos del asistente de subcampaña. |
 | Media | AUD-014 | PENDIENTE de reevaluación | Confirmar alertas de dependencias y planificar migración compatible. |
 | Baja | AUD-004 | PENDIENTE | Revisar duplicación de formatters de fecha/zona horaria. |
-| Baja | AUD-005 | PENDIENTE | Revisar tipos de campaña duplicados conservando orden visual. |
+| Baja | AUD-005 | CERRADO local | Servicio y formulario reutilizan `TIPO_CAMPANIA_VALUES`, conservando Arborización primero. |
 
 El orden de ejecución entre repositorios se decide en el tablero oficial; esta tabla prioriza riesgos de frontend, no introduce nuevas dependencias de producto.
 
 ## Pendientes y criterio de cierre
 
 ### AUD-028 — Alcance de información para ADMIN en Plantación
+
+27 de octubre, organización del detalle: el ADMIN interno tiene la pestaña **Registros** para el historial detallado; Resumen conserva tres agregados del ámbito completo y el acceso al historial. La consulta, las páginas cargadas y la selección del mapa se conservan al alternar secciones. Verificación local: 63 archivos/877 pruebas, lint, build/TypeScript/PWA y diff-check aprobados; sesión ADMIN de la subcampaña 51 confirmó el resumen y su acceso al historial. Este cambio conserva el alcance público y los pendientes de contrato descritos a continuación.
 
 27 de octubre: el detalle interno de ADMIN incorpora stock elegible por especie mediante `GET /api/v1/subcampanias/:id/contexto-registro`, mapa compartido con las plantaciones publicadas e historial visualmente ampliado. Stock y participante reutilizan presentación/transporte; mapa e historial comparten la lectura de Impacto y filtran su ámbito. El mapa permanece de consulta y «Asignar stock» está deshabilitado, sin escritura.
 
@@ -173,7 +175,11 @@ Revisar `subcampaniaFormatters.ts` y formateos en dashboards antes de extraer ut
 
 ### AUD-005 — Tipos de campaña
 
-El service conserva `TIPOS_CAMPANIA` y el formulario `CAMPANIA_TYPES`, con distinto orden. Cerrar al compartir valores canónicos conservando el orden visual explícito. No reemplazar enums de backend por etiquetas de UI.
+27 de octubre: servicio y formulario usan el catálogo existente `TIPO_CAMPANIA_VALUES`. El formulario deriva su orden con Arborización primero; no se cambian enums, etiquetas ni valores de backend. Se retira el array duplicado del servicio.
+
+En la misma revisión de Plantación se retiraron `GpsStatusCard` (sin imports), `listSubcampaniasOperativas` (selector sin consumidores que filtraba por logística) y el antiguo `putSubcampaniaPlan` con DTO/validador/alias y pruebas exclusivos de ese camino. El asistente y el detalle ya usaban la revisión atómica con versión, cuya cobertura se conserva. Se simplificaron condiciones imposibles del panel participante y de sus pruebas. La búsqueda estática de imports y referencias verificó cada retiro; mapas usados por GENERAL/VALIDADOR, redirecciones compatibles y contrato de reposición se conservan. Los informes históricos no se reescriben como si acreditaran el código actual.
+
+Verificación de esta limpieza: 17 archivos/294 pruebas focales y suite completa de 63 archivos/874 pruebas aprobadas; `npm run lint`, `npm run build` (TypeScript/PWA) y `git diff --check` aprobados. La búsqueda con resolución TypeScript desde `src/main.tsx` no encontró módulos de producción huérfanos en Plantación/Participación/Impacto ni referencias a los símbolos retirados en `src`. Se retiraron pruebas exclusivas del guardado obsoleto; las de la revisión atómica y reposición siguen aprobadas. Sin dependencias nuevas, escritura contra backend ni QA de navegador por este cambio. El build conserva el aviso conocido de tamaño de MapLibre.
 
 ## Cierres conservados
 

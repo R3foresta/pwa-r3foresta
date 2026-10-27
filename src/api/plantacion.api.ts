@@ -8,7 +8,6 @@ import type {
   DescartarEvidenciasPlantacionInput,
   EquipoMemberInput,
   EstadoSubcampania,
-  PutPlanInput,
   RevisarPlanInput,
   SetSubcampaniaPoligonoInput,
   UpdateCampaniaInput,
@@ -283,9 +282,9 @@ export async function getSubcampaniaPlanApi(
   })
 }
 
-export async function putSubcampaniaPlanApi(
+export async function revisarSubcampaniaPlanApi(
   subcampaniaId: number,
-  input: PutPlanInput,
+  input: RevisarPlanInput,
   authId?: string,
 ): Promise<Response> {
   return fetch(`${API_BASE_URL}/subcampanias/${subcampaniaId}/plan`, {
@@ -293,14 +292,6 @@ export async function putSubcampaniaPlanApi(
     headers: getPlanAuthHeaders({ authId, includeContentType: true }),
     body: JSON.stringify(input),
   })
-}
-
-export async function revisarSubcampaniaPlanApi(
-  subcampaniaId: number,
-  input: RevisarPlanInput,
-  authId?: string,
-): Promise<Response> {
-  return putSubcampaniaPlanApi(subcampaniaId, input, authId)
 }
 
 export async function cancelarSubcampaniaApi(
