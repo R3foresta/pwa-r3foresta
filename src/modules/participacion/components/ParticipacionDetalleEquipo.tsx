@@ -1,22 +1,52 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Button, Card } from '../../../components/ui'
+import { Button } from '../../../components/ui'
+import { EquipoMemberCard, EquipoSectionHeading } from '../../plantacion/components/EquipoVisual'
 import { ParticipacionService } from '../api/participacion.api'
-import type { CapacidadSubcampania, MiembrosLectura } from '../types'
+import { useParticipacionCapabilities } from '../hooks/useParticipacionCapabilities'
+import type { CapacidadSubcampania, MiembroParticipacion, MiembrosLectura } from '../types'
+import AgregarParticipanteEquipo from './AgregarParticipanteEquipo'
 import { accessError, permissionLabel } from './accessPresentation'
 
-export default function ParticipacionDetalleEquipo({ scope, globalAdmin }: { scope: CapacidadSubcampania; globalAdmin: boolean }) {
+type Props = { scope: CapacidadSubcampania; globalAdmin: boolean; actorId: string; canDesignateAdmins?: boolean; includeLogistics?: boolean }
+
+export default function ParticipacionDetalleEquipo({ scope, globalAdmin, actorId, canDesignateAdmins = globalAdmin, includeLogistics = true }: Props) {
   const allowed = globalAdmin || scope.permiso_contextual === 'ADMINISTRADOR_SUBCAMPANIA' || scope.permiso_contextual === 'PLANTADOR'
   const canManage = (globalAdmin || scope.permiso_contextual === 'ADMINISTRADOR_SUBCAMPANIA') && (
     scope.acciones.incorporar_plantador || scope.acciones.retirar_plantador || scope.acciones.designar_administrador ||
     scope.acciones.cambiar_administrador || scope.acciones.retirar_administrador || scope.acciones.reemplazar_administrador
   )
-  return <Card as="section" className="space-y-3"><h2 className="text-lg font-bold">Equipo de la subcampaña</h2>
-    {allowed ? <Members key={scope.subcampania_id} scope={scope} canManage={canManage} /> : <p className="text-sm leading-6 text-neutral-600">La consulta del equipo no está disponible para tu cuenta.</p>}
-  </Card>
+  return <section className="space-y-4" aria-label="Equipo de la subcampaña">
+    {allowed ? <Members key={scope.subcampania_id} scope={scope} globalAdmin={globalAdmin} actorId={actorId} canManage={canManage} canDesignateAdmins={canDesignateAdmins} includeLogistics={includeLogistics} />
+      : <p className="text-sm leading-6 text-neutral-600">La consulta del equipo no está disponible para tu cuenta.</p>}
+  </section>
 }
 
-function Members({ scope, canManage }: { scope: CapacidadSubcampania; canManage: boolean }) {
+function memberRole(member: MiembroParticipacion): string {
+  if (member.acceso_global) return member.etiqueta_acceso_global ?? 'Administrador global'
+  if (member.permiso_contextual) return permissionLabel(member.permiso_contextual)
+  if (member.responsabilidad_logistica === 'COORDINADOR') return 'Coordinador'
+  if (member.responsabilidad_logistica === 'OPERARIO') return 'Operario'
+  return 'Miembro'
+}
+
+function memberSubtitle(member: MiembroParticipacion): string | undefined {
+  const values = [member.organizacion]
+  if (member.responsabilidad_logistica) values.push(`Logística: ${member.responsabilidad_logistica === 'COORDINADOR' ? 'Coordinador' : 'Operario'}`)
+  return values.filter(Boolean).join(' · ') || undefined
+}
+
+function MemberGroup({ title, members }: { title: string; members: MiembroParticipacion[] }) {
+  if (members.length === 0) return null
+  return <div className="space-y-2">
+    <EquipoSectionHeading title={title} aside={`${members.length} ${members.length === 1 ? 'asignado' : 'asignados'}`} />
+    <ul className="space-y-2">{members.map(member => <EquipoMemberCard key={member.usuario_id} nombre={member.nombre} rol={memberRole(member)}
+      subtitle={memberSubtitle(member)} tone={member.acceso_global || member.permiso_contextual === 'ADMINISTRADOR_SUBCAMPANIA' || member.responsabilidad_logistica === 'COORDINADOR' ? 'warning' : 'brand'} />)}</ul>
+  </div>
+}
+
+function Members({ scope, globalAdmin, actorId, canManage, canDesignateAdmins = false, includeLogistics }: Props & { canManage: boolean }) {
+  const capabilities = useParticipacionCapabilities()
   const [page, setPage] = useState<MiembrosLectura | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -30,29 +60,42 @@ function Members({ scope, canManage }: { scope: CapacidadSubcampania; canManage:
       .finally(() => { if (!controller.signal.aborted) setLoading(false) })
     return () => { controller.abort(); request.current?.abort() }
   }, [scope.subcampania_id])
-  async function loadMore(cursor?: string) {
-    if (loading) return
+
+  async function load(cursor?: string): Promise<boolean> {
+    if (loading) return false
     request.current?.abort()
     const controller = new AbortController()
     request.current = controller
     setLoading(true); setError(null)
     try {
       const data = await ParticipacionService.miembros(scope.subcampania_id, { limite: 20, ...(cursor ? { cursor } : {}) }, controller.signal)
-      if (!controller.signal.aborted) setPage(previous => ({ ...data, data: cursor && previous ? [...new Map([...previous.data, ...data.data].map(member => [member.usuario_id, member])).values()] : data.data }))
-    } catch (reason) { if (!controller.signal.aborted) setError(accessError(reason)) }
-    finally { if (!controller.signal.aborted) setLoading(false) }
+      if (controller.signal.aborted) return false
+      setPage(previous => ({ ...data, data: cursor && previous ? [...new Map([...previous.data, ...data.data].map(member => [member.usuario_id, member])).values()] : data.data }))
+      return true
+    } catch (reason) {
+      if (!controller.signal.aborted) setError(accessError(reason))
+      return false
+    } finally { if (!controller.signal.aborted) setLoading(false) }
   }
-  return <div className="space-y-3">
-    <p className="text-sm text-neutral-600">Permisos de participación y responsabilidades logísticas. Las fotos del equipo todavía no están disponibles.</p>
-    {!canManage && page && !error && <p className="text-xs text-neutral-600">Puedes consultar el equipo de esta subcampaña. Los cambios de acceso están reservados a sus administradores.</p>}
-    {loading && <p role="status">Consultando equipo…</p>}
-    {error && <div className="space-y-2"><p role="alert" className="text-sm text-danger-700">{error}</p><Button variant="secondary" onClick={() => void loadMore(page?.siguiente_cursor ?? undefined)}>Reintentar equipo</Button></div>}
-    {!loading && !error && page?.data.length === 0 && <p>No hay miembros en esta consulta.</p>}
-    {page && <ul className="divide-y divide-neutral-100">{page.data.map(member => <li key={member.usuario_id} className="flex items-center gap-3 py-3">
-      <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-500">●</span>
-      <div className="min-w-0 text-sm"><p className="break-words font-bold">{member.nombre}</p><p>{permissionLabel(member.permiso_contextual)}</p>{member.acceso_global && <p>{member.etiqueta_acceso_global}</p>}{member.responsabilidad_logistica && <p className="text-xs text-neutral-500">Logística: {member.responsabilidad_logistica === 'COORDINADOR' ? 'Coordinador' : 'Operario'}</p>}</div>
-    </li>)}</ul>}
-    {page?.siguiente_cursor && !error && <Button variant="secondary" loading={loading} onClick={() => void loadMore(page.siguiente_cursor!)}>Cargar más personas</Button>}
-    {canManage && <div className="border-t border-neutral-100 pt-3"><Link to="/app/participacion/accesos" className="inline-flex min-h-11 items-center font-semibold text-brand-700 underline">Gestionar permisos de participación</Link><p className="text-xs text-neutral-500">Selecciona esta subcampaña en el gestor antes de revisar y confirmar cambios.</p></div>}
+
+  async function refreshAfterConfirmed() {
+    const [members, permissions] = await Promise.allSettled([load(), capabilities.refresh()])
+    if (members.status !== 'fulfilled' || !members.value || permissions.status !== 'fulfilled') throw new Error('Reintenta la lectura para ver los permisos vigentes.')
+  }
+
+  const admins = page?.data.filter(member => member.acceso_global || member.permiso_contextual === 'ADMINISTRADOR_SUBCAMPANIA') ?? []
+  const plantadores = page?.data.filter(member => !member.acceso_global && member.permiso_contextual === 'PLANTADOR') ?? []
+  const logistics = page?.data.filter(member => !member.acceso_global && !member.permiso_contextual) ?? []
+  const visibleCount = admins.length + plantadores.length + (includeLogistics ? logistics.length : 0)
+  const heading = page?.siguiente_cursor ? 'Miembros del equipo' : `${visibleCount} ${visibleCount === 1 ? 'miembro' : 'miembros'}`
+
+  return <div className="space-y-4">
+    <AgregarParticipanteEquipo scope={scope} actorId={actorId} globalAdmin={globalAdmin} canDesignateAdmins={canDesignateAdmins} heading={heading} onConfirmed={refreshAfterConfirmed} />
+    {loading && <p role="status" className="text-sm font-semibold text-neutral-500">Consultando equipo…</p>}
+    {error && <div className="space-y-2"><p role="alert" className="text-sm text-danger-700">{error}</p><Button variant="secondary" onClick={() => void load()}>Reintentar equipo</Button></div>}
+    {!loading && !error && page && visibleCount === 0 && <div className="rounded-2xl bg-white p-5 text-center shadow-soft ring-1 ring-black/5"><p className="text-sm font-extrabold text-brand-800">Todavía no hay participantes</p><p className="mt-1 text-xs text-neutral-500">Las cuentas autorizadas aparecerán aquí.</p></div>}
+    {page && !error && <div className="space-y-4"><MemberGroup title="Administradores" members={admins} /><MemberGroup title="Plantadores" members={plantadores} />{includeLogistics && <MemberGroup title="Equipo logístico" members={logistics} />}</div>}
+    {page?.siguiente_cursor && !error && <Button variant="secondary" loading={loading} onClick={() => void load(page.siguiente_cursor!)}>Cargar más personas</Button>}
+    {canManage && <Link to="/app/participacion/accesos" className="inline-flex min-h-11 items-center text-xs font-semibold text-brand-700 underline">Retirar o cambiar otros permisos</Link>}
   </div>
 }

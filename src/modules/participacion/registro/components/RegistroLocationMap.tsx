@@ -1,4 +1,5 @@
-import { CircleMarker, MapContainer, Polygon, TileLayer, useMapEvents } from 'react-leaflet'
+import { CircleMarker, MapContainer, Polygon, useMapEvents } from 'react-leaflet'
+import OpenFreeMapBaseLayer from '../../../../components/map/OpenFreeMapBaseLayer'
 import type { ContextoRegistro } from '../../registroTypes'
 import 'leaflet/dist/leaflet.css'
 
@@ -12,8 +13,8 @@ export default function RegistroLocationMap({ polygon, point, onSelect }: Props)
   const center = point ?? positions[0]?.[0]
   if (!center) return <p className="text-sm text-neutral-600">El mapa no puede representar el polígono. Usa las coordenadas manuales.</p>
   return <div className="h-72 overflow-hidden rounded-3xl ring-1 ring-neutral-200" aria-label="Mapa para elegir ubicación de la plantación">
-    <MapContainer key={center.join(',')} center={center} zoom={15} className="h-full w-full" scrollWheelZoom={false}>
-      <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+    <MapContainer key={center.join(',')} center={center} zoom={15} maxZoom={19} className="h-full w-full" scrollWheelZoom={false}>
+      <OpenFreeMapBaseLayer />
       <Polygon positions={positions} pathOptions={{ color: '#166534', fillOpacity: 0.15 }} />
       <SelectPoint onSelect={onSelect} />
       {point && <CircleMarker center={point} radius={8} pathOptions={{ color: '#ffffff', fillColor: '#166534', fillOpacity: 1 }} />}

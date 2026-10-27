@@ -3,7 +3,7 @@ import type { ErrorEvent, GeoJSONSource, MapLayerMouseEvent, MapSourceDataEvent 
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import { getImpactoGroupSelection } from './impactoMapData'
 import type { ImpactoMapData } from './impactoMapData'
-import { createImpactoMapStyle, OSM_SOURCE, ZONE_FILL, ZONE_SOURCE } from './impactoMapStyle'
+import { OPENFREEMAP_LIBERTY_STYLE_URL, ZONE_FILL, ZONE_SOURCE } from './impactoMapStyle'
 
 setWorkerUrl(workerUrl)
 
@@ -24,7 +24,7 @@ export function createImpactoMapController(container: HTMLDivElement, initial: I
   let popupGroup: string | null = null
   const markers = new Map<string, { marker: Marker; button: HTMLButtonElement }>()
   const map = new LibreMap({
-    container, style: createImpactoMapStyle(), center: initial.data.coordinates[0], zoom: 12,
+    container, style: OPENFREEMAP_LIBERTY_STYLE_URL, center: initial.data.coordinates[0], zoom: 12,
     maxZoom: 19, maxPitch: 0, renderWorldCopies: false, scrollZoom: false, dragRotate: false,
     touchPitch: false, cooperativeGestures: true, attributionControl: { compact: false },
     locale: { 'Map.Title': 'Mapa público de zonas y registros grupales', 'Popup.Close': 'Cerrar registros de esta ubicación', 'AttributionControl.ToggleAttribution': 'Mostrar atribución', 'CooperativeGesturesHandler.MobileHelpText': 'Usa dos dedos para mover el mapa', 'CooperativeGesturesHandler.WindowsHelpText': 'Usa Ctrl y la rueda para acercar el mapa', 'CooperativeGesturesHandler.MacHelpText': 'Usa ⌘ y la rueda para acercar el mapa' },
@@ -110,17 +110,17 @@ export function createImpactoMapController(container: HTMLDivElement, initial: I
     }
   }
   function onError(event: ErrorEvent) {
-    if ('sourceId' in event && event.sourceId === OSM_SOURCE) events.onBaseMapError(true)
+    if ('sourceId' in event && event.sourceId && event.sourceId !== ZONE_SOURCE) events.onBaseMapError(true)
     else events.onFailure()
   }
   function onSourceData(event: MapSourceDataEvent) {
     // isSourceLoaded también puede ser true con teselas fallidas: exigir contenido cargado.
-    if (event.sourceId === OSM_SOURCE && event.isSourceLoaded && event.tile?.state === 'loaded') events.onBaseMapError(false)
+    if (event.sourceId !== ZONE_SOURCE && event.isSourceLoaded && event.tile?.state === 'loaded') events.onBaseMapError(false)
   }
   function onMouseEnter() { map.getCanvas().style.cursor = 'pointer' }
   function onMouseLeave() { map.getCanvas().style.cursor = '' }
   map.on('load', onLoad)
-  // Las zonas y los marcadores no esperan a que termine de descargar la base OSM.
+  // Las zonas y los marcadores no esperan a que terminen de descargar las teselas de Liberty.
   map.on('style.load', onLoad)
   map.on('error', onError)
   map.on('sourcedata', onSourceData)

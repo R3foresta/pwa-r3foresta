@@ -6,11 +6,11 @@ import {
   MapContainer,
   Marker,
   Polygon,
-  TileLayer,
   useMap,
   useMapEvents,
 } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
+import OpenFreeMapBaseLayer from '../../../components/map/OpenFreeMapBaseLayer'
 import Icon from '../../../components/Icon'
 import { Button } from '../../../components/ui'
 import { PlantacionService } from '../../../services/plantacion.service'
@@ -528,11 +528,11 @@ function SubcampaniaPolygonStep({
             <MapContainer
               center={mapCenter}
               zoom={15}
+              maxZoom={19}
               scrollWheelZoom
-              attributionControl={false}
               className="h-full w-full"
             >
-              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" maxZoom={19} />
+              <OpenFreeMapBaseLayer />
               <MapViewport center={mapCenter} polygonPositions={polygonPositions} />
               <PolygonEditorEvents onAddVertex={handleAddVertex} />
 

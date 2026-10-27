@@ -20,7 +20,7 @@ const engine = vi.hoisted(() => {
     sources = new Map<string, { data: unknown; setData: ReturnType<typeof vi.fn> }>()
     layers: { id: string; type: string; source?: string }[] = []
     canvas = document.createElement('canvas')
-    constructor(options: { container: HTMLElement }) { this.container = options.container }
+    constructor(options: { container: HTMLElement; style: string }) { this.container = options.container }
     on = vi.fn((event: string, layerOrListener: string | Listener, listener?: Listener) => {
       const key = typeof layerOrListener === 'string' ? `${event}:${layerOrListener}` : event
       const handler = typeof layerOrListener === 'function' ? layerOrListener : listener!
@@ -53,7 +53,7 @@ const engine = vi.hoisted(() => {
     touchZoomRotate = { disableRotation: vi.fn() }
   }
   const maps: FakeMap[] = []
-  const createMap = vi.fn(function (options: { container: HTMLElement }) {
+  const createMap = vi.fn(function (options: { container: HTMLElement; style: string }) {
     const map = new FakeMap(options)
     maps.push(map)
     return map
@@ -122,6 +122,11 @@ function mountMap(onSelect = vi.fn()) {
 }
 
 describe('Mapa público de Impacto con MapLibre', () => {
+  it('carga el estilo Liberty de OpenFreeMap', () => {
+    mountMap()
+    expect(engine.createMap.mock.calls[0][0].style).toBe('https://tiles.openfreemap.org/styles/liberty')
+  })
+
   it('permite ampliar el mapa compacto y volver sin perder la selección ni reiniciar el motor', () => {
     const onSelect = vi.fn()
     render(<ImpactoMap compact subcampanias={[scope]} puntos={[point]} seleccion={`r:${point.registro_id}`} onSelect={onSelect} />)
@@ -246,17 +251,17 @@ describe('Mapa público de Impacto con MapLibre', () => {
     expect(onSelect).toHaveBeenLastCalledWith('r:9007199254740996')
   })
 
-  it('distingue un fallo del fondo OSM del contenido público y permite seguir seleccionando', () => {
+  it('distingue un fallo del fondo Liberty del contenido público y permite seguir seleccionando', () => {
     const onSelect = vi.fn()
     const { map } = mountMap(onSelect)
-    act(() => map.emit('error', { sourceId: 'osm', error: new Error('No se pudo cargar la tesela') }))
+    act(() => map.emit('error', { sourceId: 'liberty-source', error: new Error('No se pudo cargar la tesela') }))
     expect(screen.getByRole('status').textContent).toMatch(/mapa base no está disponible/i)
     fireEvent.click(screen.getByRole('button', { name: `Ver registro ${point.registro_id}` }))
     expect(onSelect).toHaveBeenCalledWith(`r:${point.registro_id}`)
     expect(map.remove).not.toHaveBeenCalled()
-    act(() => map.emit('sourcedata', { sourceId: 'osm', isSourceLoaded: true, tile: { state: 'errored' } }))
+    act(() => map.emit('sourcedata', { sourceId: 'liberty-source', isSourceLoaded: true, tile: { state: 'errored' } }))
     expect(screen.getByRole('status').textContent).toMatch(/mapa base no está disponible/i)
-    act(() => map.emit('sourcedata', { sourceId: 'osm', isSourceLoaded: true, tile: { state: 'loaded' } }))
+    act(() => map.emit('sourcedata', { sourceId: 'liberty-source', isSourceLoaded: true, tile: { state: 'loaded' } }))
     expect(screen.queryByText(/mapa base no está disponible/i)).toBeNull()
   })
 

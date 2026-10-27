@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { MapContainer, Polygon, TileLayer } from 'react-leaflet'
+import { MapContainer, Polygon } from 'react-leaflet'
 import type { LatLngTuple } from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import OpenFreeMapBaseLayer from '../../../components/map/OpenFreeMapBaseLayer'
 import Icon from '../../../components/Icon'
 import { Button } from '../../../components/ui'
 import { PlantacionService } from '../../../services/plantacion.service'
@@ -319,17 +320,14 @@ function SubcampaniaResumenStep({
                   <MapContainer
                     center={mapCenter}
                     zoom={14}
+                    maxZoom={19}
                     zoomControl={false}
                     dragging={false}
                     scrollWheelZoom={false}
                     doubleClickZoom={false}
-                    attributionControl={false}
                     className="h-full w-full"
                   >
-                    <TileLayer
-                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                      maxZoom={19}
-                    />
+                    <OpenFreeMapBaseLayer allowRetry={false} />
                     <Polygon
                       positions={polygonPositions}
                       pathOptions={{

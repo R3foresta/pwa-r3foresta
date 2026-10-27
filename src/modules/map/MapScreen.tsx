@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
+import { MapContainer, Marker, Popup, useMap } from 'react-leaflet'
 import type { LatLngExpression } from 'leaflet'
 import L from 'leaflet'
+import OpenFreeMapBaseLayer from '../../components/map/OpenFreeMapBaseLayer'
 import { RecoleccionesService, type Recoleccion } from '../../services/recolecciones.service'
 import { formatUnidadCanonicaDisplay } from '../../utils/recoleccionUnidad'
 import { getUbicacionDisplay, getUbicacionDivision } from '../../utils/ubicacion'
@@ -337,15 +338,12 @@ function MapScreen() {
           <MapContainer
             center={center}
             zoom={13}
+            maxZoom={19}
             scrollWheelZoom={true}
-            attributionControl={false}
             zoomControl={false}
             style={{ height: '100%', width: '100%' }}
           >
-            <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              maxZoom={19}
-            />
+            <OpenFreeMapBaseLayer />
             <LocationMarker />
             
             {/* Marcadores de recolecciones */}

@@ -5,6 +5,7 @@ import { UsersService } from '../../../services/users.service'
 import type { UsuarioResumen } from '../../../types/users'
 import type { EquipoMember, Subcampania } from '../types/contracts'
 import { formatDate } from '../utils/subcampaniaFormatters'
+import { EquipoActionButton, EquipoMemberCard, EquipoSearchField, EquipoSectionHeading } from './EquipoVisual'
 import { UserAvatar } from './UserAvatar'
 
 const SEARCH_DEBOUNCE_MS = 300
@@ -16,21 +17,6 @@ const SEARCH_DEBOUNCE_MS = 300
 // no se puede cambiar desde acá; solo se agregan/quitan operarios (el backend
 // además rechaza quitar al coordinador mientras está ACTIVA, caso que acá nunca
 // se ofrece). El padre decide `canManage` — ver EQUIPO_EDITABLE_ESTADOS.
-
-function RolBadge({ rol }: { rol: EquipoMember['rol'] }) {
-  if (rol === 'COORDINADOR') {
-    return (
-      <span className="inline-flex rounded-full bg-warning-50 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.14em] text-warning-700 ring-1 ring-warning-100">
-        Coordinador
-      </span>
-    )
-  }
-  return (
-    <span className="inline-flex rounded-full bg-brand-50 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.14em] text-brand-600 ring-1 ring-brand-100">
-      Operario
-    </span>
-  )
-}
 
 function Spinner({ className }: { className?: string }) {
   return (
@@ -214,19 +200,9 @@ export function SubcampaniaEquipoManager({
           {equipo.length} {equipo.length === 1 ? 'miembro' : 'miembros'}
         </p>
         {canManage && (
-          <button
-            type="button"
-            onClick={handleToggleEditing}
-            disabled={busy}
-            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-wide transition active:scale-[0.98] disabled:cursor-wait disabled:opacity-60 ${
-              editing
-                ? 'bg-brand-600 text-white shadow-soft hover:bg-brand-700'
-                : 'bg-white text-brand-700 ring-1 ring-brand-100 shadow-soft hover:bg-brand-50'
-            }`}
-          >
-            <Icon name={editing ? 'check' : 'user'} className="h-3.5 w-3.5" />
+          <EquipoActionButton icon={editing ? 'check' : 'user'} active={editing} onClick={handleToggleEditing} disabled={busy}>
             {editing ? 'Listo' : 'Editar equipo'}
-          </button>
+          </EquipoActionButton>
         )}
       </div>
 
@@ -238,44 +214,14 @@ export function SubcampaniaEquipoManager({
 
       {/* Coordinador (siempre de solo lectura) */}
       {coordinador && (
-        <section className="rounded-2xl bg-white p-3 shadow-soft ring-1 ring-black/5">
-          <div className="flex items-center gap-3">
-            <UserAvatar
-              nombre={coordinador.nombre_usuario ?? 'C'}
-              fotoUrl={coordinador.foto_perfil_url}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-warning-50 text-sm font-extrabold text-warning-700"
-            />
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-1.5">
-                <p className="truncate text-sm font-extrabold leading-tight text-brand-800">
-                  {coordinador.nombre_usuario ?? `Usuario #${coordinador.usuario_id}`}
-                </p>
-                <RolBadge rol="COORDINADOR" />
-              </div>
-              {coordinador.agregado_at && (
-                <p className="mt-0.5 text-[10.5px] font-bold text-neutral-500">
-                  Desde {formatDate(coordinador.agregado_at.slice(0, 10))}
-                </p>
-              )}
-            </div>
-            {editing && (
-              <span className="shrink-0 rounded-full bg-neutral-50 px-2 py-1 text-[9px] font-extrabold uppercase tracking-wider text-neutral-400 ring-1 ring-neutral-100">
-                Fijo
-              </span>
-            )}
-          </div>
-        </section>
+        <EquipoMemberCard as="section" nombre={coordinador.nombre_usuario ?? `Usuario #${coordinador.usuario_id}`}
+          fotoUrl={coordinador.foto_perfil_url} rol="Coordinador" tone="warning"
+          subtitle={coordinador.agregado_at ? `Desde ${formatDate(coordinador.agregado_at.slice(0, 10))}` : undefined}
+          action={editing ? <span className="shrink-0 rounded-full bg-neutral-50 px-2 py-1 text-[9px] font-extrabold uppercase tracking-wider text-neutral-400 ring-1 ring-neutral-100">Fijo</span> : undefined} />
       )}
 
       {/* Operarios */}
-      <div className="flex items-baseline justify-between">
-        <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
-          Operarios
-        </p>
-        <p className="text-[11px] font-extrabold tabular-nums text-neutral-500">
-          {operarios.length} asignado{operarios.length !== 1 ? 's' : ''}
-        </p>
-      </div>
+      <EquipoSectionHeading title="Operarios" aside={`${operarios.length} asignado${operarios.length !== 1 ? 's' : ''}`} />
 
       {operarios.length === 0 ? (
         <section className="rounded-2xl bg-white p-5 text-center shadow-soft ring-1 ring-black/5">
@@ -294,29 +240,10 @@ export function SubcampaniaEquipoManager({
       ) : (
         <ul className="space-y-2">
           {operarios.map((operario) => (
-            <li
-              key={operario.id}
-              className="flex items-center gap-3 rounded-2xl bg-white p-3 shadow-soft ring-1 ring-black/5"
-            >
-              <UserAvatar
-                nombre={operario.nombre_usuario ?? 'U'}
-                fotoUrl={operario.foto_perfil_url}
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-50 text-sm font-extrabold text-brand-700"
-              />
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <p className="truncate text-sm font-extrabold leading-tight text-brand-800">
-                    {operario.nombre_usuario ?? `Usuario #${operario.usuario_id}`}
-                  </p>
-                  <RolBadge rol="OPERARIO" />
-                </div>
-                {operario.agregado_at && (
-                  <p className="mt-0.5 text-[10.5px] font-bold text-neutral-500">
-                    Desde {formatDate(operario.agregado_at.slice(0, 10))}
-                  </p>
-                )}
-              </div>
-              {editing && canManage && (
+            <EquipoMemberCard key={operario.id} nombre={operario.nombre_usuario ?? `Usuario #${operario.usuario_id}`}
+              fotoUrl={operario.foto_perfil_url} rol="Operario"
+              subtitle={operario.agregado_at ? `Desde ${formatDate(operario.agregado_at.slice(0, 10))}` : undefined}
+              action={editing && canManage ? (
                 <button
                   type="button"
                   onClick={() => void handleRemoveOperario(operario.usuario_id)}
@@ -331,8 +258,7 @@ export function SubcampaniaEquipoManager({
                   )}
                   {removingId === operario.usuario_id ? 'Quitando…' : 'Quitar'}
                 </button>
-              )}
-            </li>
+              ) : undefined} />
           ))}
         </ul>
       )}
@@ -344,26 +270,7 @@ export function SubcampaniaEquipoManager({
             Agregar operario
           </p>
 
-          <div className="mt-3 flex items-center gap-2 rounded-2xl border border-neutral-200 bg-white px-3 py-3 shadow-soft focus-within:border-brand-400 focus-within:ring-2 focus-within:ring-brand-100">
-            <Icon name="search" className="h-4 w-4 shrink-0 text-neutral-400" />
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar usuario…"
-              className="w-full border-none bg-transparent text-sm font-semibold text-neutral-700 outline-none placeholder:font-medium placeholder:text-neutral-400"
-            />
-            {query && (
-              <button
-                type="button"
-                aria-label="Limpiar búsqueda"
-                onClick={() => setQuery('')}
-                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-500 transition hover:bg-neutral-200"
-              >
-                <Icon name="x" className="h-3 w-3" />
-              </button>
-            )}
-          </div>
+          <div className="mt-3"><EquipoSearchField value={query} onChange={setQuery} placeholder="Buscar usuario…" /></div>
 
           <div className="mt-2">
             {searchLoading && (

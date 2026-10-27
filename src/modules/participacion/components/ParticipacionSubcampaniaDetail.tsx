@@ -63,7 +63,7 @@ export default function ParticipacionSubcampaniaDetail({ actorId, scope, onBack 
       {data && <ParticipacionDetalleHistorial records={records} hasMore={Boolean(data.siguiente_cursor)} loadingMore={loadingMore} pageError={pageError} scopeChanged={scopeChanged} onLoadMore={() => void loadMore()} returnTo={returnTo} confirmedEmpty={Boolean(zone && zone.registros === 0 && !data.siguiente_cursor)} />}
       {zone && <div className="flex flex-wrap items-center gap-3"><ImpactoShare path={`/impacto/subcampanias/${scope.subcampania_id}`} title={scope.nombre} /><span className="text-xs text-neutral-500">Comparte solo la consulta pública.</span></div>}
     </div>}
-    {tab === 'equipo' && <ParticipacionDetalleEquipo scope={scope} globalAdmin={false} />}
+    {tab === 'equipo' && <ParticipacionDetalleEquipo scope={scope} globalAdmin={false} actorId={actorId} />}
     {tab === 'mapa' && <Card as="section" className="space-y-3" aria-label="Mapa de esta subcampaña">
       <h2 className="text-lg font-bold">Mapa de {scope.nombre}</h2>
       {publicStatus}

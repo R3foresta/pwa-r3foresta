@@ -11,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@maplibre/maplibre-gl-leaflet": "^0.1.4",
     "@passwordless-id/webauthn": "^2.3.1",
     "@types/leaflet": "^1.9.21",
     "browser-image-compression": "^2.0.2",

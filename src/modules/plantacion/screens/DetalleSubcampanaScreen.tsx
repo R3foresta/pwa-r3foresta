@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import L from 'leaflet'
 import type { LatLngTuple } from 'leaflet'
-import { MapContainer, Polygon, TileLayer, useMap } from 'react-leaflet'
+import { MapContainer, Polygon, useMap } from 'react-leaflet'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import 'leaflet/dist/leaflet.css'
+import OpenFreeMapBaseLayer from '../../../components/map/OpenFreeMapBaseLayer'
 import plantacionHero from '../../../assets/home/plantacion.webp'
 import SubcampaniaSpeciesCard from '../components/SubcampaniaSpeciesCard'
 import SubcampaniaDetailHeader from '../components/SubcampaniaDetailHeader'
@@ -31,6 +32,7 @@ import CancelarSubcampaniaModal from '../components/CancelarSubcampaniaModal'
 import CerrarSubcampaniaModal from '../components/CerrarSubcampaniaModal'
 import EditarPlanSubcampania from '../components/EditarPlanSubcampania'
 import { SubcampaniaEquipoManager } from '../components/SubcampaniaEquipoManager'
+import ParticipacionEquipoInterno from '../../participacion/components/ParticipacionEquipoInterno'
 
 // Estados en los que un ADMIN puede gestionar el equipo (agregar/quitar
 // operarios) desde el detalle. La gestión de equipo va por su propio servicio y
@@ -225,16 +227,16 @@ function MiniMapPreview({
         <MapContainer
           center={positions[0] ?? [-16.5, -68.15]}
           zoom={14}
+          maxZoom={19}
           dragging={false}
           scrollWheelZoom={false}
           doubleClickZoom={false}
           touchZoom={false}
           keyboard={false}
           zoomControl={false}
-          attributionControl={false}
           className="h-full w-full"
         >
-          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" maxZoom={19} />
+          <OpenFreeMapBaseLayer allowRetry={false} />
           <MapFitBounds positions={positions} />
           <Polygon
             positions={positions}
@@ -630,15 +632,10 @@ function EquipoTab({
   // ACTIVA. El coordinador se muestra pero no se puede cambiar desde acá.
   const canManage = isAdmin && EQUIPO_EDITABLE_ESTADOS.includes(sub.estado)
 
-  return (
-    <SubcampaniaEquipoManager
-      subcampania={sub}
-      equipo={equipo}
-      canManage={canManage}
-      authId={authId}
-      onEquipoChange={onEquipoChange}
-    />
-  )
+  return <div className="space-y-5">
+    <SubcampaniaEquipoManager subcampania={sub} equipo={equipo} canManage={canManage} authId={authId} onEquipoChange={onEquipoChange} />
+    {isAdmin && <ParticipacionEquipoInterno subcampaniaId={String(sub.id)} />}
+  </div>
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -705,17 +702,14 @@ function MapaTab({
         <MapContainer
           center={polygonPositions[0] ?? [-16.5, -68.15]}
           zoom={14}
+          maxZoom={19}
           dragging={false}
           scrollWheelZoom={false}
           doubleClickZoom={false}
           zoomControl={false}
-          attributionControl={false}
           className="h-full w-full"
         >
-          <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            maxZoom={19}
-          />
+          <OpenFreeMapBaseLayer />
           <MapFitBounds positions={polygonPositions} />
           <Polygon
             positions={polygonPositions}
