@@ -1,7 +1,14 @@
 import Icon from '../../../components/Icon'
 import { Button } from '../../../components/ui'
+import { useState } from 'react'
 
-type Species = { id: string; nombre: string; nombre_cientifico?: string | null; cantidad_objetivo: number; porcentaje_objetivo: number }
+type Species = { id: string; nombre: string; imagen_url?: string | null; cantidad_objetivo: number; porcentaje_objetivo: number }
+
+function SpeciesPhoto({ url }: { url?: string | null }) {
+  const [failed, setFailed] = useState(false)
+  if (!url || failed) return null
+  return <img src={url} alt="" loading="lazy" onError={() => setFailed(true)} className="h-12 w-12 shrink-0 rounded-xl object-cover ring-1 ring-brand-100" />
+}
 
 export default function SubcampaniaSpeciesCard({ items, onEdit }: { items: Species[]; onEdit?: () => void }) {
   return (
@@ -39,13 +46,9 @@ export default function SubcampaniaSpeciesCard({ items, onEdit }: { items: Speci
           return (
             <li key={meta.id} className="py-4">
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
+                <div className="flex min-w-0 items-center gap-3">
+                  <SpeciesPhoto key={meta.imagen_url} url={meta.imagen_url} />
                   <p className="break-words text-sm font-bold text-brand-800">{meta.nombre}</p>
-                  {meta.nombre_cientifico && (
-                    <p className="mt-0.5 break-words text-[11px] italic leading-relaxed text-neutral-500">
-                      {meta.nombre_cientifico}
-                    </p>
-                  )}
                 </div>
                 <div className="shrink-0 text-right">
                   <p className="text-lg font-extrabold leading-none tabular-nums text-brand-800">

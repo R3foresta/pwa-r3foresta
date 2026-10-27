@@ -9,6 +9,7 @@ import type {
   TipoPlantaCatalogo,
 } from '../../types/plantas.types'
 import PlantaForm from './components/PlantaForm'
+import { getPlantaNombre } from '../../utils/plantaNombre'
 
 type ApiError = Error & { status?: number }
 
@@ -170,7 +171,7 @@ function EditarPlantaScreen() {
     <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-28 pt-6 text-brand-700">
       <PageHeader
         title="Editar especie"
-        subtitle={planta.nombre_comun_principal || planta.especie}
+        subtitle={getPlantaNombre(planta, `Planta #${planta.id}`)}
         backTo="/app/plantas"
       />
 
@@ -216,7 +217,7 @@ function EditarPlantaScreen() {
       <ConfirmDialog
         open={confirmOpen}
         title="¿Desactivar esta especie?"
-        description={`"${planta.nombre_comun_principal || planta.especie}" dejará de aparecer en los selectores si no tiene recolecciones o lotes de vivero en proceso. Podrás reactivarla más adelante.`}
+        description={`"${getPlantaNombre(planta, `Planta #${planta.id}`)}" dejará de aparecer en los selectores si no tiene recolecciones o lotes de vivero en proceso. Podrás reactivarla más adelante.`}
         confirmLabel="Sí, desactivar"
         cancelLabel="Cancelar"
         variant="danger"

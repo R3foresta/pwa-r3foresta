@@ -1,6 +1,7 @@
 import type { GetPlanData, PlanEspecieMetaInput } from '../types/contracts'
 import { buildPlanMetasPayload } from './planMetas'
 import type { SubcampaniaEspecieDraft } from './subcampaniaDraft'
+import { getPlantaNombre } from '../../../utils/plantaNombre'
 
 export type PlanEspecieForm = {
   planta_id: number
@@ -23,7 +24,19 @@ export type PlanFormProposal = { meta_total_arboles: number; metas: PlanEspecieM
 const PERCENT_TOLERANCE = 0.000001
 
 export function getPlanEspecieNombre(item: PlanEspecieForm): string {
-  return item.nombre_comun_principal || item.especie || `Especie #${item.planta_id}`
+  return getPlantaNombre(item, `Especie #${item.planta_id}`)
+}
+
+/** Actualiza sólo presentación al recuperar/reconsultar; conserva la propuesta exacta. */
+export function withPlanSpeciesNames(value: PlanMetaEspeciesValue, plan: GetPlanData): PlanMetaEspeciesValue {
+  return { ...value, especies: value.especies.map(item => {
+    const planta = plan.metas.find(meta => meta.planta_id === item.planta_id)?.planta
+    if (!planta) return item
+    return { ...item,
+      nombre_cientifico: planta.nombre_cientifico ?? item.nombre_cientifico,
+      nombre_comun_principal: Object.hasOwn(planta, 'nombre_comun_principal') ? planta.nombre_comun_principal : item.nombre_comun_principal,
+    }
+  }) }
 }
 
 export function positivePlanInteger(raw: string): number | null {
@@ -61,6 +74,7 @@ export function createPlanFormFromPlan(plan: GetPlanData): PlanMetaEspeciesValue
   return { meta: String(plan.meta_total_arboles), especies: plan.metas.map(item => ({
     planta_id: item.planta_id, especie: item.planta?.especie || `Especie #${item.planta_id}`,
     nombre_cientifico: item.planta?.nombre_cientifico || '',
+    nombre_comun_principal: item.planta?.nombre_comun_principal,
     cantidad: String(item.cantidad_objetivo), porcentaje: String(item.porcentaje_objetivo),
   })) }
 }

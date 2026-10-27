@@ -22,7 +22,7 @@ const subcampania: Subcampania = {
 const plan: GetPlanData = {
   subcampania_id: 54, estado: 'ACTIVA', meta_total_arboles: 40, plan_revision: 2,
   metas: [{ planta_id: 5, cantidad_objetivo: 40, porcentaje_objetivo: 100,
-    planta: { id: 5, especie: 'Aliso', nombre_cientifico: 'Alnus acuminata' } }],
+    planta: { id: 5, especie: 'Aliso', nombre_comun_principal: 'Aliso', nombre_cientifico: 'Alnus acuminata' } }],
 }
 
 function apiError(message: string, status: number): Error & { status: number } {
@@ -237,7 +237,7 @@ describe('editor conectado del plan de subcampaña', () => {
     const twoSpecies: GetPlanData = { ...plan, metas: [
       { ...plan.metas[0], cantidad_objetivo: 20, porcentaje_objetivo: 50 },
       { planta_id: 8, cantidad_objetivo: 20, porcentaje_objetivo: 50,
-        planta: { id: 8, especie: 'Nogal', nombre_cientifico: 'Juglans regia' } },
+        planta: { id: 8, especie: 'Nogal', nombre_comun_principal: 'Nogal', nombre_cientifico: 'Juglans regia' } },
     ] }
     vi.mocked(PlantacionService.getSubcampaniaPlan).mockResolvedValue(twoSpecies)
     vi.mocked(PlantacionService.revisarSubcampaniaPlan).mockRejectedValue(apiError('Nogal tiene stock inicial disponible y no se puede retirar.', 422))

@@ -4,6 +4,7 @@ import { Button } from '../../../components/ui'
 import { useAuth } from '../../../contexts/AuthContext'
 import { getPlantacionErrorStatus, PlantacionService } from '../../../services/plantacion.service'
 import { WebAuthnService } from '../../../services/webauthn.service'
+import { getPlantaNombre } from '../../../utils/plantaNombre'
 import type { Campania, GetPlanData, PlanEspecieMeta } from '../types/contracts'
 import {
   loadSubcampaniaBaseDraft,
@@ -42,7 +43,8 @@ function mergeDraftEspeciesWithPlan(
       planta_id: meta.planta_id,
       especie: local?.especie ?? meta.planta?.especie ?? '',
       nombre_cientifico: local?.nombre_cientifico ?? meta.planta?.nombre_cientifico ?? '',
-      nombre_comun_principal: local?.nombre_comun_principal ?? null,
+      nombre_comun_principal: meta.planta && Object.hasOwn(meta.planta, 'nombre_comun_principal')
+        ? meta.planta.nombre_comun_principal : local?.nombre_comun_principal ?? null,
       saldo_disponible: local?.saldo_disponible,
       pct: Math.max(0, Math.min(100, Math.round(meta.porcentaje_objetivo * 100) / 100)),
     }
@@ -109,8 +111,8 @@ function SubcampaniaEspeciesStep({
   }
 
   // Si ya existe la subcampaña en backend, precargar el plan de metas por especie.
-  // El GET /plan trae planta_id/especie/nombre_cientifico; se mergean con el draft
-  // local por planta_id para preservar saldo_disponible y nombre_comun_principal.
+  // El plan aporta nombres vivos; se conserva la propuesta y la referencia de
+  // stock del draft. Servidores anteriores pueden omitir el nombre común.
   useEffect(() => {
     const subcampaniaId = initialDraft?.subcampania_id
     if (!subcampaniaId || !isAuthenticated || !token || accessError) return
@@ -479,7 +481,7 @@ function SubcampaniaEspeciesStep({
           {currentPlan && <div className="rounded-2xl bg-white p-3">
             <p>Plan vigente: {currentPlan.meta_total_arboles} árboles · Revisión {currentPlan.plan_revision ?? 'no disponible'}</p>
             <ul className="mt-2 space-y-1">{currentPlan.metas.map(item => <li key={item.planta_id}>
-              {item.planta?.especie || `Especie #${item.planta_id}`}: {item.porcentaje_objetivo}% · {item.cantidad_objetivo} árboles
+              {getPlantaNombre(item.planta ?? {}, `Especie #${item.planta_id}`)}: {item.porcentaje_objetivo}% · {item.cantidad_objetivo} árboles
             </li>)}</ul>
             <p className="mt-2">Tu propuesta: {meta} árboles. Revisa el mix en el formulario.</p>
           </div>}

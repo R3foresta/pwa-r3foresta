@@ -3,7 +3,8 @@ import ConfirmDialog from '../../../components/ConfirmDialog'
 import { Button } from '../../../components/ui'
 import type { GetPlanData } from '../types/contracts'
 import { usePlanMetaEspeciesForm } from '../hooks/usePlanMetaEspeciesForm'
-import { createPlanFormFromPlan, getPlanEspecieNombre, recalculatePlanQuantities, validatePlanForm, type PlanFormErrors, type PlanFormProposal } from '../utils/planMetaEspeciesForm'
+import { createPlanFormFromPlan, getPlanEspecieNombre, recalculatePlanQuantities, validatePlanForm, withPlanSpeciesNames, type PlanFormErrors, type PlanFormProposal } from '../utils/planMetaEspeciesForm'
+import { getPlantaNombre } from '../../../utils/plantaNombre'
 import { loadPlanEditorDraft, savePlanEditorDraft } from '../utils/planEditorDraft'
 import PlanMetaEspeciesForm from './PlanMetaEspeciesForm'
 import CatalogoEspeciesPicker, { type EspecieCatalogoItem } from './CatalogoEspeciesPicker'
@@ -46,7 +47,8 @@ function EditarPlanSubcampaniaModal({ plan, authId, subcampaniaNombre, isAdmin, 
     disabled,
     onChange: () => { setValidationErrors({ especies: [] }); setReview(null) },
   })
-  const { especies } = form.value
+  const presentation = withPlanSpeciesNames(form.value, plan)
+  const { especies } = presentation
   const currentReview = reviewedPlan === plan ? review : null
 
   useEffect(() => {
@@ -124,7 +126,7 @@ function EditarPlanSubcampaniaModal({ plan, authId, subcampaniaNombre, isAdmin, 
               const current = plan.metas.find((item) => item.planta_id === id)
               const proposed = currentReview.metas.find((item) => item.planta_id === id)
               const proposedItem = especies.find((item) => item.planta_id === id)
-              const name = proposedItem ? getPlanEspecieNombre(proposedItem) : current?.planta?.especie || `Especie #${id}`
+              const name = proposedItem ? getPlanEspecieNombre(proposedItem) : getPlantaNombre(current?.planta ?? {}, `Especie #${id}`)
               return <tr key={id} className="border-b border-neutral-100">
                 <th className="py-3 font-semibold">{name}<span className="mt-1 block text-[10px] text-neutral-500">{!current ? 'Agregada' : !proposed ? 'Se retira del plan' : 'Plan vigente'}</span></th>
                 <td className="px-2 py-3">{current ? <>{formatNumber(current.cantidad_objetivo)} árboles<br />{formatNumber(current.porcentaje_objetivo)}%</> : '—'}</td>
@@ -134,7 +136,7 @@ function EditarPlanSubcampaniaModal({ plan, authId, subcampaniaNombre, isAdmin, 
           </table>
         </> : <>
           <p className="text-sm font-semibold text-brand-700">Meta actual: {formatNumber(plan.meta_total_arboles)} árboles</p>
-          <PlanMetaEspeciesForm value={form.value} errors={validationErrors} disabled={disabled}
+          <PlanMetaEspeciesForm value={presentation} errors={validationErrors} disabled={disabled}
             metaLabel="Meta total propuesta" manualQuantities currentMetas={plan.metas}
             onMetaChange={form.changeMeta} onMetaStep={form.stepMeta}
             onPercentageChange={form.changePercentage} onPercentageStep={form.stepPercentage}

@@ -70,7 +70,6 @@ function PlanSpeciesRow({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1 basis-24">
           <p className="text-sm font-extrabold leading-tight text-brand-800">{nombre}</p>
-          {item.nombre_cientifico && <p className="mt-0.5 text-[11px] italic text-neutral-500">{item.nombre_cientifico}</p>}
           {showCurrent && (
             <p className="mt-1 text-xs font-semibold text-neutral-500">
               {current

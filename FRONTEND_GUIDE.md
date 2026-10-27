@@ -65,6 +65,8 @@ El perfil visible está ligado al token que lo verificó. Al cambiar token por l
 
 Reutilizar `PlanMetaEspeciesForm`, `usePlanMetaEspeciesForm` y utilidades del módulo. Asistente y detalle conservan su propia carga, autorización, confirmación y persistencia.
 
+Nombres operativos del catálogo: `getPlantaNombre` prioriza `nombre_comun_principal` y sólo recurre a `nombre_cientifico` si falta/está vacío. `especie` puede contener una familia o clasificación y no sirve como nombre legible alternativo. El GET del plan entrega común/foto opcional; contexto v1 resuelve su `nombre` en backend para plan participante, stock y captura. Al recuperar una propuesta del editor se actualizan únicamente los nombres desde el plan consultado, conservando cantidades y porcentajes exactos. Los históricos conservan sus snapshots; no completar sus nombres desde el catálogo vivo.
+
 - GET/PUT del plan requieren Bearer; no usan `x-auth-id`. Sin token no enviar petición. El detalle ofrece edición a ADMIN global en BORRADOR/ACTIVA.
 - Una revisión usa un único PUT con `meta_total_arboles`, `metas`, `revision_esperada`; `plan_revision` procede de GET, incluido `0`. Sin versión no habilitar guardado ni hacer fallback por PATCH.
 - El asistente y el detalle usan `revisarSubcampaniaPlan`; se retiró el cliente anterior de solo metas, su validador y sus DTO sin consumidores. El catálogo de tipos procede de `TIPO_CAMPANIA_VALUES`; el formulario conserva Arborización primero.

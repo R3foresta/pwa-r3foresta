@@ -7,6 +7,7 @@ import {
   type EspecieStockVivero,
 } from '../../../services/lotes-vivero.service'
 import type { PlantaCatalogo } from '../../../types/plantas.types'
+import { getPlantaNombre } from '../../../utils/plantaNombre'
 
 export type EspecieCatalogoItem = {
   planta_id: number
@@ -246,10 +247,7 @@ function CatalogoEspeciesPicker({ open, excludedPlantaIds, onClose, onConfirm }:
                         </span>
                         <div className="min-w-0">
                           <p className="text-sm font-extrabold leading-tight text-brand-800">
-                            {item.nombre_comun_principal || item.especie}
-                          </p>
-                          <p className="text-[11px] italic text-neutral-500">
-                            {item.nombre_cientifico}
+                            {getPlantaNombre(item, `Especie #${item.planta_id}`)}
                           </p>
                         </div>
                       </div>

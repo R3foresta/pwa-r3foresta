@@ -5,6 +5,7 @@ import Icon from '../../components/Icon'
 import { PlantasService } from '../../services/plantas.service'
 import type { PlantaCatalogo, PlantasPagination } from '../../types/plantas.types'
 import { withImageVersion } from '../../utils/imageUrl'
+import { getPlantaNombre } from '../../utils/plantaNombre'
 
 const PAGE_LIMIT = 20
 
@@ -23,7 +24,7 @@ type PlantaCardProps = {
 }
 
 function PlantaCard({ planta, onClick }: PlantaCardProps) {
-  const titulo = planta.nombre_comun_principal || planta.especie
+  const titulo = getPlantaNombre(planta, `Planta #${planta.id}`)
   const inicial = (titulo || '?').trim().charAt(0).toUpperCase()
   const imageUrl = withImageVersion(planta.imagen_url, planta.updated_at)
   return (

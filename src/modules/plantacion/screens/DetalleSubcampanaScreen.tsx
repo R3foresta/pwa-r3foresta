@@ -37,6 +37,7 @@ import ParticipacionEquipoInterno from '../../participacion/components/Participa
 import SubcampaniaAdminStock from '../components/SubcampaniaAdminStock'
 import SubcampaniaAdminActividad from '../components/SubcampaniaAdminActividad'
 import { useRegistroContext } from '../../participacion/registro/hooks/useRegistroContext'
+import { getPlantaNombre } from '../../../utils/plantaNombre'
 
 // Estados en los que un ADMIN puede gestionar el equipo (agregar/quitar
 // operarios) desde el detalle. La gestión de equipo va por su propio servicio y
@@ -600,8 +601,8 @@ function ResumenTab({
       </div>
 
       {metasPlan.length > 0 && <SubcampaniaSpeciesCard items={metasPlan.map(meta => ({
-        id: String(meta.planta_id), nombre: meta.planta?.especie ?? `Planta #${meta.planta_id}`,
-        nombre_cientifico: meta.planta?.nombre_cientifico, cantidad_objetivo: meta.cantidad_objetivo,
+        id: String(meta.planta_id), nombre: getPlantaNombre(meta.planta ?? {}, `Planta #${meta.planta_id}`),
+        imagen_url: meta.planta?.imagen_url, cantidad_objetivo: meta.cantidad_objetivo,
         porcentaje_objetivo: meta.porcentaje_objetivo,
       }))} onEdit={canEditPlan ? onEditarPlan : undefined} />}
 

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import Icon from '../../../components/Icon'
 import type { PlantaCatalogo } from '../../../types/plantas.types'
 import { withImageVersion } from '../../../utils/imageUrl'
+import { getPlantaNombre } from '../../../utils/plantaNombre'
 
 type Props = {
   plantas: PlantaCatalogo[]
@@ -77,7 +78,7 @@ function PlantSelector({ plantas, loading, onSelect, onCreateNew }: Props) {
                 {imageUrl ? (
                   <img
                     src={imageUrl}
-                    alt={planta.nombre_comun_principal || planta.especie}
+                    alt={getPlantaNombre(planta, `Planta #${planta.id}`)}
                     className="h-full w-full object-cover"
                   />
                 ) : (
@@ -89,7 +90,7 @@ function PlantSelector({ plantas, loading, onSelect, onCreateNew }: Props) {
               <div className="flex-1 text-left">
                 <p className="text-base font-extrabold text-brand-700">
                   {/* Priorizamos el nombre común principal */}
-                  {planta.nombre_comun_principal || planta.especie || 'Sin nombre común'}
+                  {getPlantaNombre(planta, `Planta #${planta.id}`)}
                 </p>
                 <p className="text-sm font-semibold text-neutral-500 italic">
                   {planta.nombre_cientifico}

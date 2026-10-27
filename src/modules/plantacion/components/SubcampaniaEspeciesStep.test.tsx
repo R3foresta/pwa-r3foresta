@@ -14,18 +14,18 @@ vi.mock('../../../services/plantacion.service', () => ({ PlantacionService: {
   revisarSubcampaniaPlan: vi.fn(),
 }, getPlantacionErrorStatus: (reason: unknown) => reason && typeof reason === 'object' && 'status' in reason ? reason.status : undefined }))
 vi.mock('./CatalogoEspeciesPicker', () => ({ default: ({ open, onConfirm }: {
-  open: boolean; onConfirm: (items: Array<{ planta_id: number; especie: string; nombre_cientifico: string; saldo_disponible: number }>) => void
-}) => open ? <button onClick={() => onConfirm([{ planta_id: 2, especie: 'Tara', nombre_cientifico: '', saldo_disponible: 0 }])}>Elegir Tara del catálogo</button> : null }))
+  open: boolean; onConfirm: (items: Array<{ planta_id: number; especie: string; nombre_comun_principal: string; nombre_cientifico: string; saldo_disponible: number }>) => void
+}) => open ? <button onClick={() => onConfirm([{ planta_id: 2, especie: 'Tara', nombre_comun_principal: 'Tara', nombre_cientifico: '', saldo_disponible: 0 }])}>Elegir Tara del catálogo</button> : null }))
 
 const campania: Campania = { id: 20, nombre: 'Campaña Palca', tipo: 'REFORESTACION',
   codigo_trazabilidad: 'C20', created_at: '2026-10-01', updated_at: '2026-10-01' }
 const plan: GetPlanData = { subcampania_id: 54, estado: 'BORRADOR', meta_total_arboles: 40, plan_revision: 3,
-  metas: [{ planta_id: 1, cantidad_objetivo: 40, porcentaje_objetivo: 100, planta: { id: 1, especie: 'Molle' } }] }
+  metas: [{ planta_id: 1, cantidad_objetivo: 40, porcentaje_objetivo: 100, planta: { id: 1, especie: 'Molle', nombre_comun_principal: 'Molle' } }] }
 const draft: SubcampaniaBaseDraft = {
   draft_id: 'draft-54', subcampania_id: 54, campania_id: 20, tipo: 'REFORESTACION', nombre: 'Subcampaña Palca',
   comunidad: { id: 1, nombre: 'Palca', pais: { id: 1, nombre: 'Bolivia', codigo_iso2: 'BO' }, activo: true, nivel_actual: 1 },
   coordinador: { id: 8, nombre: 'Coordinador', rol: 'GENERAL' }, fecha_estimada_inicio: '', fecha_estimada_fin: '',
-  meta_total_arboles: 40, especies: [{ planta_id: 1, especie: 'Molle', nombre_cientifico: 'Schinus molle', saldo_disponible: 80, pct: 100 }],
+  meta_total_arboles: 40, especies: [{ planta_id: 1, especie: 'Molle', nombre_comun_principal: 'Molle', nombre_cientifico: 'Schinus molle', saldo_disponible: 80, pct: 100 }],
   created_at: '2026-10-01', updated_at: '2026-10-01',
 }
 
@@ -167,7 +167,7 @@ describe('Plan coherente del asistente de subcampaña', () => {
 
   it('no avanza cuando la meta es menor que el número de especies positivas', async () => {
     saveSubcampaniaBaseDraft({ ...draft, meta_total_arboles: 1, especies: [
-      { ...draft.especies![0], pct: 50 }, { planta_id: 2, especie: 'Tara', nombre_cientifico: '', saldo_disponible: 0, pct: 50 },
+      { ...draft.especies![0], pct: 50 }, { planta_id: 2, especie: 'Tara', nombre_comun_principal: 'Tara', nombre_cientifico: '', saldo_disponible: 0, pct: 50 },
     ] })
     const { onNext } = renderStep()
     await waitFor(() => expect(PlantacionService.getSubcampaniaPlan).toHaveBeenCalledOnce())
@@ -194,8 +194,8 @@ describe('Plan coherente del asistente de subcampaña', () => {
     const user = userEvent.setup()
     saveSubcampaniaBaseDraft({ ...draft, meta_total_arboles: 10, especies: [
       { ...draft.especies![0], pct: 33 },
-      { planta_id: 2, especie: 'Tara', nombre_cientifico: '', saldo_disponible: 0, pct: 33 },
-      { planta_id: 3, especie: 'Queñua', nombre_cientifico: '', saldo_disponible: 0, pct: 34 },
+      { planta_id: 2, especie: 'Tara', nombre_comun_principal: 'Tara', nombre_cientifico: '', saldo_disponible: 0, pct: 33 },
+      { planta_id: 3, especie: 'Queñua', nombre_comun_principal: 'Queñua', nombre_cientifico: '', saldo_disponible: 0, pct: 34 },
     ] })
     const { onNext } = renderStep()
     await waitFor(() => expect(PlantacionService.getSubcampaniaPlan).toHaveBeenCalledOnce())
@@ -238,7 +238,7 @@ describe('Plan coherente del asistente de subcampaña', () => {
     const user = userEvent.setup()
     saveSubcampaniaBaseDraft({ ...draft, meta_total_arboles: 60, especies: [
       { ...draft.especies![0], pct: 50 },
-      { planta_id: 2, especie: 'Tara', nombre_cientifico: '', saldo_disponible: 0, pct: 50 },
+      { planta_id: 2, especie: 'Tara', nombre_comun_principal: 'Tara', nombre_cientifico: '', saldo_disponible: 0, pct: 50 },
     ] })
     const { onDraftSaved, unmount } = renderStep()
     await waitFor(() => expect(PlantacionService.getSubcampaniaPlan).toHaveBeenCalledOnce())

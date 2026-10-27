@@ -233,6 +233,8 @@ export type PlanEspecieMeta = PlanEspecieMetaInput & {
     id: number
     especie?: string | null
     nombre_cientifico?: string | null
+    nombre_comun_principal?: string | null
+    imagen_url?: string | null
   } | null
 }
 

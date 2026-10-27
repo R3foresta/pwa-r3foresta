@@ -36,7 +36,7 @@ const subcampania: Subcampania = {
 const plan: GetPlanData = {
   subcampania_id: 54, estado: 'ACTIVA', meta_total_arboles: 40, plan_revision: 2,
   metas: [{ planta_id: 5, cantidad_objetivo: 40, porcentaje_objetivo: 100,
-    planta: { id: 5, especie: 'Aliso', nombre_cientifico: 'Alnus acuminata' } }],
+    planta: { id: 5, especie: 'Familia del aliso', nombre_comun_principal: 'Aliso', nombre_cientifico: 'Alnus acuminata' } }],
 }
 const saved: RevisarPlanData = {
   ...plan, plan_revision: 3, meta_total_arboles: 60,

@@ -4,6 +4,8 @@ import {
   addPlanCatalogSpecies,
   createPlanFormFromDraft,
   createPlanFormFromPlan,
+  getPlanEspecieNombre,
+  withPlanSpeciesNames,
   getPlanPercentageTotal,
   planFormToDraft,
   recalculatePlanQuantities,
@@ -32,6 +34,21 @@ const savedPlan: GetPlanData = {
 }
 
 describe('formulario compartido de meta y especies', () => {
+  it('conserva nombres comunes remotos al abrir y recuperar una propuesta sin cambiar cantidades', () => {
+    const plan = { ...savedPlan, metas: [{ ...savedPlan.metas[0], planta: {
+      id: 1, especie: 'Araceae', nombre_comun_principal: 'Lechuga de agua', nombre_cientifico: 'Pistia stratiotes',
+    } }] }
+    const initial = createPlanFormFromPlan(plan)
+    expect(getPlanEspecieNombre(initial.especies[0])).toBe('Lechuga de agua')
+    const draft = { ...initial, meta: '99', especies: [{ ...initial.especies[0], nombre_comun_principal: undefined, cantidad: '78', porcentaje: '12.34' }] }
+    const recovered = withPlanSpeciesNames(draft, plan)
+    expect(getPlanEspecieNombre(recovered.especies[0])).toBe('Lechuga de agua')
+    expect(recovered.meta).toBe('99')
+    expect(recovered.especies[0]).toMatchObject({ cantidad: '78', porcentaje: '12.34' })
+    expect(draft.especies[0].nombre_comun_principal).toBeUndefined()
+    const withoutCommon = withPlanSpeciesNames(recovered, { ...plan, metas: [{ ...plan.metas[0], planta: { ...plan.metas[0].planta, nombre_comun_principal: null } }] })
+    expect(getPlanEspecieNombre(withoutCommon.especies[0])).toBe('Pistia stratiotes')
+  })
   it('conserva exactamente el plan persistido sin inferir cantidades ni stock', () => {
     const value = createPlanFormFromPlan(savedPlan)
     expect(value.meta).toBe('40')

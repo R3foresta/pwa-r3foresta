@@ -17,6 +17,7 @@ import { loadSubcampaniaBaseDraft } from '../utils/subcampaniaDraft'
 import { formatDate, toLatLngTuple } from '../utils/subcampaniaFormatters'
 import SubcampaniaSuccessOverlay from './SubcampaniaSuccessOverlay'
 import { UserAvatar } from './UserAvatar'
+import { getPlantaNombre } from '../../../utils/plantaNombre'
 
 type Props = {
   campania: Campania
@@ -188,7 +189,7 @@ function SubcampaniaResumenStep({
   const especiesLabel = especies
     .map(
       (e) =>
-        `${e.pct}% ${e.nombre_comun_principal || e.especie}`,
+        `${e.pct}% ${getPlantaNombre(e, `Especie #${e.planta_id}`)}`,
     )
     .join(' · ')
 

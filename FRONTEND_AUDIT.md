@@ -11,6 +11,7 @@ Entrega INT06 publicada en PWA `62f55dc`: 32 suites/445 tests, lint y build/Type
 | Prioridad | ID | Estado | Qué falta |
 | --- | --- | --- | --- |
 | Alta | AUD-028 | PENDIENTE · contrato administrativo | Historial privado completo de plantaciones por subcampaña y lectura de stock administrativo fuera de ACTIVA; el detalle ADMIN muestra por ahora stock elegible de inicial y registros publicados. |
+| Media | AUD-027 | CORREGIDO local · aceptación visual pendiente | Plan, stock y registro priorizan común/científico; catálogo real cotejado y backend local recargado. Falta aceptación autenticada de ambas audiencias y publicación externa. |
 | Alta | AUD-026 | CORREGIDO local · confirmación real pendiente | Equipo resuelve Administrador → Plantador con C07; acreditar el terminal autenticado real y la actualización de permisos de ambas cuentas. |
 | Media | AUD-025 | PENDIENTE · QA de campo | Verificar Liberty en los mapas operativos con dispositivos reales y conectividad variable; comprobar WebGL2, carga, atribución y manejo de fallo del fondo. |
 | Alta | AUD-024 | CERRADO en localhost | Lectura de Equipo verificada con VOLUNTARIO/PLANTADOR y Supabase real; publicación externa se sigue en AUD-021. |
@@ -42,6 +43,12 @@ El contexto solo permite ACTIVA y saldo elegible para inicial: no acredita stock
 Cerrar con contrato/backend verificable de listado administrativo paginado por subcampaña y lectura de stock para los estados autorizados, DTOs/validadores coordinados y regresión de permisos, paginación, cambio de cuenta y ámbito. Hasta entonces no presentar esta vista como auditoría privada completa. La edición del polígono no forma parte de esta entrega.
 
 Verificación de la consulta implementada: 61 archivos/883 pruebas aprobadas con `npm run test -- --maxWorkers=2`, lint, build/TypeScript/PWA y diff-check aprobados. Veinte pruebas nuevas cubren historial detallado, stock sin membresía, estados/roles, errores independientes, polígono del contexto, respuestas tardías y regreso ficha → mapa con selección exacta. Navegador local con sesión ADMIN mostró stock, registros e interacción con el mapa de la subcampaña 51; no se realizaron escrituras. Se conserva el aviso conocido de tamaño del chunk MapLibre. Esta evidencia no acredita el contrato privado pendiente ni despliegue.
+
+### AUD-027 — Nombre común en subcampañas, stock y registro
+
+27 de octubre: el diagnóstico encontró que la RPC del contexto v1 priorizaba `especie` y omitía `nombre_comun_principal`; el plan interno tampoco entregaba el común. Se corrigió en los servicios backend de lectura: después de autorizar/validar el plan o contexto, una consulta limitada a sus IDs resuelve nombres del catálogo, común primero y científico si falta/está vacío. Se conserva el DTO v1 de contexto, stock/revisión/payloads; no requiere migración ni reescribe snapshots. El GET del plan añade común/foto opcional. Frontend usa esa prioridad en detalle ADMIN, editor/recuperación, asistente/selector y catálogo de plantas; voluntarios, stock y captura comparten el `nombre` corregido. La tarjeta del plan ADMIN muestra foto si existe y conserva el texto si falla. [Diagnóstico e implementación](docs/DIAGNOSTICO_NOMBRES_PLANTACION.md).
+
+Catálogo Supabase real consultado en lectura: 42 Kiswara, 49 Helecho de agua, 50 Lechuga de agua y 55 Ruda, las cuatro con foto. El nuevo lector devolvió esos mismos nombres. Verificación frontend: 63 archivos/874 pruebas, lint y build/TypeScript/PWA; backend: 74 suites/1013 unitarios, build, lint focal y OpenAPI reproducible. Backend local recargado con la compilación corregida. Falta aceptación visual autenticada de ambas audiencias: el navegador quedó deshabilitado en Work durante la revisión. Sin escrituras de plantación ni despliegue externo. Historial/detalle propio mantienen el alcance contractual documentado; la tarjeta de especies sigue mostrando el plan, no cantidades ya plantadas.
 
 ### AUD-026 — Cambio de administrador a plantador desde Equipo
 
