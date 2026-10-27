@@ -177,11 +177,17 @@ export function validarMisRegistros(value: unknown, optionsValue: MisRegistrosQu
   const options = validarMisRegistrosQuery(optionsValue), item = row(row(value, ['data']).data, ['registros', 'siguiente_cursor'])
   const data: MisRegistros = {
     registros: unique(list(item.registros, value => {
-      const item = row(value, ['id', 'subcampania_id', 'fecha_plantacion', 'codigo_trazabilidad', 'cantidad_total_plantada', 'es_reposicion', 'relaciones', 'url_publica', 'url_detalle_propio']), id = validarImpactoId(item.id)
+      const item = row(value, ['id', 'subcampania_id', 'fecha_plantacion', 'codigo_trazabilidad', 'cantidad_total_plantada', 'es_reposicion', 'relaciones', 'url_publica', 'url_detalle_propio'], ['subcampania_nombre', 'especies', 'foto_portada']), id = validarImpactoId(item.id)
       if (item.url_detalle_propio !== `/api/v1/plantaciones/${id}/detalle-propio`) return fail()
+      const foto = item.foto_portada === undefined || item.foto_portada === null ? null : row(item.foto_portada, ['id', 'url'])
+      const fotoId = foto ? validarImpactoId(foto.id) : null
+      if (foto && foto.url !== `/api/v1/plantaciones/${id}/imagenes/${fotoId}`) return fail()
       const result: MisRegistro = {
-        id, subcampania_id: validarImpactoId(item.subcampania_id), fecha_plantacion: validarImpactoFecha(item.fecha_plantacion), codigo_trazabilidad: text(item.codigo_trazabilidad),
+        id, subcampania_id: validarImpactoId(item.subcampania_id), subcampania_nombre: item.subcampania_nombre === undefined ? null : text(item.subcampania_nombre),
+        fecha_plantacion: validarImpactoFecha(item.fecha_plantacion), codigo_trazabilidad: text(item.codigo_trazabilidad),
         cantidad_total_plantada: integer(item.cantidad_total_plantada, 1, intMax), es_reposicion: bool(item.es_reposicion),
+        especies: item.especies === undefined ? [] : unique(list(item.especies, value => { const species = row(value, ['planta_id', 'nombre', 'cantidad']); return { planta_id: validarImpactoId(species.planta_id), nombre: nullableText(species.nombre), cantidad: integer(species.cantidad, 1, intMax) } }), species => species.planta_id),
+        foto_portada: foto && fotoId ? { id: fotoId, url: foto.url as string } : null,
         relaciones: unique(list(item.relaciones, value => choice(value, ['AUTOR', 'PARTICIPANTE'] as const), 1, 2), item => item),
         url_publica: item.url_publica === null ? null : url(item.url_publica, 'registros', id), url_detalle_propio: item.url_detalle_propio as string,
       }

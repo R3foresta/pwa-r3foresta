@@ -75,7 +75,7 @@ describe('cliente de lectura INT05 por audiencia', () => {
   it('Mis registros usa exclusivamente Bearer vigente y no exige permiso de registro', async () => {
     localStorage.setItem('authToken', 'cuenta-sin-permiso-operativo')
     const fetch = vi.fn().mockResolvedValue(response(examples.mis_registros)); vi.stubGlobal('fetch', fetch)
-    await expect(ImpactoService.misRegistros()).resolves.toEqual(examples.mis_registros)
+    await expect(ImpactoService.misRegistros()).resolves.toMatchObject(examples.mis_registros)
     expect(fetch).toHaveBeenCalledTimes(1)
     expect(fetch.mock.calls[0][0]).toBe(`${api}/plantaciones/mis-registros`)
     expect(fetch.mock.calls[0][1]).toMatchObject({ credentials: 'omit', cache: 'no-store', headers: { Authorization: 'Bearer cuenta-sin-permiso-operativo' } })
@@ -106,5 +106,23 @@ describe('cliente de lectura INT05 por audiencia', () => {
     expect(() => imagenPublicaUrl('https://privado.test/original')).toThrow()
     vi.stubEnv('VITE_API_URL', 'javascript:alert(1)')
     expect(() => imagenPublicaUrl('900050')).toThrow()
+  })
+  it('foto propia se descarga con Bearer y ruta validada, sin exponer el token en la URL', async () => {
+    localStorage.setItem('authToken', 'cuenta-propia')
+    const blob = new Blob(['jpeg'], { type: 'image/jpeg' })
+    const fetch = vi.fn().mockResolvedValue({ status: 200, headers: new Headers({ 'Content-Type': 'image/jpeg' }), blob: async () => blob }); vi.stubGlobal('fetch', fetch)
+    await expect(ImpactoService.imagenPropia('826000', '901')).resolves.toBe(blob)
+    expect(fetch.mock.calls[0][0]).toBe(`${absoluteApi}/plantaciones/826000/imagenes/901`)
+    expect(fetch.mock.calls[0][1]).toMatchObject({ method: 'GET', credentials: 'omit', cache: 'no-store', headers: { Authorization: 'Bearer cuenta-propia' } })
+    await expect(ImpactoService.imagenPropia('826000', '901?token=otra')).rejects.toThrow()
+  })
+  it('foto propia rechaza respuesta no JPEG o sesión cambiada', async () => {
+    localStorage.setItem('authToken', 'cuenta-inicial')
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce({ status: 200, headers: new Headers({ 'Content-Type': 'text/html' }), blob: async () => new Blob(['html']) }).mockImplementationOnce(async () => {
+      localStorage.setItem('authToken', 'otra-cuenta')
+      return { status: 200, headers: new Headers({ 'Content-Type': 'image/jpeg' }), blob: async () => new Blob(['jpeg'], { type: 'image/jpeg' }) }
+    }))
+    await expect(ImpactoService.imagenPropia('826000', '901')).rejects.toMatchObject({ name: 'ImpactoContratoError' })
+    await expect(ImpactoService.imagenPropia('826000', '901')).rejects.toMatchObject({ status: 401, codigo: 'SESION_INVALIDA' })
   })
 })

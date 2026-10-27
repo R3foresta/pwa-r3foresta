@@ -27,8 +27,20 @@ describe('contratos INT05 con respuestas HTTP sintéticas de SQL 081 / OpenAPI 1
     expect(record.personas[0].afiliacion.estado).toBe('HISTORICA_NO_DISPONIBLE')
   })
   it('acepta Mis registros con relaciones dobles y ámbito privado', () => {
-    expect(validarMisRegistros(examples.mis_registros)).toEqual(examples.mis_registros)
+    expect(validarMisRegistros(examples.mis_registros)).toMatchObject(examples.mis_registros)
     expect(validarMisRegistros(examples.mis_registros).data.registros.find(item => item.id === '826000')?.relaciones).toEqual(['AUTOR', 'PARTICIPANTE'])
+  })
+  it('valida especies y foto privada por registro, con respaldo para respuestas anteriores', () => {
+    const own = clone(examples.mis_registros)
+    const first = own.data.registros[0] as typeof own.data.registros[number] & Record<string, unknown>
+    first.subcampania_nombre = 'Zona Norte'
+    first.especies = [{ planta_id: '8', nombre: 'Kiswara', cantidad: 30 }, { planta_id: '9', nombre: 'Ruda', cantidad: 25 }]
+    first.foto_portada = { id: '901', url: `/api/v1/plantaciones/${first.id}/imagenes/901` }
+    const validated = validarMisRegistros(own).data.registros[0]
+    expect(validated).toMatchObject({ subcampania_nombre: 'Zona Norte', especies: first.especies, foto_portada: first.foto_portada })
+    expect(validarMisRegistros(examples.mis_registros).data.registros[0]).toMatchObject({ subcampania_nombre: null, especies: [], foto_portada: null })
+    first.foto_portada = { id: '901', url: '/api/v1/impact/imagenes/901' }
+    expect(() => validarMisRegistros(own)).toThrow(ImpactoContratoError)
   })
   it.each(['0', '01', '-1', '+1', '1.0', '1e2', ' 1', '1 ', '9223372036854775808', 42, null, ['1']])('rechaza ID no canónico %j', id => {
     expect(() => validarImpactoId(id)).toThrow(ImpactoContratoError)

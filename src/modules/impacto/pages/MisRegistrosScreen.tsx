@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Button, Card, PageHeader } from '../../../components/ui'
 import { useAuth } from '../../../contexts/AuthContext'
 import { ImpactoService } from '../api/impacto.api'
+import OwnRecordPhoto from '../components/OwnRecordPhoto'
 import { formatImpactoDate, formatImpactoNumber } from '../utils/consulta'
 import type { MisRegistro } from '../types'
 
@@ -56,7 +57,7 @@ function AccountMisRegistros({ enabled }: { enabled: boolean }) {
   return <main className="mx-auto max-w-3xl space-y-5 px-5 pb-36 pt-6">
     <PageHeader title="Mis registros" eyebrow="Mi participación" backTo="/participar" />
     <p className="text-xs font-semibold text-brand-700">Historial de todas tus campañas</p>
-    <p className="text-sm leading-6 text-neutral-600">Plantaciones que registraste o en las que figuras como participante histórico. La cantidad pertenece al grupo completo; no representa crédito individual.</p>
+    <p className="text-sm leading-6 text-neutral-600">Plantaciones que registraste o en las que figuras como participante. Cada registro aparece una sola vez, aunque hayas registrado y participado. Las cantidades pertenecen al grupo completo.</p>
     <Link to="/impacto" className="inline-flex min-h-11 items-center text-sm font-semibold text-brand-700 underline">Consultar impacto global</Link>
     {!enabled ? <Card className="space-y-3"><p className="text-sm">Necesitas una sesión verificada para consultar tus registros.</p><Button onClick={() => { void login().catch(() => undefined) }}>Recuperar sesión</Button></Card> : <>
       {reading.loading && <p role="status" className="text-sm text-neutral-600">Consultando tus registros…</p>}
@@ -65,12 +66,20 @@ function AccountMisRegistros({ enabled }: { enabled: boolean }) {
       {reading.records.length > 0 && <ul className="space-y-4">{reading.records.map(record => {
         const author = record.relaciones.includes('AUTOR')
         const destination = author || !record.url_publica ? `/app/participacion/registros/${record.id}` : `/impacto/registros/${record.id}`
-        return <li key={record.id}><Card as="article" className="space-y-3">
-          <div className="flex flex-wrap gap-2">{author && <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-800">Registré</span>}{record.relaciones.includes('PARTICIPANTE') && <span className="rounded-full bg-info-50 px-3 py-1 text-xs font-semibold text-info-700">Participé</span>}</div>
-          <h2 className="break-words font-bold text-brand-800">{record.codigo_trazabilidad}</h2>
-          <p className="text-sm text-neutral-700">{formatImpactoDate(record.fecha_plantacion)} · {formatImpactoNumber(record.cantidad_total_plantada)} plantas del grupo · {record.es_reposicion ? 'Reposición' : 'Plantación inicial'}</p>
-          <p className="text-xs text-neutral-500">Subcampaña {record.subcampania_id}. La relación histórica se conserva aunque se retire la habilitación operativa.</p>
-          <div className="flex flex-wrap gap-4"><Link to={destination} state={returnState} className="inline-flex min-h-11 items-center text-sm font-semibold text-brand-700 underline">{author ? 'Ver mi registro guardado' : record.url_publica ? 'Ver registro público' : 'Ver registro histórico permitido'}</Link>{author && record.url_publica && <Link to={`/impacto/registros/${record.id}`} state={returnState} className="inline-flex min-h-11 items-center text-sm font-semibold text-brand-700 underline">Ver registro público</Link>}</div>
+        return <li key={record.id}><Card as="article" padding="none" className="overflow-hidden">
+          <div className="sm:flex">
+            <div className="h-44 bg-neutral-50 sm:h-auto sm:w-48 sm:shrink-0">
+              {record.foto_portada ? <OwnRecordPhoto key={record.foto_portada.id} registroId={record.id} evidenciaId={record.foto_portada.id} alt={`Foto de la plantación ${record.codigo_trazabilidad}`} /> : <p className="flex h-full items-center justify-center p-4 text-center text-xs text-neutral-500">Foto no disponible</p>}
+            </div>
+            <div className="min-w-0 flex-1 space-y-3 p-4">
+              <div className="flex flex-wrap gap-2">{author && <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-800">Registré</span>}{record.relaciones.includes('PARTICIPANTE') && <span className="rounded-full bg-info-50 px-3 py-1 text-xs font-semibold text-info-700">Participé</span>}</div>
+              <p className="text-sm font-semibold text-neutral-700">{record.es_reposicion ? 'Reposición' : 'Plantación inicial'} · {formatImpactoDate(record.fecha_plantacion)}</p>
+              <div className="space-y-1"><h2 className="break-words font-bold text-brand-800">{record.codigo_trazabilidad}</h2>{record.especies.length ? <ul className="space-y-1 text-sm text-neutral-700">{record.especies.map(species => <li key={species.planta_id} className="flex flex-wrap justify-between gap-x-3"><span className="break-words">{species.nombre ?? 'Nombre histórico no disponible'}</span><span className="font-semibold">{formatImpactoNumber(species.cantidad)} plantas</span></li>)}</ul> : <p className="text-sm text-neutral-500">Especies no disponibles en el resumen.</p>}</div>
+              <p className="text-sm font-bold text-brand-800">{formatImpactoNumber(record.cantidad_total_plantada)} plantas del grupo</p>
+              <p className="text-xs text-neutral-500">{record.subcampania_nombre || `Subcampaña ${record.subcampania_id}`}</p>
+              <div className="flex flex-wrap gap-4"><Link to={destination} state={returnState} className="inline-flex min-h-11 items-center text-sm font-semibold text-brand-700 underline">{author ? 'Ver mi registro guardado' : record.url_publica ? 'Ver registro público' : 'Ver registro histórico permitido'}</Link>{author && record.url_publica && <Link to={`/impacto/registros/${record.id}`} state={returnState} className="inline-flex min-h-11 items-center text-sm font-semibold text-brand-700 underline">Ver registro público</Link>}</div>
+            </div>
+          </div>
         </Card></li>
       })}</ul>}
       {reading.loaded && !reading.recoverSession && <div className="flex flex-wrap gap-3">{reading.cursor && <Button disabled={reading.loading} onClick={() => { void load(reading.cursor ?? undefined) }}>Cargar más registros</Button>}<Button variant="secondary" disabled={reading.loading} onClick={() => { void load() }}>Actualizar mis registros</Button></div>}

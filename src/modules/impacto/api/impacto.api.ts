@@ -1,5 +1,6 @@
 import { validarErrorFueraRecibo } from '../../participacion/api/participacion.contract'
-import { ParticipacionApiError, requestPrivada } from '../../participacion/api/participacion.transport'
+import { ParticipacionApiError, requestPrivada, tokenActual } from '../../participacion/api/participacion.transport'
+import { WebAuthnService } from '../../../services/webauthn.service'
 import type { ImpactoQuery, ImpactoScope, MisRegistrosQuery } from '../types'
 import {
   ImpactoContratoError, validarImpactoConsulta, validarImpactoId, validarImpactoQuery,
@@ -59,6 +60,40 @@ async function requestPublica(path: string, signal?: AbortSignal): Promise<unkno
     signal?.removeEventListener('abort', onAbort)
   }
 }
+/** Una evidencia propia puede pertenecer a un registro no público; nunca se carga con `<img>` sin Bearer. */
+export async function imagenPropia(registroId: string, evidenciaId: string, signal?: AbortSignal): Promise<Blob> {
+  const path = `/plantaciones/${validarImpactoId(registroId)}/imagenes/${validarImpactoId(evidenciaId)}`
+  const token = tokenActual()
+  const controller = new AbortController()
+  let timedOut = false
+  let cancel!: (reason: Error) => void
+  const cancellation = new Promise<never>((_resolve, reject) => { cancel = reject })
+  const onAbort = () => { controller.abort(); cancel(new DOMException('Consulta cancelada', 'AbortError')) }
+  const timeout = window.setTimeout(() => { timedOut = true; controller.abort(); cancel(new DOMException('Tiempo de espera agotado', 'TimeoutError')) }, IMPACTO_REQUEST_TIMEOUT_MS)
+  signal?.addEventListener('abort', onAbort, { once: true })
+  if (signal?.aborted) onAbort()
+  try {
+    const blob = await Promise.race([
+      (async () => {
+        if (controller.signal.aborted) throw new DOMException('Consulta cancelada', 'AbortError')
+        const response = await fetch(`${baseUrl()}${path}`, { method: 'GET', credentials: 'omit', cache: 'no-store', signal: controller.signal, headers: { Authorization: `Bearer ${token}` } })
+        if (response.status !== 200) throw errorFromResponse(response.status, await response.json().catch(() => null))
+        if (response.headers.get('Content-Type')?.split(';')[0].trim().toLowerCase() !== 'image/jpeg') throw new ImpactoContratoError('La respuesta de la foto no cumple el contrato.')
+        return response.blob()
+      })(), cancellation,
+    ])
+    if (WebAuthnService.getToken()?.trim() !== token) throw new ImpactoApiError(401, 'SESION_INVALIDA', 'La sesión cambió durante la lectura de la foto.')
+    if (!blob.size) throw new ImpactoContratoError('La foto está vacía. Vuelve a intentarlo.')
+    return blob
+  } catch (error) {
+    if (signal?.aborted || !timedOut && error instanceof DOMException && error.name === 'AbortError' || error instanceof ImpactoApiError || error instanceof ImpactoContratoError) throw error
+    if (error instanceof ParticipacionApiError) return readingError(error)
+    throw new ImpactoApiError(0, 'RESULTADO_NO_DETERMINADO', timedOut ? 'Se agotó la espera de la foto. Vuelve a intentarlo.' : 'No se pudo cargar la foto. Comprueba tu conexión y vuelve a intentarlo.')
+  } finally {
+    window.clearTimeout(timeout)
+    signal?.removeEventListener('abort', onAbort)
+  }
+}
 function queryString(options: ImpactoQuery): string {
   const query = new URLSearchParams()
   for (const [key, value] of Object.entries(options)) if (value !== undefined) query.set(key, String(value))
@@ -84,4 +119,5 @@ export class ImpactoService {
     } catch (error) { return readingError(error) }
   }
   static imagenPublicaUrl = imagenPublicaUrl
+  static imagenPropia = imagenPropia
 }

@@ -78,10 +78,13 @@ export type ImpactoConsulta = {
 export type MisRegistro = {
   id: string
   subcampania_id: string
+  subcampania_nombre: string | null
   fecha_plantacion: string
   codigo_trazabilidad: string
   cantidad_total_plantada: number
   es_reposicion: boolean
+  especies: { planta_id: string; nombre: string | null; cantidad: number }[]
+  foto_portada: { id: string; url: string } | null
   relaciones: ('AUTOR' | 'PARTICIPANTE')[]
   url_publica: string | null
   url_detalle_propio: string

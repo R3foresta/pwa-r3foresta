@@ -1,16 +1,17 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ImpactoService } from '../api/impacto.api'
 import type { MisRegistro, MisRegistros } from '../types'
 import MisRegistrosScreen from './MisRegistrosScreen'
 
 const auth = vi.hoisted(() => ({ user: { id: '42', auth_id: 'ana' } as { id: string; auth_id: string } | null, isAuthenticated: true, login: vi.fn().mockResolvedValue(undefined) }))
 vi.mock('../../../contexts/AuthContext', () => ({ useAuth: () => auth }))
-vi.mock('../api/impacto.api', () => ({ ImpactoService: { misRegistros: vi.fn() } }))
+vi.mock('../api/impacto.api', () => ({ ImpactoService: { misRegistros: vi.fn(), imagenPropia: vi.fn() } }))
 const request = vi.mocked(ImpactoService.misRegistros)
+const photoRequest = vi.mocked(ImpactoService.imagenPropia)
 function record(id = '22', relations: MisRegistro['relaciones'] = ['AUTOR']): MisRegistro {
-  return { id, subcampania_id: '9', fecha_plantacion: '2026-10-17', codigo_trazabilidad: `Grupo ${id}`, cantidad_total_plantada: 30, es_reposicion: false, relaciones: relations, url_publica: `/api/v1/impact/registros/${id}`, url_detalle_propio: `/api/v1/plantaciones/${id}/detalle-propio` }
+  return { id, subcampania_id: '9', subcampania_nombre: 'Zona Norte', fecha_plantacion: '2026-10-17', codigo_trazabilidad: `Grupo ${id}`, cantidad_total_plantada: 30, es_reposicion: false, especies: [{ planta_id: '8', nombre: 'Kiswara', cantidad: 30 }], foto_portada: null, relaciones: relations, url_publica: `/api/v1/impact/registros/${id}`, url_detalle_propio: `/api/v1/plantaciones/${id}/detalle-propio` }
 }
 const page = (records: MisRegistro[] = [], cursor: string | null = null) => ({ data: { registros: records, siguiente_cursor: cursor } })
 const tree = () => <MemoryRouter><MisRegistrosScreen /></MemoryRouter>
@@ -20,7 +21,9 @@ beforeEach(() => {
   auth.user = { id: '42', auth_id: 'ana' }
   auth.isAuthenticated = true
   request.mockReset()
+  photoRequest.mockReset()
 })
+afterEach(() => vi.unstubAllGlobals())
 describe('Mis registros por relación histórica', () => {
   it('deduplica páginas y distingue autor y participante sin repartir cantidades', async () => {
     request.mockResolvedValueOnce(page([record('22'), record('21', ['PARTICIPANTE'])], '21')).mockResolvedValueOnce(page([record('22', ['PARTICIPANTE']), record('20', ['PARTICIPANTE'])]))
@@ -34,6 +37,51 @@ describe('Mis registros por relación histórica', () => {
     expect(screen.getAllByRole('link', { name: 'Ver registro público' }).map(link => link.getAttribute('href'))).toEqual(['/impacto/registros/22', '/impacto/registros/21', '/impacto/registros/20'])
     expect(request).toHaveBeenLastCalledWith({ limite: 20, cursor: '21' }, expect.any(AbortSignal))
     expect(screen.queryByText(/90 plantas/)).toBeNull()
+  })
+  it('muestra especies de la plantación, fecha, relación y foto propia sin URL pública', async () => {
+    const nativeUrl = URL
+    vi.stubGlobal('URL', class extends nativeUrl { static createObjectURL = vi.fn(() => 'blob:foto-propia'); static revokeObjectURL = vi.fn() })
+    photoRequest.mockResolvedValue(new Blob(['jpeg'], { type: 'image/jpeg' }))
+    request.mockResolvedValue(page([{ ...record('22', ['AUTOR', 'PARTICIPANTE']), url_publica: null, especies: [{ planta_id: '8', nombre: 'Kiswara', cantidad: 20 }, { planta_id: '9', nombre: 'Ruda', cantidad: 10 }], foto_portada: { id: '901', url: '/api/v1/plantaciones/22/imagenes/901' } }]))
+    render(tree())
+    expect((await screen.findByRole('img', { name: 'Foto de la plantación Grupo 22' })).getAttribute('src')).toBe('blob:foto-propia')
+    expect(screen.getByText('Kiswara')).toBeTruthy()
+    expect(screen.getByText('Ruda')).toBeTruthy()
+    expect(screen.getByText('30 plantas del grupo')).toBeTruthy()
+    expect(screen.getAllByText('Registré')).toHaveLength(1)
+    expect(screen.getAllByText('Participé')).toHaveLength(1)
+    expect(screen.getAllByRole('article')).toHaveLength(1)
+    expect(photoRequest).toHaveBeenCalledWith('22', '901', expect.any(AbortSignal))
+  })
+  it('mantiene la tarjeta si falta o falla su miniatura', async () => {
+    const nativeUrl = URL
+    vi.stubGlobal('URL', class extends nativeUrl { static createObjectURL = vi.fn(() => 'blob:foto-recuperada'); static revokeObjectURL = vi.fn() })
+    photoRequest.mockRejectedValueOnce(new Error('Foto temporalmente no disponible')).mockResolvedValueOnce(new Blob(['jpeg'], { type: 'image/jpeg' }))
+    request.mockResolvedValue(page([record('22'), { ...record('21', ['PARTICIPANTE']), foto_portada: { id: '902', url: '/api/v1/plantaciones/21/imagenes/902' } }]))
+    render(tree())
+    await screen.findByText('No se pudo cargar la foto.')
+    expect(screen.getByText('Foto no disponible')).toBeTruthy()
+    expect(screen.getAllByRole('article')).toHaveLength(2)
+    fireEvent.click(screen.getByRole('button', { name: 'Reintentar foto' }))
+    expect((await screen.findByRole('img', { name: 'Foto de la plantación Grupo 21' })).getAttribute('src')).toBe('blob:foto-recuperada')
+    expect(photoRequest).toHaveBeenCalledTimes(2)
+  })
+  it('carga la miniatura al entrar cerca de la vista, sin pedir todas las fotos al montar', async () => {
+    let intersect!: (entries: IntersectionObserverEntry[]) => void
+    class Observer {
+      constructor(callback: IntersectionObserverCallback) { intersect = entries => callback(entries, this as unknown as IntersectionObserver) }
+      observe = vi.fn()
+      disconnect = vi.fn()
+    }
+    vi.stubGlobal('IntersectionObserver', Observer)
+    photoRequest.mockImplementation(() => new Promise(() => {}))
+    request.mockResolvedValue(page([{ ...record(), foto_portada: { id: '901', url: '/api/v1/plantaciones/22/imagenes/901' } }]))
+    render(tree())
+    await screen.findByText('Foto disponible')
+    await waitFor(() => expect(intersect).toBeTypeOf('function'))
+    expect(photoRequest).not.toHaveBeenCalled()
+    act(() => intersect([{ isIntersecting: true } as IntersectionObserverEntry]))
+    expect(photoRequest).toHaveBeenCalledWith('22', '901', expect.any(AbortSignal))
   })
   it('permite lectura histórica no pública sin atribuir acceso operativo', async () => {
     request.mockResolvedValueOnce(page([{ ...record('22', ['PARTICIPANTE']), url_publica: null }]))
@@ -66,6 +114,21 @@ describe('Mis registros por relación histórica', () => {
     expect(screen.getByRole('link', { name: 'Ver cómo participar' }).getAttribute('href')).toBe('/participar')
     await act(async () => { finish(page([record()])); await Promise.resolve() })
     expect(screen.queryByText('Grupo 22')).toBeNull()
+  })
+  it('revoca la foto privada al cambiar de cuenta', async () => {
+    const nativeUrl = URL, revoke = vi.fn()
+    vi.stubGlobal('URL', class extends nativeUrl { static createObjectURL = vi.fn(() => 'blob:foto-ana'); static revokeObjectURL = revoke })
+    photoRequest.mockResolvedValue(new Blob(['jpeg'], { type: 'image/jpeg' }))
+    request.mockResolvedValueOnce(page([{ ...record(), foto_portada: { id: '901', url: '/api/v1/plantaciones/22/imagenes/901' } }]))
+    const view = render(tree())
+    await screen.findByRole('img', { name: 'Foto de la plantación Grupo 22' })
+    auth.user = { id: '43', auth_id: 'bea' }
+    localStorage.setItem('authToken', 'bea-token')
+    request.mockResolvedValueOnce(page())
+    view.rerender(tree())
+    await screen.findByText(/Todavía no hay registros/)
+    expect(revoke).toHaveBeenCalledWith('blob:foto-ana')
+    expect(screen.queryByRole('img', { name: 'Foto de la plantación Grupo 22' })).toBeNull()
   })
   it('cambiar sólo el token oculta filas mientras verifica la nueva lectura', async () => {
     request.mockResolvedValueOnce(page([record()]))

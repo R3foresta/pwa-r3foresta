@@ -3,6 +3,7 @@ import { useLocation, useParams } from 'react-router-dom'
 import { Button, Card, PageHeader } from '../../../../components/ui'
 import { useAuth } from '../../../../contexts/AuthContext'
 import { RegistroParticipacionService } from '../../api/registro.api'
+import OwnRecordPhoto from '../../../impacto/components/OwnRecordPhoto'
 import type { DetallePropioRegistro } from '../../registroTypes'
 import { isPublicImpactPath } from '../../../../utils/appAccess'
 
@@ -14,11 +15,6 @@ export default function DetallePropioScreen() {
     ?? (state as { impactoReturnTo?: unknown } | null)?.impactoReturnTo
   const returnTo = typeof from === 'string' && (from === '/app/participacion/mis-registros' || isPublicImpactPath(from)) ? from : '/app/participacion/mis-registros'
   return <DetallePropio key={`${user?.id}:${localStorage.getItem('authToken')}:${registroId}`} actorId={user?.id ?? null} registroId={registroId ?? null} returnTo={returnTo} />
-}
-
-function ConfirmedPhoto({ id }: { id: string }) {
-  const [failed, setFailed] = useState(false)
-  return <div className="space-y-1">{failed ? <p className="rounded-2xl bg-neutral-50 p-4 text-sm text-neutral-600">La foto no se pudo cargar.</p> : <img src={RegistroParticipacionService.imagenPublicaUrl(id)} alt={`Evidencia confirmada ${id}`} loading="lazy" onError={() => setFailed(true)} className="h-48 w-full rounded-2xl object-cover" />}<p className="text-xs text-neutral-500">Evidencia {id}</p></div>
 }
 
 function DetallePropio({ actorId, registroId, returnTo }: { actorId: string | null; registroId: string | null; returnTo: string }) {
@@ -47,7 +43,7 @@ function DetallePropio({ actorId, registroId, returnTo }: { actorId: string | nu
       <Card as="section" className="space-y-2"><h2 className="font-bold text-brand-800">Ubicación evaluada</h2><p className="text-sm text-neutral-700">{data.latitud}, {data.longitud}</p><p className="text-sm text-neutral-700">{data.gps_dentro_poligono ? 'Dentro del polígono' : 'Exterior permitido registrado'}</p></Card>
       <Card as="section" className="space-y-3"><h2 className="font-bold text-brand-800">Personas y afiliaciones del registro</h2>{data.participantes.map((person) => <div key={person.usuario_id} className="border-t border-neutral-100 pt-2 text-sm"><p className="font-bold text-brand-800">{person.nombre_snapshot ?? 'Nombre histórico no disponible'} · {person.es_responsable ? 'Responsable' : 'Participante'}</p><p className="text-neutral-600">{person.afiliacion_estado === 'DECLARADA' ? person.afiliacion_snapshot : person.afiliacion_estado === 'NO_DECLARADA' ? 'Sin afiliación declarada' : 'Afiliación histórica no disponible'}</p></div>)}</Card>
       {data.observaciones_autor && <Card as="section" className="space-y-2"><h2 className="font-bold text-brand-800">Observaciones propias</h2><p className="whitespace-pre-wrap break-words text-sm text-neutral-700">{data.observaciones_autor}</p></Card>}
-      <Card as="section" className="space-y-3"><h2 className="font-bold text-brand-800">Evidencia confirmada</h2><div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{data.evidencia_ids.map((id) => <ConfirmedPhoto key={id} id={id} />)}</div></Card>
+      <Card as="section" className="space-y-3"><h2 className="font-bold text-brand-800">Evidencia confirmada</h2><div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{data.evidencia_ids.map((id) => <div key={id} className="space-y-1"><div className="h-48"><OwnRecordPhoto registroId={data.registro_plantacion_id} evidenciaId={id} alt={`Evidencia confirmada ${id}`} /></div><p className="text-xs text-neutral-500">Evidencia {id}</p></div>)}</div></Card>
     </>}
   </div>
 }

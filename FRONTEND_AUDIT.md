@@ -10,6 +10,7 @@ Entrega INT06 publicada en PWA `62f55dc`: 32 suites/445 tests, lint y build/Type
 
 | Prioridad | ID | Estado | Qué falta |
 | --- | --- | --- | --- |
+| Alta | AUD-029 | CERRADO en localhost | Lectura reparada con 088; VOLUNTARIO plantador, admin plantador y «Participé» confirmados en la pantalla real. |
 | Alta | AUD-028 | PENDIENTE · contrato administrativo | Historial privado completo de plantaciones por subcampaña y lectura de stock administrativo fuera de ACTIVA; el detalle ADMIN muestra por ahora stock elegible de inicial y registros publicados. |
 | Media | AUD-027 | CORREGIDO local · aceptación visual pendiente | Plan, stock y registro priorizan común/científico; catálogo real cotejado y backend local recargado. Falta aceptación autenticada de ambas audiencias y publicación externa. |
 | Alta | AUD-026 | CORREGIDO local · confirmación real pendiente | Equipo resuelve Administrador → Plantador con C07; acreditar el terminal autenticado real y la actualización de permisos de ambas cuentas. |
@@ -31,6 +32,12 @@ Entrega INT06 publicada en PWA `62f55dc`: 32 suites/445 tests, lint y build/Type
 El orden de ejecución entre repositorios se decide en el tablero oficial; esta tabla prioriza riesgos de frontend, no introduce nuevas dependencias de producto.
 
 ## Pendientes y criterio de cierre
+
+### AUD-029 — Mis registros: lectura propia y tarjetas históricas
+
+27 de octubre: en `localhost:5173` la lectura propia devolvía «No se pudo consultar. Reintente la lectura» con sesión verificada. El diagnóstico de la RPC configurada encontró SQLSTATE `25006`: `pa_mis_registros_leer` estaba declarada `STABLE`, pero la verificación de actor ejecuta `SELECT FOR SHARE`. La migración backend 088 la declara `VOLATILE` y agrega a la proyección propia nombre de subcampaña, especies históricas y foto de portada autorizada. La PWA muestra una lista sin agrupar, con relación «Registré»/«Participé» y cantidad grupal, para ADMIN y VOLUNTARIO. Las fotos privadas se cargan con Bearer y se descartan al cambiar cuenta; el detalle propio reutiliza esa ruta para registros no públicos.
+
+Código frontend y backend verificado localmente con pruebas focales, lint y build; OpenAPI generado coincide. El usuario aplicó 088 en el SQL Editor del proyecto configurado (resultado «Success. No rows returned»). Tras reiniciar el backend local, la ruta nueva de imagen devuelve 401 sin sesión y las RPC de lista/foto devuelven `PT401` para una identidad sintética inexistente: el error `25006` ya no se reproduce en ese control. El usuario confirmó que **las plantaciones, nombres de planta y fotos aparecen** en `/app/participacion/mis-registros` con su cuenta VOLUNTARIO plantador, que la lista aparece con la cuenta admin plantador y que un registro creado por otra persona lleva la etiqueta «Participé». El acceso de una cuenta ajena quedó cubierto en SQL sintético y pruebas del servicio, sin sesión real ajena. No se han creado plantaciones de prueba ni modificado filas reales.
 
 ### AUD-028 — Alcance de información para ADMIN en Plantación
 
@@ -112,7 +119,7 @@ Tercera pasada: ficha seleccionada antes del mapa, registro antes del stock por 
 
 Verificación local hasta la tercera pasada: `npm run test` (51 archivos / 755 pruebas), `npm run lint`, `npm run build` (incluye TypeScript/PWA) y `git diff --check` aprobados. El build conserva el aviso conocido del chunk diferido de MapLibre mayor a 1 MB; falta medirlo en equipos de campo.
 
-Pendiente de contrato para la siguiente mejora: `GET /api/v1/plantaciones/mis-registros` admite únicamente `cursor`/`limite`; su DTO carece de campaña/nombres/coordenadas. Para filtrar el historial y dibujar su mapa se necesitan esos campos/filtros, conservando autor/participante histórico aun con acceso retirado. No derivar esa pertenencia de capacidades actuales ni usar el mapa colectivo como si fuera el historial propio. El primer paso ya simplifica la presentación de preparación/cargas; queda pendiente aceptación con usuarios y medición de carga en campo, manteniendo recuperación, identidad y confirmación durable.
+Pendiente de contrato para una mejora posterior: `GET /api/v1/plantaciones/mis-registros` admite únicamente `cursor`/`limite`; 088 añade nombre de subcampaña, especies y foto, pero todavía no entrega campaña/coordenadas ni filtros. Para filtrar el historial y dibujar su mapa se necesitan esos campos/filtros, conservando autor/participante histórico aun con acceso retirado. No derivar esa pertenencia de capacidades actuales ni usar el mapa colectivo como si fuera el historial propio. El primer paso ya simplifica la presentación de preparación/cargas; queda pendiente aceptación con usuarios y medición de carga en campo, manteniendo recuperación, identidad y confirmación durable.
 
 El 22 de octubre se constató duplicación de Impacto global, retorno al mismo destino, bloque personal antes de las métricas y exceso de listas/filtros en la portada. Se recompuso con componentes existentes: contador/mapa/carrusel, perfil en esquina, navegación pública, copia directa y orientación para incorporarse. Lint/build y 695 pruebas aprobados; revisión de navegador local visitante en móvil/escritorio. La prueba de registro WebAuthn y la aceptación del diseño por Pablo siguen pendientes. [Detalle y límites](src/modules/impacto/README.md#revisión-uxui--22-de-octubre-de-2026).
 

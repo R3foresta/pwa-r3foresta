@@ -1,16 +1,24 @@
 import { act, render, screen } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { RegistroParticipacionService } from '../../api/registro.api'
+import { ImpactoService } from '../../../impacto/api/impacto.api'
 import type { DetallePropioRegistroLectura } from '../../registroTypes'
 import DetallePropioScreen from './DetallePropioScreen'
 
 const auth = vi.hoisted(() => ({ actorId: '801', login: vi.fn() }))
 vi.mock('../../../../contexts/AuthContext', () => ({ useAuth: () => ({ user: { id: auth.actorId }, login: auth.login }) }))
+vi.mock('../../../impacto/api/impacto.api', () => ({ ImpactoService: { imagenPropia: vi.fn() } }))
 function detail(): DetallePropioRegistroLectura {
   return { observado_en: '2026-10-16T12:00:00Z', data: { registro_plantacion_id: '9007199254740999', codigo_trazabilidad: 'PLT-PERSISTIDA', subcampania_id: '820', fecha_plantacion: '2026-10-16', revision_registro: '9007199254740995', relaciones: ['AUTOR'], cantidad_total_plantada: 7, especies: [{ planta_id: '8', cantidad: 7 }], latitud: -16.5, longitud: -68.1, gps_dentro_poligono: true, participantes: [{ usuario_id: '801', nombre_snapshot: 'Nombre guardado', afiliacion_snapshot: 'Afiliación de entonces', afiliacion_estado: 'DECLARADA', afiliacion_tipo: 'OTRA', organizacion_id_snapshot: null, es_responsable: true }], evidencia_ids: ['901'], observaciones_autor: 'Observación privada persistida' } }
 }
-beforeEach(() => { auth.actorId = '801' })
+beforeEach(() => {
+  auth.actorId = '801'
+  vi.mocked(ImpactoService.imagenPropia).mockReset().mockResolvedValue(new Blob(['jpeg'], { type: 'image/jpeg' }))
+  const nativeUrl = URL
+  vi.stubGlobal('URL', class extends nativeUrl { static createObjectURL = vi.fn(() => 'blob:foto-propia'); static revokeObjectURL = vi.fn() })
+})
+afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks() })
 function element() { return <MemoryRouter initialEntries={['/detalle/9007199254740999']}><Routes><Route path="/detalle/:registroId" element={<DetallePropioScreen />} /></Routes></MemoryRouter> }
 
 describe('Detalle propio persistido', () => {
@@ -25,7 +33,8 @@ describe('Detalle propio persistido', () => {
     expect(screen.getByText(/9007199254740995/)).toBeTruthy()
     expect(own).toHaveBeenCalledWith('801', '9007199254740999', expect.any(AbortSignal))
     expect(context).not.toHaveBeenCalled()
-    expect(screen.getByRole('img', { name: 'Evidencia confirmada 901' }).getAttribute('src')).toContain('/api/v1/impact/imagenes/901')
+    expect((await screen.findByRole('img', { name: 'Evidencia confirmada 901' })).getAttribute('src')).toBe('blob:foto-propia')
+    expect(ImpactoService.imagenPropia).toHaveBeenCalledWith('9007199254740999', '901', expect.any(AbortSignal))
   })
 
   it('sin observaciones del autor no inventa una sección y conserva ausencias históricas', async () => {

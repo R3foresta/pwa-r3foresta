@@ -28,7 +28,7 @@ La proyección de Impacto entrega mapa, plantación inicial, meta, faltantes y a
 
 El mismo mapa admite presentación compacta con altura de 32svh acotada a 14–18rem en móvil, ampliación voluntaria y leyenda desplegable. MapLibre usa gestos cooperativos: un dedo desplaza la página y dos dedos operan el mapa; botones, marcadores y controles mantienen objetivos de 44px. La instancia se conserva al ampliar/reducir. El formulario inicial conserva sus tres pasos y su footer usa `bottom-0` y área segura porque `BottomNav` se oculta en esa ruta.
 
-Mis registros señala explícitamente que abarca todas las campañas. Su contrato sólo entrega `subcampania_id`, sin campaña, nombres ni coordenadas, y sólo acepta paginación. Un filtro histórico por campaña/mapa propio requiere ampliar ese contrato; cruzar capacidades actuales excluiría registros de accesos retirados. No se simula ese filtro en cliente.
+Mis registros muestra una sola lista de todas las campañas, sin agrupar. La proyección propia añade nombre de subcampaña, especies del registro y una foto de portada autorizada; conserva los campos anteriores durante la transición de contrato. No entrega campaña, coordenadas ni filtros adicionales a la paginación. Un filtro histórico por campaña/mapa propio requeriría ampliar el contrato; cruzar capacidades actuales excluiría registros de accesos retirados. No se simula ese filtro en cliente.
 
 La comprobación visual autenticada en teléfono y gestos táctiles reales sigue pendiente: el navegador local quedó desactivado en Work al preparar la vista móvil. Las pruebas de componentes no acreditan WebGL real ni escrituras contra backend. El registro inicial reutiliza el asistente existente; no se cambiaron comandos, permisos, cargas ni persistencia.
 
@@ -44,6 +44,7 @@ Verificación local de esta iteración: 51 archivos / 755 pruebas aprobadas, lin
 | `hooks/useImpactoConsulta.ts` | Consulta cancelable por ámbito/filtro, paginación y descarte de respuestas obsoletas. |
 | `pages/ImpactoConsultaScreen.tsx`, `pages/ImpactoRegistroScreen.tsx` | Global/campaña/subcampaña y detalle público reducido. |
 | `pages/MisRegistrosScreen.tsx` | Historial propio separado por cuenta/token y paginado sin depender de capacidades. |
+| `components/OwnRecordPhoto.tsx` | Foto histórica propia cargada con Bearer cuando se acerca a la pantalla; libera el Blob al cambiar cuenta o desmontar. |
 | `components/ImpactoMapPanel.tsx` | Mapa cargado de forma diferida; listas equivalentes accesibles fuera del mapa. |
 | `components/ImpactoExplorer.tsx`, `hooks/useImpactoExplorer.ts` | Exploración de campañas/zonas, selección y navegación visual del carrusel; sin consultas adicionales al backend. |
 | `components/ImpactoSummary.tsx` | Jerarquía visual de indicadores públicos, sin calcular supervivencia. |
@@ -62,6 +63,7 @@ Base configurada por `VITE_API_URL`, con `/api/v1` agregado por el cliente. Las 
 | `/impact/subcampanias/:id` | `organizacion_id`, `planta_id`, `desde`, `hasta`, `cursor`, `limite` |
 | `/impact/registros/:id` | Ninguno. |
 | `/plantaciones/mis-registros` | `cursor`, `limite`. Requiere Bearer vigente y cuenta activa. |
+| `/plantaciones/:registroId/imagenes/:evidenciaId` | JPEG privado de un registro donde el actor figura como autor o participante histórico; requiere Bearer. |
 
 IDs y cursor son cadenas decimales canónicas positivas dentro de BIGINT; nunca convertirlos a `number`. `limite` admite 1–100, con 20 por omisión del backend. `desde`/`hasta` son días inclusivos de plantación, sin desplazar por zona horaria. Los parámetros repetidos, desconocidos o incompatibles con el nivel se rechazan. `seleccion=s:<id>` o `seleccion=r:<id>` sólo pertenece a la URL de presentación; no se envía al backend.
 
@@ -91,7 +93,7 @@ La consulta pública comienza sin esperar perfil/capacidades, omite credenciales
 
 En la consulta pública sólo se pagina `registros`, por ID descendente y cursor exclusivo. Cada página vuelve a incluir indicadores, campañas, subcampañas y mapa de todo el alcance filtrado: se reemplazan esos campos y se anexan únicamente registros deduplicados. No sumar indicadores por página. Si la proyección completa cambia al paginar, se retiran filas que dejaron de ser públicas y se muestra el cambio de alcance. Cambiar filtros/ámbito cancela la lectura anterior y oculta sus resultados hasta resolver la nueva.
 
-Mis registros usa Bearer directamente, sin pedir capacidades operativas. La frontera de cuenta/token desmonta el contenido previo, cancela solicitudes pendientes y descarta respuestas tardías. La unión se deduplica por ID y conserva las etiquetas «Registré»/«Participé»; la cantidad sigue perteneciendo al grupo. El autor tiene acceso al detalle propio y, cuando existe, un enlace público separado. El participante prefiere el detalle público y usa el histórico permitido cuando el ámbito no es público. La lista no amplía observaciones privadas ni concede acceso a stock/equipo. 401/403 ofrecen recuperar sesión; error y vacío confirmado son estados distintos. Actualizar reinicia el recorrido de cursores.
+Mis registros usa Bearer directamente, sin pedir capacidades operativas, para ADMIN y VOLUNTARIO con la misma relación propia. La frontera de cuenta/token desmonta el contenido previo, cancela solicitudes pendientes y descarta respuestas tardías. La unión se deduplica por ID y conserva las etiquetas «Registré»/«Participé»; la cantidad sigue perteneciendo al grupo. Las tarjetas muestran fecha, especies, subcampaña y foto cuando están disponibles. La foto se consulta con Bearer por la ruta privada, se presenta mediante un Blob local y no expone token, bucket ni ruta de Storage; si falla, la tarjeta sigue disponible. El detalle propio usa esa misma lectura de imagen para registros no públicos. El autor tiene acceso al detalle propio y, cuando existe, un enlace público separado. El participante prefiere el detalle público y usa el histórico permitido cuando el ámbito no es público. La lista no amplía observaciones privadas ni concede acceso a stock/equipo. 401/403 ofrecen recuperar sesión; error y vacío confirmado son estados distintos. Actualizar reinicia el recorrido de cursores.
 
 ## Última campaña
 
