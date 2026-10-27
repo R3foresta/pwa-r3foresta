@@ -917,6 +917,7 @@ function DetalleSubcampanaScreen() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, login } = useAuth()
+  const isAdmin = (user?.rol ?? '').toUpperCase() === 'ADMIN'
   const { subcampaniaId } = useParams<{ subcampaniaId: string }>()
 
   const numericId = Number(subcampaniaId)
@@ -935,7 +936,7 @@ function DetalleSubcampanaScreen() {
   )
   const [searchParams, setSearchParams] = useSearchParams()
   const requestedTab = searchParams.get('pestana')
-  const activeTab: DetailTab = requestedTab === 'equipo' || requestedTab === 'mapa' ? requestedTab : 'resumen'
+  const activeTab: DetailTab = requestedTab === 'equipo' || requestedTab === 'mapa' || (isAdmin && requestedTab === 'registros') ? requestedTab : 'resumen'
   const setActiveTab = (tab: DetailTab) => {
     const next = new URLSearchParams(searchParams)
     next.set('pestana', tab)
@@ -954,7 +955,6 @@ function DetalleSubcampanaScreen() {
   const closeInFlightRef = useRef(false)
 
   const authId = user?.auth_id
-  const isAdmin = (user?.rol ?? '').toUpperCase() === 'ADMIN'
   const registration = useRegistroContext(user?.id ?? null, sub?.id === numericId ? String(sub.id) : null, isAdmin && sub?.estado === 'ACTIVA')
   const displayedPlan = plan?.subcampania_id === numericId ? plan : null
   const requestRef = useRef(0)
@@ -1264,7 +1264,7 @@ function DetalleSubcampanaScreen() {
 
           {!loading && !error && sub && (
             <>
-              <DetailTabs active={activeTab} onChange={setActiveTab} />
+              <DetailTabs active={activeTab} onChange={setActiveTab} showRegistros={isAdmin} />
 
               {planReadError && (
                 <div role="alert" className="rounded-3xl bg-danger-50 p-4 text-xs font-semibold text-danger-700 ring-1 ring-danger-200">

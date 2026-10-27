@@ -27,7 +27,7 @@ function props() {
 describe('Historial detallado del ADMIN interno', () => {
   it('conserva la identidad exacta al seleccionar mapa y abre los detalles históricos sin escrituras', async () => {
     const current = props()
-    render(<MemoryRouter><SubcampaniaAdminHistorial {...current} returnTo="/app/planting/subcampanias/51?pestana=resumen" /></MemoryRouter>)
+    render(<MemoryRouter><SubcampaniaAdminHistorial {...current} returnTo="/app/planting/subcampanias/51?pestana=registros" /></MemoryRouter>)
     expect(screen.getByText(/no incluye una auditoría administrativa completa/)).toBeTruthy()
     expect(screen.getByText('Ana histórica')).toBeTruthy()
     expect(screen.queryByRole('img')).toBeNull()

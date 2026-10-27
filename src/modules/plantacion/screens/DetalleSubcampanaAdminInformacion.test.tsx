@@ -100,6 +100,32 @@ beforeEach(() => {
 afterEach(() => { vi.restoreAllMocks() })
 
 describe('Información de Plantación para ADMIN interno', () => {
+  it('muestra en Resumen los agregados del ámbito completo y lleva el detalle a Registros', async () => {
+    const response = publicData()
+    response.data.subcampanias[0] = { ...response.data.subcampanias[0], registros: 27, plantacion_inicial: 150, reposiciones: 12 }
+    response.data.indicadores = { registros: 99, plantacion_inicial: 999, reposiciones: 99, bajas_reportadas: 0 }
+    response.data.siguiente_cursor = '500'
+    vi.mocked(ImpactoService.consultar).mockResolvedValue(response)
+    render(<Tree />)
+
+    const activity = await screen.findByRole('region', { name: 'Actividad de plantación' }, { timeout: 5000 })
+    await waitFor(() => expect(within(activity).getByText('Registros').parentElement?.querySelector('dd')?.textContent).toBe('27'))
+    expect(within(activity).getByText('Plantación inicial').parentElement?.querySelector('dd')?.textContent).toBe('150')
+    expect(within(activity).getByText('Reposiciones').parentElement?.querySelector('dd')?.textContent).toBe('12')
+    expect(screen.queryByRole('region', { name: 'Historial de plantaciones' })).toBeNull()
+    expect(screen.queryByText('PLT-826-HIST')).toBeNull()
+    expect(screen.queryByText('Responsable histórico 826')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Cargar más plantaciones' })).toBeNull()
+
+    fireEvent.click(within(activity).getByRole('button', { name: 'Ver registros' }))
+    const history = await screen.findByRole('region', { name: 'Historial de plantaciones' })
+    expect(await within(history).findByText('Responsable histórico 826')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Registros' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.queryByRole('region', { name: 'Actividad de plantación' })).toBeNull()
+    expect(within(history).getByRole('button', { name: 'Cargar más plantaciones' })).toBeTruthy()
+    expect(ImpactoService.consultar).toHaveBeenCalledOnce()
+  })
+
   it('consulta stock sin membresía, conserva asignación deshabilitada y comparte mapa con el historial', async () => {
     render(<Tree />)
     const stock = await screen.findByRole('region', { name: 'Stock de la subcampaña' })
@@ -111,6 +137,7 @@ describe('Información de Plantación para ADMIN interno', () => {
     fireEvent.click(assign)
     expect(LotesViveroService.crearAsignacion).not.toHaveBeenCalled()
 
+    fireEvent.click(screen.getByRole('button', { name: 'Registros' }))
     const history = await screen.findByRole('region', { name: 'Historial de plantaciones' })
     expect(await within(history).findByText('Responsable histórico 826')).toBeTruthy()
     fireEvent.click(within(history).getByRole('button', { name: 'Ver en mapa' }))
@@ -142,6 +169,7 @@ describe('Información de Plantación para ADMIN interno', () => {
 
   it('conserva la plantación elegida desde el historial en la ruta de retorno de la ficha pública', async () => {
     render(<Tree />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Registros' }))
     const history = await screen.findByRole('region', { name: 'Historial de plantaciones' })
     fireEvent.click(await within(history).findByRole('button', { name: 'Ver en mapa' }))
     await waitFor(() => expect(screen.getByTestId('mapa-compartido').getAttribute('data-selection')).toBe(`r:${registroId}`))
@@ -152,11 +180,57 @@ describe('Información de Plantación para ADMIN interno', () => {
     expect(screen.getByRole('button', { name: 'Mapa' }).getAttribute('aria-pressed')).toBe('true')
   })
 
+  it('abre Registros desde la URL y conserva esa sección al volver de la ficha pública', async () => {
+    const destination = '/app/planting/subcampanias/826?pestana=registros'
+    render(<Tree initialPath={destination} />)
+    const history = await screen.findByRole('region', { name: 'Historial de plantaciones' })
+    expect(await within(history).findByText('Responsable histórico 826')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Registros' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.queryByRole('region', { name: 'Actividad de plantación' })).toBeNull()
+    fireEvent.click(within(history).getByRole('link', { name: 'Abrir ficha pública' }))
+    expect(screen.getByTestId('ficha-return').textContent).toBe(destination)
+    fireEvent.click(screen.getByRole('link', { name: 'Volver al mapa' }))
+    const returnedHistory = await screen.findByRole('region', { name: 'Historial de plantaciones' })
+    expect(await within(returnedHistory).findByText('Responsable histórico 826')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Registros' }).getAttribute('aria-pressed')).toBe('true')
+  })
+
+  it('conserva las páginas cargadas al alternar Registros, Resumen y Mapa', async () => {
+    const first = publicData()
+    first.data.siguiente_cursor = '500'
+    const next = publicData()
+    const secondRecord = { ...next.data.registros[0], id: '499', codigo_trazabilidad: 'PLT-826-SEGUNDO' }
+    next.data.registros = [secondRecord]
+    next.data.mapa.push({ ...next.data.mapa[0], registro_id: secondRecord.id })
+    next.data.siguiente_cursor = null
+    vi.mocked(ImpactoService.consultar).mockResolvedValueOnce(first).mockResolvedValueOnce(next)
+    render(<Tree initialPath="/app/planting/subcampanias/826?pestana=registros" />)
+    await screen.findByText('PLT-826-HIST')
+    fireEvent.click(screen.getByRole('button', { name: 'Cargar más plantaciones' }))
+    expect(await screen.findByText('PLT-826-SEGUNDO')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Resumen' }))
+    expect(await screen.findByRole('region', { name: 'Actividad de plantación' })).toBeTruthy()
+    expect(screen.queryByText('PLT-826-SEGUNDO')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Mapa' }))
+    expect((await screen.findByTestId('mapa-compartido')).getAttribute('data-points')).toBe(`${registroId},499`)
+    fireEvent.click(screen.getByRole('button', { name: 'Registros' }))
+    expect(await screen.findByText('PLT-826-HIST')).toBeTruthy()
+    expect(screen.getByText('PLT-826-SEGUNDO')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Cargar más plantaciones' })).toBeNull()
+    expect(ImpactoService.consultar).toHaveBeenCalledTimes(2)
+    expect(ImpactoService.consultar).toHaveBeenLastCalledWith({ tipo: 'subcampania', id: '826' }, { limite: 20, cursor: '500' }, expect.any(AbortSignal))
+  })
+
   it('un 404 público conserva stock y polígono oficial sin afirmar que el historial está vacío', async () => {
     vi.mocked(ImpactoService.consultar).mockRejectedValue(Object.assign(new Error('No publicado'), { status: 404 }))
     render(<Tree />)
     expect(await screen.findByText('Stock 801-826')).toBeTruthy()
     expect(await screen.findByText(/Esto no significa que no existan plantaciones/)).toBeTruthy()
+    expect(screen.queryByText(/Todavía no hay plantaciones registradas/)).toBeNull()
+    expect(screen.getByRole('button', { name: 'Reintentar resumen de actividad' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Registros' }))
+    expect(await screen.findByText(/El historial público no está disponible/)).toBeTruthy()
     expect(screen.queryByText(/Todavía no hay plantaciones registradas/)).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Mapa' }))
     const map = await screen.findByTestId('mapa-compartido')
@@ -171,9 +245,10 @@ describe('Información de Plantación para ADMIN interno', () => {
     const stock = await screen.findByRole('region', { name: 'Stock de la subcampaña' })
     expect(await within(stock).findByRole('alert')).toBeTruthy()
     expect(within(stock).queryByText('Sin stock')).toBeNull()
+    expect(within(stock).getByRole('button', { name: 'Reintentar stock' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Registros' }))
     expect(await screen.findByText('Responsable histórico 826')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Ver en mapa' })).toBeTruthy()
-    expect(within(stock).getByRole('button', { name: 'Reintentar stock' })).toBeTruthy()
   })
 
   it('usa el polígono autorizado del contexto cuando falta en el detalle y falla la consulta pública', async () => {
@@ -195,13 +270,16 @@ describe('Información de Plantación para ADMIN interno', () => {
     expect(within(stock).getByText(/El stock no se ha consultado/)).toBeTruthy()
     expect(RegistroParticipacionService.contexto).not.toHaveBeenCalled()
     expect(within(stock).queryByText('Sin stock')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Registros' }))
     expect(await screen.findByText('Responsable histórico 826')).toBeTruthy()
   })
 
   it.each(['GENERAL', 'VALIDADOR'])('conserva el recorrido de %s sin montar las lecturas nuevas de ADMIN', async rol => {
     auth.user.rol = rol
-    render(<Tree />)
+    render(<Tree initialPath="/app/planting/subcampanias/826?pestana=registros" />)
     expect(await screen.findByRole('heading', { name: 'Subcampaña 826' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Resumen' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.queryByRole('button', { name: 'Registros' })).toBeNull()
     expect(screen.queryByRole('region', { name: 'Stock de la subcampaña' })).toBeNull()
     expect(screen.queryByRole('region', { name: 'Historial de plantaciones' })).toBeNull()
     expect(RegistroParticipacionService.contexto).not.toHaveBeenCalled()
@@ -223,7 +301,6 @@ describe('Información de Plantación para ADMIN interno', () => {
     const historySignal = vi.mocked(ImpactoService.consultar).mock.calls[0][2]!
     fireEvent.click(screen.getByRole('button', { name: 'Cambiar subcampaña' }))
     expect(await screen.findByText('Stock 801-827')).toBeTruthy()
-    expect(await screen.findByText('Responsable histórico 827')).toBeTruthy()
     expect(stockSignal.aborted).toBe(true)
     expect(historySignal.aborted).toBe(true)
     await act(async () => {
@@ -234,6 +311,9 @@ describe('Información de Plantación para ADMIN interno', () => {
     expect(screen.queryByText('Stock 801-826')).toBeNull()
     expect(screen.queryByText('Responsable histórico 826')).toBeNull()
     expect(screen.getByText('Stock 801-827')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Registros' }))
+    expect(await screen.findByText('Responsable histórico 827')).toBeTruthy()
+    expect(screen.queryByText('Responsable histórico 826')).toBeNull()
   })
 
   it('cancela lecturas al cambiar cuenta y no restaura información del ADMIN anterior', async () => {
