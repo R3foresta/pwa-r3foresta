@@ -274,7 +274,7 @@ describe('Información de Plantación para ADMIN interno', () => {
     expect(await screen.findByText('Responsable histórico 826')).toBeTruthy()
   })
 
-  it.each(['GENERAL', 'VALIDADOR'])('conserva el recorrido de %s sin montar las lecturas nuevas de ADMIN', async rol => {
+  it.each(['GENERAL', 'VALIDADOR'])('comparte el mapa de plantaciones con %s sin habilitar herramientas de ADMIN', async rol => {
     auth.user.rol = rol
     render(<Tree initialPath="/app/planting/subcampanias/826?pestana=registros" />)
     expect(await screen.findByRole('heading', { name: 'Subcampaña 826' })).toBeTruthy()
@@ -285,8 +285,17 @@ describe('Información de Plantación para ADMIN interno', () => {
     expect(RegistroParticipacionService.contexto).not.toHaveBeenCalled()
     expect(ImpactoService.consultar).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('button', { name: 'Mapa' }))
-    expect(screen.queryByTestId('mapa-compartido')).toBeNull()
-    expect(ImpactoService.consultar).not.toHaveBeenCalled()
+    const map = await screen.findByTestId('mapa-compartido')
+    await waitFor(() => expect(map.getAttribute('data-points')).toBe(registroId))
+    expect(map.getAttribute('data-scopes')).toBe('826')
+    expect(JSON.parse(map.getAttribute('data-poligono')!)).toEqual(officialPolygon)
+    expect(ImpactoService.consultar).toHaveBeenCalledExactlyOnceWith({ tipo: 'subcampania', id: '826' }, { limite: 20 }, expect.any(AbortSignal))
+    expect(screen.queryByRole('button', { name: 'Registros' })).toBeNull()
+    expect(RegistroParticipacionService.contexto).not.toHaveBeenCalled()
+    expect(PlantacionService.setSubcampaniaPoligono).not.toHaveBeenCalled()
+    fireEvent.change(screen.getByRole('combobox', { name: 'Seleccionar plantación' }), { target: { value: registroId } })
+    fireEvent.click(screen.getByRole('link', { name: 'Abrir ficha pública' }))
+    expect(screen.getByTestId('ficha-return').textContent).toBe(`/app/planting/subcampanias/826?pestana=mapa&registro=${registroId}`)
   })
 
   it('cancela stock e historial al cambiar subcampaña y descarta respuestas tardías del ámbito anterior', async () => {

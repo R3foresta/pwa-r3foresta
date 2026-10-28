@@ -48,7 +48,7 @@ export function createImpactoMapController(container: HTMLDivElement, initial: I
   function positionPopup() {
     const group = current.data.groups.find(item => item.id === popupGroup)
     if (!popup || !popupContent || !group) return
-    popupContent.style.setProperty('--impacto-popup-list-height', `${Math.max(44, container.clientHeight - 130)}px`)
+    popupContent.style.setProperty('--map-popup-list-height', `${Math.max(44, container.clientHeight - 130)}px`)
     // El portal ya tiene dimensiones: MapLibre puede elegir el anclaje correcto.
     popup.setMaxWidth(`${Math.min(290, Math.max(160, (container.clientWidth || 322) - 32))}px`)
     popup.setLngLat(group.coordinates)

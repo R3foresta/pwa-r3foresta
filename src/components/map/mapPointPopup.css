@@ -1,0 +1,4 @@
+.map-point-popup-list {
+  max-height: min(14rem, var(--map-popup-list-height, 14rem));
+  overscroll-behavior: contain;
+}

@@ -198,6 +198,30 @@ describe('Mapa público de Impacto con MapLibre', () => {
     expect(map.panBy).toHaveBeenLastCalledWith([104, 0], { duration: 0 })
   })
 
+  it('abre cada plantación coincidente con el retorno de la subcampaña y conserva sus IDs BIGINT', async () => {
+    const user = userEvent.setup()
+    const onSelect = vi.fn()
+    const second = { ...point, registro_id: '9007199254740997', cantidad_total_plantada: 3, es_reposicion: true }
+    const recordReturnTo = vi.fn((id: string) => `/app/planting/subcampanias/${scope.id}?pestana=mapa&registro=${id}`)
+    function Destination() {
+      const location = useLocation()
+      return <p data-testid="destination">{location.pathname}|{location.state?.impactoReturnTo}</p>
+    }
+    render(<MemoryRouter><ImpactoMap privateScope subcampanias={[scope]} puntos={[point, second]} seleccion={null}
+      onSelect={onSelect} recordReturnTo={recordReturnTo} /><Destination /></MemoryRouter>)
+    act(() => engine.maps[0].emit('load'))
+    await user.click(screen.getByRole('button', { name: '2 registros en esta ubicación' }))
+    expect(screen.getByRole('link', { name: `Ver plantación ${point.registro_id}` }).getAttribute('href')).toBe(`/impacto/registros/${point.registro_id}`)
+    const secondLink = screen.getByRole('link', { name: `Ver plantación ${second.registro_id}` })
+    expect(secondLink.getAttribute('href')).toBe(`/impacto/registros/${second.registro_id}`)
+    expect(recordReturnTo).toHaveBeenCalledWith(point.registro_id)
+    expect(recordReturnTo).toHaveBeenCalledWith(second.registro_id)
+    await user.click(secondLink)
+    expect(onSelect).toHaveBeenLastCalledWith(`r:${second.registro_id}`)
+    expect(screen.getByTestId('destination').textContent).toBe(`/impacto/registros/${second.registro_id}|/app/planting/subcampanias/${scope.id}?pestana=mapa&registro=${second.registro_id}`)
+    expect(screen.getByTestId('destination').textContent).not.toContain('seleccion=')
+  })
+
   it('carga el estilo Liberty de OpenFreeMap', () => {
     mountMap()
     expect(engine.createMap.mock.calls[0][0].style).toBe('https://tiles.openfreemap.org/styles/liberty')

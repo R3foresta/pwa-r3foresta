@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { Button } from '../../../components/ui'
+import MapPointPopup from '../../../components/map/MapPointPopup'
 import type { ImpactoPunto, ImpactoSubcampania } from '../types'
 import { buildImpactoMapData } from '../map/impactoMapData'
 import { createImpactoMapController } from '../map/impactoMapController'
@@ -19,8 +20,8 @@ export type ImpactoMapProps = {
   /** Ocupa el contenedor de la vista de selección a pantalla completa. */
   fill?: boolean
   privateScope?: boolean
-  /** Habilita el detalle público; los mapas operativos conservan su propia selección. */
-  recordReturnTo?: string
+  /** Habilita el detalle público; una función permite conservar el retorno de cada pantalla. */
+  recordReturnTo?: string | ((recordId: string) => string)
 }
 
 function selectedRecordReturn(returnTo: string, recordId: string) {
@@ -37,7 +38,7 @@ export default function ImpactoMap({ subcampanias, puntos, seleccion, onSelect, 
   return <InteractiveMap key={attempt} data={data} onSelect={onSelect} focusRevision={focusRevision} compact={compact} fill={fill} privateScope={privateScope} recordReturnTo={recordReturnTo} onRetry={() => setAttempt(value => value + 1)} />
 }
 
-function InteractiveMap({ data, onSelect, focusRevision, onRetry, compact, fill, privateScope, recordReturnTo }: ImpactoMapSnapshot & { onRetry: () => void; compact: boolean; fill: boolean; privateScope: boolean; recordReturnTo?: string }) {
+function InteractiveMap({ data, onSelect, focusRevision, onRetry, compact, fill, privateScope, recordReturnTo }: ImpactoMapSnapshot & { onRetry: () => void; compact: boolean; fill: boolean; privateScope: boolean; recordReturnTo?: ImpactoMapProps['recordReturnTo'] }) {
   const container = useRef<HTMLDivElement>(null)
   const controller = useRef<ImpactoMapController | null>(null)
   const initial = useRef({ data, onSelect, focusRevision })
@@ -112,23 +113,18 @@ function InteractiveMap({ data, onSelect, focusRevision, onRetry, compact, fill,
       </div>
     )}
     {popup && group && createPortal(
-      <div className="space-y-3 text-neutral-800">
-        <p className="pr-8 text-sm font-bold">
-          {group.puntos.length === 1 ? 'Plantación en esta ubicación' : `${group.puntos.length} plantaciones en esta ubicación`}
-        </p>
-        <div className="impacto-map-popup-list space-y-2 overflow-y-auto">
+      <MapPointPopup title={group.puntos.length === 1 ? 'Plantación en esta ubicación' : `${group.puntos.length} plantaciones en esta ubicación`}>
           {group.puntos.map(point => recordReturnTo ? (
             <div key={point.registro_id} className="space-y-1">
               <p className="text-sm">{point.cantidad_total_plantada} {point.cantidad_total_plantada === 1 ? 'planta' : 'plantas'} {point.es_reposicion ? 'de reposición' : point.cantidad_total_plantada === 1 ? 'inicial' : 'iniciales'}</p>
-              <Link to={`/impacto/registros/${point.registro_id}`} state={{ impactoReturnTo: selectedRecordReturn(recordReturnTo, point.registro_id) }} onClick={() => onSelect(`r:${point.registro_id}`)} className="inline-flex min-h-11 w-full items-center rounded-xl bg-brand-700 px-3 py-2 text-sm font-semibold text-white underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700">Ver plantación {point.registro_id}</Link>
+              <Link to={`/impacto/registros/${point.registro_id}`} state={{ impactoReturnTo: typeof recordReturnTo === 'function' ? recordReturnTo(point.registro_id) : selectedRecordReturn(recordReturnTo, point.registro_id) }} onClick={() => onSelect(`r:${point.registro_id}`)} className="inline-flex min-h-11 w-full items-center rounded-xl bg-brand-700 px-3 py-2 text-sm font-semibold text-white underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700">Ver plantación {point.registro_id}</Link>
             </div>
           ) : (
             <Button key={point.registro_id} size="sm" variant="secondary" className="min-h-11 w-full text-left" onClick={() => onSelect(`r:${point.registro_id}`)}>
               Registro {point.registro_id}: {point.cantidad_total_plantada} {point.es_reposicion ? 'reposiciones' : 'iniciales'}
             </Button>
           ))}
-        </div>
-      </div>, popup.container,
+      </MapPointPopup>, popup.container,
     )}
   </div>
 }

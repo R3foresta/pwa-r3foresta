@@ -499,7 +499,7 @@ describe('UX-02: detalle compartido', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Mapa' }))
     fireEvent.change(screen.getByRole('combobox', { name: 'Seleccionar plantación' }), { target: { value: '1011' } })
     expect(screen.getByTestId('participant-map').getAttribute('data-selection')).toBe('r:1011')
-    fireEvent.click(screen.getByRole('link', { name: 'Ver esta plantación' }))
+    fireEvent.click(screen.getByRole('link', { name: 'Abrir ficha pública' }))
     expect(JSON.parse(screen.getByTestId('location-state').textContent!).impactoReturnTo).toBe('/app/planting/subcampanias/11?pestana=mapa&registro=1011')
     fireEvent.click(screen.getByRole('button', { name: 'Atrás del navegador' }))
     expect(screen.getByRole('button', { name: 'Mapa' }).getAttribute('aria-pressed')).toBe('true')

@@ -36,6 +36,8 @@ import { SubcampaniaEquipoManager } from '../components/SubcampaniaEquipoManager
 import ParticipacionEquipoInterno from '../../participacion/components/ParticipacionEquipoInterno'
 import SubcampaniaAdminStock from '../components/SubcampaniaAdminStock'
 import SubcampaniaAdminActividad from '../components/SubcampaniaAdminActividad'
+import SubcampaniaPlantacionesMap from '../components/SubcampaniaPlantacionesMap'
+import { useImpactoConsulta } from '../../impacto/hooks/useImpactoConsulta'
 import { useRegistroContext } from '../../participacion/registro/hooks/useRegistroContext'
 import { getPlantaNombre } from '../../../utils/plantaNombre'
 
@@ -656,20 +658,17 @@ function EquipoTab({
 function MapaTab({
   sub,
   campania_id,
-  localPoligonoFallback,
+  poligono,
 }: {
   sub: Subcampania
   campania_id: number
-  localPoligonoFallback: GeoJsonPolygon | null
+  poligono: GeoJsonPolygon | null
 }) {
   const navigate = useNavigate()
-
-  const displayPoligono = sub.poligono ?? localPoligonoFallback
-  const polygonPositions = useMemo(
-    () => getPolygonPositions(displayPoligono),
-    [displayPoligono],
-  )
-
+  const scopeId = String(sub.id)
+  const consulta = useImpactoConsulta({ tipo: 'subcampania', id: scopeId }, { limite: 20 })
+  const zone = consulta.data?.subcampanias.find(item => item.id === scopeId)
+  const displayPoligono = poligono ?? zone?.poligono ?? null
   const isBorrador = sub.estado === 'BORRADOR'
   const hectareas = formatHectareas(sub.area_hectareas)
   const plantados = getPlantados(sub)
@@ -678,61 +677,12 @@ function MapaTab({
       ? Math.round(plantados / sub.area_hectareas)
       : null
 
-  if (!displayPoligono || polygonPositions.length === 0) {
-    return (
-      <section className="rounded-3xl bg-white p-6 text-center shadow-soft ring-1 ring-black/5">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-neutral-50 text-neutral-400">
-          <Icon name="map" className="h-6 w-6" />
-        </div>
-        <p className="mt-3 text-sm font-extrabold text-brand-800">Sin zona delimitada</p>
-        <p className="mt-1 text-[11.5px] font-semibold leading-relaxed text-neutral-500">
-          El polígono de la subcampaña no ha sido definido todavía.
-        </p>
-        {isBorrador && (
-          <button
-            type="button"
-            onClick={() => navigate(buildWizardUrl(campania_id, sub.id, 3))}
-            className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-extrabold text-white shadow-soft transition hover:bg-brand-700"
-          >
-            <Icon name="map" className="h-4 w-4" />
-            Definir zona
-          </button>
-        )}
-      </section>
-    )
-  }
-
   return (
     <div className="space-y-3">
-      {/* `isolate z-0` crea un stacking context propio: los panes internos de
-          Leaflet (z-index 400+) dejan de competir con el BottomNav (z-40). */}
-      <div
-        className="relative isolate z-0 overflow-hidden rounded-3xl bg-neutral-100 shadow-soft ring-1 ring-black/5"
-        style={{ height: '55vh', minHeight: 300 }}
-      >
-        <MapContainer
-          center={polygonPositions[0] ?? [-16.5, -68.15]}
-          zoom={14}
-          maxZoom={19}
-          dragging={false}
-          scrollWheelZoom={false}
-          doubleClickZoom={false}
-          zoomControl={false}
-          className="h-full w-full"
-        >
-          <OpenFreeMapBaseLayer />
-          <MapFitBounds positions={polygonPositions} />
-          <Polygon
-            positions={polygonPositions}
-            pathOptions={{
-              color: '#166534',
-              fillColor: '#22c55e',
-              fillOpacity: 0.25,
-              weight: 3,
-            }}
-          />
-        </MapContainer>
-      </div>
+      <SubcampaniaPlantacionesMap subcampania={{ id: scopeId, nombre: sub.nombre, poligono: displayPoligono }}
+        puntos={consulta.data?.mapa ?? []} registros={consulta.data?.registros ?? []}
+        loading={consulta.loading} error={consulta.error} onRetry={consulta.retry} publishedRecords={zone?.registros} />
+      {!displayPoligono && isBorrador && <Button size="sm" leftIcon="map" onClick={() => navigate(buildWizardUrl(campania_id, sub.id, 3))}>Definir zona</Button>}
 
       <div className="grid grid-cols-3 gap-2">
         <div className="rounded-2xl bg-white p-3 text-center shadow-soft ring-1 ring-black/5">
@@ -1341,7 +1291,7 @@ function DetalleSubcampanaScreen() {
                 <MapaTab
                   sub={sub}
                   campania_id={sub.campania_id}
-                  localPoligonoFallback={localPoligonoFallback}
+                  poligono={sub.poligono ?? registration.context?.subcampania.poligono ?? localPoligonoFallback}
                 />
               )}
 

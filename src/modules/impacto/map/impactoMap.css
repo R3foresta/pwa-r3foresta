@@ -46,11 +46,6 @@
   box-shadow: 0 8px 32px rgb(20 50 30 / 16%);
 }
 
-.impacto-map-popup-list {
-  max-height: min(14rem, var(--impacto-popup-list-height, 14rem));
-  overscroll-behavior: contain;
-}
-
 .impacto-map .maplibregl-popup-content a:focus-visible,
 .impacto-map .maplibregl-popup-close-button:focus-visible {
   outline: 3px solid #b45309;
