@@ -26,8 +26,9 @@ export default function ImpactoRegistroContent({ data, returnTo }: { data: Impac
   const follow = data.seguimiento
   return <>
     <Card as="section" className="space-y-3">
-      <h2 className="break-words text-xl font-bold text-brand-800">{data.codigo_trazabilidad}</h2>
+      <h2 className="break-words text-xl font-bold text-brand-800">Plantación en {data.subcampania_nombre}</h2>
       <p className="text-sm text-neutral-600">Registro {data.id} · {formatImpactoDate(data.fecha_plantacion)}</p>
+      <p className="break-words text-sm text-neutral-600">Trazabilidad: <span>{data.codigo_trazabilidad}</span></p>
       <p className="text-3xl font-extrabold text-brand-800">{formatImpactoNumber(data.cantidad_total_plantada)} <span className="text-base font-semibold">plantas {data.es_reposicion ? 'de reposición' : 'de plantación inicial'}</span></p>
       <p className="text-sm text-neutral-600">Cantidad del registro grupal, sin reparto individual por persona u organización.</p>
       <div className="flex flex-wrap gap-3 text-sm font-bold text-brand-700"><Link to={`/impacto/campanias/${data.campania_id}`} state={{ impactoReturnTo: returnTo }} className="inline-flex min-h-11 items-center break-words underline underline-offset-4">{data.campania_nombre}</Link><Link to={`/impacto/subcampanias/${data.subcampania_id}`} state={{ impactoReturnTo: returnTo }} className="inline-flex min-h-11 items-center break-words underline underline-offset-4">{data.subcampania_nombre}</Link></div>

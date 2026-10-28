@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ImpactoConsulta, ImpactoScope } from '../types'
 
 export type ImpactoExplorerLevel = 'campania' | 'subcampania'
+export type ImpactoExplorerView = { level: ImpactoExplorerLevel; focusId: string | null }
 export type ImpactoExplorerChoice = {
   id: string
   nombre: string
@@ -15,6 +16,8 @@ type Options = {
   scope: ImpactoScope
   queryKey: string
   selected: string | null
+  view: ImpactoExplorerView
+  onViewChange: (view: ImpactoExplorerView) => void
   onSelectionChange: (value: string | null) => void
 }
 
@@ -33,9 +36,9 @@ function buildChoices(data: ImpactoConsulta | null, campaigns: boolean): Impacto
     }))
     : data.subcampanias.map(zone => ({
       id: zone.id,
-      nombre: zone.zona || zone.nombre,
+      nombre: zone.nombre,
       context: [
-        zone.zona && zone.nombre !== zone.zona ? zone.nombre : '',
+        zone.zona && zone.nombre !== zone.zona ? zone.zona : '',
         data.campanias.find(campaign => campaign.id === zone.campania_id)?.nombre,
       ].filter(Boolean).join(' · '),
       count: zone.plantacion_inicial,
@@ -49,12 +52,9 @@ function scrollBehavior(): ScrollBehavior {
 }
 
 /** Coordina únicamente la exploración visual; consulta y selección en URL pertenecen a la pantalla. */
-export function useImpactoExplorer({ data, scope, queryKey, selected, onSelectionChange }: Options) {
-  const [browseLevel, setBrowseLevel] = useState<ImpactoExplorerLevel>('subcampania')
-  const campaigns = scope.tipo === 'global' && browseLevel === 'campania'
+export function useImpactoExplorer({ data, scope, queryKey, selected, view, onViewChange, onSelectionChange }: Options) {
+  const campaigns = scope.tipo === 'global' && view.level === 'campania'
   const viewKey = queryKey + campaigns
-  const [focus, setFocus] = useState<{ key: string; id: string } | null>(null)
-  const [mapFocus, setMapFocus] = useState<{ key: string; id: string } | null>(null)
   const [focusRevision, setFocusRevision] = useState(0)
   const [loops, setLoops] = useState(false)
   const mapSection = useRef<HTMLElement>(null)
@@ -62,10 +62,14 @@ export function useImpactoExplorer({ data, scope, queryKey, selected, onSelectio
   const keyboardCarousel = useRef(false)
   const selectedPoint = data?.mapa.find(point => `r:${point.registro_id}` === selected)
   const selectedZone = data?.subcampanias.find(zone => `s:${zone.id}` === selected || zone.id === selectedPoint?.subcampania_id)
-  const focused = focus?.key === viewKey ? focus.id : selectedZone ? (campaigns ? selectedZone.campania_id : selectedZone.id) : null
+  const focused = selectedZone ? (campaigns ? selectedZone.campania_id : selectedZone.id) : view.focusId
   const choices = useMemo(() => buildChoices(data, campaigns), [data, campaigns])
   const choice = choices.find(item => item.id === focused)
-  const mapChoice = mapFocus?.key === viewKey ? choices.find(item => item.id === mapFocus.id) : null
+  const requestedMapChoice = choices.find(item => item.id === view.focusId)
+  // Los enlaces antiguos pueden combinar foco y selección incompatibles.
+  // La selección debe seguir visible, aunque haya que ampliar el mapa completo.
+  const incompatibleFocus = Boolean(requestedMapChoice && selectedZone && requestedMapChoice.id !== (campaigns ? selectedZone.campania_id : selectedZone.id))
+  const mapChoice = incompatibleFocus ? undefined : requestedMapChoice
   const zones = data?.subcampanias.filter(zone => !mapChoice || (campaigns ? zone.campania_id === mapChoice.id : zone.id === mapChoice.id)) ?? []
   const zoneIds = new Set(zones.map(zone => zone.id))
   const points = data?.mapa.filter(point => !mapChoice || zoneIds.has(point.subcampania_id)) ?? []
@@ -105,11 +109,9 @@ export function useImpactoExplorer({ data, scope, queryKey, selected, onSelectio
   }
 
   function focusCard(id: string, source: 'map' | 'card' = 'card') {
-    setFocus({ key: viewKey, id })
     if (source === 'card') {
-      setMapFocus({ key: viewKey, id })
+      onViewChange({ level: campaigns ? 'campania' : 'subcampania', focusId: id })
       setFocusRevision(revision => revision + 1)
-      if (selected) onSelectionChange(null)
     }
     const rail = carousel.current
     if (loops && rail) {
@@ -135,9 +137,12 @@ export function useImpactoExplorer({ data, scope, queryKey, selected, onSelectio
   }
 
   function showAll() {
-    setFocus(null)
-    setMapFocus(null)
-    onSelectionChange(null)
+    onViewChange({ level: campaigns ? 'campania' : 'subcampania', focusId: null })
+    setFocusRevision(revision => revision + 1)
+  }
+
+  function setBrowseLevel(level: ImpactoExplorerLevel) {
+    onViewChange({ level, focusId: null })
     setFocusRevision(revision => revision + 1)
   }
 
@@ -152,7 +157,9 @@ export function useImpactoExplorer({ data, scope, queryKey, selected, onSelectio
   function beginPointerNavigation() { keyboardCarousel.current = false }
 
   return {
-    campaigns, choices, choice, zones, points, loops, focusRevision,
+    campaigns, choices, choice, mapChoice, zones, points, loops, focusRevision,
+    unavailableFocus: Boolean(data && view.focusId && !requestedMapChoice),
+    incompatibleFocus,
     mapSection, carousel, beginKeyboardNavigation, beginPointerNavigation,
     setBrowseLevel, focusCard, select, showAll, stepCard, wrapCarousel,
   }

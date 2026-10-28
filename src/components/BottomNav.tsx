@@ -107,7 +107,7 @@ function BottomNav({ publicMode = false }: { publicMode?: boolean }) {
                 to={needsLogin ? '/auth/login' : item.path}
                 state={needsLogin ? { from: item.path } : undefined}
                 aria-current={isActive ? 'page' : undefined}
-                className={`flex flex-1 flex-col items-center gap-1 rounded-xl px-1 py-2 text-[11px] font-semibold transition ${
+                className={`flex flex-1 flex-col items-center gap-1 rounded-xl px-1 py-2 ${hasInternalAccess ? 'text-[11px]' : 'text-xs'} font-semibold transition ${
                   isActive ? 'text-white' : 'text-white/70'
                 }`}
               >

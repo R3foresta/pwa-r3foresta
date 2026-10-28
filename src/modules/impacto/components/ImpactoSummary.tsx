@@ -1,27 +1,21 @@
-import Icon from '../../../components/Icon'
 import { Card } from '../../../components/ui'
 import type { ImpactoIndicadores } from '../types'
 import { formatImpactoNumber } from '../utils/consulta'
 
-export default function ImpactoSummary({ indicadores, filtered }: { indicadores: ImpactoIndicadores; filtered: boolean }) {
+export default function ImpactoSummary({ indicadores, filtered, speciesName, scopeLabel }: { indicadores: ImpactoIndicadores; filtered: boolean; speciesName?: string; scopeLabel: string }) {
   return (
     <Card as="section" aria-label="Indicadores de impacto" padding="none" className="overflow-hidden bg-gradient-to-br from-brand-800 to-brand-600 text-white">
-      <div className="grid gap-6 p-6 sm:p-8 md:grid-cols-[1.1fr_1fr] md:items-end md:gap-10">
+      <div className="grid gap-4 p-5 sm:p-6 md:grid-cols-[1.1fr_1fr] md:items-center md:gap-8">
         <div>
-          <div aria-hidden="true" className="mb-5 flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-brand-100">
-            <Icon name="trees" className="h-6 w-6" />
-          </div>
-          <p className="break-words text-6xl font-semibold leading-none tracking-tighter sm:text-8xl">{formatImpactoNumber(indicadores.plantacion_inicial)}</p>
-          <h2 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">plantas registradas</h2>
+          <p className="mb-2 text-sm font-medium text-brand-100">{scopeLabel}{filtered ? ' · selección filtrada' : ''}</p>
+          <p className="break-words text-5xl font-semibold leading-none tracking-tighter sm:text-7xl">{formatImpactoNumber(indicadores.plantacion_inicial)}</p>
+          <h2 className="mt-2 text-xl font-semibold tracking-tight sm:text-2xl">plantas de plantación inicial</h2>
+          <p className="mt-2 text-sm leading-5 text-brand-100">{filtered ? 'En los registros de esta selección.' : 'Plantaciones realizadas en equipo.'} No es un conteo de plantas vivas.</p>
         </div>
-        <div className="space-y-4">
-          <p className="max-w-xl text-sm leading-6 text-brand-100 sm:text-base sm:leading-7">
-            Plantaciones iniciales realizadas en equipo{filtered ? ' en esta selección' : ''}. Descubre dónde están y conoce cada jornada.
-          </p>
-          <p className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-2 text-xs font-medium text-white">
-            <span aria-hidden="true"><Icon name="pin" className="h-4 w-4" /></span>
-            {formatImpactoNumber(indicadores.registros)} registros grupales
-          </p>
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-white">{formatImpactoNumber(indicadores.registros)} {indicadores.registros === 1 ? 'registro grupal' : 'registros grupales'}</p>
+          {speciesName && <p className="text-sm leading-5 text-brand-100">Registros que incluyen {speciesName}; el total reúne todas las especies de esos registros.</p>}
+          <a href="#impacto-mapa-title" className="inline-flex min-h-11 items-center text-sm font-semibold text-white underline underline-offset-4">Explorar zonas</a>
           <details className="border-t border-white/15 pt-1 text-xs leading-5 text-brand-100">
             <summary className="min-h-11 cursor-pointer py-3 font-medium text-white">Qué cuenta este número</summary>
             <p>Bajas reportadas: {formatImpactoNumber(indicadores.bajas_reportadas)} · Reposiciones: {formatImpactoNumber(indicadores.reposiciones)}</p>

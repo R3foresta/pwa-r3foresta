@@ -8,11 +8,19 @@ export type ImpactoFilters = Partial<Record<(typeof FILTER_KEYS)[number], string
 export function readImpactoQuery(search: string, scope: ImpactoScope): { query: ImpactoQuery; error: string | null } {
   const params = new URLSearchParams(search)
   const query: ImpactoQuery = {}
-  const allowed = new Set<string>([...FILTER_KEYS, 'cursor', 'limite', 'seleccion'])
+  const allowed = new Set<string>([...FILTER_KEYS, 'cursor', 'limite', 'seleccion', 'nivel', 'foco'])
   if (scope.tipo !== 'global') allowed.delete('campania_id')
   if (scope.tipo === 'subcampania') allowed.delete('subcampania_id')
   for (const [key, value] of params) {
     if (!allowed.has(key) || params.getAll(key).length > 1) return { query, error: 'El enlace contiene filtros repetidos o no disponibles para este nivel.' }
+    if (key === 'nivel') {
+      if (value !== 'subcampania' && !(value === 'campania' && scope.tipo === 'global')) return { query, error: 'El nivel de exploración del enlace no está disponible.' }
+      continue
+    }
+    if (key === 'foco') {
+      if (!/^[1-9][0-9]*$/.test(value) || BigInt(value) > 9223372036854775807n) return { query, error: 'La ubicación del enlace no es válida.' }
+      continue
+    }
     if (key === 'seleccion') {
       if (!/^[sr]:[1-9][0-9]*$/.test(value)) return { query, error: 'La selección del enlace no es válida.' }
       continue

@@ -20,6 +20,6 @@ export default function ImpactoSubcampaniaCard({ data, returnTo, filtered = fals
     {filtered && <p className="text-xs text-neutral-500">Los filtros reducen los hechos comparados; la meta vigente conserva el total de la subcampaña.</p>}
     {children}
     {showFollowUp && <details className="rounded-2xl bg-neutral-50 p-3 text-sm text-neutral-700"><summary className="min-h-11 cursor-pointer py-3 font-semibold">Ver seguimiento reportado</summary><p className="mt-2">Bajas reportadas: {formatImpactoNumber(data.bajas_reportadas)} · Reposiciones: {formatImpactoNumber(data.reposiciones)}</p><p className="mt-1 text-xs text-neutral-500">No modifican el avance inicial ni los faltantes. No representan supervivencia comprobada.</p></details>}
-    {!current && <Link className="inline-flex min-h-11 items-center text-sm font-bold text-brand-700 underline underline-offset-4" to={href ?? `/impacto/subcampanias/${data.id}`} state={{ impactoReturnTo: returnTo }}>Abrir subcampaña</Link>}
+    {!current && <Link aria-label={`Conocer zona: ${data.nombre}`} className="inline-flex min-h-11 items-center text-sm font-bold text-brand-700 underline underline-offset-4" to={href ?? `/impacto/subcampanias/${data.id}`} state={{ impactoReturnTo: returnTo }}>Conocer zona</Link>}
   </Card>
 }

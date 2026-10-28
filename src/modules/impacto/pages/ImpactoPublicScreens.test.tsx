@@ -36,6 +36,122 @@ function renderPublic(path: string, state?: unknown) {
 beforeEach(() => { query.mockReset(); detail.mockReset() })
 
 describe('Impacto público y navegación por ámbitos', () => {
+  it('identifica el destino de cada enlace de zona y campaña', async () => {
+    const response = globalResponse()
+    query.mockResolvedValueOnce(response)
+    renderPublic('/impacto')
+    await screen.findByText('4 puntos públicos')
+    const rail = screen.getByLabelText('Explorar campañas y zonas')
+    for (const zone of response.data.subcampanias) {
+      expect(within(rail).getByRole('link', { name: `Conocer zona: ${zone.nombre}` }).getAttribute('href')).toBe(`/impacto/subcampanias/${zone.id}`)
+    }
+    fireEvent.click(screen.getByRole('button', { name: 'Campañas' }))
+    for (const campaign of response.data.campanias) {
+      expect(within(rail).getByRole('link', { name: `Conocer campaña: ${campaign.nombre}` }).getAttribute('href')).toBe(`/impacto/campanias/${campaign.id}`)
+    }
+    expect(within(rail).queryByRole('link', { name: /^(Conocer zona|Conocer campaña)$/ })).toBeNull()
+  })
+
+  it('enfoca el encabezado al abrir una campaña y al volver a la página anterior', async () => {
+    query.mockResolvedValueOnce(globalResponse())
+      .mockResolvedValueOnce(validarImpactoConsulta(examples.campania, { tipo: 'campania', id: '800' }))
+      .mockResolvedValueOnce(globalResponse())
+    renderPublic('/impacto')
+    await screen.findByText('4 puntos públicos')
+    expect(document.activeElement).toBe(screen.getByRole('heading', { level: 1 }))
+    fireEvent.click(screen.getByRole('button', { name: 'Campañas' }))
+    const link = screen.getByRole('link', { name: 'Conocer campaña: Campaña local INT03A' })
+    link.focus()
+    fireEvent.click(link)
+    const heading = await screen.findByRole('heading', { level: 1, name: 'Campaña local INT03A' })
+    expect(document.activeElement).toBe(heading)
+    expect(heading.tabIndex).toBe(-1)
+    fireEvent.click(screen.getByRole('button', { name: 'Volver' }))
+    await screen.findByText('4 puntos públicos')
+    expect(document.activeElement).toBe(screen.getByRole('heading', { level: 1, name: 'Nuestra huella, juntos' }))
+  })
+
+  it('no roba el foco al recibir el nombre tardío de una campaña ni al seleccionar en el mapa', async () => {
+    let finish!: (response: { data: ImpactoConsulta }) => void
+    query.mockImplementationOnce(() => new Promise(resolve => { finish = resolve }))
+    renderPublic('/impacto/campanias/800')
+    expect(document.activeElement).toBe(screen.getByRole('heading', { level: 1, name: 'Impacto de campaña' }))
+    const copy = screen.getByRole('button', { name: 'Copiar enlace' })
+    copy.focus()
+    await act(async () => { finish(validarImpactoConsulta(examples.campania, { tipo: 'campania', id: '800' })); await Promise.resolve() })
+    expect(screen.getByRole('heading', { level: 1, name: 'Campaña local INT03A' })).toBeTruthy()
+    expect(document.activeElement).toBe(copy)
+    const marker = screen.getByRole('button', { name: 'Mapa zona 826' })
+    marker.focus()
+    fireEvent.click(marker)
+    expect(document.activeElement).toBe(marker)
+    expect(query).toHaveBeenCalledTimes(1)
+  })
+
+  it('restaura una vista compartida de campaña sin enviarla como filtro y copia su URL', async () => {
+    const copy = vi.fn().mockResolvedValue(undefined)
+    vi.stubGlobal('navigator', { clipboard: { writeText: copy } })
+    try {
+      query.mockResolvedValueOnce(globalResponse())
+      renderPublic('/impacto?nivel=campania&foco=801')
+      await screen.findByText('1 puntos públicos')
+      expect(screen.getByRole('button', { name: 'Campañas' }).getAttribute('aria-pressed')).toBe('true')
+      expect(query).toHaveBeenCalledExactlyOnceWith({ tipo: 'global' }, {}, expect.any(AbortSignal))
+      expect(document.title).toBe('Impacto global · R3foresta')
+      expect(within(screen.getByRole('region', { name: 'Indicadores de impacto' })).getByText('50')).toBeTruthy()
+      fireEvent.click(screen.getByRole('button', { name: 'Copiar enlace' }))
+      await screen.findByText('Enlace público copiado.')
+      expect(copy).toHaveBeenCalledWith('http://localhost/impacto?nivel=campania&foco=801')
+    } finally { vi.unstubAllGlobals() }
+  })
+
+  it('seleccionar otra zona desde la lista ampliada limpia el foco incompatible y enfoca el mapa', async () => {
+    const response = globalResponse()
+    query.mockResolvedValueOnce(response)
+    renderPublic('/impacto?foco=826')
+    await screen.findByText('2 puntos públicos')
+    fireEvent.click(screen.getByText('Ver detalle de las zonas y las plantaciones'))
+    const other = response.data.subcampanias.find(zone => zone.id !== '826')!
+    fireEvent.click(screen.getByRole('button', { name: `Seleccionar zona: ${other.nombre}` }))
+    expect(screen.getByTestId('current-location').textContent).toBe(`/impacto?seleccion=s%3A${other.id}`)
+    expect(screen.getByText('4 puntos públicos')).toBeTruthy()
+    expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Aquí estamos plantando' }))
+    expect(query).toHaveBeenCalledTimes(1)
+  })
+
+  it('la lista junto al mapa conserva todos los puntos aunque sólo se haya cargado una página de registros', async () => {
+    const response = globalResponse()
+    response.data.registros = response.data.registros.slice(0, 1)
+    query.mockResolvedValueOnce(response)
+    renderPublic('/impacto')
+    await screen.findByText('4 puntos públicos')
+    fireEvent.click(screen.getByRole('button', { name: 'Ver como lista' }))
+    const list = screen.getByRole('region', { name: 'Plantaciones ubicadas · 4' })
+    expect(within(list).getAllByRole('link')).toHaveLength(4)
+    fireEvent.click(within(list).getByRole('button', { name: 'Ubicar registro 826000' }))
+    expect(screen.getByRole('region', { name: 'Resumen del registro seleccionado' })).toBeTruthy()
+    expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Aquí estamos plantando' }))
+  })
+
+  it('conserva el nombre elegido, explica la especie y anuncia el vacío junto a filtros', async () => {
+    const empty = globalResponse()
+    empty.data = { indicadores: { plantacion_inicial: 0, reposiciones: 0, bajas_reportadas: 0, registros: 0 }, campanias: [], subcampanias: [], registros: [], mapa: [], siguiente_cursor: null }
+    query.mockResolvedValueOnce(globalResponse()).mockResolvedValueOnce(empty)
+    renderPublic('/impacto')
+    await screen.findByText('4 puntos públicos')
+    fireEvent.click(screen.getByRole('button', { name: 'Filtrar impacto público' }))
+    fireEvent.change(screen.getByLabelText('Especie'), { target: { value: '8' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Aplicar filtros' }))
+    await screen.findByText('Sin registros para estos filtros')
+    expect(screen.getByRole('button', { name: 'Quitar filtro Especie: Tara histórica' })).toBeTruthy()
+    expect(screen.getByText('Registros que incluyen Tara histórica; el total reúne todas las especies de esos registros.')).toBeTruthy()
+    const status = screen.getByText('0 plantaciones ubicadas en la consulta con los filtros aplicados.')
+    expect(document.activeElement).toBe(status)
+    expect((screen.getByLabelText('Especie') as HTMLSelectElement).selectedOptions[0].textContent).toBe('Tara histórica')
+    fireEvent.click(screen.getByRole('button', { name: 'Filtrar impacto público' }))
+    expect(screen.getByRole('button', { name: 'Quitar filtro Especie: Tara histórica' })).toBeTruthy()
+  })
+
   it('vuelve a la campaña y subcampaña del plantador desde un registro público', async () => {
     detail.mockResolvedValueOnce(recordResponse())
     renderPublic('/impacto/registros/826000', { impactoReturnTo: '/participar?campania_id=800&subcampania_id=826' })
@@ -61,7 +177,7 @@ describe('Impacto público y navegación por ámbitos', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Campañas' }))
     fireEvent.click(screen.getByRole('button', { name: 'Ver en el mapa: Campaña segunda INT05' }))
     expect(screen.queryByRole('region', { name: 'Resumen de zona seleccionada' })).toBeNull()
-    expect(screen.getByTestId('current-location').textContent).toBe('/impacto')
+    expect(screen.getByTestId('current-location').textContent).toBe('/impacto?nivel=campania&foco=801')
     expect(screen.getByText('1 puntos públicos')).toBeTruthy()
     expect(query).toHaveBeenCalledTimes(1)
   })
@@ -69,7 +185,7 @@ describe('Impacto público y navegación por ámbitos', () => {
   it('un enlace con selección resalta su tarjeta y Ver todas limpia esa selección', async () => {
     query.mockResolvedValueOnce(globalResponse())
     renderPublic('/impacto?seleccion=s%3A826')
-    await screen.findByRole('button', { name: 'Subcampañas' })
+    await screen.findByRole('button', { name: 'Zonas' })
     const card = document.querySelector('[data-campaign="826"]') as HTMLElement
     expect(within(card).getByRole('button').getAttribute('aria-pressed')).toBe('true')
     fireEvent.click(screen.getByRole('button', { name: 'Ver todas las ubicaciones' }))
@@ -82,7 +198,7 @@ describe('Impacto público y navegación por ámbitos', () => {
     const response = globalResponse()
     query.mockResolvedValueOnce(response)
     renderPublic('/impacto')
-    await screen.findByRole('button', { name: 'Subcampañas' })
+    await screen.findByRole('button', { name: 'Zonas' })
     const point = response.data.mapa[0]
     const zone = response.data.subcampanias.find(item => item.id === point.subcampania_id)!
     const campaign = response.data.campanias.find(item => item.id === zone.campania_id)!
@@ -102,7 +218,7 @@ describe('Impacto público y navegación por ámbitos', () => {
     try {
       query.mockResolvedValueOnce(globalResponse())
       renderPublic('/impacto')
-      await screen.findByRole('button', { name: 'Subcampañas' })
+      await screen.findByRole('button', { name: 'Zonas' })
       const rail = screen.getByLabelText('Explorar campañas y zonas')
       await waitFor(() => expect(rail.querySelectorAll('article').length).toBe(globalResponse().data.subcampanias.length * (width === 300 ? 3 : 1)))
       expect(within(rail).getAllByRole('article')).toHaveLength(globalResponse().data.subcampanias.length)
@@ -122,7 +238,7 @@ describe('Impacto público y navegación por ámbitos', () => {
   it('inicia en subcampañas y permite cambiar de nivel sin consultar otra API', async () => {
     query.mockResolvedValueOnce(globalResponse())
     renderPublic('/impacto')
-    const sub = await screen.findByRole('button', { name: 'Subcampañas' })
+    const sub = await screen.findByRole('button', { name: 'Zonas' })
     expect(sub.getAttribute('aria-pressed')).toBe('true')
     expect(screen.queryByRole('heading', { name: 'Campaña local INT03A' })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Campañas' }))
@@ -147,7 +263,7 @@ describe('Impacto público y navegación por ámbitos', () => {
     expect(within(card).getByRole('button', { name: 'Ver en el mapa: Campaña local INT03A' }).getAttribute('aria-pressed')).toBe('true')
     expect(within(card).getByText('Viendo en el mapa')).toBeTruthy()
     expect(scroll).toHaveBeenCalledOnce()
-    expect(screen.getByTestId('current-location').textContent).toBe('/impacto')
+    expect(screen.getByTestId('current-location').textContent).toBe('/impacto?nivel=campania&foco=800')
     expect(query).toHaveBeenCalledTimes(1)
   })
 
@@ -160,7 +276,7 @@ describe('Impacto público y navegación por ámbitos', () => {
     const scroll = vi.fn()
     section.scrollIntoView = scroll
     vi.spyOn(section, 'getBoundingClientRect').mockReturnValue({ top: -400 } as DOMRect)
-    fireEvent.click(within(title.closest('article')!).getByRole('link', { name: 'Conocer campaña' }))
+    fireEvent.click(within(title.closest('article')!).getByRole('link', { name: 'Conocer campaña: Campaña local INT03A' }))
     await waitFor(() => expect(query).toHaveBeenLastCalledWith({ tipo: 'campania', id: '800' }, {}, expect.any(AbortSignal)))
     expect(screen.getByTestId('current-location').textContent).toBe('/impacto/campanias/800')
     expect(scroll).not.toHaveBeenCalled()
@@ -242,8 +358,8 @@ describe('Impacto público y navegación por ámbitos', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Mapa registro 826000' }))
     expect(query).toHaveBeenCalledTimes(1)
     expect(screen.getByTestId('current-location').textContent).toContain('seleccion=r%3A826000')
-    fireEvent.click(screen.getByRole('link', { name: 'Abrir detalle público' }))
-    await screen.findByRole('heading', { name: 'INT05-GRUPO-25' })
+    fireEvent.click(screen.getByRole('link', { name: 'Ver plantación' }))
+    await screen.findByText('INT05-GRUPO-25', { exact: true })
     fireEvent.click(screen.getByRole('button', { name: 'Volver' }))
     await screen.findByRole('region', { name: 'Resumen del registro seleccionado' })
     expect(screen.getByTestId('current-location').textContent).toBe('/impacto?planta_id=8&desde=2026-10-15&seleccion=r%3A826000')
@@ -255,7 +371,7 @@ describe('Impacto público y navegación por ámbitos', () => {
     renderPublic('/impacto?organizacion_id=1&planta_id=8&desde=2026-10-15')
     fireEvent.click(await screen.findByRole('button', { name: 'Mapa zona 826' }))
     const summary = screen.getByRole('region', { name: 'Resumen de zona seleccionada' })
-    const link = within(summary).getByRole('link', { name: 'Abrir subcampaña' })
+    const link = within(summary).getByRole('link', { name: 'Conocer zona: Ámbito INT05 826' })
     expect(link.getAttribute('href')).toBe('/impacto/subcampanias/826?organizacion_id=1&planta_id=8&desde=2026-10-15')
     fireEvent.click(link)
     await waitFor(() => expect(query).toHaveBeenLastCalledWith({ tipo: 'subcampania', id: '826' }, { organizacion_id: '1', planta_id: '8', desde: '2026-10-15' }, expect.any(AbortSignal)))
@@ -283,6 +399,8 @@ describe('Impacto público y navegación por ámbitos', () => {
     '/impacto/subcampanias/826?subcampania_id=827',
     '/impacto?desde=2026-02-30', '/impacto?desde=2026-10-16&hasta=2026-10-15',
     '/impacto?planta_id=01', '/impacto?cursor=0',
+    '/impacto?nivel=inventado', '/impacto?foco=0', '/impacto?foco=9223372036854775808',
+    '/impacto?nivel=campania&nivel=subcampania', '/impacto/campanias/800?nivel=campania',
   ])('rechaza filtros inválidos %s sin consultar otro alcance', async (path) => {
     renderPublic(path)
     expect(screen.getByRole('alert')).toBeTruthy()
@@ -316,6 +434,25 @@ describe('Impacto público y navegación por ámbitos', () => {
 })
 
 describe('detalle público de registro grupal', () => {
+  it('enfoca el h1 al abrir otra plantación sin robar foco cuando termina su consulta', async () => {
+    let finish!: (response: { data: ImpactoRegistro }) => void
+    detail.mockResolvedValueOnce(recordResponse()).mockImplementationOnce(() => new Promise(resolve => { finish = resolve }))
+    renderPublic('/impacto/registros/826000')
+    await screen.findByText('INT05-GRUPO-25', { exact: true })
+    const heading = screen.getByRole('heading', { level: 1, name: 'Registro público' })
+    expect(document.activeElement).toBe(heading)
+    const navigate = screen.getByRole('button', { name: 'Abrir otro registro de prueba' })
+    navigate.focus()
+    fireEvent.click(navigate)
+    expect(document.activeElement).toBe(heading)
+    const copy = screen.getByRole('button', { name: 'Copiar enlace' })
+    copy.focus()
+    const response = recordResponse()
+    response.data.id = '827000'
+    await act(async () => { finish(response); await Promise.resolve() })
+    expect(document.activeElement).toBe(copy)
+  })
+
   it('abre la ubicación desde el registro y permite volver a la misma jornada', async () => {
     detail.mockResolvedValue(recordResponse())
     query.mockResolvedValueOnce(subResponse())
@@ -324,10 +461,9 @@ describe('detalle público de registro grupal', () => {
     await screen.findByRole('region', { name: 'Resumen del registro seleccionado' })
     expect(screen.getByTestId('current-location').textContent).toBe('/impacto/subcampanias/826?seleccion=r%3A826000')
     expect(query).toHaveBeenLastCalledWith({ tipo: 'subcampania', id: '826' }, {}, expect.any(AbortSignal))
-    expect(screen.queryByRole('link', { name: 'Conocer zona' })).toBeNull()
-    expect(screen.queryByRole('link', { name: 'Abrir subcampaña' })).toBeNull()
+    expect(screen.queryByRole('link', { name: /^Conocer zona:/ })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Volver' }))
-    await screen.findByRole('heading', { name: 'INT05-GRUPO-25' })
+    await screen.findByText('INT05-GRUPO-25', { exact: true })
     expect(screen.getByTestId('current-location').textContent).toBe('/impacto/registros/826000')
   })
 
@@ -350,7 +486,7 @@ describe('detalle público de registro grupal', () => {
     try {
       detail.mockResolvedValueOnce(recordResponse())
       renderPublic('/impacto/registros/826000')
-      await screen.findByRole('heading', { name: 'INT05-GRUPO-25' })
+      await screen.findByText('INT05-GRUPO-25', { exact: true })
       fireEvent.click(screen.getByRole('button', { name: 'Copiar enlace' }))
       const field = await screen.findByRole('textbox', { name: 'Enlace público' }) as HTMLInputElement
       expect(document.activeElement).toBe(field)
@@ -367,7 +503,7 @@ describe('detalle público de registro grupal', () => {
     try {
       detail.mockResolvedValueOnce(recordResponse())
       renderPublic('/impacto/registros/826000')
-      await screen.findByRole('heading', { name: 'INT05-GRUPO-25' })
+      await screen.findByText('INT05-GRUPO-25', { exact: true })
       const button = screen.getByRole('button', { name: 'Copiar enlace' })
       fireEvent.click(button)
       fireEvent.click(button)
@@ -384,7 +520,7 @@ describe('detalle público de registro grupal', () => {
     record.data.personas.push({ nombre: null, es_responsable: false, afiliacion: { estado: 'HISTORICA_NO_DISPONIBLE', tipo: null, nombre: null, organizacion_id: null } })
     detail.mockResolvedValueOnce(record)
     renderPublic('/impacto/registros/826000')
-    await screen.findByRole('heading', { name: 'INT05-GRUPO-25' })
+    await screen.findByText('INT05-GRUPO-25', { exact: true })
     expect(detail).toHaveBeenCalledWith('826000', expect.any(AbortSignal))
     expect(query).not.toHaveBeenCalled()
     expect(screen.getByText('Cantidad del registro grupal, sin reparto individual por persona u organización.')).toBeTruthy()
@@ -430,7 +566,7 @@ describe('detalle público de registro grupal', () => {
     expect(screen.getByRole('alert').textContent).toBe('El detalle público no admite filtros en el enlace.')
     expect(detail).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('link', { name: 'Abrir enlace sin filtros' }))
-    await screen.findByRole('heading', { name: 'INT05-GRUPO-25' })
+    await screen.findByText('INT05-GRUPO-25', { exact: true })
     expect(detail).toHaveBeenCalledWith('826000', expect.any(AbortSignal))
   })
 
@@ -443,14 +579,14 @@ describe('detalle público de registro grupal', () => {
     expect(signal.aborted).toBe(true)
     await screen.findByRole('heading', { name: 'Registro público no disponible' })
     await act(async () => { finish(recordResponse()); await Promise.resolve() })
-    expect(screen.queryByRole('heading', { name: 'INT05-GRUPO-25' })).toBeNull()
+    expect(screen.queryByText('INT05-GRUPO-25', { exact: true })).toBeNull()
     expect(screen.queryByText(/Sin registros|Sin bajas/)).toBeNull()
   })
 
   it('vuelve a Mis registros por state permitido y comparte únicamente la URL pública', async () => {
     detail.mockResolvedValueOnce(recordResponse())
     renderPublic('/impacto/registros/826000', { impactoReturnTo: '/app/participacion/mis-registros' })
-    await screen.findByRole('heading', { name: 'INT05-GRUPO-25' })
+    await screen.findByText('INT05-GRUPO-25', { exact: true })
     fireEvent.click(screen.getByRole('button', { name: 'Copiar enlace' }))
     const link = await screen.findByRole('textbox', { name: 'Enlace público' })
     expect((link as HTMLInputElement).value).toBe('http://localhost/impacto/registros/826000')
@@ -463,20 +599,20 @@ describe('detalle público de registro grupal', () => {
     let finish!: (response: { data: ImpactoRegistro }) => void
     detail.mockResolvedValueOnce(recordResponse()).mockImplementationOnce(() => new Promise(() => {})).mockImplementationOnce(() => new Promise((resolve) => { finish = resolve }))
     renderPublic('/impacto/registros/826000')
-    await screen.findByRole('heading', { name: 'INT05-GRUPO-25' })
+    await screen.findByText('INT05-GRUPO-25', { exact: true })
     fireEvent.click(screen.getByRole('button', { name: 'Abrir otro registro de prueba' }))
     fireEvent.click(screen.getByRole('button', { name: 'Volver al registro de prueba' }))
-    expect(screen.queryByRole('heading', { name: 'INT05-GRUPO-25' })).toBeNull()
+    expect(screen.queryByText('INT05-GRUPO-25', { exact: true })).toBeNull()
     expect(screen.getByText('Consultando registro público…')).toBeTruthy()
     expect(detail).toHaveBeenCalledTimes(3)
     await act(async () => { finish(recordResponse()); await Promise.resolve() })
-    expect(screen.getByRole('heading', { name: 'INT05-GRUPO-25' })).toBeTruthy()
+    expect(screen.getByText('INT05-GRUPO-25', { exact: true })).toBeTruthy()
   })
 
   it('un state ajeno no abre gestión privada al volver', async () => {
     detail.mockResolvedValueOnce(recordResponse()); query.mockResolvedValueOnce(subResponse())
     renderPublic('/impacto/registros/826000', { impactoReturnTo: '/app/campanias/800/stock' })
-    await screen.findByRole('heading', { name: 'INT05-GRUPO-25' })
+    await screen.findByText('INT05-GRUPO-25', { exact: true })
     fireEvent.click(screen.getByRole('button', { name: 'Volver' }))
     await screen.findByRole('region', { name: 'Indicadores de impacto' })
     expect(screen.getByTestId('current-location').textContent).toBe('/impacto/subcampanias/826')
