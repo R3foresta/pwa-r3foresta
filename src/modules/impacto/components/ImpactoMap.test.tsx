@@ -1,4 +1,6 @@
 import { act, fireEvent, render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { MemoryRouter, useLocation } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ImpactoPunto, ImpactoSubcampania } from '../types'
 import ImpactoMap from './ImpactoMap'
@@ -49,6 +51,7 @@ const engine = vi.hoisted(() => {
     fitBounds = vi.fn()
     easeTo = vi.fn()
     jumpTo = vi.fn()
+    panBy = vi.fn()
     remove = vi.fn()
     touchZoomRotate = { disableRotation: vi.fn() }
   }
@@ -58,11 +61,23 @@ const engine = vi.hoisted(() => {
     maps.push(map)
     return map
   })
+  const popups: FakePopup[] = []
   class FakePopup {
     element = document.createElement('div')
     handlers = new Map<string, (() => void)[]>()
-    setDOMContent(content: HTMLElement) { this.element.replaceChildren(content); return this }
-    setLngLat() { return this }
+    options: { focusAfterOpen?: boolean; maxWidth?: string }
+    constructor(options: { focusAfterOpen?: boolean; maxWidth?: string }) { this.options = options; popups.push(this) }
+    setDOMContent(content: HTMLElement) {
+      const close = document.createElement('button')
+      close.type = 'button'
+      close.textContent = 'Cerrar registros de esta ubicación'
+      close.addEventListener('click', () => this.remove())
+      this.element.replaceChildren(content, close)
+      return this
+    }
+    setLngLat = vi.fn(() => this)
+    setMaxWidth = vi.fn((width: string) => { this.options.maxWidth = width; return this })
+    getElement() { return this.element }
     addTo(map: FakeMap) { map.container.append(this.element); return this }
     remove() { this.element.remove(); this.handlers.get('close')?.forEach(handler => handler()); return this }
     on(event: string, handler: () => void) { this.handlers.set(event, [...(this.handlers.get(event) ?? []), handler]); return this }
@@ -82,7 +97,7 @@ const engine = vi.hoisted(() => {
     Marker: FakeMarker,
     setWorkerUrl: vi.fn(),
   }
-  return { maps, createMap, api }
+  return { maps, popups, createMap, api }
 })
 
 vi.mock('maplibre-gl', () => ({ ...engine.api, default: engine.api }))
@@ -103,6 +118,7 @@ let observers: { callback: ResizeObserverCallback; observe: ReturnType<typeof vi
 
 beforeEach(() => {
   engine.maps.length = 0
+  engine.popups.length = 0
   engine.createMap.mockClear()
   observers = []
   vi.stubGlobal('ResizeObserver', class {
@@ -122,6 +138,66 @@ function mountMap(onSelect = vi.fn()) {
 }
 
 describe('Mapa público de Impacto con MapLibre', () => {
+  it('enfoca el contenido tras montarlo, permite Tab hasta cerrar y devuelve foco al marcador', async () => {
+    const user = userEvent.setup()
+    mountMap()
+    const marker = screen.getByRole('button', { name: `Ver registro ${point.registro_id}` })
+    marker.focus()
+    await user.keyboard('{Enter}')
+    const record = screen.getByRole('button', { name: 'Registro 9007199254740995: 10 iniciales' })
+    expect(document.activeElement).toBe(record)
+    expect(engine.popups[0].options.focusAfterOpen).toBe(false)
+    await user.tab()
+    const close = screen.getByRole('button', { name: 'Cerrar registros de esta ubicación' })
+    expect(document.activeElement).toBe(close)
+    await user.keyboard('{Enter}')
+    expect(document.activeElement).toBe(marker)
+    expect(screen.queryByRole('button', { name: 'Registro 9007199254740995: 10 iniciales' })).toBeNull()
+  })
+
+  it('cierra con Escape y conserva el foco del marcador que abrió el contenido', async () => {
+    const user = userEvent.setup()
+    mountMap()
+    const marker = screen.getByRole('button', { name: `Ver registro ${point.registro_id}` })
+    await user.click(marker)
+    await user.keyboard('{Escape}')
+    expect(document.activeElement).toBe(marker)
+    expect(screen.queryByRole('button', { name: 'Cerrar registros de esta ubicación' })).toBeNull()
+  })
+
+  it('recalcula el anclaje con contenido React y limita el ancho a mapas estrechos', () => {
+    const { map } = mountMap()
+    Object.defineProperty(map.container, 'clientWidth', { configurable: true, value: 288 })
+    Object.defineProperty(map.container, 'clientHeight', { configurable: true, value: 360 })
+    fireEvent.click(screen.getByRole('button', { name: `Ver registro ${point.registro_id}` }))
+    expect(engine.popups[0].setMaxWidth).toHaveBeenLastCalledWith('256px')
+    expect(engine.popups[0].setLngLat).toHaveBeenCalledTimes(2)
+  })
+
+  it('abre el detalle desde el popup con el retorno de la consulta pública', async () => {
+    const user = userEvent.setup()
+    function Destination() {
+      const location = useLocation()
+      return <p data-testid="destination">{location.pathname}|{location.state?.impactoReturnTo}</p>
+    }
+    render(<MemoryRouter><ImpactoMap subcampanias={[scope]} puntos={[point]} seleccion={null} onSelect={vi.fn()} recordReturnTo="/impacto?desde=2026-10-01" /><Destination /></MemoryRouter>)
+    act(() => engine.maps[0].emit('load'))
+    await user.click(screen.getByRole('button', { name: `Ver registro ${point.registro_id}` }))
+    const link = screen.getByRole('link', { name: `Ver plantación ${point.registro_id}` })
+    expect(document.activeElement).toBe(link)
+    await user.keyboard('{Enter}')
+    expect(screen.getByTestId('destination').textContent).toBe(`/impacto/registros/${point.registro_id}|/impacto?desde=2026-10-01&seleccion=r%3A${point.registro_id}`)
+  })
+
+  it('desplaza el mapa si el contenido todavía rebasa su borde tras medirlo', () => {
+    const { map } = mountMap()
+    fireEvent.click(screen.getByRole('button', { name: `Ver registro ${point.registro_id}` }))
+    vi.spyOn(map.container, 'getBoundingClientRect').mockReturnValue({ left: 0, right: 288, top: 0, bottom: 360, width: 288, height: 360 } as DOMRect)
+    vi.spyOn(engine.popups[0].element, 'getBoundingClientRect').mockReturnValue({ left: 160, right: 380, top: 60, bottom: 250, width: 220, height: 190 } as DOMRect)
+    act(() => observers[0].callback([], observers[0] as unknown as ResizeObserver))
+    expect(map.panBy).toHaveBeenLastCalledWith([104, 0], { duration: 0 })
+  })
+
   it('carga el estilo Liberty de OpenFreeMap', () => {
     mountMap()
     expect(engine.createMap.mock.calls[0][0].style).toBe('https://tiles.openfreemap.org/styles/liberty')

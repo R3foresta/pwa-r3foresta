@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { Link } from 'react-router-dom'
 import { Button } from '../../../components/ui'
 import type { ImpactoPunto, ImpactoSubcampania } from '../types'
 import { buildImpactoMapData } from '../map/impactoMapData'
@@ -18,16 +19,25 @@ export type ImpactoMapProps = {
   /** Ocupa el contenedor de la vista de selección a pantalla completa. */
   fill?: boolean
   privateScope?: boolean
+  /** Habilita el detalle público; los mapas operativos conservan su propia selección. */
+  recordReturnTo?: string
 }
 
-export default function ImpactoMap({ subcampanias, puntos, seleccion, onSelect, focusRevision, compact = false, fill = false, privateScope = false }: ImpactoMapProps) {
+function selectedRecordReturn(returnTo: string, recordId: string) {
+  const [pathname, search] = returnTo.split('?')
+  const params = new URLSearchParams(search)
+  params.set('seleccion', `r:${recordId}`)
+  return `${pathname}?${params}`
+}
+
+export default function ImpactoMap({ subcampanias, puntos, seleccion, onSelect, focusRevision, compact = false, fill = false, privateScope = false, recordReturnTo }: ImpactoMapProps) {
   const data = useMemo(() => buildImpactoMapData(subcampanias, puntos, seleccion), [subcampanias, puntos, seleccion])
   const [attempt, setAttempt] = useState(0)
   if (!data.bounds) return <p className="rounded-2xl bg-brand-50 p-5 text-sm text-neutral-600">{privateScope ? 'No hay ubicación disponible para esta subcampaña.' : 'No hay ubicaciones públicas para representar en este alcance.'}</p>
-  return <InteractiveMap key={attempt} data={data} onSelect={onSelect} focusRevision={focusRevision} compact={compact} fill={fill} privateScope={privateScope} onRetry={() => setAttempt(value => value + 1)} />
+  return <InteractiveMap key={attempt} data={data} onSelect={onSelect} focusRevision={focusRevision} compact={compact} fill={fill} privateScope={privateScope} recordReturnTo={recordReturnTo} onRetry={() => setAttempt(value => value + 1)} />
 }
 
-function InteractiveMap({ data, onSelect, focusRevision, onRetry, compact, fill, privateScope }: ImpactoMapSnapshot & { onRetry: () => void; compact: boolean; fill: boolean; privateScope: boolean }) {
+function InteractiveMap({ data, onSelect, focusRevision, onRetry, compact, fill, privateScope, recordReturnTo }: ImpactoMapSnapshot & { onRetry: () => void; compact: boolean; fill: boolean; privateScope: boolean; recordReturnTo?: string }) {
   const container = useRef<HTMLDivElement>(null)
   const controller = useRef<ImpactoMapController | null>(null)
   const initial = useRef({ data, onSelect, focusRevision })
@@ -36,6 +46,7 @@ function InteractiveMap({ data, onSelect, focusRevision, onRetry, compact, fill,
   const [baseMapFailed, setBaseMapFailed] = useState(false)
   const [popup, setPopup] = useState<ImpactoMapPopup | null>(null)
   const [expanded, setExpanded] = useState(false)
+  const focusedPopup = useRef<ImpactoMapPopup | null>(null)
   const group = data.groups.find(item => item.id === popup?.groupId)
 
   useEffect(() => {
@@ -49,6 +60,10 @@ function InteractiveMap({ data, onSelect, focusRevision, onRetry, compact, fill,
     return () => { controller.current?.destroy(); controller.current = null }
   }, [])
   useEffect(() => { controller.current?.update({ data, onSelect, focusRevision }) }, [data, onSelect, focusRevision])
+  useLayoutEffect(() => {
+    if (popup && group) controller.current?.popupReady(popup.container, focusedPopup.current !== popup)
+    focusedPopup.current = popup
+  }, [popup, group])
 
   if (failed) return (
     <div className="space-y-3 rounded-2xl bg-neutral-50 p-5">
@@ -74,7 +89,7 @@ function InteractiveMap({ data, onSelect, focusRevision, onRetry, compact, fill,
         <Button size="sm" variant="secondary" className="h-11 w-11 rounded-xl bg-white/95 text-xl shadow-soft" disabled={!ready} aria-label="Alejar mapa" onClick={() => controller.current?.zoom(-1)}>−</Button>
       </div>
     </div>
-    {fill ? <p className="px-3 py-2 text-xs text-neutral-600">Verde: subcampaña · Naranja: selección. Usa dos dedos para mover el mapa.</p> : compact ? <details className="px-2 text-xs text-neutral-600"><summary className="flex min-h-11 cursor-pointer items-center font-semibold">Leyenda y ayuda del mapa</summary><p className="pb-3 leading-5">Verde: registro grupal y zona de trabajo. Naranja: selección. Toca un punto o una zona para consultar. Usa dos dedos para mover o acercar el mapa.</p></details> : <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-neutral-500">
+    {fill ? <p className="px-3 py-2 text-sm text-neutral-600">Verde: zona · Naranja: selección. Arrastra con el ratón o usa dos dedos para mover el mapa.</p> : compact ? <details className="px-2 text-sm text-neutral-600"><summary className="flex min-h-11 cursor-pointer items-center font-semibold">Leyenda y ayuda del mapa</summary><p className="pb-3 leading-5">Verde: plantación y zona de trabajo. Naranja: selección. Selecciona un punto o una zona para consultar. Arrastra con el ratón o usa dos dedos para mover el mapa; los botones + y − permiten acercar o alejar.</p></details> : <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-neutral-600">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2" aria-label="Leyenda del mapa">
         <span className="inline-flex items-center gap-2">
           <span className="h-2.5 w-2.5 rounded-full bg-brand-700" aria-hidden="true" />Registro grupal
@@ -86,7 +101,7 @@ function InteractiveMap({ data, onSelect, focusRevision, onRetry, compact, fill,
           <span className="h-2.5 w-2.5 rounded-full bg-amber-700" aria-hidden="true" />Selección
         </span>
       </div>
-      <span>Usa dos dedos para mover o acercar el mapa</span>
+      <span>Arrastra con el ratón o usa dos dedos para mover el mapa.</span>
     </div>}
     {baseMapFailed && (
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-amber-50 p-4">
@@ -99,10 +114,15 @@ function InteractiveMap({ data, onSelect, focusRevision, onRetry, compact, fill,
     {popup && group && createPortal(
       <div className="space-y-3 text-neutral-800">
         <p className="pr-8 text-sm font-bold">
-          {group.puntos.length === 1 ? 'Registro grupal' : `${group.puntos.length} registros en esta ubicación`}
+          {group.puntos.length === 1 ? 'Plantación en esta ubicación' : `${group.puntos.length} plantaciones en esta ubicación`}
         </p>
-        <div className="max-h-56 space-y-2 overflow-y-auto">
-          {group.puntos.map(point => (
+        <div className="impacto-map-popup-list space-y-2 overflow-y-auto">
+          {group.puntos.map(point => recordReturnTo ? (
+            <div key={point.registro_id} className="space-y-1">
+              <p className="text-sm">{point.cantidad_total_plantada} {point.cantidad_total_plantada === 1 ? 'planta' : 'plantas'} {point.es_reposicion ? 'de reposición' : point.cantidad_total_plantada === 1 ? 'inicial' : 'iniciales'}</p>
+              <Link to={`/impacto/registros/${point.registro_id}`} state={{ impactoReturnTo: selectedRecordReturn(recordReturnTo, point.registro_id) }} onClick={() => onSelect(`r:${point.registro_id}`)} className="inline-flex min-h-11 w-full items-center rounded-xl bg-brand-700 px-3 py-2 text-sm font-semibold text-white underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700">Ver plantación {point.registro_id}</Link>
+            </div>
+          ) : (
             <Button key={point.registro_id} size="sm" variant="secondary" className="min-h-11 w-full text-left" onClick={() => onSelect(`r:${point.registro_id}`)}>
               Registro {point.registro_id}: {point.cantidad_total_plantada} {point.es_reposicion ? 'reposiciones' : 'iniciales'}
             </Button>

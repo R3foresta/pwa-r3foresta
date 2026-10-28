@@ -25,6 +25,7 @@ export function createImpactoMapController(container: HTMLDivElement, initial: I
   let disposed = false
   let popup: Popup | null = null
   let popupGroup: string | null = null
+  let popupContent: HTMLDivElement | null = null
   const markers = new Map<string, { marker: Marker; button: HTMLButtonElement }>()
   const map = new LibreMap({
     container, style: OPENFREEMAP_LIBERTY_STYLE_URL, center: initial.data.coordinates[0], zoom: 12,
@@ -34,12 +35,29 @@ export function createImpactoMapController(container: HTMLDivElement, initial: I
   })
   map.touchZoomRotate.disableRotation()
 
-  function closePopup() {
+  function closePopup(restoreFocus = false) {
     const previous = popup
+    const trigger = popupGroup ? markers.get(popupGroup)?.button : null
     popup = null
     popupGroup = null
+    popupContent = null
     previous?.remove()
     if (!disposed) events.onPopup(null)
+    if (restoreFocus && trigger?.isConnected) trigger.focus({ preventScroll: true })
+  }
+  function positionPopup() {
+    const group = current.data.groups.find(item => item.id === popupGroup)
+    if (!popup || !popupContent || !group) return
+    popupContent.style.setProperty('--impacto-popup-list-height', `${Math.max(44, container.clientHeight - 130)}px`)
+    // El portal ya tiene dimensiones: MapLibre puede elegir el anclaje correcto.
+    popup.setMaxWidth(`${Math.min(290, Math.max(160, (container.clientWidth || 322) - 32))}px`)
+    popup.setLngLat(group.coordinates)
+    const bounds = popup.getElement().getBoundingClientRect()
+    const mapBounds = container.getBoundingClientRect()
+    if (!mapBounds.width || !mapBounds.height) return
+    const dx = bounds.left < mapBounds.left + 12 ? bounds.left - mapBounds.left - 12 : bounds.right > mapBounds.right - 12 ? bounds.right - mapBounds.right + 12 : 0
+    const dy = bounds.top < mapBounds.top + 12 ? bounds.top - mapBounds.top - 12 : bounds.bottom > mapBounds.bottom - 12 ? bounds.bottom - mapBounds.bottom + 12 : 0
+    if (dx || dy) map.panBy([dx, dy], { duration: 0 })
   }
   function openGroup(id: string) {
     const group = current.data.groups.find(item => item.id === id)
@@ -49,9 +67,19 @@ export function createImpactoMapController(container: HTMLDivElement, initial: I
     if (selection) current.onSelect(selection)
     const content = document.createElement('div')
     popupGroup = id
-    popup = new Popup({ closeButton: true, closeOnClick: false, maxWidth: '290px', offset: 18 })
+    popupContent = content
+    const opened = new Popup({ closeButton: true, closeOnClick: false, focusAfterOpen: false, maxWidth: '290px', offset: 18, padding: { top: 56, right: 56, bottom: 12, left: 12 } })
       .setLngLat(group.coordinates).setDOMContent(content).addTo(map)
-    popup.on('close', () => { popup = null; popupGroup = null; if (!disposed) events.onPopup(null) })
+    popup = opened
+    opened.on('close', () => {
+      if (popup !== opened) return
+      popup = null; popupGroup = null; popupContent = null
+      if (!disposed) {
+        events.onPopup(null)
+        const trigger = markers.get(id)?.button
+        if (trigger?.isConnected) trigger.focus({ preventScroll: true })
+      }
+    })
     events.onPopup({ groupId: id, container: content })
   }
   function syncMarkers() {
@@ -122,6 +150,13 @@ export function createImpactoMapController(container: HTMLDivElement, initial: I
   }
   function onMouseEnter() { map.getCanvas().style.cursor = 'pointer' }
   function onMouseLeave() { map.getCanvas().style.cursor = '' }
+  function onKeyDown(event: KeyboardEvent) {
+    if (event.key !== 'Escape' || !popup) return
+    event.preventDefault()
+    event.stopPropagation()
+    closePopup(true)
+  }
+  container.addEventListener('keydown', onKeyDown)
   map.on('load', onLoad)
   // Las zonas y los marcadores no esperan a que terminen de descargar las teselas de Liberty.
   map.on('style.load', onLoad)
@@ -131,7 +166,9 @@ export function createImpactoMapController(container: HTMLDivElement, initial: I
   map.on('click', ZONE_FILL, onZoneClick)
   map.on('mouseenter', ZONE_FILL, onMouseEnter)
   map.on('mouseleave', ZONE_FILL, onMouseLeave)
-  const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => { if (!disposed) map.resize() })
+  const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => {
+    if (!disposed) { map.resize(); positionPopup() }
+  })
   observer?.observe(container)
 
   return {
@@ -141,12 +178,18 @@ export function createImpactoMapController(container: HTMLDivElement, initial: I
       sync()
       if (loaded && refit) fit()
     },
+    popupReady(content: HTMLDivElement, focus: boolean) {
+      if (disposed || content !== popupContent) return
+      positionPopup()
+      if (focus) content.querySelector<HTMLElement>('a[href], button:not([disabled])')?.focus({ preventScroll: true })
+    },
     fit,
     zoom(delta: number) { if (!disposed) map.easeTo({ zoom: Math.min(19, Math.max(0, map.getZoom() + delta)), duration: 0 }) },
     destroy() {
       if (disposed) return
       disposed = true
       observer?.disconnect()
+      container.removeEventListener('keydown', onKeyDown)
       map.off('load', onLoad)
       map.off('style.load', onLoad)
       map.off('error', onError)
