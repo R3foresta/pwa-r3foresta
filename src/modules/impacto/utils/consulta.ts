@@ -48,10 +48,22 @@ export function impactoErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'No se pudo consultar el impacto. Comprueba tu conexión e inténtalo otra vez.'
 }
 
+/** Destino canónico de campaña; el detalle lo liga a su campaña y subcampaña consultadas. */
+export function safeCampaniaMapReturn(value: unknown, campaniaId?: string, subcampaniaId?: string): string | null {
+  if (typeof value !== 'string' || value !== value.trim()) return null
+  const match = /^\/app\/planting\/campanias\/([1-9][0-9]*)\?pestana=mapa(?:&subcampania=([1-9][0-9]*))?(?:&registro=[1-9][0-9]*)?$/.exec(value)
+  if (!match || (campaniaId !== undefined && match[1] !== campaniaId)) return null
+  if (subcampaniaId !== undefined && match[2] !== undefined && match[2] !== subcampaniaId) return null
+  return value
+}
+
 export function safeImpactoReturn(value: unknown): string | null {
   if (value === '/app/participacion/mis-registros') return value
   const participation = safeParticipacionReturn(value)
   if (participation) return participation
+  // El retorno interno de campaña conserva únicamente su mapa y selección.
+  const campaignMap = safeCampaniaMapReturn(value)
+  if (campaignMap) return campaignMap
   return typeof value === 'string' && /^\/impacto(?:\/(?:campanias|subcampanias|registros)\/[1-9][0-9]*)?(?:\?[^#]*)?$/.test(value) ? value : null
 }
 

@@ -1,11 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import L from 'leaflet'
-import type { LatLngTuple } from 'leaflet'
-import { MapContainer, Polygon, useMap } from 'react-leaflet'
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import 'leaflet/dist/leaflet.css'
-import OpenFreeMapBaseLayer from '../../../components/map/OpenFreeMapBaseLayer'
+import PolygonMapPreview from '../../../components/map/PolygonMapPreview'
 import plantacionHero from '../../../assets/home/plantacion.webp'
 import SubcampaniaSpeciesCard from '../components/SubcampaniaSpeciesCard'
 import SubcampaniaDetailHeader from '../components/SubcampaniaDetailHeader'
@@ -26,7 +22,7 @@ import {
   type RevisarPlanData,
   type Subcampania,
 } from '../types/contracts'
-import { formatDate, toLatLngTuple } from '../utils/subcampaniaFormatters'
+import { formatDate } from '../utils/subcampaniaFormatters'
 import { loadSubcampaniaBaseDrafts } from '../utils/subcampaniaDraft'
 import { UserAvatar } from '../components/UserAvatar'
 import CancelarSubcampaniaModal from '../components/CancelarSubcampaniaModal'
@@ -38,6 +34,7 @@ import SubcampaniaAdminStock from '../components/SubcampaniaAdminStock'
 import SubcampaniaAdminActividad from '../components/SubcampaniaAdminActividad'
 import SubcampaniaPlantacionesMap from '../components/SubcampaniaPlantacionesMap'
 import { useImpactoConsulta } from '../../impacto/hooks/useImpactoConsulta'
+import { safeCampaniaMapReturn } from '../../impacto/utils/consulta'
 import { useRegistroContext } from '../../participacion/registro/hooks/useRegistroContext'
 import { getPlantaNombre } from '../../../utils/plantaNombre'
 
@@ -74,10 +71,6 @@ function getPlanReadError(reason: unknown): PlanReadError {
         ? 'La subcampaña no existe.'
         : reason instanceof Error ? reason.message : 'No se pudo consultar el plan vigente.'
   return { status, message }
-}
-
-function getPolygonPositions(poligono: GeoJsonPolygon | null | undefined): LatLngTuple[] {
-  return (poligono?.coordinates[0] ?? []).map(toLatLngTuple)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -189,82 +182,6 @@ function LoadingHeader({ onBack }: { onBack: () => void }) {
         <h1 className="mt-1 text-[28px] font-extrabold leading-tight">Cargando...</h1>
       </div>
     </header>
-  )
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Tab bar
-// Mapa helpers
-// ─────────────────────────────────────────────────────────────────────────────
-
-function MapFitBounds({ positions }: { positions: LatLngTuple[] }) {
-  const map = useMap()
-  const fitted = useRef(false)
-
-  useEffect(() => {
-    if (positions.length > 0 && !fitted.current) {
-      fitted.current = true
-      map.fitBounds(L.latLngBounds(positions), { maxZoom: 17, padding: [24, 24] })
-    }
-  }, [map, positions])
-
-  return null
-}
-
-// Vista previa del polígono en el Resumen. `isolate z-0` encierra los z-index
-// internos de Leaflet (400+) en un stacking context propio para que el mapa no
-// se dibuje encima del BottomNav (z-40).
-function MiniMapPreview({
-  positions,
-  label,
-  onClick,
-}: {
-  positions: LatLngTuple[]
-  label: string
-  onClick: () => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label="Ver mapa completo"
-      className="relative isolate z-0 block h-[150px] w-full overflow-hidden rounded-3xl bg-neutral-100 text-left shadow-soft ring-1 ring-black/5 transition hover:ring-brand-300"
-    >
-      <div className="pointer-events-none absolute inset-0">
-        <MapContainer
-          center={positions[0] ?? [-16.5, -68.15]}
-          zoom={14}
-          maxZoom={19}
-          dragging={false}
-          scrollWheelZoom={false}
-          doubleClickZoom={false}
-          touchZoom={false}
-          keyboard={false}
-          zoomControl={false}
-          className="h-full w-full"
-        >
-          <OpenFreeMapBaseLayer allowRetry={false} />
-          <MapFitBounds positions={positions} />
-          <Polygon
-            positions={positions}
-            pathOptions={{
-              color: '#166534',
-              fillColor: '#22c55e',
-              fillOpacity: 0.25,
-              weight: 3,
-            }}
-          />
-        </MapContainer>
-      </div>
-      <span className="absolute bottom-2.5 left-2.5 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-[10.5px] font-extrabold text-brand-800 shadow-soft backdrop-blur">
-        <Icon name="pin" className="h-3.5 w-3.5 text-success-600" />
-        {label}
-      </span>
-      <span className="absolute right-2.5 top-2.5 inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-brand-700 shadow-soft backdrop-blur">
-        Ver mapa
-        <Icon name="chevron-right" className="h-3 w-3" />
-      </span>
-    </button>
   )
 }
 
@@ -430,10 +347,6 @@ function ResumenTab({
   const coordinador = equipo.find((m) => m.rol === 'COORDINADOR')
   const isBorrador = sub.estado === 'BORRADOR'
   const displayPoligono = sub.poligono ?? poligonoConsulta ?? localPoligonoFallback
-  const polygonPositions = useMemo(
-    () => getPolygonPositions(displayPoligono),
-    [displayPoligono],
-  )
 
   const supervivencia = getSupervivenciaPct(sub)
   const hectareas = formatHectareas(sub.area_hectareas)
@@ -552,9 +465,9 @@ function ResumenTab({
       </div>
 
       {/* Mini mapa → tab mapa */}
-      {polygonPositions.length > 0 && (
-        <MiniMapPreview
-          positions={polygonPositions}
+      {displayPoligono && (displayPoligono.coordinates[0]?.length ?? 0) > 0 && (
+        <PolygonMapPreview
+          polygons={[{ id: String(sub.id), poligono: displayPoligono }]}
           label={hectareas ? `${hectareas} ha` : sub.zona_nombre ?? 'Zona delimitada'}
           onClick={onTabMapa}
         />
@@ -679,7 +592,7 @@ function MapaTab({
 
   return (
     <div className="space-y-3">
-      <SubcampaniaPlantacionesMap subcampania={{ id: scopeId, nombre: sub.nombre, poligono: displayPoligono }}
+      <SubcampaniaPlantacionesMap campaniaId={String(sub.campania_id)} subcampania={{ id: scopeId, nombre: sub.nombre, poligono: displayPoligono }}
         puntos={consulta.data?.mapa ?? []} registros={consulta.data?.registros ?? []}
         loading={consulta.loading} error={consulta.error} onRetry={consulta.retry} publishedRecords={zone?.registros} />
       {!displayPoligono && isBorrador && <Button size="sm" leftIcon="map" onClick={() => navigate(buildWizardUrl(campania_id, sub.id, 3))}>Definir zona</Button>}
@@ -970,6 +883,11 @@ function DetalleSubcampanaScreen() {
     const home = user?.id && subcampaniaId ? inicioReturnForActor(location.state, user.id, subcampaniaId) : null
     if (home) { navigate(home); return }
     if (sub) {
+      const campaignReturn = safeCampaniaMapReturn(location.state?.campaniaReturnTo, String(sub.campania_id), String(sub.id))
+      if (campaignReturn) {
+        navigate(campaignReturn)
+        return
+      }
       navigate(`/app/planting/campanias/${sub.campania_id}`)
     } else {
       navigate('/app/planting')

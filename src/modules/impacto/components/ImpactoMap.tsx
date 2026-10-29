@@ -20,8 +20,12 @@ export type ImpactoMapProps = {
   /** Ocupa el contenedor de la vista de selección a pantalla completa. */
   fill?: boolean
   privateScope?: boolean
+  /** Nombre del alcance de consulta interna, por defecto una subcampaña. */
+  scopeLabel?: string
   /** Habilita el detalle público; una función permite conservar el retorno de cada pantalla. */
   recordReturnTo?: string | ((recordId: string) => string)
+  /** Único contexto interno admitido; las pantallas de origen y retorno lo validan. */
+  recordReturnState?: { campaniaReturnTo: string }
 }
 
 function selectedRecordReturn(returnTo: string, recordId: string) {
@@ -31,14 +35,14 @@ function selectedRecordReturn(returnTo: string, recordId: string) {
   return `${pathname}?${params}`
 }
 
-export default function ImpactoMap({ subcampanias, puntos, seleccion, onSelect, focusRevision, compact = false, fill = false, privateScope = false, recordReturnTo }: ImpactoMapProps) {
+export default function ImpactoMap({ subcampanias, puntos, seleccion, onSelect, focusRevision, compact = false, fill = false, privateScope = false, scopeLabel = 'esta subcampaña', recordReturnTo, recordReturnState }: ImpactoMapProps) {
   const data = useMemo(() => buildImpactoMapData(subcampanias, puntos, seleccion), [subcampanias, puntos, seleccion])
   const [attempt, setAttempt] = useState(0)
-  if (!data.bounds) return <p className="rounded-2xl bg-brand-50 p-5 text-sm text-neutral-600">{privateScope ? 'No hay ubicación disponible para esta subcampaña.' : 'No hay ubicaciones públicas para representar en este alcance.'}</p>
-  return <InteractiveMap key={attempt} data={data} onSelect={onSelect} focusRevision={focusRevision} compact={compact} fill={fill} privateScope={privateScope} recordReturnTo={recordReturnTo} onRetry={() => setAttempt(value => value + 1)} />
+  if (!data.bounds) return <p className="rounded-2xl bg-brand-50 p-5 text-sm text-neutral-600">{privateScope ? `No hay ubicación disponible para ${scopeLabel}.` : 'No hay ubicaciones públicas para representar en este alcance.'}</p>
+  return <InteractiveMap key={attempt} data={data} onSelect={onSelect} focusRevision={focusRevision} compact={compact} fill={fill} privateScope={privateScope} scopeLabel={scopeLabel} recordReturnTo={recordReturnTo} recordReturnState={recordReturnState} onRetry={() => setAttempt(value => value + 1)} />
 }
 
-function InteractiveMap({ data, onSelect, focusRevision, onRetry, compact, fill, privateScope, recordReturnTo }: ImpactoMapSnapshot & { onRetry: () => void; compact: boolean; fill: boolean; privateScope: boolean; recordReturnTo?: ImpactoMapProps['recordReturnTo'] }) {
+function InteractiveMap({ data, onSelect, focusRevision, onRetry, compact, fill, privateScope, scopeLabel, recordReturnTo, recordReturnState }: ImpactoMapSnapshot & { onRetry: () => void; compact: boolean; fill: boolean; privateScope: boolean; scopeLabel: string; recordReturnTo?: ImpactoMapProps['recordReturnTo']; recordReturnState?: ImpactoMapProps['recordReturnState'] }) {
   const container = useRef<HTMLDivElement>(null)
   const controller = useRef<ImpactoMapController | null>(null)
   const initial = useRef({ data, onSelect, focusRevision })
@@ -76,7 +80,7 @@ function InteractiveMap({ data, onSelect, focusRevision, onRetry, compact, fill,
   )
 
   return <div className={fill ? "flex h-full min-h-48 flex-col" : "space-y-3"}>
-    <div className={`impacto-map relative isolate overflow-hidden rounded-3xl bg-brand-50 ring-1 ring-brand-200 ${fill ? 'min-h-48 flex-1' : compact ? expanded ? 'h-[65svh] min-h-80' : 'h-[clamp(14rem,32svh,18rem)] sm:h-[420px]' : 'h-[360px] sm:h-[460px]'}`} role="region" aria-label={privateScope ? "Mapa de esta subcampaña" : fill ? "Mapa de subcampañas" : "Mapa público de zonas y registros grupales"}>
+    <div className={`impacto-map relative isolate overflow-hidden rounded-3xl bg-brand-50 ring-1 ring-brand-200 ${fill ? 'min-h-48 flex-1' : compact ? expanded ? 'h-[65svh] min-h-80' : 'h-[clamp(14rem,32svh,18rem)] sm:h-[420px]' : 'h-[360px] sm:h-[460px]'}`} role="region" aria-label={privateScope ? `Mapa de ${scopeLabel}` : fill ? "Mapa de subcampañas" : "Mapa público de zonas y registros grupales"}>
       <div ref={container} className="h-full w-full" />
       {!ready && <div role="status" className="pointer-events-none absolute inset-0 flex items-center justify-center bg-brand-50/80 text-sm text-brand-800">{privateScope ? 'Cargando mapa…' : 'Cargando mapa público…'}</div>}
       <div className="absolute left-3 top-3 z-10">
@@ -117,7 +121,7 @@ function InteractiveMap({ data, onSelect, focusRevision, onRetry, compact, fill,
           {group.puntos.map(point => recordReturnTo ? (
             <div key={point.registro_id} className="space-y-1">
               <p className="text-sm">{point.cantidad_total_plantada} {point.cantidad_total_plantada === 1 ? 'planta' : 'plantas'} {point.es_reposicion ? 'de reposición' : point.cantidad_total_plantada === 1 ? 'inicial' : 'iniciales'}</p>
-              <Link to={`/impacto/registros/${point.registro_id}`} state={{ impactoReturnTo: typeof recordReturnTo === 'function' ? recordReturnTo(point.registro_id) : selectedRecordReturn(recordReturnTo, point.registro_id) }} onClick={() => onSelect(`r:${point.registro_id}`)} className="inline-flex min-h-11 w-full items-center rounded-xl bg-brand-700 px-3 py-2 text-sm font-semibold text-white underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700">Ver plantación {point.registro_id}</Link>
+              <Link to={`/impacto/registros/${point.registro_id}`} state={{ impactoReturnTo: typeof recordReturnTo === 'function' ? recordReturnTo(point.registro_id) : selectedRecordReturn(recordReturnTo, point.registro_id), ...(recordReturnState ? { campaniaReturnTo: recordReturnState.campaniaReturnTo } : {}) }} onClick={() => onSelect(`r:${point.registro_id}`)} className="inline-flex min-h-11 w-full items-center rounded-xl bg-brand-700 px-3 py-2 text-sm font-semibold text-white underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-700">Ver plantación {point.registro_id}</Link>
             </div>
           ) : (
             <Button key={point.registro_id} size="sm" variant="secondary" className="min-h-11 w-full text-left" onClick={() => onSelect(`r:${point.registro_id}`)}>

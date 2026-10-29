@@ -74,10 +74,17 @@ function PublicRecordDestination() {
   const state = useLocation().state as { impactoReturnTo?: string } | null
   return <><p data-testid="ficha-return">{state?.impactoReturnTo}</p><Link to={state?.impactoReturnTo ?? '/'}>Volver al mapa</Link></>
 }
-function Tree({ initialPath = '/app/planting/subcampanias/826' }: { initialPath?: string }) {
-  return <MemoryRouter initialEntries={[initialPath]}>
+function CampaignDestination() {
+  const location = useLocation()
+  return <p data-testid="campania-destination">{location.pathname + location.search}</p>
+}
+function Tree({ initialPath = '/app/planting/subcampanias/826', initialState = null }: {
+  initialPath?: string; initialState?: { campaniaReturnTo: string } | null
+}) {
+  return <MemoryRouter initialEntries={[{ pathname: initialPath.split('?')[0], search: initialPath.includes('?') ? `?${initialPath.split('?')[1]}` : '', state: initialState }]}>
     <Suspense fallback={<p>Cargando ruta</p>}><Routes>
       <Route path="/app/planting/subcampanias/:subcampaniaId" element={<SubcampaniaDetailRoute />} />
+      <Route path="/app/planting/campanias/:campaniaId" element={<CampaignDestination />} />
       <Route path="/impacto/registros/:registroId" element={<PublicRecordDestination />} />
     </Routes></Suspense>
     <SwitchScope />
@@ -100,6 +107,24 @@ beforeEach(() => {
 afterEach(() => { vi.restoreAllMocks() })
 
 describe('Información de Plantación para ADMIN interno', () => {
+  it('vuelve al mapa de su campaña conservando la subcampaña y el registro BIGINT seleccionados', async () => {
+    const campaniaReturnTo = `/app/planting/campanias/800?pestana=mapa&subcampania=826&registro=${registroId}`
+    render(<Tree initialState={{ campaniaReturnTo }} />)
+    await screen.findByRole('heading', { name: 'Subcampaña 826' }, { timeout: 5000 })
+    fireEvent.click(screen.getByRole('button', { name: 'Volver' }))
+    expect(screen.getByTestId('campania-destination').textContent).toBe(campaniaReturnTo)
+  })
+
+  it.each([
+    `/app/planting/campanias/999?pestana=mapa&subcampania=826&registro=${registroId}`,
+    `https://otro.test/app/planting/campanias/800?pestana=mapa&subcampania=826&registro=${registroId}`,
+  ])('descarta el retorno a una campaña ajena o destino externo: %s', async campaniaReturnTo => {
+    render(<Tree initialState={{ campaniaReturnTo }} />)
+    await screen.findByRole('heading', { name: 'Subcampaña 826' })
+    fireEvent.click(screen.getByRole('button', { name: 'Volver' }))
+    expect(screen.getByTestId('campania-destination').textContent).toBe('/app/planting/campanias/800')
+  })
+
   it('muestra en Resumen los agregados del ámbito completo y lleva el detalle a Registros', async () => {
     const response = publicData()
     response.data.subcampanias[0] = { ...response.data.subcampanias[0], registros: 27, plantacion_inicial: 150, reposiciones: 12 }

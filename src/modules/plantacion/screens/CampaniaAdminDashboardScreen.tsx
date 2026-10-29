@@ -1,10 +1,13 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import plantacionHero from '../../../assets/home/plantacion.webp'
 import Icon from '../../../components/Icon'
 import { useAuth } from '../../../contexts/AuthContext'
 import { PlantacionService } from '../../../services/plantacion.service'
 import DesactivarCampaniaModal from '../components/DesactivarCampaniaModal'
+import CampaniaMapPanel, { CampaniaMapStatus } from '../components/CampaniaMapPanel'
+import { useImpactoConsulta } from '../../impacto/hooks/useImpactoConsulta'
+import { useCampaniaMapGeometry } from '../hooks/useCampaniaMapGeometry'
 import { formatRelativeTime } from '../../../utils/datetime'
 import {
   TIPO_CAMPANIA_LABEL,
@@ -25,6 +28,8 @@ import {
 } from '../utils/subcampaniaDraft'
 import { formatDate as formatFullDate } from '../utils/subcampaniaFormatters'
 import { getCampaniaAggregatedTotals } from '../utils/dashboardAggregates'
+
+const PolygonMapPreview = lazy(() => import('../../../components/map/PolygonMapPreview'))
 
 type LocationState = {
   campania?: Campania
@@ -583,6 +588,7 @@ function DCTabs({
               key={tab.key}
               type="button"
               onClick={() => onChange(tab.key)}
+              aria-pressed={selected}
               className={`flex-1 rounded-full px-3 py-2 text-[12px] font-extrabold tracking-wide transition ${
                 selected
                   ? 'bg-brand-700 text-white shadow-soft'
@@ -691,119 +697,6 @@ function NoCoordinadorAlert({ count }: { count: number }) {
         </p>
       </div>
     </section>
-  )
-}
-
-// ================= Preview del mapa de cobertura =================
-
-function CoverageMapPreview({
-  hectareas,
-  activeCount,
-  draftCount,
-  onOpen,
-}: {
-  hectareas: number
-  activeCount: number
-  draftCount: number
-  onOpen: () => void
-}) {
-  const totalMarkers = Math.max(0, activeCount + draftCount)
-  const positions = useMemo(() => {
-    const base: Array<{ x: number; y: number; active: boolean }> = [
-      { x: 30, y: 42, active: true },
-      { x: 55, y: 30, active: true },
-      { x: 68, y: 55, active: true },
-      { x: 22, y: 60, active: false },
-      { x: 48, y: 68, active: false },
-      { x: 76, y: 38, active: false },
-    ]
-    let a = activeCount
-    let d = draftCount
-    const out: Array<{ x: number; y: number; active: boolean }> = []
-    for (const pos of base) {
-      if (pos.active && a > 0) {
-        a -= 1
-        out.push(pos)
-      } else if (!pos.active && d > 0) {
-        d -= 1
-        out.push(pos)
-      }
-    }
-    return out
-  }, [activeCount, draftCount])
-
-  return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="relative block w-full overflow-hidden rounded-3xl bg-brand-50 p-4 text-left shadow-soft ring-1 ring-black/5 transition hover:ring-brand-200"
-    >
-      <svg
-        viewBox="0 0 100 100"
-        preserveAspectRatio="none"
-        className="pointer-events-none absolute inset-0 h-full w-full text-brand-100"
-        aria-hidden
-      >
-        <defs>
-          <pattern id="mapDots" width="6" height="6" patternUnits="userSpaceOnUse">
-            <circle cx="1" cy="1" r="0.6" fill="currentColor" />
-          </pattern>
-        </defs>
-        <rect width="100" height="100" fill="url(#mapDots)" opacity="0.6" />
-        <path
-          d="M0 60 Q 25 45 50 55 T 100 50"
-          stroke="currentColor"
-          strokeOpacity="0.6"
-          strokeWidth="0.6"
-          fill="none"
-        />
-        <path
-          d="M0 78 Q 30 65 55 72 T 100 70"
-          stroke="currentColor"
-          strokeOpacity="0.5"
-          strokeWidth="0.5"
-          fill="none"
-        />
-        {positions.map((pos, idx) => (
-          <g key={idx} transform={`translate(${pos.x} ${pos.y})`}>
-            {pos.active ? (
-              <>
-                <circle r="3.6" fill="#10b981" fillOpacity="0.16" />
-                <circle r="1.9" fill="#10b981" />
-              </>
-            ) : (
-              <>
-                <circle
-                  r="3.6"
-                  fill="none"
-                  stroke="#94a3b8"
-                  strokeDasharray="1 1"
-                  strokeWidth="0.5"
-                />
-                <circle r="1.6" fill="#cbd5e1" />
-              </>
-            )}
-          </g>
-        ))}
-      </svg>
-
-      <div className="relative flex items-start justify-between gap-2">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1.5 text-[11px] font-extrabold text-brand-700 shadow-soft ring-1 ring-black/5">
-          <Icon name="pin" className="h-3 w-3" />
-          Cobertura agregada · {hectareas} ha
-        </span>
-        <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-[10.5px] font-extrabold uppercase tracking-[0.12em] text-brand-700 shadow-soft ring-1 ring-black/5">
-          Tap para ver detalle
-          <Icon name="chevron-right" className="h-3 w-3" />
-        </span>
-      </div>
-      <div className="relative h-32" />
-      {totalMarkers === 0 && (
-        <p className="relative mt-2 text-center text-[11px] font-semibold text-neutral-500">
-          Sin polígonos definidos aún
-        </p>
-      )}
-    </button>
   )
 }
 
@@ -1304,24 +1197,20 @@ function AgregarSubcampaniaFab({
 
 // ================= Placeholder tab panel =================
 
-function PendingTabPanel({ tab }: { tab: DashboardTab }) {
-  const titleByTab: Record<DashboardTab, string> = {
-    resumen: 'Resumen',
+function PendingTabPanel({ tab }: { tab: 'equipo' | 'lotes' }) {
+  const titleByTab: Record<'equipo' | 'lotes', string> = {
     equipo: 'Equipo agregado',
     lotes: 'Lotes comprometidos',
-    mapa: 'Cobertura geográfica',
   }
-  const copyByTab: Record<DashboardTab, string> = {
-    resumen: 'El resumen aparece cuando existan sub-campañas.',
+  const copyByTab: Record<'equipo' | 'lotes', string> = {
     equipo: 'La asignación de responsables vive en cada sub-campaña.',
     lotes: 'Los lotes se asignan a sub-campañas individuales.',
-    mapa: 'La zona se define por sub-campaña y luego se agrega aquí.',
   }
   return (
     <section className="rounded-3xl bg-white p-5 text-center shadow-soft ring-1 ring-black/5">
       <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-neutral-50 text-neutral-500">
         <Icon
-          name={tab === 'mapa' ? 'map' : tab === 'lotes' ? 'package' : 'info'}
+          name={tab === 'lotes' ? 'package' : 'info'}
           className="h-6 w-6"
         />
       </div>
@@ -1364,7 +1253,7 @@ function LoadingHeader({ onBack }: { onBack: () => void }) {
 
 // ================= Screen =================
 
-function CampaniaAdminDashboardScreen() {
+function CampaniaDashboard() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user } = useAuth()
@@ -1378,7 +1267,14 @@ function CampaniaAdminDashboardScreen() {
   const [activityFeed, setActivityFeed] = useState<CampaniaActivityItem[]>([])
   const [loading, setLoading] = useState(hasValidCampaniaId)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<DashboardTab>('resumen')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const requestedTab = searchParams.get('pestana')
+  const activeTab: DashboardTab = DASHBOARD_TABS.some(tab => tab.key === requestedTab) ? requestedTab as DashboardTab : 'resumen'
+  const setActiveTab = (tab: DashboardTab) => {
+    const next = new URLSearchParams(searchParams)
+    next.set('pestana', tab)
+    setSearchParams(next, { replace: true, state: location.state })
+  }
   const [subcampaniaFilter, setSubcampaniaFilter] = useState<SubcampaniaFilter>('todas')
   const [localDrafts] = useState<SubcampaniaBaseDraft[]>(() =>
     hasValidCampaniaId ? loadSubcampaniaBaseDrafts(numericCampaniaId) : [],
@@ -1429,7 +1325,30 @@ function CampaniaAdminDashboardScreen() {
 
   useEffect(() => {
     void refetchDashboard()
+    return () => { requestIdRef.current += 1 }
   }, [refetchDashboard])
+
+  const mapEnabled = Boolean(campania && !loading && !visibleError)
+  const mapQuery = useImpactoConsulta(
+    { tipo: 'campania', id: String(numericCampaniaId) },
+    { limite: 20 },
+    mapEnabled,
+  )
+  const mapGeometry = useCampaniaMapGeometry(subcampanias, user?.auth_id, mapEnabled)
+  const mapZones = useMemo(() => {
+    const published = new Map(mapQuery.data?.subcampanias
+      .filter(sub => sub.campania_id === String(numericCampaniaId))
+      .map(sub => [sub.id, sub]) ?? [])
+    return subcampanias.map(sub => ({
+      id: String(sub.id), nombre: sub.nombre,
+      poligono: sub.poligono ?? mapGeometry.polygons.get(String(sub.id)) ?? published.get(String(sub.id))?.poligono ?? null,
+    }))
+  }, [subcampanias, mapQuery.data, mapGeometry.polygons, numericCampaniaId])
+  const mapPoints = useMemo(() => {
+    const allowed = new Set(mapZones.map(zone => zone.id))
+    return mapQuery.data?.mapa.filter(point => allowed.has(point.subcampania_id)) ?? []
+  }, [mapZones, mapQuery.data])
+  const previewPolygons = useMemo(() => mapZones.flatMap(zone => zone.poligono ? [{ id: zone.id, poligono: zone.poligono }] : []), [mapZones])
 
   const goBack = () => navigate('/app/planting')
 
@@ -1508,9 +1427,6 @@ function CampaniaAdminDashboardScreen() {
     }).length
   }, [subcampanias])
 
-  const activeSubCount = countByEstado(subcampanias, 'ACTIVA')
-  const draftBackendCount = countByEstado(subcampanias, 'BORRADOR')
-
   return (
     <div className="relative min-h-screen bg-brand-50 text-brand-700">
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-28">
@@ -1558,12 +1474,15 @@ function CampaniaAdminDashboardScreen() {
                 <>
                   <MetricsGrid metrics={metrics} />
                   <NoCoordinadorAlert count={sinCoordinadorCount} />
-                  <CoverageMapPreview
-                    hectareas={metrics?.hectareas ?? 0}
-                    activeCount={activeSubCount}
-                    draftCount={draftBackendCount + visibleLocalDrafts.length}
-                    onOpen={() => setActiveTab('mapa')}
-                  />
+                  <Suspense fallback={<div role="status" className="flex h-[150px] items-center justify-center rounded-3xl bg-brand-50 text-sm text-brand-700">Cargando vista previa del mapa…</div>}>
+                    <PolygonMapPreview
+                      polygons={previewPolygons}
+                      label={`Cobertura de ${mapZones.length} subcampaña${mapZones.length === 1 ? '' : 's'}`}
+                      onClick={() => setActiveTab('mapa')}
+                    />
+                  </Suspense>
+                  <CampaniaMapStatus loading={mapQuery.loading} error={mapQuery.error} onRetry={mapQuery.retry}
+                    geometryLoading={mapGeometry.loading} geometryErrors={mapGeometry.errors} onGeometryRetry={mapGeometry.retry} />
                   <SubcampaniasSection
                     campania={campania}
                     items={filteredItems}
@@ -1579,13 +1498,19 @@ function CampaniaAdminDashboardScreen() {
                 </>
               )}
 
-              {activeTab !== 'resumen' && <PendingTabPanel tab={activeTab} />}
+              {activeTab === 'mapa' && <CampaniaMapPanel
+                campaniaId={String(campania.id)} nombre={campania.nombre}
+                subcampanias={subcampanias} zonas={mapZones} puntos={mapPoints}
+                loading={mapQuery.loading} error={mapQuery.error} onRetry={mapQuery.retry}
+                geometryLoading={mapGeometry.loading} geometryErrors={mapGeometry.errors} onGeometryRetry={mapGeometry.retry}
+              />}
+              {(activeTab === 'equipo' || activeTab === 'lotes') && <PendingTabPanel tab={activeTab} />}
             </>
           )}
         </main>
       </div>
 
-      {campania && !loading && !visibleError && (
+      {campania && !loading && !visibleError && activeTab !== 'mapa' && (
         <AgregarSubcampaniaFab
           canCreate={canCreateSubcampania}
           onCreate={goToNewSubcampania}
@@ -1606,4 +1531,9 @@ function CampaniaAdminDashboardScreen() {
   )
 }
 
-export default CampaniaAdminDashboardScreen
+export default function CampaniaAdminDashboardScreen() {
+  const { user } = useAuth()
+  const { campaniaId } = useParams()
+  const identity = `${user?.id}:${user?.auth_id}:${localStorage.getItem('authToken')}:${campaniaId}`
+  return <CampaniaDashboard key={identity} />
+}

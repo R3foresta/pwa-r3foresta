@@ -64,6 +64,6 @@ export default function SubcampaniaAdminActividad({ subcampania, poligono, tab }
 
   if (tab !== 'mapa') return null
 
-  return <SubcampaniaPlantacionesMap subcampania={{ id: scopeId, nombre: subcampania.nombre, poligono: polygon }}
+  return <SubcampaniaPlantacionesMap campaniaId={String(subcampania.campania_id)} subcampania={{ id: scopeId, nombre: subcampania.nombre, poligono: polygon }}
     puntos={points} registros={records} loading={consulta.loading} error={consulta.error} onRetry={consulta.retry} publishedRecords={zone?.registros} />
 }

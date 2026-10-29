@@ -68,6 +68,7 @@ import type {
 } from '../modules/organizaciones/types'
 
 const ROLES_SUBCAMPANIA: RolEnSubcampania[] = ['COORDINADOR', 'OPERARIO']
+type SubcampaniaDetalleDto = Subcampania & { poligono_geojson?: GeoJsonPolygon | null }
 
 /**
  * Error de la capa de servicio de Plantación. Extiende `Error` de forma
@@ -498,14 +499,14 @@ export class PlantacionService {
       throw new Error('ID de subcampaña inválido.')
     }
     const response = await getSubcampaniaApi(subcampaniaId, authId)
-    const payload = await parseJsonResponse<ApiEnvelope<Subcampania>>(
+    const payload = await parseJsonResponse<ApiEnvelope<SubcampaniaDetalleDto>>(
       response,
       'Error al cargar la subcampaña.',
     )
     if (!payload.data) {
       throw new Error('Subcampaña no encontrada.')
     }
-    return payload.data
+    return { ...payload.data, poligono: payload.data.poligono ?? payload.data.poligono_geojson ?? null }
   }
 
   static async getSubcampaniaEquipo(
