@@ -12,6 +12,7 @@ import {
 import { formatUnidadCanonicaDisplay, mapToCantidadYUnidadCanonica } from '../../utils/recoleccionUnidad'
 import { getUbicacionCoords, getUbicacionDisplay, getUbicacionDivision } from '../../utils/ubicacion'
 import { getRecoleccionFormActions, resolveEstadoOperativo, resolveEstadoRegistro } from './recoleccionStatus'
+import RecoleccionDeleteAction from './components/RecoleccionDeleteAction'
 
 function formatDate(value: string) {
   return new Date(value).toLocaleDateString('es-BO', {
@@ -48,6 +49,8 @@ function RecoleccionDetailScreen() {
   const [discardQuantity, setDiscardQuantity] = useState('')
   const [discardError, setDiscardError] = useState<string | null>(null)
   const [discarding, setDiscarding] = useState(false)
+  const [deletionLocked, setDeletionLocked] = useState(false)
+  const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
     const parsedId = Number(id)
@@ -92,7 +95,7 @@ function RecoleccionDetailScreen() {
     return () => {
       mounted = false
     }
-  }, [id])
+  }, [id, reloadKey])
 
   const evidencias = useMemo(() => {
     if (recoleccion?.evidencias && recoleccion.evidencias.length > 0) {
@@ -102,7 +105,7 @@ function RecoleccionDetailScreen() {
   }, [evidenciasFallback, recoleccion?.evidencias])
 
   const handleSubmitForValidation = async () => {
-    if (!recoleccion || !getRecoleccionFormActions(recoleccion, user).canSubmit) {
+    if (!recoleccion || deletionLocked || !getRecoleccionFormActions(recoleccion, user).canSubmit) {
       return
     }
 
@@ -244,6 +247,7 @@ function RecoleccionDetailScreen() {
             type="button"
             aria-label="Volver"
             onClick={() => navigate(-1)}
+            disabled={deletionLocked}
             className="absolute left-4 top-6 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-brand-700 shadow-soft transition hover:bg-white"
           >
             <Icon name="arrow-left" className="h-5 w-5" />
@@ -369,6 +373,7 @@ function RecoleccionDetailScreen() {
                   {formActions.canEdit && <Button
                     type="button"
                     variant="secondary"
+                    disabled={submittingToValidation || deletionLocked}
                     onClick={() => navigate(`/app/collections/new?editId=${recoleccion.id}`)}
                   >
                     {estadoRegistro === 'RECHAZADO' ? 'Corregir' : 'Editar'}
@@ -377,7 +382,7 @@ function RecoleccionDetailScreen() {
                     type="button"
                     variant="primary"
                     onClick={() => void handleSubmitForValidation()}
-                    disabled={submittingToValidation}
+                    disabled={submittingToValidation || deletionLocked}
                     loading={submittingToValidation}
                   >
                     {submittingToValidation ? 'Enviando...' : 'Enviar a validación'}
@@ -387,6 +392,14 @@ function RecoleccionDetailScreen() {
 
               </div>
             )}
+
+            <RecoleccionDeleteAction
+              key={`${recoleccion.id}:${user?.id}:${user?.rol}`}
+              recoleccion={recoleccion}
+              disabled={submittingToValidation || discarding}
+              onLockedChange={setDeletionLocked}
+              onReload={() => setReloadKey((previous) => previous + 1)}
+            />
 
             {puedeDesechar && (
               <div className="mt-4 border-t border-neutral-100 pt-4">

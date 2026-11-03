@@ -221,6 +221,22 @@ export interface RegistroDesechoResult {
   estado_operativo: 'ABIERTO' | 'CERRADO'
 }
 
+export interface RecoleccionEliminadaResult {
+  recoleccion_id: number
+  eliminado_en: string
+  eliminado_por_usuario_id: number
+}
+
+export class RecoleccionRequestError extends Error {
+  readonly status: number
+
+  constructor(message: string, status: number) {
+    super(message)
+    this.name = 'RecoleccionRequestError'
+    this.status = status
+  }
+}
+
 const DRAFT_ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'image/heif']
 const DRAFT_ALLOWED_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif']
 const DRAFT_MAX_NEW_FILES = 5
@@ -314,7 +330,7 @@ export class RecoleccionesService {
         (payload as ApiEnvelope<unknown> | null)?.error ||
         raw ||
         `Error ${response.status}`
-      throw new Error(apiMessage)
+      throw new RecoleccionRequestError(apiMessage, response.status)
     }
 
     if (!payload) {
@@ -689,6 +705,45 @@ export class RecoleccionesService {
       return { success: true, data: (payload as ApiEnvelope<Recoleccion>).data as Recoleccion }
     }
     return { success: true, data: payload as Recoleccion }
+  }
+
+  static async deleteDraft(id: number): Promise<{ success: true; data: RecoleccionEliminadaResult }> {
+    if (!Number.isSafeInteger(id) || id <= 0) {
+      throw new Error('ID de recolección inválido.')
+    }
+
+    const token = localStorage.getItem('authToken')
+    if (!token?.trim()) {
+      throw new Error('Vuelve a iniciar sesión antes de eliminar la recolección.')
+    }
+
+    const response = await fetch(`${API_URL}/api/recolecciones/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    const payload = await this.parseJsonResponse<unknown>(response)
+
+    if (response.status === 200 && payload && typeof payload === 'object' &&
+      'success' in payload && payload.success === true && 'data' in payload &&
+      payload.data && typeof payload.data === 'object') {
+      const data = payload.data
+      if ('recoleccion_id' in data && data.recoleccion_id === id &&
+        'eliminado_en' in data && typeof data.eliminado_en === 'string' &&
+        data.eliminado_en.trim() !== '' && Number.isFinite(Date.parse(data.eliminado_en)) &&
+        'eliminado_por_usuario_id' in data && typeof data.eliminado_por_usuario_id === 'number' &&
+        Number.isSafeInteger(data.eliminado_por_usuario_id) && data.eliminado_por_usuario_id > 0) {
+        return {
+          success: true,
+          data: {
+            recoleccion_id: id,
+            eliminado_en: data.eliminado_en,
+            eliminado_por_usuario_id: data.eliminado_por_usuario_id,
+          },
+        }
+      }
+    }
+
+    throw new Error('No se pudo confirmar la eliminación. Actualiza el detalle antes de volver a intentarlo.')
   }
 
   static async updateDraft(
