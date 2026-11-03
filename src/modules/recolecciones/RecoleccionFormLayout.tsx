@@ -5,8 +5,9 @@
 // Envuelve las 3 pantallas del formulario: Datos, Ubicación y Resumen
 // ============================================================================
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { Navigate, Outlet, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import AppInitializationScreen from '../../components/AppInitializationScreen'
 import { useAuth } from '../../contexts/AuthContext'
 import { RecoleccionesService } from '../../services/recolecciones.service'
 import { RecoleccionFormProvider } from './RecoleccionFormContext'
@@ -76,7 +77,11 @@ function RecoleccionFormLayout() {
           - /app/collections/new → RecoleccionFormDatosScreen
           - /app/collections/new/location → RecoleccionFormUbicacionScreen
           - /app/collections/new/summary → RecoleccionFormResumenScreen */}
-      <RecoleccionFormAccess />
+      {/* Mantiene activo el Provider al cargar un paso lazy: el Suspense global
+          puede reconectar sus efectos y revocar previews que siguen en uso. */}
+      <Suspense fallback={<AppInitializationScreen message="Cargando el formulario" />}>
+        <RecoleccionFormAccess />
+      </Suspense>
     </RecoleccionFormProvider>
   )
 }

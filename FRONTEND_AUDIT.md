@@ -1,6 +1,6 @@
 # Auditoría y pendientes del frontend
 
-Corte: 28 de octubre de 2026. Lista única de deuda frontend. No sustituye el [tablero global](../r3foresta-docs/specs/plantacion/participacion-aliada/implementacion/README.md) ni acredita estado del backend desplegado.
+Corte: 3 de noviembre de 2026. Lista única de deuda frontend. No sustituye el [tablero global](../r3foresta-docs/specs/plantacion/participacion-aliada/implementacion/README.md) ni acredita estado del backend desplegado.
 
 El [histórico de auditoría](docs/archivo/FRONTEND_AUDIT_2026-10-15.md) conserva diagnósticos, cierres y resultados anteriores. Se retiraron de esta entrada los checklists repetidos y diagnósticos de módulos que ya no describían su implementación. Un hallazgo abierto se mantiene pendiente hasta verificar su cierre; este ajuste documental no lo resuelve por sí solo.
 
@@ -10,6 +10,7 @@ Entrega INT06 publicada en PWA `62f55dc`: 32 suites/445 tests, lint y build/Type
 
 | Prioridad | ID | Estado | Qué falta |
 | --- | --- | --- | --- |
+| Media | AUD-031 | CORREGIDO local · QA de navegador pendiente | Previews de Recolección conservadas entre pasos lazy bajo StrictMode; verificar decodificación real de ambas fotos y liberación al salir en navegador. |
 | Media | AUD-030 | PENDIENTE · navegación del navegador | El botón Volver del formulario abre el diálogo de conservar/descartar; Atrás del navegador o el gesto del sistema lo omite y conserva el borrador. Definir y verificar un bloqueo de navegación compatible con `BrowserRouter` si se requiere el mismo diálogo para esos gestos. |
 | Alta | AUD-029 | CERRADO en localhost | Lectura reparada con 088; VOLUNTARIO plantador, admin plantador y «Participé» confirmados en la pantalla real. |
 | Alta | AUD-028 | PENDIENTE · contrato administrativo | Historial privado completo de plantaciones por subcampaña y lectura de stock administrativo fuera de ACTIVA; el detalle ADMIN muestra por ahora stock elegible de inicial y registros publicados. |
@@ -33,6 +34,14 @@ Entrega INT06 publicada en PWA `62f55dc`: 32 suites/445 tests, lint y build/Type
 El orden de ejecución entre repositorios se decide en el tablero oficial; esta tabla prioriza riesgos de frontend, no introduce nuevas dependencias de producto.
 
 ## Pendientes y criterio de cierre
+
+### AUD-031 — Previews de Recolección durante navegación lazy
+
+3 de noviembre: el cleanup de `RecoleccionFormProvider` revocaba las URLs blob de Lugar y Total al reconectar efectos por una ruta lazy bajo el Suspense global y StrictMode (React 19.2.0). El estado conservaba las URLs revocadas y los `File` originales; el resumen mostraba `ERR_FILE_NOT_FOUND`. `RecoleccionFormLayout` incorpora un Suspense dentro del Provider para mantener sus recursos activos durante Datos → Ubicación → Resumen, sin cambiar multipart, IDs ni servicios. Se conserva el cleanup al eliminar fotos, reiniciar o desmontar el flujo.
+
+Regresión sintética con Layout, Provider y Resumen reales, StrictMode, rutas lazy de resolución controlada y dos fotos: comprueba URLs vigentes, identidad de los `File` entregados al servicio, navegación de vuelta y liberación de previews. JSDOM simula el registro de object URLs, no decodifica imágenes; servicio y sesión simulados, sin escrituras de negocio. Pendiente verificar ambas fotos en navegador real. El error 500 de lectura de evidencias se trata en backend por separado y no queda resuelto por este cambio.
+
+Verificación local: `npm run test -- --maxWorkers=2` aprobó 74 archivos/1026 pruebas; `npm run lint`, `npm run build` (TypeScript/PWA) y `git diff --check` aprobados. Retirar temporalmente el Suspense local reproduce la revocación y hace fallar la regresión; el límite se restauró. El build conserva el aviso de tamaño del chunk MapLibre. Sin push ni despliegue.
 
 ### AUD-029 — Mis registros: lectura propia y tarjetas históricas
 

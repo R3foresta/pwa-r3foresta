@@ -53,6 +53,8 @@ UI en español, Tailwind y primitivas de `src/components/ui/`. Componentes enfoc
 - En evidencias mostrar preview seguro y metadatos recibidos; `bucket`/`ruta_archivo` no son URLs públicas.
 - Eventos/movimientos append-only: historial completo, sin editar/borrar; filtros sólo visuales.
 
+En el formulario de Recolección, el `Suspense` de los pasos lazy vive dentro de `RecoleccionFormProvider`. Así el Provider conserva activos sus efectos y sus URLs blob durante la navegación; el límite global puede reconectarlos bajo StrictMode y revocar previews aún presentes en el estado. Mantener la liberación al quitar fotos, reiniciar y desmontar el flujo; los `File` originales siguen siendo la entrada del envío multipart.
+
 ## Sesión, rutas y capacidades
 
 `AuthContext` es la fuente de sesión; `useWebAuthn` delega en él. El arranque verifica perfil con Bearer antes de abrir privados. `r3foresta:user` y `auth_id` son datos auxiliares, nunca autoridad.
