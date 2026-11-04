@@ -11,6 +11,7 @@ import { hasInternalAppAccess } from '../../utils/appAccess'
 import ParticipantHomeScreen from './ParticipantHomeScreen'
 import GestionAccesosEntry from '../participacion/components/GestionAccesosEntry'
 import RegistroParticipanteEntry from '../participacion/components/RegistroParticipanteEntry'
+import UsuariosEntry from '../usuarios/components/UsuariosEntry'
 
 function HomeScreen() {
   const { user } = useAuth()
@@ -164,6 +165,7 @@ function InternalHomeScreen() {
 
       <RegistroParticipanteEntry />
       <GestionAccesosEntry />
+      <UsuariosEntry />
 
       {isAdmin && (
         <div className="mt-7">

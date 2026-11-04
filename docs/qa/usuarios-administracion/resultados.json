@@ -1,0 +1,358 @@
+{
+  "estado": "CORRECTO",
+  "fecha_local": "2026-11-03",
+  "fecha_utc": "2026-11-04T01:42:49.902Z",
+  "entorno": "SINTETICO_LOCAL_INT02C",
+  "backend": {
+    "url": "http://127.0.0.1:3302",
+    "revision": "c684ad96138727fe203d58087068bff35d42956e",
+    "cambios_de_trabajo": true,
+    "migraciones_sha256": {
+      "068_pa_participacion_comando.sql": "838e1e658d178e59af5318e5b64514aef6b02317c1d4b19a3bd71af77e353a45",
+      "069_pa_int02b_eventos_acceso.sql": "cc360b8799d6a681d3ac98fe0114feae38223dfea7bea9dda0a4b739d0afca39",
+      "070_pa_int02b_permisos_contextuales.sql": "fe577206af76c8aa5f61ad453d0916b0e025b13b1660ba996fc8bbbd81dddd39",
+      "071_pa_int02b_bootstrap_controlado.sql": "ef8a2e3ff9a4e370c8ff176e0f85b46447f135dd3e5bd34ce21f74f909dbb560",
+      "072_pa_int02c_comandos_acceso.sql": "747b74f9a1d4c0eab006544119c4a5d505c757939a4eeedaec77e95f25233ee7",
+      "073_pa_int02c_lecturas.sql": "7bfcc6d60e5baaf603a514475e5403137d28a478dba715eed22a63797c34b157",
+      "087_pa_miembros_plantador_lectura.sql": "23b858877b1d7655ce7a9643c024d3f6c36846495af79379d27a558ec331a5b3",
+      "091_usuarios_administracion_lectura.sql": "cd162dd707545a11ab8993e0cd4c49ff2cb01f69a63a33c2bb43957253d60796"
+    }
+  },
+  "pwa_base": "http://127.0.0.1:3306",
+  "adaptador_sesion": "Únicamente GET del perfil propio de arranque: identidad y rol contrastados con capacidades API/DB reales. Sin ceremonia WebAuthn.",
+  "alcance": "Selección y cambios de roles globales, autorización, cancelación, pérdida de respuesta tras commit, recuperación propia y separación entre cuentas.",
+  "limites": [
+    "No acredita despliegue ni catálogo remoto, WebAuthn, revisión humana de UX o QA del resto del sistema.",
+    "Solo personas y comandos de la fixture sintética; no se guardan tokens ni headers de autorización."
+  ],
+  "checks": [
+    "fixture aislada incluye 091 y usuario 604 inicia VOLUNTARIO/revisión 0",
+    "visitante: ruta administrativa conduce al login sin descargar usuarios",
+    "login-mobile.png: sin desbordamiento horizontal",
+    "gestora: no ve buscador ni descarga selector administrativo",
+    "sin-permiso-mobile.png: sin desbordamiento horizontal",
+    "voluntario: no ve buscador ni descarga selector administrativo",
+    "ADMIN: selector real disponible con identidad contrastada por API/DB",
+    "confirmación identifica usuario y roles anterior/nuevo",
+    "confirmacion-mobile.png: sin desbordamiento horizontal",
+    "cancelar confirmación no envía POST ni modifica autoridad",
+    "PWA→API→DB: 604 pasa a GENERAL con revisión 1",
+    "primera confirmación emite un único POST con revisión leída",
+    "se pierde solo la respuesta posterior a commit real: VALIDADOR/revisión 2",
+    "incertidumbre conserva clave por cuenta y bloquea otra intención",
+    "sin-confirmar-mobile.png: sin desbordamiento horizontal",
+    "otra cuenta en el mismo navegador no ve ni recupera el pendiente original",
+    "cambio de cuenta conserva el pendiente de la cuenta original",
+    "recarga de cuenta original recupera por GET sin nuevo POST",
+    "recuperación muestra el rol confirmado y mantiene revisión 2",
+    "terminal validado libera el pendiente de su cuenta",
+    "recuperado-mobile.png: sin desbordamiento horizontal",
+    "último ADMIN: rechazo durable visible sin degradar cuenta 600",
+    "rechazo-ultimo-admin-desktop.png: sin desbordamiento horizontal",
+    "ensayo del último ADMIN restaura roles de ambos administradores sin borrar historia",
+    "usuarios-desktop.png: sin desbordamiento horizontal",
+    "ninguna solicitud de gestión transmite actor por body o headers legados",
+    "sin errores de ejecución del navegador"
+  ],
+  "commands": [
+    {
+      "profile": "admin",
+      "path": "/api/v1/usuarios/604/roles",
+      "usuario_id": "604",
+      "comando_id": "b080ebd3-e78b-4c80-b6f2-017cc8da16ca",
+      "rol_global": "GENERAL",
+      "revision_esperada": "0",
+      "motivo": "QA sintética: asignación General"
+    },
+    {
+      "profile": "admin",
+      "path": "/api/v1/usuarios/604/roles",
+      "usuario_id": "604",
+      "comando_id": "9f89b024-a55d-4dbf-acf8-c0e43d0060cd",
+      "rol_global": "VALIDADOR",
+      "revision_esperada": "1",
+      "motivo": "QA sintética: asignación Validador con respuesta perdida"
+    },
+    {
+      "profile": "admin",
+      "path": "/api/v1/usuarios/600/roles",
+      "usuario_id": "600",
+      "comando_id": "71669410-089a-4744-8bdc-d82e86d5ffcc",
+      "rol_global": "VOLUNTARIO",
+      "revision_esperada": "0",
+      "motivo": "QA sintética: último ADMIN debe conservarse"
+    }
+  ],
+  "api_commands": [
+    {
+      "profile": "admin",
+      "path": "/api/v1/usuarios/601/roles",
+      "usuario_id": "601",
+      "comando_id": "17249412-1b8d-4d6c-8b26-f99c425adc75",
+      "rol_global": "GENERAL",
+      "revision_esperada": "0",
+      "motivo": "QA sintética: preparar protección del último ADMIN"
+    },
+    {
+      "profile": "admin",
+      "path": "/api/v1/usuarios/601/roles",
+      "usuario_id": "601",
+      "comando_id": "7faaeb1d-67af-48ab-851b-05bf92a1d805",
+      "rol_global": "ADMIN",
+      "revision_esperada": "1",
+      "motivo": "QA sintética: restaurar segundo ADMIN tras ensayo"
+    }
+  ],
+  "network": [
+    {
+      "profile": "gestora",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "profile": "gestora",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "profile": "gestora",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "gestora",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "voluntario",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "profile": "voluntario",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "profile": "voluntario",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "voluntario",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/usuarios"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/usuarios"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/usuarios/604/autoridad"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/usuarios/604/autoridad"
+    },
+    {
+      "profile": "admin",
+      "method": "POST",
+      "path": "/api/v1/usuarios/604/roles"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/usuarios"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/usuarios"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/usuarios"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/usuarios/604/autoridad"
+    },
+    {
+      "profile": "admin",
+      "method": "POST",
+      "path": "/api/v1/usuarios/604/roles"
+    },
+    {
+      "profile": "gestora",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "profile": "gestora",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "profile": "gestora",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "gestora",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/users/profile"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/participacion/comandos/9f89b024-a55d-4dbf-acf8-c0e43d0060cd"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/usuarios"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/usuarios"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/usuarios"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/usuarios"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/usuarios/600/autoridad"
+    },
+    {
+      "profile": "admin",
+      "method": "POST",
+      "path": "/api/v1/usuarios/600/roles"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/usuarios"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/participacion/capacidades"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/usuarios"
+    },
+    {
+      "profile": "admin",
+      "method": "GET",
+      "path": "/api/v1/usuarios"
+    }
+  ],
+  "screenshots": [
+    "login-mobile.png",
+    "sin-permiso-mobile.png",
+    "confirmacion-mobile.png",
+    "sin-confirmar-mobile.png",
+    "recuperado-mobile.png",
+    "rechazo-ultimo-admin-desktop.png",
+    "usuarios-desktop.png"
+  ],
+  "errors": []
+}

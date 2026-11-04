@@ -1,0 +1,73 @@
+{
+  "fecha_local": "2026-11-03",
+  "zona_horaria": "America/La_Paz",
+  "estado": "CORRECTO",
+  "revision_base": "c684ad96138727fe203d58087068bff35d42956e",
+  "arbol_de_trabajo": true,
+  "runtime": {
+    "node": "24.19.0",
+    "npm": "12.0.2",
+    "vite": "7.3.6"
+  },
+  "verificacion": {
+    "lint": {
+      "comando": "npm run lint",
+      "exit_code": 0
+    },
+    "build": {
+      "comando": "npm run build",
+      "typescript_incluido": true,
+      "exit_code": 0
+    },
+    "pruebas": {
+      "comando": "npm run test -- --maxWorkers=2",
+      "suites": 81,
+      "pruebas": 1137,
+      "exit_code": 0
+    }
+  },
+  "navegador": {
+    "estado": "CORRECTO",
+    "comprobaciones": 27,
+    "entorno": "SINTETICO_LOCAL_INT02C",
+    "reporte": "resultados.json",
+    "perfil_arranque_simulado": true,
+    "resto_rutas_gestion_reales": true,
+    "capturas_revisadas_por_agente": [
+      "confirmacion-mobile.png",
+      "recuperado-mobile.png",
+      "usuarios-desktop.png"
+    ]
+  },
+  "nota_verificacion": "Revisión del encargo sobre la implementación local: ocho regresiones adicionales para 401/403, doble confirmación y StrictMode. Base de 1.129 pruebas y suite final de 1.137 aprobadas con dos workers, sin cambiar timeouts. Lint, build y las 27 comprobaciones integradas repetidos y aprobados.",
+  "sha256": {
+    "src/modules/usuarios/api/usuarios.api.test.ts": "e34cb5812584881b5c23dd457158d46ae26d18e6339667faefb59daf52f9b47d",
+    "src/modules/usuarios/api/usuarios.api.ts": "33a67a9af24733e8048eeac4bb70fffceac7090fbc28dff15d67c144e32f99f8",
+    "src/modules/usuarios/api/usuarios.contract.ts": "da36a25a02300710317badb09a68e3dc3f00da1001b8d61d67443160ee223e75",
+    "src/modules/usuarios/commands/roleCommandStore.ts": "4028934af73f950548bd25029dd4634538e4319c0387cc4538ae3803d291b3d6",
+    "src/modules/usuarios/commands/roleCommands.test.tsx": "b9c645cbd233d701f71b945a4cb4b82e344321ede35f5bfe8532357615f23dd3",
+    "src/modules/usuarios/commands/useRoleCommand.ts": "32df59591c9ad327681312c8d2e6647797a0eab9eaf47bf952e712016db34a38",
+    "src/modules/usuarios/components/RoleCommandStatus.tsx": "a772edfdde340efece60fb08a48abb8073bb0e2c4f1d8b6b8c20e2070eef11c1",
+    "src/modules/usuarios/components/UsuariosEntry.test.tsx": "6a52e70575a0d0955db1860a5ab882d50e5c8f703e0dd53664731479a2635cd0",
+    "src/modules/usuarios/components/UsuariosEntry.tsx": "531660a497f352e3b74757531b47360b6fd4ff2d9c958ae2c99014eef756e426",
+    "src/modules/usuarios/components/rolesPresentation.ts": "2258e7b9c2daf76d58b71c513308382529dd2e0a8aa8f45f3586b4586f978e92",
+    "src/modules/usuarios/hooks/useHasPendingRoleCommand.ts": "ee73a5b3268b1047a949700923b78a2273fc0b7c8ef5fbaf0a5d744f4ae09796",
+    "src/modules/usuarios/hooks/useUsuariosAdministracion.ts": "a6be1ab72f07966b1b11597f53f451eda95b83d71df80693418f75a48c3aa2b3",
+    "src/modules/usuarios/pages/GestionUsuariosScreen.test.tsx": "196b73b6ade89c503113f529fc9db0fb08ec380f98b1128ada0f5461ba275c0a",
+    "src/modules/usuarios/pages/GestionUsuariosScreen.tsx": "1502f3cde4414fab9ce515b3f021ba9c0861f50765d04723062305acd377f357",
+    "src/modules/usuarios/types.ts": "9ba5915151e69b90d16a580adb099059be94bcfe97ade836a5523a98e11d144b",
+    "src/modules/usuarios/usuarios-navigation.test.ts": "3e4f9d97d2c69f1b4bea77c4d665eef33b9df796a158dcb17be10f9a5995c68a",
+    "src/App.tsx": "f247f3b277c2cd5a8bc2fcf16384ec30df7f0285385be17c12721cff5bd7240b",
+    "src/utils/appAccess.ts": "65b72eb5f8f69c5ea0661824a2eb0ec4fd35960885bf7f31400c1bedd7376552",
+    "src/components/MenuLateral.tsx": "658925b8dcb885a2254079da4623ca9ee3040bbdc95da2d8d4a1b93854fb2cc6",
+    "src/modules/home/HomeScreen.tsx": "89c55aaa90f46f3cb685f4d46f83acf2bb6bf28397eaab143381c51bce45b159",
+    "src/modules/home/ParticipantHomeScreen.tsx": "d9e93c57ed4c7e3535d81133dfdc9058cb6a1fa47b269a30182bcf6232145179",
+    "scripts/qa/usuarios-administracion-browser.cjs": "d9fd03f7909beee7bb7a019c47edc27db1a93ff15e99f047bc0ba84b6a901586"
+  },
+  "limites": [
+    "Sin WebAuthn real ni entorno remoto; API/SQL sintéticos aislados.",
+    "Sin commit, push o despliegue.",
+    "Revisión visual automatizada/agente; revisión humana de UX pendiente."
+  ],
+  "fecha_utc": "2026-11-04T01:42:49.902Z"
+}

@@ -23,6 +23,7 @@ const ImpactoConsultaScreen = lazy(() => import('./modules/impacto/pages/Impacto
 const ImpactoRegistroScreen = lazy(() => import('./modules/impacto/pages/ImpactoRegistroScreen'))
 const MisRegistrosScreen = lazy(() => import('./modules/impacto/pages/MisRegistrosScreen'))
 const GestionAccesosScreen = lazy(() => import('./modules/participacion/pages/GestionAccesosScreen'))
+const GestionUsuariosScreen = lazy(() => import('./modules/usuarios/pages/GestionUsuariosScreen'))
 const CorreccionesScreen = lazy(() => import('./modules/participacion/correcciones/pages/CorreccionesScreen'))
 const LoginScreen = lazy(() => import('./modules/auth/LoginScreen'))
 const RegisterScreen = lazy(() => import('./modules/auth/RegisterScreen'))
@@ -177,6 +178,7 @@ function App() {
             <Route index element={<Navigate to="home" replace />} />
             <Route path="home" element={<HomeScreen />} />
             <Route path="participacion/accesos" element={<GestionAccesosScreen />} />
+            <Route path="usuarios" element={<GestionUsuariosScreen />} />
             <Route path="participacion/registrar" element={<Navigate to="/participar" replace />} />
             <Route path="participacion/borradores" element={<RegistroDraftsScreen />} />
             <Route path="participacion/subcampanias/:subcampaniaId/registrar" element={<RegistrarParticipanteScreen />} />

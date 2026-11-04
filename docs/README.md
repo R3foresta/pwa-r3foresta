@@ -6,6 +6,7 @@ Entrada de trabajo: [README](../README.md). Pendientes vigentes: [auditoría](..
 
 | Área | Informe | Alcance |
 | --- | --- | --- |
+| Administración de usuarios · 3 de noviembre | [Flujo, contrato y QA](QA_USUARIOS_ADMINISTRACION.md), [navegador](qa/usuarios-administracion/resultados.json), [verificación](qa/usuarios-administracion/verificacion-local.json) | Solo ADMIN; selector y cambio de rol con recuperación durable. 1.137 pruebas frontend y 27 comprobaciones integradas locales; requiere 091. SQL remoto y despliegue pendientes. |
 | Correcciones UX/UI de Impacto · 28 de octubre | [Plan, agentes y revisión](PLAN_CORRECCIONES_UX_IMPACTO_2026-10-28.md) | UX-01–UX-10 implementados dentro del contrato público; revisiones cruzadas, 934 pruebas y navegador 320/390/1440 px. Pendientes humanos, campo y facetas/portadas completas en AUD-023. |
 | UX/UI de Impacto · 28 de octubre | [Revisión y prioridades](REVISION_UX_UI_IMPACTO_2026-10-28.md) | Navegador a 320/390/1440 px, mapa, filtros, detalle, teclado y contraste. Hallazgos abiertos en AUD-023; sin cambios de producto. |
 | Correcciones INT07 · preparación | [Cotejo de componentes y contratos](PREPARACION_CORRECCIONES_INT07.md), [bocetos estáticos](bocetos/INT07_CORRECCIONES.html) | Preparación documental del 20 de octubre; backend parcial, sin integración de rutas candidatas. FE01–FE08 pendientes; exige APIs verificadas, ejemplos y fixture reproducible. |
