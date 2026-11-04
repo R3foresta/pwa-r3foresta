@@ -84,8 +84,8 @@ function BottomNav({ publicMode = false }: { publicMode?: boolean }) {
   const showQuickActionButton =
     hasInternalAccess && !isInQuickActionRoute && !isSubcampaniaWizardRoute && !isRegistroPlantacionRoute
 
-  // El formulario dispone de volver/cancelar con aviso de cambios sin guardar.
-  if (pathname === '/app/edit-profile' || /^\/app\/participacion\/subcampanias\/[^/]+\/registrar$/.test(pathname)) return null
+  // Las tareas enfocadas conservan su propia navegación y evitan superponer acciones globales.
+  if (/^\/app\/usuarios\/?$/.test(pathname) || pathname === '/app/edit-profile' || /^\/app\/participacion\/subcampanias\/[^/]+\/registrar$/.test(pathname)) return null
 
   return (
     <>

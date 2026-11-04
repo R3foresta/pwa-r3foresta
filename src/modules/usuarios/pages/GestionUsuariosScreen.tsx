@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import ConfirmDialog from '../../../components/ConfirmDialog'
 import SuccessModal from '../../../components/SuccessModal'
-import { Button, Card, PageHeader, inputClasses } from '../../../components/ui'
+import { Button, Card, PageHeader } from '../../../components/ui'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useParticipacionCapabilities } from '../../participacion/hooks/useParticipacionCapabilities'
 import { useRoleCommand } from '../commands/useRoleCommand'
 import RoleCommandStatus from '../components/RoleCommandStatus'
+import UsuarioRoleForm from '../components/UsuarioRoleForm'
+import UsuariosSelector from '../components/UsuariosSelector'
 import { ROLE_LABELS } from '../components/rolesPresentation'
 import { useUsuarioAutoridad, useUsuariosAdministracion, usuariosError, type UsuariosAccessIssue } from '../hooks/useUsuariosAdministracion'
-import { ROLES_GLOBALES, type RolGlobal, type UsuarioAdministracion } from '../types'
+import type { RolGlobal, UsuarioAdministracion } from '../types'
 
 export default function GestionUsuariosScreen() {
   const { user } = useAuth()
@@ -27,6 +29,7 @@ function GestionUsuarios({ actorId }: { actorId: string | null }) {
   const [filters, setFilters] = useState({ consulta: '', rol_global: '' as RolGlobal | '' })
   const [listVersion, setListVersion] = useState(0)
   const [selected, setSelected] = useState<UsuarioAdministracion | null>(null)
+  const [focusSearch, setFocusSearch] = useState(false)
   const [role, setRole] = useState<RolGlobal>('VOLUNTARIO')
   const [reason, setReason] = useState('')
   const [intentionVersion, setIntentionVersion] = useState(0)
@@ -90,7 +93,7 @@ function GestionUsuarios({ actorId }: { actorId: string | null }) {
   }
 
   async function recoverSession() {
-    setLocalError(null); setRefreshing(true)
+    clearSelection(); setRefreshing(true)
     try {
       await login()
       if (command.pending) await command.recover()
@@ -113,42 +116,46 @@ function GestionUsuarios({ actorId }: { actorId: string | null }) {
     await command.confirm({ usuario_id: selected.usuario_id, rol_global: role, revision_esperada: review.data.revision_autoridad, motivo: normalizedReason })
   }
 
-  return <div className="mx-auto max-w-3xl space-y-4 px-4 pb-28 pt-6">
-    <PageHeader eyebrow="Administración" title="Usuarios y permisos" subtitle="Escoge un usuario y asigna su rol global" />
+  return <div className="mx-auto max-w-2xl space-y-4 px-4 pb-8 pt-5 sm:pt-6">
+    <PageHeader eyebrow="Administración" title="Usuarios y permisos" subtitle="Escoge un usuario y asigna su rol global" backTo="/app/home" />
     <RoleCommandStatus command={command} onReset={() => void resetTerminal()} onLogin={() => void recoverSession()} />
     {localError && <p role="alert" className="text-sm text-danger-700">{localError}</p>}
     {accessIssue && <Card className="space-y-3"><p role="alert" className="text-sm text-danger-700">{accessIssue.message}</p><Button variant="secondary" loading={refreshing} onClick={() => void (accessIssue.status === 401 ? recoverSession() : refresh())}>{accessIssue.status === 401 ? 'Recuperar sesión con passkey' : 'Revisar permisos'}</Button></Card>}
     {capabilities.status === 'loading' && <Card><p role="status" className="text-sm text-neutral-600">Verificando tus permisos…</p></Card>}
     {(capabilities.status === 'error' || capabilities.status === 'sessionExpired') && <Card className="space-y-3"><p role="alert" className="text-sm text-danger-700">{capabilities.error ?? 'No se pudo verificar tu autorización.'}</p><Button variant="secondary" onClick={() => void (capabilities.status === 'sessionExpired' ? recoverSession() : refresh())}>{capabilities.status === 'sessionExpired' ? 'Recuperar sesión con passkey' : 'Reintentar permisos'}</Button></Card>}
     {capabilities.status === 'ready' && !canManage && <Card><p className="text-sm text-neutral-700">Solo los administradores globales pueden gestionar los roles de usuarios.</p></Card>}
-    {canManage && !accessIssue && <>
-      <Card as="section" className="space-y-4">
-        <h2 className="font-bold text-brand-800">1. Escoger usuario</h2>
-        <form className="space-y-3" onSubmit={(event) => { event.preventDefault(); if (!locked && searchValid) { clearSelection(); setFilters({ consulta: normalizedSearch, rol_global: roleFilter }); setListVersion((value) => value + 1) } }}>
-          <label className="block text-sm font-semibold text-brand-800">Buscar por nombre o usuario<input value={search} maxLength={100} disabled={locked} onChange={(event) => { setSearch(event.target.value); clearSelection() }} className={inputClasses(!searchValid)} autoComplete="off" /></label>
-          {!searchValid && <p className="text-sm text-danger-700">Escribe al menos 2 caracteres o deja la búsqueda vacía.</p>}
-          <label className="block text-sm font-semibold text-brand-800">Filtrar por rol<select value={roleFilter} disabled={locked} onChange={(event) => { setRoleFilter(event.target.value as RolGlobal | ''); clearSelection() }} className={inputClasses(false)}><option value="">Todos los roles</option>{ROLES_GLOBALES.map((value) => <option key={value} value={value}>{ROLE_LABELS[value]}</option>)}</select></label>
-          <div className="flex flex-wrap gap-2"><Button type="submit" variant="secondary" disabled={locked || !searchValid}>Buscar usuarios</Button><Button variant="ghost" disabled={locked} onClick={() => void refresh()}>Actualizar lista</Button></div>
-        </form>
-        {dirtyFilters && <p className="text-sm text-neutral-600">Aplica la búsqueda para escoger una cuenta.</p>}
-        {users.loading && <p role="status" className="text-sm text-neutral-600">Consultando usuarios…</p>}
-        {users.error && <div className="space-y-2"><p role="alert" className="text-sm text-danger-700">{users.error}</p><Button variant="secondary" onClick={() => void (users.sessionExpired ? recoverSession() : refresh())}>{users.sessionExpired ? 'Recuperar sesión con passkey' : 'Reintentar lista'}</Button></div>}
-        {!users.loading && !users.error && users.rows.length === 0 && <p className="text-sm text-neutral-600">No hay usuarios activos que coincidan con la búsqueda.</p>}
-        <ul className="space-y-2">{users.rows.map((person) => <li key={person.usuario_id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-neutral-200 p-3"><div className="min-w-0 text-sm"><p className="break-words font-semibold text-brand-800">{person.nombre}</p><p className="break-words text-neutral-600">{person.username ? `@${person.username} · ` : ''}Cuenta {person.usuario_id}</p><p className="text-neutral-600">{ROLE_LABELS[person.rol_global]}</p></div><Button variant={selected?.usuario_id === person.usuario_id ? 'primary' : 'secondary'} size="sm" disabled={locked || dirtyFilters} aria-pressed={selected?.usuario_id === person.usuario_id} aria-label={`Seleccionar a ${person.nombre} (${person.username ?? person.usuario_id})`} onClick={() => { invalidateReview(); setSelected(person); setRole(person.rol_global); setReason('') }}>{selected?.usuario_id === person.usuario_id ? 'Seleccionado' : 'Seleccionar'}</Button></li>)}</ul>
-        {users.moreError && <p role="alert" className="text-sm text-danger-700">{users.moreError}</p>}
-        {users.cursor && <Button variant="secondary" disabled={locked || dirtyFilters} loading={users.loadingMore} onClick={() => void users.loadMore()}>{users.moreError ? 'Reintentar siguiente página' : 'Cargar más usuarios'}</Button>}
-      </Card>
-      {selected && <Card as="section" className="space-y-3">
-        <h2 className="font-bold text-brand-800">2. Asignar rol</h2>
-        <p className="text-sm text-neutral-700">Usuario seleccionado: <strong>{selected.nombre}</strong>{selected.username ? ` · @${selected.username}` : ''}</p>
-        <label className="block text-sm font-semibold text-brand-800">Rol a asignar<select value={role} disabled={locked} onChange={(event) => { setRole(event.target.value as RolGlobal); invalidateReview() }} className={inputClasses(false)}>{ROLES_GLOBALES.map((value) => <option key={value} value={value}>{ROLE_LABELS[value]}</option>)}</select></label>
-        <p className="text-xs text-neutral-600">Cada usuario tiene un rol global.</p>
-        <label className="block text-sm font-semibold text-brand-800">Motivo del cambio<textarea value={reason} rows={3} maxLength={1000} disabled={locked} onChange={(event) => { setReason(event.target.value); invalidateReview() }} className={inputClasses(Boolean(reason) && !reasonValid)} /></label>
-        <p className="text-xs text-neutral-600">Indica un motivo de 3 a 1000 caracteres.</p>
-        {review.error && <p role="alert" className="text-sm text-danger-700">{review.error}</p>}
-        <Button disabled={!canReview} loading={review.loading} onClick={() => void reviewChange()}>Revisar cambio de rol</Button>
-      </Card>}
-    </>}
+    {canManage && !accessIssue && command.state === 'idle' && (selected ? (
+      <UsuarioRoleForm
+        person={selected}
+        role={role}
+        reason={reason}
+        reasonValid={reasonValid}
+        locked={locked}
+        canReview={canReview}
+        loading={review.loading}
+        error={review.error}
+        onChangeUser={() => { clearSelection(); setFocusSearch(true) }}
+        onRoleChange={(value) => { setRole(value); invalidateReview() }}
+        onReasonChange={(value) => { setReason(value); invalidateReview() }}
+        onReview={() => void reviewChange()}
+      />
+    ) : (
+      <UsuariosSelector
+        search={search}
+        roleFilter={roleFilter}
+        searchValid={searchValid}
+        dirtyFilters={dirtyFilters}
+        locked={locked}
+        focusSearch={focusSearch}
+        users={users}
+        onSearchChange={(value) => { setSearch(value); clearSelection() }}
+        onRoleFilterChange={(value) => { setRoleFilter(value); clearSelection() }}
+        onSearch={() => { clearSelection(); setFilters({ consulta: normalizedSearch, rol_global: roleFilter }); setListVersion((value) => value + 1) }}
+        onRefresh={() => void refresh()}
+        onRetry={() => void (users.sessionExpired ? recoverSession() : refresh())}
+        onSelect={(person) => { invalidateReview(); setSelected(person); setRole(person.rol_global); setReason(''); setFocusSearch(false) }}
+      />
+    ))}
     <ConfirmDialog open={dialogOpen && Boolean(review.data) && canReview} title="Confirmar cambio de rol" description="Revisa el usuario y el rol antes de confirmar." confirmLabel="Confirmar rol" onConfirm={() => void confirm()} onCancel={() => setDialogOpen(false)}>
       {selected && review.data && <div className="mt-4 space-y-2 text-sm text-neutral-700"><p className="font-semibold">{review.data.nombre}</p><p>{selected.username ? `@${selected.username} · ` : ''}Cuenta {selected.usuario_id}</p><p>Rol actual: <strong>{ROLE_LABELS[review.data.rol_global]}</strong></p><p>Nuevo rol: <strong>{ROLE_LABELS[role]}</strong></p><p className="break-words">Motivo: {normalizedReason}</p></div>}
     </ConfirmDialog>

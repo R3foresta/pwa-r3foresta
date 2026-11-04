@@ -1,11 +1,11 @@
 {
   "estado": "CORRECTO",
   "fecha_local": "2026-11-03",
-  "fecha_utc": "2026-11-04T01:42:49.902Z",
+  "fecha_utc": "2026-11-04T02:06:43.959Z",
   "entorno": "SINTETICO_LOCAL_INT02C",
   "backend": {
     "url": "http://127.0.0.1:3302",
-    "revision": "c684ad96138727fe203d58087068bff35d42956e",
+    "revision": "37cec4d3801484e0f0e8fdbefcc5f4deecad64c6",
     "cambios_de_trabajo": true,
     "migraciones_sha256": {
       "068_pa_participacion_comando.sql": "838e1e658d178e59af5318e5b64514aef6b02317c1d4b19a3bd71af77e353a45",
@@ -33,18 +33,32 @@
     "sin-permiso-mobile.png: sin desbordamiento horizontal",
     "voluntario: no ve buscador ni descarga selector administrativo",
     "ADMIN: selector real disponible con identidad contrastada por API/DB",
+    "usuarios-mobile.png: sin desbordamiento horizontal",
+    "seleccionar oculta buscador y otras cuentas",
+    "el foco pasa al encabezado del formulario sin abrir el teclado",
+    "320px: tarea enfocada sin navegación ni acciones superpuestas",
+    "320px: revisar cambio visible sin scroll ni obstrucciones",
+    "seleccionado-320.png: sin desbordamiento horizontal",
+    "390px: tarea enfocada sin navegación ni acciones superpuestas",
+    "390px: revisar cambio visible sin scroll ni obstrucciones",
+    "seleccionado-390.png: sin desbordamiento horizontal",
+    "1280px: tarea enfocada sin navegación ni acciones superpuestas",
+    "1280px: revisar cambio visible sin scroll ni obstrucciones",
+    "seleccionado-1280.png: sin desbordamiento horizontal",
+    "cambiar usuario devuelve foco a búsqueda y conserva listado sin otro GET ni POST",
     "confirmación identifica usuario y roles anterior/nuevo",
     "confirmacion-mobile.png: sin desbordamiento horizontal",
     "cancelar confirmación no envía POST ni modifica autoridad",
     "PWA→API→DB: 604 pasa a GENERAL con revisión 1",
     "primera confirmación emite un único POST con revisión leída",
     "se pierde solo la respuesta posterior a commit real: VALIDADOR/revisión 2",
-    "incertidumbre conserva clave por cuenta y bloquea otra intención",
+    "incertidumbre conserva clave por cuenta y oculta otras asignaciones",
     "sin-confirmar-mobile.png: sin desbordamiento horizontal",
     "otra cuenta en el mismo navegador no ve ni recupera el pendiente original",
     "cambio de cuenta conserva el pendiente de la cuenta original",
     "recarga de cuenta original recupera por GET sin nuevo POST",
     "recuperación muestra el rol confirmado y mantiene revisión 2",
+    "resultado confirmado no vuelve a mostrar otras cuentas",
     "terminal validado libera el pendiente de su cuenta",
     "recuperado-mobile.png: sin desbordamiento horizontal",
     "último ADMIN: rechazo durable visible sin degradar cuenta 600",
@@ -59,7 +73,7 @@
       "profile": "admin",
       "path": "/api/v1/usuarios/604/roles",
       "usuario_id": "604",
-      "comando_id": "b080ebd3-e78b-4c80-b6f2-017cc8da16ca",
+      "comando_id": "bf191a21-4cb6-4349-b8d4-a23da25612ce",
       "rol_global": "GENERAL",
       "revision_esperada": "0",
       "motivo": "QA sintética: asignación General"
@@ -68,7 +82,7 @@
       "profile": "admin",
       "path": "/api/v1/usuarios/604/roles",
       "usuario_id": "604",
-      "comando_id": "9f89b024-a55d-4dbf-acf8-c0e43d0060cd",
+      "comando_id": "b720de41-94ed-438b-9c87-c73163ef06a1",
       "rol_global": "VALIDADOR",
       "revision_esperada": "1",
       "motivo": "QA sintética: asignación Validador con respuesta perdida"
@@ -77,7 +91,7 @@
       "profile": "admin",
       "path": "/api/v1/usuarios/600/roles",
       "usuario_id": "600",
-      "comando_id": "71669410-089a-4744-8bdc-d82e86d5ffcc",
+      "comando_id": "f59c270d-8231-4e31-80fb-dcad88f2e432",
       "rol_global": "VOLUNTARIO",
       "revision_esperada": "0",
       "motivo": "QA sintética: último ADMIN debe conservarse"
@@ -88,7 +102,7 @@
       "profile": "admin",
       "path": "/api/v1/usuarios/601/roles",
       "usuario_id": "601",
-      "comando_id": "17249412-1b8d-4d6c-8b26-f99c425adc75",
+      "comando_id": "01249b85-89e9-463b-a2f5-20df92c0491e",
       "rol_global": "GENERAL",
       "revision_esperada": "0",
       "motivo": "QA sintética: preparar protección del último ADMIN"
@@ -97,7 +111,7 @@
       "profile": "admin",
       "path": "/api/v1/usuarios/601/roles",
       "usuario_id": "601",
-      "comando_id": "7faaeb1d-67af-48ab-851b-05bf92a1d805",
+      "comando_id": "44773a5d-8b0f-4e07-beea-febb316cf237",
       "rol_global": "ADMIN",
       "revision_esperada": "1",
       "motivo": "QA sintética: restaurar segundo ADMIN tras ensayo"
@@ -277,7 +291,7 @@
     {
       "profile": "admin",
       "method": "GET",
-      "path": "/api/v1/participacion/comandos/9f89b024-a55d-4dbf-acf8-c0e43d0060cd"
+      "path": "/api/v1/participacion/comandos/b720de41-94ed-438b-9c87-c73163ef06a1"
     },
     {
       "profile": "admin",
@@ -348,11 +362,35 @@
   "screenshots": [
     "login-mobile.png",
     "sin-permiso-mobile.png",
+    "usuarios-mobile.png",
+    "seleccionado-320.png",
+    "seleccionado-390.png",
+    "seleccionado-1280.png",
     "confirmacion-mobile.png",
     "sin-confirmar-mobile.png",
     "recuperado-mobile.png",
     "rechazo-ultimo-admin-desktop.png",
     "usuarios-desktop.png"
   ],
-  "errors": []
+  "errors": [],
+  "medidas_ui": [
+    {
+      "ancho": 320,
+      "alto": 740,
+      "boton_inferior": 564.5,
+      "scroll_y": 0
+    },
+    {
+      "ancho": 390,
+      "alto": 844,
+      "boton_inferior": 564.5,
+      "scroll_y": 0
+    },
+    {
+      "ancho": 1280,
+      "alto": 900,
+      "boton_inferior": 564.5,
+      "scroll_y": 0
+    }
+  ]
 }

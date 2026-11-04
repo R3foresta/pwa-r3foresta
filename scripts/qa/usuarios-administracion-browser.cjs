@@ -9,6 +9,7 @@ const apiBase = process.env.PA_QA_API || 'http://127.0.0.1:3302'
 const pwaBase = process.env.PA_QA_PWA || 'http://127.0.0.1:5173'
 const output = resolve(process.env.PA_QA_OUTPUT || 'docs/qa/usuarios-administracion')
 const checks = [], commands = [], apiCommands = [], errors = [], network = [], screenshots = [], legacyHeaders = []
+const uiMeasurements = []
 let browser, fixtureMetadata
 const check = (name, condition = true) => { assert(condition, name); checks.push(name); console.log('OK: ' + name) }
 
@@ -21,7 +22,7 @@ async function saveReport(status, failure) {
     adaptador_sesion: 'Únicamente GET del perfil propio de arranque: identidad y rol contrastados con capacidades API/DB reales. Sin ceremonia WebAuthn.',
     alcance: 'Selección y cambios de roles globales, autorización, cancelación, pérdida de respuesta tras commit, recuperación propia y separación entre cuentas.',
     limites: ['No acredita despliegue ni catálogo remoto, WebAuthn, revisión humana de UX o QA del resto del sistema.', 'Solo personas y comandos de la fixture sintética; no se guardan tokens ni headers de autorización.'],
-    checks, commands, api_commands: apiCommands, network, screenshots, errors,
+    checks, commands, api_commands: apiCommands, network, screenshots, errors, medidas_ui: uiMeasurements,
     ...(failure ? { fallo: failure instanceof Error ? failure.message : String(failure) } : {}),
   }
   await writeFile(`${output}/resultados.json`, JSON.stringify(report, null, 2) + '\n')
@@ -154,6 +155,24 @@ async function run() {
   const page = admin.page
   await ready(page)
   check('ADMIN: selector real disponible con identidad contrastada por API/DB', network.some(item => item.profile === 'admin' && item.method === 'GET' && item.path === '/api/v1/usuarios'))
+  await screenshot(page, 'usuarios-mobile.png')
+  await page.getByRole('button', { name: 'Seleccionar a Responsable de logística (preview-logistica)', exact: true }).click()
+  await heading(page, 'Asignar rol').waitFor()
+  check('seleccionar oculta buscador y otras cuentas', await page.getByRole('textbox', { name: 'Buscar por nombre o usuario', exact: true }).count() === 0 && await page.getByRole('button', { name: /^Seleccionar a / }).count() === 0)
+  check('el foco pasa al encabezado del formulario sin abrir el teclado', await heading(page, 'Asignar rol').evaluate(element => element === document.activeElement))
+  for (const viewport of [{ width: 320, height: 740 }, { width: 390, height: 844 }, { width: 1280, height: 900 }]) {
+    await page.setViewportSize(viewport)
+    const reviewButton = page.getByRole('button', { name: 'Revisar cambio de rol', exact: true })
+    const button = await reviewButton.boundingBox()
+    check(`${viewport.width}px: tarea enfocada sin navegación ni acciones superpuestas`, await page.getByRole('navigation', { name: 'Navegación principal', exact: true }).count() === 0 && await page.getByRole('button', { name: 'Abrir acciones rápidas', exact: true }).count() === 0)
+    check(`${viewport.width}px: revisar cambio visible sin scroll ni obstrucciones`, button.y >= 0 && button.y + button.height < viewport.height && await reviewButton.evaluate(element => { const rect = element.getBoundingClientRect(); return element.contains(document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2)) }))
+    uiMeasurements.push({ ancho: viewport.width, alto: viewport.height, boton_inferior: button.y + button.height, scroll_y: await page.evaluate(() => scrollY) })
+    await screenshot(page, `seleccionado-${viewport.width}.png`)
+  }
+  await page.setViewportSize({ width: 390, height: 844 })
+  const readsBeforeChange = network.filter(item => item.method === 'GET' && item.path === '/api/v1/usuarios').length
+  await page.getByRole('button', { name: 'Cambiar usuario', exact: true }).click()
+  check('cambiar usuario devuelve foco a búsqueda y conserva listado sin otro GET ni POST', await page.getByRole('textbox', { name: 'Buscar por nombre o usuario', exact: true }).evaluate(element => element === document.activeElement) && network.filter(item => item.method === 'GET' && item.path === '/api/v1/usuarios').length === readsBeforeChange && commands.length === 0)
   await propose(page, 'preview-voluntario', 'Seleccionar a Voluntario sin permiso (preview-voluntario)', 'GENERAL', 'QA sintética: asignación General')
   const confirmationText = await page.getByRole('dialog').innerText()
   check('confirmación identifica usuario y roles anterior/nuevo', confirmationText.includes('Cuenta 604') && /Rol actual:.*Voluntario/s.test(confirmationText) && /Nuevo rol:.*General/s.test(confirmationText))
@@ -183,7 +202,7 @@ async function run() {
   await heading(page, 'Cambio de rol sin confirmar').waitFor()
   const second = await authority('604')
   check('se pierde solo la respuesta posterior a commit real: VALIDADOR/revisión 2', !!lostCommand && committedResult.revision_nueva === '2' && second.rol_global === 'VALIDADOR' && second.revision_autoridad === '2')
-  check('incertidumbre conserva clave por cuenta y bloquea otra intención', await page.evaluate(() => !!localStorage.getItem('r3foresta:usuarios:rol:v1:600')) && await page.getByRole('button', { name: 'Buscar usuarios', exact: true }).isDisabled())
+  check('incertidumbre conserva clave por cuenta y oculta otras asignaciones', await page.evaluate(() => !!localStorage.getItem('r3foresta:usuarios:rol:v1:600')) && await page.getByRole('button', { name: 'Buscar usuarios', exact: true }).count() === 0 && await page.getByRole('combobox', { name: 'Rol a asignar', exact: true }).count() === 0)
   await screenshot(page, 'sin-confirmar-mobile.png')
   const postsAtLoss = commands.length
   const otherAccountAt = network.length
@@ -197,7 +216,9 @@ async function run() {
   await page.reload({ waitUntil: 'domcontentloaded' })
   await closeSuccess(page)
   check('recarga de cuenta original recupera por GET sin nuevo POST', commands.length === postsAtLoss && network.slice(recoveryAt).some(item => item.method === 'GET' && item.path.endsWith(`/comandos/${lostCommand.comando_id}`)))
-  check('recuperación muestra el rol confirmado y mantiene revisión 2', await page.getByText('Cuenta 604: General → Validador', { exact: true }).count() === 1 && (await authority('604')).revision_autoridad === '2')
+  const recoveredText = await page.getByRole('heading', { name: 'Cambio de rol confirmado', exact: true }).locator('xpath=ancestor::section').innerText()
+  check('recuperación muestra el rol confirmado y mantiene revisión 2', recoveredText.includes('Cuenta 604') && /General\s*→\s*Validador/.test(recoveredText) && (await authority('604')).revision_autoridad === '2')
+  check('resultado confirmado no vuelve a mostrar otras cuentas', await page.getByRole('button', { name: /^Seleccionar a / }).count() === 0 && await page.getByRole('textbox', { name: 'Buscar por nombre o usuario', exact: true }).count() === 0)
   check('terminal validado libera el pendiente de su cuenta', await page.evaluate(() => localStorage.getItem('r3foresta:usuarios:rol:v1:600') === null))
   await screenshot(page, 'recuperado-mobile.png')
 

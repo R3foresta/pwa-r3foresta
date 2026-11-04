@@ -2,7 +2,7 @@
   "fecha_local": "2026-11-03",
   "zona_horaria": "America/La_Paz",
   "estado": "CORRECTO",
-  "revision_base": "c684ad96138727fe203d58087068bff35d42956e",
+  "revision_base": "37cec4d3801484e0f0e8fdbefcc5f4deecad64c6",
   "arbol_de_trabajo": true,
   "runtime": {
     "node": "24.19.0",
@@ -21,25 +21,27 @@
     },
     "pruebas": {
       "comando": "npm run test -- --maxWorkers=2",
-      "suites": 81,
-      "pruebas": 1137,
+      "suites": 82,
+      "pruebas": 1145,
       "exit_code": 0
     }
   },
   "navegador": {
     "estado": "CORRECTO",
-    "comprobaciones": 27,
+    "comprobaciones": 41,
     "entorno": "SINTETICO_LOCAL_INT02C",
     "reporte": "resultados.json",
     "perfil_arranque_simulado": true,
     "resto_rutas_gestion_reales": true,
     "capturas_revisadas_por_agente": [
-      "confirmacion-mobile.png",
+      "seleccionado-320.png",
+      "seleccionado-390.png",
+      "seleccionado-1280.png",
       "recuperado-mobile.png",
-      "usuarios-desktop.png"
+      "usuarios-mobile.png"
     ]
   },
-  "nota_verificacion": "Revisión del encargo sobre la implementación local: ocho regresiones adicionales para 401/403, doble confirmación y StrictMode. Base de 1.129 pruebas y suite final de 1.137 aprobadas con dos workers, sin cambiar timeouts. Lint, build y las 27 comprobaciones integradas repetidos y aprobados.",
+  "nota_verificacion": "UI con selección/formulario/resultado excluyentes y navegación enfocada. 82 suites/1.145 pruebas, lint y build aprobados. Tres pruebas de BottomNav también ejecutadas enfocadas. 41 comprobaciones de navegador con backend sintético real; sin errores ni obstrucciones en el caso medido a 320/390/1280 px. Se conserva el aviso conocido del tamaño de MapLibre.",
   "sha256": {
     "src/modules/usuarios/api/usuarios.api.test.ts": "e34cb5812584881b5c23dd457158d46ae26d18e6339667faefb59daf52f9b47d",
     "src/modules/usuarios/api/usuarios.api.ts": "33a67a9af24733e8048eeac4bb70fffceac7090fbc28dff15d67c144e32f99f8",
@@ -47,14 +49,14 @@
     "src/modules/usuarios/commands/roleCommandStore.ts": "4028934af73f950548bd25029dd4634538e4319c0387cc4538ae3803d291b3d6",
     "src/modules/usuarios/commands/roleCommands.test.tsx": "b9c645cbd233d701f71b945a4cb4b82e344321ede35f5bfe8532357615f23dd3",
     "src/modules/usuarios/commands/useRoleCommand.ts": "32df59591c9ad327681312c8d2e6647797a0eab9eaf47bf952e712016db34a38",
-    "src/modules/usuarios/components/RoleCommandStatus.tsx": "a772edfdde340efece60fb08a48abb8073bb0e2c4f1d8b6b8c20e2070eef11c1",
+    "src/modules/usuarios/components/RoleCommandStatus.tsx": "32bb0f7048686157808e704aa041e652a2b531b918ebbd7cbef9767e9d9a487d",
     "src/modules/usuarios/components/UsuariosEntry.test.tsx": "6a52e70575a0d0955db1860a5ab882d50e5c8f703e0dd53664731479a2635cd0",
     "src/modules/usuarios/components/UsuariosEntry.tsx": "531660a497f352e3b74757531b47360b6fd4ff2d9c958ae2c99014eef756e426",
     "src/modules/usuarios/components/rolesPresentation.ts": "2258e7b9c2daf76d58b71c513308382529dd2e0a8aa8f45f3586b4586f978e92",
     "src/modules/usuarios/hooks/useHasPendingRoleCommand.ts": "ee73a5b3268b1047a949700923b78a2273fc0b7c8ef5fbaf0a5d744f4ae09796",
     "src/modules/usuarios/hooks/useUsuariosAdministracion.ts": "a6be1ab72f07966b1b11597f53f451eda95b83d71df80693418f75a48c3aa2b3",
-    "src/modules/usuarios/pages/GestionUsuariosScreen.test.tsx": "196b73b6ade89c503113f529fc9db0fb08ec380f98b1128ada0f5461ba275c0a",
-    "src/modules/usuarios/pages/GestionUsuariosScreen.tsx": "1502f3cde4414fab9ce515b3f021ba9c0861f50765d04723062305acd377f357",
+    "src/modules/usuarios/pages/GestionUsuariosScreen.test.tsx": "edcdff4d9c222254fe9cc76c3b34b733b9cac67106be61e75f9569df10820118",
+    "src/modules/usuarios/pages/GestionUsuariosScreen.tsx": "22243ab636e83ba9f37aa221951328755682781015bc15df013f467e6f22a907",
     "src/modules/usuarios/types.ts": "9ba5915151e69b90d16a580adb099059be94bcfe97ade836a5523a98e11d144b",
     "src/modules/usuarios/usuarios-navigation.test.ts": "3e4f9d97d2c69f1b4bea77c4d665eef33b9df796a158dcb17be10f9a5995c68a",
     "src/App.tsx": "f247f3b277c2cd5a8bc2fcf16384ec30df7f0285385be17c12721cff5bd7240b",
@@ -62,12 +64,16 @@
     "src/components/MenuLateral.tsx": "658925b8dcb885a2254079da4623ca9ee3040bbdc95da2d8d4a1b93854fb2cc6",
     "src/modules/home/HomeScreen.tsx": "89c55aaa90f46f3cb685f4d46f83acf2bb6bf28397eaab143381c51bce45b159",
     "src/modules/home/ParticipantHomeScreen.tsx": "d9e93c57ed4c7e3535d81133dfdc9058cb6a1fa47b269a30182bcf6232145179",
-    "scripts/qa/usuarios-administracion-browser.cjs": "d9fd03f7909beee7bb7a019c47edc27db1a93ff15e99f047bc0ba84b6a901586"
+    "scripts/qa/usuarios-administracion-browser.cjs": "b6c49d2cc124dac8af88419fdf4be041587b2a22936867c9e2546572db406920",
+    "src/components/BottomNav.tsx": "fb3f68c50e2a52d9af06f722774a3b16446f6ac2db5b6e9cc7c29389d11091ff",
+    "src/components/BottomNav.test.tsx": "ce9b2c6bf66fdd5863fc844be3956d285c5e8a0ec599874ad90e53653741db10",
+    "src/modules/usuarios/components/UsuarioRoleForm.tsx": "4a8d338b5811acbe3cae6fa0d8fa57edfb0283d46317367bd7e43e0a4d9b37db",
+    "src/modules/usuarios/components/UsuariosSelector.tsx": "c7ba6c4caa9d520bc065a42fe8c0b670a6f5e55512b9be5ceae345046242c538"
   },
   "limites": [
     "Sin WebAuthn real ni entorno remoto; API/SQL sintéticos aislados.",
-    "Sin commit, push o despliegue.",
+    "Ajustes de UI sin commit, push ni despliegue; funcionalidad base en commit local 37cec4d.",
     "Revisión visual automatizada/agente; revisión humana de UX pendiente."
   ],
-  "fecha_utc": "2026-11-04T01:42:49.902Z"
+  "fecha_utc": "2026-11-04T02:06:43.959Z"
 }
