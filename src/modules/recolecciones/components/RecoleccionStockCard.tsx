@@ -1,3 +1,5 @@
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import Icon from '../../../components/Icon'
 import StatusBadge from '../../../components/ui/StatusBadge'
 import {
@@ -14,24 +16,28 @@ type Props = {
 }
 
 function RecoleccionStockCard({ item, compact = false }: Props) {
+  const [failedImage, setFailedImage] = useState<string | null>(null)
   const title = item.nombre_comun_principal?.trim() || item.especie
   const scientificName = item.nombre_cientifico?.trim() || item.especie
   const availability = resolveStockAvailability(item)
 
   return (
-    <article
-      className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 gap-y-2 bg-white min-[430px]:grid-cols-[minmax(0,1fr)_auto_auto] ${
+    <Link
+      to={`/app/collections/stock/${item.planta_id}`}
+      aria-label={`Ver historial de ${title}`}
+      className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 gap-y-2 bg-white transition hover:bg-brand-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-600 min-[430px]:grid-cols-[minmax(0,1fr)_auto_auto] ${
         compact ? 'px-4 py-3' : 'px-4 py-4'
       }`}
     >
       <div className="col-start-1 row-start-1 flex min-w-0 items-center gap-2">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-100 text-brand-600">
-          {item.imagen_url ? (
+          {item.imagen_url && item.imagen_url !== failedImage ? (
             <img
               src={item.imagen_url}
               alt=""
               className="h-full w-full object-cover"
               loading="lazy"
+              onError={() => setFailedImage(item.imagen_url)}
             />
           ) : (
             <Icon name="leaf" className="h-5 w-5" />
@@ -69,7 +75,7 @@ function RecoleccionStockCard({ item, compact = false }: Props) {
         label={RECOLECCION_STOCK_LABELS[availability]}
         className="col-start-2 row-start-1 min-w-[78px] justify-center whitespace-nowrap min-[430px]:col-start-3"
       />
-    </article>
+    </Link>
   )
 }
 

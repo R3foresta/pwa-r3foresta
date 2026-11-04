@@ -1,6 +1,6 @@
 # Auditoría y pendientes del frontend
 
-Corte: 3 de noviembre de 2026. Lista única de deuda frontend. No sustituye el [tablero global](../r3foresta-docs/specs/plantacion/participacion-aliada/implementacion/README.md) ni acredita estado del backend desplegado.
+Corte: 4 de noviembre de 2026. Lista única de deuda frontend. No sustituye el [tablero global](../r3foresta-docs/specs/plantacion/participacion-aliada/implementacion/README.md) ni acredita estado del backend desplegado.
 
 El [histórico de auditoría](docs/archivo/FRONTEND_AUDIT_2026-10-15.md) conserva diagnósticos, cierres y resultados anteriores. Se retiraron de esta entrada los checklists repetidos y diagnósticos de módulos que ya no describían su implementación. Un hallazgo abierto se mantiene pendiente hasta verificar su cierre; este ajuste documental no lo resuelve por sí solo.
 
@@ -10,6 +10,8 @@ Entrega INT06 publicada en PWA `62f55dc`: 32 suites/445 tests, lint y build/Type
 
 | Prioridad | ID | Estado | Qué falta |
 | --- | --- | --- | --- |
+| Media | AUD-033 | PENDIENTE · navegación móvil compartida | En 320 px, la barra interna recorta el acceso Mapa. Ajustar distribución sin perder controles/foco y verificar todos los perfiles. |
+| Media | AUD-032 | IMPLEMENTADO local · aceptación visual final pendiente | Historial ADMIN de semillas validadas por especie integrado y probado; repetir navegador tras últimos ajustes y validar dispositivo físico. |
 | Media | AUD-031 | CORREGIDO local · QA de navegador pendiente | Previews de Recolección conservadas entre pasos lazy bajo StrictMode; verificar decodificación real de ambas fotos y liberación al salir en navegador. |
 | Media | AUD-030 | PENDIENTE · navegación del navegador | El botón Volver del formulario abre el diálogo de conservar/descartar; Atrás del navegador o el gesto del sistema lo omite y conserva el borrador. Definir y verificar un bloqueo de navegación compatible con `BrowserRouter` si se requiere el mismo diálogo para esos gestos. |
 | Alta | AUD-029 | CERRADO en localhost | Lectura reparada con 088; VOLUNTARIO plantador, admin plantador y «Participé» confirmados en la pantalla real. |
@@ -34,6 +36,18 @@ Entrega INT06 publicada en PWA `62f55dc`: 32 suites/445 tests, lint y build/Type
 El orden de ejecución entre repositorios se decide en el tablero oficial; esta tabla prioriza riesgos de frontend, no introduce nuevas dependencias de producto.
 
 ## Pendientes y criterio de cierre
+
+### AUD-032 — Historial administrativo de semillas por especie
+
+4 de noviembre: tarjetas de Inicio/Stock abren la consulta ADMIN global por especie, paginada, con semillas validadas de todos los autores, incluidas cerradas y saldo cero. Reutiliza detalle, conserva especie/página y muestra snapshot de recolector, cantidad original y saldo. Disponibilidad independiente, errores/vacío separados, cancelación de respuestas obsoletas y validación del contrato. Backend añade lectura específica con actor Bearer verificado sin cambiar listado propio. Sin migraciones ni dependencias nuevas.
+
+Verificación final: `npm run test -- --maxWorkers=2` (83 archivos/1.162 pruebas), `npm run lint`, `npm run build` (TypeScript/PWA) y `git diff --check` aprobados. Conserva aviso conocido de tamaño MapLibre. Backend: 85 suites/1.207 pruebas y, tras tres casos adicionales, 20/20 focales; build/typecheck aprobados, deuda previa de lint del servicio de consultas conservada.
+
+Chrome con sesión ADMIN real confirmó especie 42 con dos autores, detalle 256 con fotos y retorno, especie 50 en UNIDAD y especie 48 vacía. Se revisó móvil 320 px y escritorio. Se corrigió la fecha operativa del detalle y se ajustó paginación/reintentos; navegador deshabilitado en Work impidió repetir la revisión visual final. Cerrar con ese recorrido y aceptación en dispositivo físico. [Evidencia y límites](docs/QA_HISTORIAL_SEMILLAS.md). Sin despliegue ni escrituras de negocio.
+
+### AUD-033 — Barra interna en 320 px
+
+Hallazgo en QA de AUD-032: `src/components/BottomNav.tsx`, navegación interna con cinco destinos; a 320 px el último acceso Mapa queda fuera del área visible de la barra. Es compartido y previo a esta funcionalidad. No se modificó dentro del historial. Cerrar ajustando la distribución y verificando etiquetas, acceso táctil/teclado, foco y acciones rápidas en móvil para las audiencias existentes.
 
 ### AUD-031 — Previews de Recolección durante navegación lazy
 

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import Icon from '../../components/Icon'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import { Badge, Button, Card, Field, Input, statusVariant } from '../../components/ui'
@@ -12,6 +12,7 @@ import {
 import { formatUnidadCanonicaDisplay, mapToCantidadYUnidadCanonica } from '../../utils/recoleccionUnidad'
 import { getUbicacionCoords, getUbicacionDisplay, getUbicacionDivision } from '../../utils/ubicacion'
 import { getRecoleccionFormActions, resolveEstadoOperativo, resolveEstadoRegistro } from './recoleccionStatus'
+import { readStockHistorialReturn, stockHistorialPath } from './stockHistorialNavigation'
 import RecoleccionDeleteAction from './components/RecoleccionDeleteAction'
 
 function formatDate(value: string) {
@@ -19,6 +20,7 @@ function formatDate(value: string) {
     day: '2-digit',
     month: 'long',
     year: 'numeric',
+    timeZone: 'UTC',
   })
 }
 
@@ -35,8 +37,10 @@ function formatDateTime(value: string | null | undefined) {
 
 function RecoleccionDetailScreen() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { id } = useParams()
   const { user } = useAuth()
+  const stockReturn = (user?.rol ?? '').toUpperCase() === 'ADMIN' ? readStockHistorialReturn(location.state) : null
 
   const [recoleccion, setRecoleccion] = useState<Recoleccion | null>(null)
   const [evidenciasFallback, setEvidenciasFallback] = useState<EvidenciaTrazabilidad[]>([])
@@ -204,7 +208,7 @@ function RecoleccionDetailScreen() {
           <Button
             type="button"
             variant="primary"
-            onClick={() => navigate('/app/collections')}
+            onClick={() => navigate(stockReturn ? stockHistorialPath(stockReturn) : '/app/collections')}
             className="mt-4"
           >
             Volver al listado
@@ -246,7 +250,7 @@ function RecoleccionDetailScreen() {
           <button
             type="button"
             aria-label="Volver"
-            onClick={() => navigate(-1)}
+            onClick={() => stockReturn && recoleccion.planta_id === stockReturn.plantaId ? navigate(stockHistorialPath(stockReturn)) : navigate(-1)}
             disabled={deletionLocked}
             className="absolute left-4 top-6 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-brand-700 shadow-soft transition hover:bg-white"
           >

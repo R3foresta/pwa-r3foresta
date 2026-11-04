@@ -21,6 +21,8 @@ Seguir la estructura real del módulo: hay `screens/` y `pages/`, sin necesidad 
 
 El recorrido campaña → detalle → mapa → ficha pública conserva únicamente `campaniaReturnTo` canónico, tanto en el enlace del panel como en la tarjeta. El origen valida campaña/subcampaña, la ficha contrasta los datos disponibles y el detalle revalida contra su propia lectura antes de regresar; esto también cubre una ficha en carga o con error. No reenviar todo el estado de navegación ni agregar transporte de contexto al encabezado compartido.
 
+El stock administrativo de semillas enlaza a `/app/collections/stock/:plantaId?page=…`. La pantalla ADMIN consulta el historial global paginado de semillas validadas mediante `GET /api/recolecciones/stock-summary/:plantaId/historial`; incluye recolecciones cerradas y presenta el recolector congelado. La disponibilidad procede de `stock-summary` por separado; su ausencia o error no se interpreta como saldo cero. El detalle recibe únicamente especie y página como retorno interno validado. Las lecturas obsoletas se descartan al cambiar especie, página, actor o token.
+
 ## Secuencia para un cambio
 
 1. Leer `package.json`, la pantalla/contrato y sus consumidores; revisar el README del módulo si existe.

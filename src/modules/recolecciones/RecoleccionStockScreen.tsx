@@ -47,7 +47,7 @@ function RecoleccionStockScreen() {
             </p>
             <h1 className="text-3xl font-extrabold leading-tight">Stock de semillas</h1>
             <p className="text-sm font-medium text-white/90">
-              {items.length} {items.length === 1 ? 'planta activa' : 'plantas activas'}
+              {!loading && !error ? `${items.length} ${items.length === 1 ? 'planta activa' : 'plantas activas'}` : 'Inventario global'}
             </p>
           </div>
           <button
@@ -61,11 +61,11 @@ function RecoleccionStockScreen() {
         </header>
 
         <div className="-mt-10 space-y-7 px-5">
-          <RecoleccionStockMetrics
+          {!loading && !error && <RecoleccionStockMetrics
             gramos={totals.gramos}
             unidades={totals.unidades}
             pendientes={totals.pendientes}
-          />
+          />}
 
           {loading && (
             <Card

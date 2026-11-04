@@ -34,6 +34,9 @@ const RecoleccionesScreen = lazy(
 const RecoleccionStockScreen = lazy(
   () => import('./modules/recolecciones/RecoleccionStockScreen'),
 )
+const RecoleccionStockHistorialScreen = lazy(
+  () => import('./modules/recolecciones/RecoleccionStockHistorialScreen'),
+)
 const RecoleccionDetailScreen = lazy(
   () => import('./modules/recolecciones/RecoleccionDetailScreen'),
 )
@@ -189,6 +192,7 @@ function App() {
             <Route path="collections">
               <Route index element={<RecoleccionesScreen />} />
               <Route path="stock" element={<RecoleccionStockScreen />} />
+              <Route path="stock/:plantaId" element={<RecoleccionStockHistorialScreen />} />
               <Route path="new" element={<RecoleccionFormLayout />}>
                 <Route index element={<RecoleccionFormDatosScreen />} />
                 <Route path="location" element={<RecoleccionFormUbicacionScreen />} />
