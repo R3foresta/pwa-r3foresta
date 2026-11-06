@@ -9,7 +9,7 @@ export type AutoridadUsuario = {
   activo: boolean
   revision_autoridad: string
 }
-export type UsuarioAdministracion = AutoridadUsuario & { username: string | null; activo: true }
+export type UsuarioAdministracion = AutoridadUsuario & { username: string | null }
 export type OpcionesUsuarios = { consulta?: string; rol_global?: RolGlobal; cursor?: string; limite?: number }
 export type UsuariosLectura = { data: UsuarioAdministracion[]; observado_en: string; siguiente_cursor: string | null }
 export type AutoridadLectura = { data: AutoridadUsuario; observado_en: string }

@@ -1,3 +1,5 @@
+import { useOperationalAccess } from '../modules/accesos/capabilitiesContext'
+import { hasViveroCapability } from '../modules/accesos/accessPolicy'
 import { lazy, Suspense, useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import Icon, { type IconName } from './Icon'
@@ -30,11 +32,14 @@ function BottomNav({ publicMode = false }: { publicMode?: boolean }) {
   const [sheetView, setSheetView] = useState<SheetView>('actions')
   const [showProfileWarning, setShowProfileWarning] = useState(false)
   const hasInternalAccess = !publicMode && hasInternalAppAccess(user?.rol)
-  const navItems = hasInternalAccess ? NAV_ITEMS : PARTICIPANT_NAV_ITEMS
+  const access = useOperationalAccess()
+  const showM1 = access.m1.status === 'ready' && Boolean(access.m1.data?.capacidades.mantener_propias) || access.m2.status === 'ready' && hasViveroCapability(access.m2.data, 'revisar_documental')
+  const showM2 = access.m2.status === 'ready' && hasViveroCapability(access.m2.data, 'operar')
+  const navItems = hasInternalAccess ? NAV_ITEMS.filter(item => item.screen !== 'collections' || showM1).filter(item => item.screen !== 'vivero' || showM2) : PARTICIPANT_NAV_ITEMS
 
   const quickActions: QuickAction[] = [
-    { label: 'Registrar recolección', icon: 'package', to: '/app/collections/new' },
-    { label: 'Nuevo germinación', icon: 'vivero', to: '/app/vivero/new' },
+    ...(access.m1.status === 'ready' && access.m1.data?.capacidades.crear ? [{ label: 'Registrar recolección', icon: 'package' as const, to: '/app/collections/new' }] : []),
+    ...(showM2 ? [{ label: 'Nuevo germinación', icon: 'vivero' as const, to: '/app/vivero/new' }] : []),
     { label: 'Registrar plantación', icon: 'leaf', to: 'plantacion-selector' },
   ]
 

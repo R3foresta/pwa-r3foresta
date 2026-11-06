@@ -39,7 +39,7 @@ export interface ApiPagination {
 }
 
 export interface LoteViveroViveroRef {
-  id: number
+  id: number | string
   codigo: string
   nombre: string
 }
@@ -79,7 +79,7 @@ export interface LoteViveroItem {
   motivo_cierre: MotivoCierreVivero | null
   recoleccion_id: number
   planta_id: number
-  vivero_id: number
+  vivero_id: number | string
   responsable_id: number
   nombre_cientifico_snapshot: string
   nombre_comercial_snapshot: string
@@ -116,7 +116,7 @@ export interface ListLotesViveroQuery {
   page?: number
   limit?: number
   estado_lote?: EstadoLoteVivero
-  vivero_id?: number
+  vivero_id?: number | string
   recoleccion_id?: number
   lote_vivero_id?: number
   motivo_cierre?: MotivoCierreVivero
@@ -133,6 +133,7 @@ export interface ListLotesViveroResponse {
 }
 
 export interface UploadEvidenciasPendientesInput {
+  vivero_id: string
   fotos: File[]
   titulo?: string
   descripcion?: string
@@ -215,8 +216,8 @@ export interface UploadEvidenciasEventoResponse {
 }
 
 export interface CreateLoteViveroInput {
-  recoleccion_id: number
-  vivero_id: number
+  recoleccion_id: number | string
+  vivero_id: number | string
   fecha_inicio: string
   fecha_evento: string
   cantidad_inicial_en_proceso: number

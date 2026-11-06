@@ -1,3 +1,8 @@
+import { WebAuthnService } from '../../../services/webauthn.service'
+import { useOperationalAccess } from '../../accesos/capabilitiesContext'
+import { canAtVivero, exactId, sameId } from '../../accesos/accessPolicy'
+import { useOrigenes } from '../hooks/useOrigenes'
+import type { OrigenMaterial } from '../api/origenes.api'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Icon from '../../../components/Icon'
@@ -6,8 +11,6 @@ import { Button } from '../../../components/ui'
 import { MAX_DIAS_VIVERO } from '../../../config/vivero'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useViveros } from '../../../hooks/useViveros'
-import type { Recoleccion } from '../../../services/recolecciones.service'
-import { RecoleccionesService } from '../../../services/recolecciones.service'
 import { LotesViveroService } from '../../../services/lotes-vivero.service'
 import { formatUnidadCanonicaDisplay } from '../../../utils/recoleccionUnidad'
 import { getUbicacionDisplay } from '../../../utils/ubicacion'
@@ -95,15 +98,9 @@ function getCantidadSugerida(saldo: number, unidad: UnidadMedidaVivero, pct: num
   return formatCantidadVivero(Math.min(saldo, normalized), unidad)
 }
 
-const getRecoleccionLabel = (item: Recoleccion) =>
-  item.nombre_comercial ||
-  item.nombre_comun_principal ||
-  item.planta?.nombre_comun_principal ||
-  item.planta?.especie ||
-  item.nombre_cientifico ||
-  `Recolección #${item.id}`
+const getRecoleccionLabel = (item: OrigenMaterial) => item.nombre_comercial_snapshot || item.nombre_cientifico_snapshot || `Recolección #${item.recoleccion_id}`
 
-const isRecoleccionElegible = (item: Recoleccion) => {
+const isRecoleccionElegible = (item: OrigenMaterial) => {
   if (!isTipoMaterialVivero(item.tipo_material)) return false
   if (!item.codigo_trazabilidad?.trim()) return false
   const estadoRegistro = String(item.estado_registro ?? '').toUpperCase()
@@ -122,13 +119,17 @@ function ViveroNewScreen() {
   const { user } = useAuth()
   const authId = user?.auth_id?.trim() || ''
 
-  const { viveros, loading: viveroLoading, error: viveroError } = useViveros()
-  const [selectedViveroId, setSelectedViveroId] = useState<number | null>(null)
+  const catalog = useViveros()
+  const { m2 } = useOperationalAccess()
+  const viveros = catalog.viveros.filter(item => canAtVivero(m2.status === 'ready' ? m2.data : null, item.id, 'operar'))
+  const viveroLoading = catalog.loading, viveroError = catalog.error
+  const [selectedViveroId, setSelectedViveroId] = useState<string | null>(null)
 
-  const [recolecciones, setRecolecciones] = useState<Recoleccion[]>([])
-  const [recoleccionLoading, setRecoleccionLoading] = useState(false)
-  const [recoleccionError, setRecoleccionError] = useState<string | null>(null)
-  const [selectedRecoleccionId, setSelectedRecoleccionId] = useState<number | null>(null)
+  const [originPage, setOriginPage] = useState(1)
+  const [originVersion, setOriginVersion] = useState(0)
+  const origins = useOrigenes(user?.id ?? null, selectedViveroId, originPage, originVersion)
+  const recolecciones = origins.items, recoleccionLoading = origins.loading, recoleccionError = origins.error
+  const [selectedRecoleccionId, setSelectedRecoleccionId] = useState<string | null>(null)
   const [pickingRecoleccion, setPickingRecoleccion] = useState(true)
 
   const [cantidadInicio, setCantidadInicio] = useState('')
@@ -145,53 +146,22 @@ function ViveroNewScreen() {
   const [showErrors, setShowErrors] = useState(false)
   const [submitPhase, setSubmitPhase] = useState<UploadPhase>('idle')
   const [confirming, setConfirming] = useState(false)
+  const [needsObservation, setNeedsObservation] = useState(false)
   const submissionStarted = useRef(false)
+  const mounted = useRef(true)
+  const confirmationToken = useRef<string | null>(null)
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false } }, [])
   const [submitError, setSubmitError] = useState<string | null>(null)
 
   const selectedRecoleccion = useMemo(
-    () => recolecciones.find((item) => item.id === selectedRecoleccionId) ?? null,
+    () => recolecciones.find((item) => item.recoleccion_id === selectedRecoleccionId) ?? null,
     [recolecciones, selectedRecoleccionId],
   )
 
   const viveroSeleccionado = useMemo(
-    () => viveros.find((v) => v.id === selectedViveroId),
+    () => viveros.find((v) => sameId(v.id, selectedViveroId)),
     [selectedViveroId, viveros],
   )
-
-  useEffect(() => {
-    if (!selectedViveroId) {
-      setRecolecciones([])
-      setSelectedRecoleccionId(null)
-      setPickingRecoleccion(true)
-      return
-    }
-
-    let isMounted = true
-    const load = async () => {
-      try {
-        setRecoleccionLoading(true)
-        setRecoleccionError(null)
-        const response = await RecoleccionesService.list({
-          vivero_id: selectedViveroId,
-          limit: 50,
-        })
-        if (isMounted) setRecolecciones(response.data || [])
-      } catch (error) {
-        if (isMounted) {
-          setRecoleccionError(
-            error instanceof Error ? error.message : 'Error al cargar recolecciones',
-          )
-        }
-      } finally {
-        if (isMounted) setRecoleccionLoading(false)
-      }
-    }
-
-    load()
-    return () => {
-      isMounted = false
-    }
-  }, [selectedViveroId])
 
   const recoleccionesDisponibles = useMemo(
     () => recolecciones.filter(isRecoleccionElegible),
@@ -273,22 +243,27 @@ function ViveroNewScreen() {
     !validation.cantidad &&
     !validation.fecha &&
     !validation.fotos &&
-    !isSubmitting
+    !isSubmitting && !needsObservation
 
-  const handleSelectVivero = (id: number | null) => {
+  const handleSelectVivero = (id: string | null) => {
+    if (submissionStarted.current) return
     setSelectedViveroId(id)
+    setUploadedEvidenceIds(null)
+    setOriginPage(1)
     setSelectedRecoleccionId(null)
     setCantidadInicio('')
     setPickingRecoleccion(true)
   }
 
-  const handleSelectRecoleccion = (id: number) => {
+  const handleSelectRecoleccion = (id: string) => {
+    if (submissionStarted.current) return
     setSelectedRecoleccionId(id)
     setCantidadInicio('')
     setPickingRecoleccion(false)
   }
 
   const handleClearRecoleccion = () => {
+    if (submissionStarted.current) return
     setSelectedRecoleccionId(null)
     setCantidadInicio('')
     setPickingRecoleccion(true)
@@ -338,6 +313,8 @@ function ViveroNewScreen() {
       return
     }
 
+    confirmationToken.current = WebAuthnService.getToken()
+    if (!confirmationToken.current) { setSubmitError('Recupera tu sesión antes de confirmar el inicio.'); return }
     setSubmitError(null)
     setShowErrors(false)
     setConfirming(true)
@@ -352,7 +329,10 @@ function ViveroNewScreen() {
       !selectedViveroId ||
       !unidadMedida
     ) return
+    const current = () => mounted.current && WebAuthnService.getToken() === confirmationToken.current
+    if (!current()) return
     submissionStarted.current = true
+    let creating = false
     setConfirming(false)
 
     try {
@@ -364,6 +344,7 @@ function ViveroNewScreen() {
         setSubmitPhase('uploading')
         const uploadResponse = await LotesViveroService.uploadEvidenciasPendientes(
           {
+            vivero_id: selectedViveroId,
             fotos: photos.map((p) => p.file),
             titulo: 'Inicio de lote vivero',
             descripcion: observaciones.trim() || 'Evidencia de inicio del lote',
@@ -373,6 +354,7 @@ function ViveroNewScreen() {
           authId,
         )
 
+        if (!current()) return
         if (!uploadResponse.evidencia_ids.length) {
           throw new Error('No se recibieron IDs de evidencia para crear el lote.')
         }
@@ -381,10 +363,12 @@ function ViveroNewScreen() {
         setUploadedEvidenceIds(uploadResponse.evidencia_ids)
       }
 
+      if (!current()) return
       setSubmitPhase('creating')
+      creating = true
       const createResponse = await LotesViveroService.createLote(
         {
-          recoleccion_id: selectedRecoleccion.id,
+          recoleccion_id: selectedRecoleccion.recoleccion_id,
           vivero_id: selectedViveroId,
           fecha_inicio: fechaInicioCheck.normalized,
           fecha_evento: fechaInicioCheck.normalized,
@@ -396,12 +380,15 @@ function ViveroNewScreen() {
         authId,
       )
 
+      if (!current()) return
       navigate(`/app/vivero/${createResponse.data.lote_vivero_id}`, { replace: true });
     } catch (error) {
+      if (!current()) return
+      if (creating) setNeedsObservation(true)
       setSubmitError(error instanceof Error ? error.message : 'Error al registrar el lote.')
     } finally {
       submissionStarted.current = false
-      setSubmitPhase('idle')
+      if (current()) setSubmitPhase('idle')
     }
   }
 
@@ -418,6 +405,7 @@ function ViveroNewScreen() {
         title="Inicio de lote"
       />
 
+      {needsObservation && <div role="alert" className="mx-auto max-w-md space-y-2 p-5 text-sm"><p>El alta no quedó confirmada. Consulta los lotes antes de volver a iniciar: la operación puede haberse guardado.</p><Button onClick={() => navigate('/app/vivero')}>Consultar lotes actuales</Button></div>}
       <form
         id="vivero-new-form"
         onSubmit={handleSubmit}
@@ -477,7 +465,7 @@ function ViveroNewScreen() {
                   </span>
                 </div>
               </div>
-              <Button variant="secondary" size="sm" onClick={() => handleSelectVivero(null)}>
+              <Button variant="secondary" size="sm" disabled={isSubmitting} onClick={() => handleSelectVivero(null)}>
                 Cambiar
               </Button>
             </div>
@@ -486,8 +474,9 @@ function ViveroNewScreen() {
               <div className="relative">
                 <select
                   value={selectedViveroId ?? ''}
+                  disabled={isSubmitting}
                   onChange={(event) =>
-                    handleSelectVivero(event.target.value ? Number(event.target.value) : null)
+                    handleSelectVivero(event.target.value ? exactId(event.target.value) : null)
                   }
                   className={`w-full appearance-none rounded-2xl border px-4 py-3 pr-10 text-sm font-semibold outline-none transition ${
                     showErrors && validation.vivero
@@ -543,6 +532,7 @@ function ViveroNewScreen() {
           ) : recoleccionError ? (
             <p className="rounded-2xl bg-danger-50 px-3 py-3 text-sm font-semibold text-danger-600">
               {recoleccionError}
+              <Button type="button" variant="secondary" onClick={() => setOriginVersion(value => value + 1)}>Reintentar orígenes</Button>
             </p>
           ) : selectedRecoleccion && !pickingRecoleccion && unidadMedida ? (
             <div className="space-y-3 rounded-2xl border border-success-200 bg-success-50/70 p-4">
@@ -557,7 +547,7 @@ function ViveroNewScreen() {
                 </div>
                 <button
                   type="button"
-                  onClick={handleClearRecoleccion}
+                  disabled={isSubmitting} onClick={handleClearRecoleccion}
                   className="rounded-full bg-white px-3 py-1 text-xs font-bold text-danger-600 ring-1 ring-danger-200 transition hover:bg-danger-50"
                 >
                   Quitar
@@ -591,7 +581,7 @@ function ViveroNewScreen() {
           ) : (
             <div className="space-y-2">
               {recoleccionesDisponibles.map((item) => {
-                const isSelected = selectedRecoleccionId === item.id
+                const isSelected = selectedRecoleccionId === item.recoleccion_id
                 const unidadItem = isUnidadMedidaVivero(item.unidad_canonica)
                   ? item.unidad_canonica
                   : null
@@ -602,7 +592,7 @@ function ViveroNewScreen() {
 
                 return (
                   <label
-                    key={item.id}
+                    key={item.recoleccion_id}
                     className={`flex cursor-pointer items-start gap-3 rounded-2xl border px-3 py-3 text-sm font-semibold transition ${
                       isSelected
                         ? 'border-success-300 bg-success-50 text-success-900 shadow-soft'
@@ -612,8 +602,9 @@ function ViveroNewScreen() {
                     <input
                       type="radio"
                       name="recoleccion_id"
+                      disabled={isSubmitting}
                       checked={isSelected}
-                      onChange={() => handleSelectRecoleccion(item.id)}
+                      onChange={() => handleSelectRecoleccion(item.recoleccion_id)}
                       className="mt-1 h-4 w-4 border-brand-200 text-success-600 focus:ring-success-200"
                     />
                     <div className="min-w-0 flex-1 space-y-1">
@@ -644,6 +635,7 @@ function ViveroNewScreen() {
               Selecciona una recolección para continuar.
             </p>
           )}
+          {origins.pagination && !selectedRecoleccion && <div className="mt-3 flex items-center justify-between gap-2 text-sm"><Button variant="secondary" disabled={originPage === 1} onClick={() => setOriginPage(value => value - 1)}>Anterior</Button><span>Página {originPage}</span><Button variant="secondary" disabled={originPage * 20 >= origins.pagination.total} onClick={() => setOriginPage(value => value + 1)}>Siguiente</Button></div>}
         </SectionCard>
 
         {/* PASO 4 — CANTIDAD */}

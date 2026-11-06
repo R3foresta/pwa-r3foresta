@@ -1,0 +1,20 @@
+{
+  "node": "v24.19.0",
+  "execPath": "/Users/pabloandresfernandezcari/.nvm/versions/node/v24.19.0/bin/node",
+  "npm": "12.0.2",
+  "npm_path": "/Users/pabloandresfernandezcari/.nvm/versions/node/v24.19.0/bin/npm",
+  "PATH_prefix": "/Users/pabloandresfernandezcari/.nvm/versions/node/v24.19.0/bin",
+  "TMPDIR": "/private/tmp",
+  "command": [
+    "npm",
+    "run",
+    "test",
+    "--",
+    "--maxWorkers=2"
+  ],
+  "cwd": "/Users/pabloandresfernandezcari/Projects/R3foresta/pwa-r3foresta",
+  "inicio_utc": "2026-11-06T10:43:51.274468+00:00",
+  "log": "pwa-tests.log",
+  "exit_code": 0,
+  "fin_utc": "2026-11-06T10:45:38.923302+00:00"
+}

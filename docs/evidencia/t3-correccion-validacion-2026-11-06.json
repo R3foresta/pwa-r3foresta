@@ -1,0 +1,275 @@
+{
+  "tarea": "T3_CORRECCION_REVISION_COORDINADORA_P2_P3",
+  "fecha_local": "2026-11-06",
+  "zona": "America/La_Paz",
+  "registrado_en": "2026-11-06T10:45:45.869515+00:00",
+  "estado": "CORREGIDA_Y_VERIFICADA_LOCALMENTE_PENDIENTE_COMPROBACION_COORDINADORA",
+  "chat_coordinador": "01a18a33-5969-7261-b845-25979ea63c2f",
+  "base": {
+    "pwa_head": "dbcedc51eac388045a5d383d6a326e241c40b312",
+    "manifest_anterior": "docs/evidencia/t3-validacion-2026-11-05.json",
+    "manifest_anterior_sha256": "d327cc6c06669b39e70453ba7ab0482696fa0a3ec95729d113397189ee5e6630",
+    "base_correccion": "docs/evidencia/t3-correccion-base-2026-11-06.json",
+    "base_correccion_sha256": "36ae7d52f5387f60f3dc2d5d3280177088b3f7076dc7a9a21779e7dcf81402c7",
+    "arbol": "Entrega T3 local anterior, sin commit; no partir sólo de HEAD."
+  },
+  "hallazgos": [
+    {
+      "prioridad": "P2",
+      "problema": "Entrada de Inicio/barra montaba GET /api/recolecciones sin M1 para un revisor M2 válido. Volver al índice podía devolverlo a su cola.",
+      "correccion": "Resolver el índice antes de montar la lista propia; conservarla con M1, redirigir al revisor sin M1 a pending-validation. Volver a Inicio sin M1 o a lista propia con M1.",
+      "regresion": "7 casos de índice/vuelta; navegador desde Inicio y barra con control negativo HTTP403 de la fixture."
+    },
+    {
+      "prioridad": "P3",
+      "problema": "Una consulta correcta tras DESECHO incierto no liberaba la preparación hasta consultar otra vez.",
+      "correccion": "Una lectura correcta posterior a la versión del fallo permite preparar otra operación; datos previos ausentes en carga/error, confirmación incierta deshabilitada y reintento sólo de lectura.",
+      "regresion": "3 casos con hook real y GET diferido/fallido/saldo vacío; navegador móvil/escritorio sin POST automático ni GET extra."
+    }
+  ],
+  "verificacion": {
+    "pwa": {
+      "runtime_ejecuciones": {
+        "tests": {
+          "node": "v24.19.0",
+          "execPath": "/Users/pabloandresfernandezcari/.nvm/versions/node/v24.19.0/bin/node",
+          "npm": "12.0.2",
+          "npm_path": "/Users/pabloandresfernandezcari/.nvm/versions/node/v24.19.0/bin/npm",
+          "PATH_prefix": "/Users/pabloandresfernandezcari/.nvm/versions/node/v24.19.0/bin",
+          "TMPDIR": "/private/tmp",
+          "command": [
+            "npm",
+            "run",
+            "test",
+            "--",
+            "--maxWorkers=2"
+          ],
+          "cwd": "/Users/pabloandresfernandezcari/Projects/R3foresta/pwa-r3foresta",
+          "inicio_utc": "2026-11-06T10:43:51.274468+00:00",
+          "log": "pwa-tests.log",
+          "exit_code": 0,
+          "fin_utc": "2026-11-06T10:45:38.923302+00:00"
+        },
+        "focales": {
+          "node": "v24.19.0",
+          "execPath": "/Users/pabloandresfernandezcari/.nvm/versions/node/v24.19.0/bin/node",
+          "npm": "12.0.2",
+          "npm_path": "/Users/pabloandresfernandezcari/.nvm/versions/node/v24.19.0/bin/npm",
+          "PATH_prefix": "/Users/pabloandresfernandezcari/.nvm/versions/node/v24.19.0/bin",
+          "TMPDIR": "/private/tmp",
+          "command": [
+            "npm",
+            "run",
+            "test",
+            "--",
+            "src/modules/recolecciones/RecoleccionesScreen.test.tsx",
+            "src/modules/vivero/screens/ViveroMaterialScreen.test.tsx",
+            "--maxWorkers=2"
+          ],
+          "cwd": "/Users/pabloandresfernandezcari/Projects/R3foresta/pwa-r3foresta",
+          "inicio_utc": "2026-11-06T10:43:51.274474+00:00",
+          "log": "focales.log",
+          "exit_code": 0,
+          "fin_utc": "2026-11-06T10:43:58.167597+00:00"
+        },
+        "lint": {
+          "node": "v24.19.0",
+          "execPath": "/Users/pabloandresfernandezcari/.nvm/versions/node/v24.19.0/bin/node",
+          "npm": "12.0.2",
+          "npm_path": "/Users/pabloandresfernandezcari/.nvm/versions/node/v24.19.0/bin/npm",
+          "PATH_prefix": "/Users/pabloandresfernandezcari/.nvm/versions/node/v24.19.0/bin",
+          "TMPDIR": "/private/tmp",
+          "command": [
+            "npm",
+            "run",
+            "lint"
+          ],
+          "cwd": "/Users/pabloandresfernandezcari/Projects/R3foresta/pwa-r3foresta",
+          "inicio_utc": "2026-11-06T10:43:51.274469+00:00",
+          "log": "pwa-lint.log",
+          "exit_code": 0,
+          "fin_utc": "2026-11-06T10:44:34.574424+00:00"
+        },
+        "build": {
+          "node": "v24.19.0",
+          "execPath": "/Users/pabloandresfernandezcari/.nvm/versions/node/v24.19.0/bin/node",
+          "npm": "12.0.2",
+          "npm_path": "/Users/pabloandresfernandezcari/.nvm/versions/node/v24.19.0/bin/npm",
+          "PATH_prefix": "/Users/pabloandresfernandezcari/.nvm/versions/node/v24.19.0/bin",
+          "TMPDIR": "/private/tmp",
+          "command": [
+            "npm",
+            "run",
+            "build"
+          ],
+          "cwd": "/Users/pabloandresfernandezcari/Projects/R3foresta/pwa-r3foresta",
+          "inicio_utc": "2026-11-06T10:43:51.274451+00:00",
+          "log": "pwa-build.log",
+          "exit_code": 0,
+          "fin_utc": "2026-11-06T10:44:43.932530+00:00"
+        }
+      },
+      "archivos_test": 91,
+      "pruebas": 1251,
+      "focales_archivos": 2,
+      "focales_pruebas": 10,
+      "lint": "APROBADO",
+      "build_typescript_vite_pwa": "APROBADO",
+      "diff_check": "APROBADO",
+      "script_check": "APROBADO",
+      "aviso_build": "Tamaño conocido del chunk MapLibre"
+    },
+    "navegador": {
+      "entorno": "SINTETICO_LOCAL_T3_HTTP",
+      "estado": "APROBADO",
+      "comprobaciones": 60,
+      "capturas": 13,
+      "errores": [],
+      "versiones": {
+        "node": "v24.19.0",
+        "navegador": "156.0.8078.80",
+        "playwright": "1.64.1"
+      },
+      "pwa": "http://127.0.0.1:5192",
+      "api": "http://127.0.0.1:3342",
+      "anchos": [
+        320,
+        390,
+        1280
+      ]
+    },
+    "backend": {
+      "archivos_preexistentes_sin_cambio": 777,
+      "sin_cambios_en_este_corte": true,
+      "suites_no_reejecutadas": true,
+      "corte_anterior": {
+        "suites": 88,
+        "pruebas": 1256,
+        "procedencia": "Manifest anterior; el coordinador además reportó su repetición independiente de la base recibida."
+      },
+      "migraciones_preservadas": {
+        "migrations/092_usuario_acceso_recoleccion.sql": {
+          "sha256": "74c2c01468f130c5ca072b17727f9d7b37470cddd4c21033315d509aa5d91fcc",
+          "sin_cambios": true
+        },
+        "migrations/093_recoleccion_acceso_explicito.sql": {
+          "sha256": "27ece38fb0860ce87dba5e30338fed63ae3d0d09ec7b49c8588385531e3b0b27",
+          "sin_cambios": true
+        },
+        "migrations/094_usuario_vivero.sql": {
+          "sha256": "7b18997966852c51a7a1baf55b8ac6209da2b37961cd5f61432f224b6387693d",
+          "sin_cambios": true
+        },
+        "migrations/095_vivero_operacion_por_ambito.sql": {
+          "sha256": "ec4ffc511d67ad80fcb042886470c0cd2cb92643b2e25d97e5af3e91490b0d96",
+          "sin_cambios": true
+        }
+      }
+    },
+    "logs": [
+      {
+        "comando": "PATH=/Users/pabloandresfernandezcari/.nvm/versions/node/v24.19.0/bin:$PATH TMPDIR=/private/tmp npm run test -- --maxWorkers=2",
+        "exit_code": 0,
+        "log": "docs/qa/t3-accesos-correccion-2026-11-06/logs/pwa-tests.log",
+        "sha256": "9b08aa76f7a7b6555b43cf6a2d6bbc5ccb88f9c0662939e075d8fc4d02a4344f"
+      },
+      {
+        "comando": "PATH=/Users/pabloandresfernandezcari/.nvm/versions/node/v24.19.0/bin:$PATH TMPDIR=/private/tmp npm run test -- src/modules/recolecciones/RecoleccionesScreen.test.tsx src/modules/vivero/screens/ViveroMaterialScreen.test.tsx --maxWorkers=2",
+        "exit_code": 0,
+        "log": "docs/qa/t3-accesos-correccion-2026-11-06/logs/focales.log",
+        "sha256": "8b0b7d2fe78ad44e2be0e638975ad2f65d314516a816018257227aa94076af7a"
+      },
+      {
+        "comando": "PATH=/Users/pabloandresfernandezcari/.nvm/versions/node/v24.19.0/bin:$PATH TMPDIR=/private/tmp npm run build",
+        "exit_code": 0,
+        "log": "docs/qa/t3-accesos-correccion-2026-11-06/logs/pwa-build.log",
+        "sha256": "3faf68b3facec222216cd49b910a7c646f8e16bd0fc34c006efcca0cfe76d027"
+      },
+      {
+        "comando": "PATH=/Users/pabloandresfernandezcari/.nvm/versions/node/v24.19.0/bin:$PATH TMPDIR=/private/tmp npm run lint",
+        "exit_code": 0,
+        "log": "docs/qa/t3-accesos-correccion-2026-11-06/logs/pwa-lint.log",
+        "sha256": "048d63fae7e5d76c35ceb618809e99eb3e0070a664d96e3738600b5270481efd"
+      },
+      {
+        "comando": "T3_QA_API_PORT=3342 T3_QA_PWA=http://127.0.0.1:5192 PLAYWRIGHT_MODULE_PATH=… T3_QA_CHROMIUM=… node scripts/qa/t3-access-browser.cjs",
+        "exit_code": 0,
+        "log": "docs/qa/t3-accesos-correccion-2026-11-06/logs/navegador.log",
+        "sha256": "d6e6758f946d5f90b4368744bc906dd8114c66ed8700a2465a8b7932da3edf00"
+      }
+    ]
+  },
+  "archivos_cambiados_sha256": {
+    "FRONTEND_AUDIT.md": "d3debd76139ac2a51706b326c14cabf8eff5c2033f14c7419569a3d39c8b929a",
+    "FRONTEND_GUIDE.md": "68fff7f8cd9cf07e89e6eb25d1e393f8e0354e6a0592a2cc55204dc702cd3614",
+    "docs/QA_T3_ACCESOS.md": "5427bebe3027d550d035f325b502cadc43de92f638231f83d1653f4e361b6be2",
+    "docs/QA_T3_CORRECCION_2026-11-06.md": "d9c3d779c96e714541c77571979d74b8bfaf6d0ca37c0aceb48c21c42e412931",
+    "docs/README.md": "fc1a828a568ee8d086ae074ab81d0934abd6dd810b85ae003078689f6d9065a4",
+    "docs/evidencia/t3-correccion-base-2026-11-06.json": "36ae7d52f5387f60f3dc2d5d3280177088b3f7076dc7a9a21779e7dcf81402c7",
+    "docs/qa/t3-accesos-correccion-2026-11-06/conflicto-1280.png": "bccf80358e9a52bd9597326b9548f2f68d7ccfd5d790787d8a45c5157af418c4",
+    "docs/qa/t3-accesos-correccion-2026-11-06/cuenta-1280.png": "270deb74e84ce658050742b1d6d2635d7f9c6a62a6713734eb04d382705964ed",
+    "docs/qa/t3-accesos-correccion-2026-11-06/cuenta-320.png": "1a77d42e054c1e5febbf874df887c56ea8798181dc7d4038077f0e7dae0e8d80",
+    "docs/qa/t3-accesos-correccion-2026-11-06/cuenta-390.png": "a886374f7e4990348ba7f3dfe9ec8a51adee2e159afbcf89c0265f18cd1d4ab5",
+    "docs/qa/t3-accesos-correccion-2026-11-06/material-consulta-pendiente-390.png": "7082ab1ee9c3750187c3a1dce91dfc7559ee0b73c09597a53b2d99f14124ee49",
+    "docs/qa/t3-accesos-correccion-2026-11-06/material-m2-390.png": "c305cc520643451f9bf39ffa06d2677a526083a40af372c6f49327fc5e25f04f",
+    "docs/qa/t3-accesos-correccion-2026-11-06/material-observado-390.png": "a7e8413d7c8284b2a354c0d6b43d5b3da66ea0d0cab1413e3831e7bdb90a1b5c",
+    "docs/qa/t3-accesos-correccion-2026-11-06/material-recuperado-1280.png": "d1f8160d179988389e321303750503ea9ffd8e110094e3d7ae473614d528f90f",
+    "docs/qa/t3-accesos-correccion-2026-11-06/recuperacion-sin-admin-390.png": "89d27625c54bb912cb7073c16848e47941b5a3ba6d7644f1b69ddb38d126cd32",
+    "docs/qa/t3-accesos-correccion-2026-11-06/resultado-incierto-390.png": "020b8d82329f46cc94db3117a11bb423549151c3ccbb4d9de7730fb1a2a707d7",
+    "docs/qa/t3-accesos-correccion-2026-11-06/resultados.json": "04160e7feb15351a1c001dba984da01ba0e10d668290b7df23837994d03e11f1",
+    "docs/qa/t3-accesos-correccion-2026-11-06/revision-desde-inicio-sin-m1-1280.png": "1fbe06a4486d4b63ce79a0d3183a6e8b96f57bc20df4dff37b07f1949e2f0e5c",
+    "docs/qa/t3-accesos-correccion-2026-11-06/revision-desde-menu-sin-m1-390.png": "54e561b87bc452dc1ff3cfcf0e9ed8561deec6d6213a67015ca7b9f312775680",
+    "docs/qa/t3-accesos-correccion-2026-11-06/revision-sin-m1-1280.png": "e059b13b1a831deb7c6dcab56e3c8b229617959ee6c47c061202d22d096fdb92",
+    "docs/qa/t3-accesos-correccion-2026-11-06/runtime-build.json": "81bad8dfe999d7d541e50f986ad6f94752fa93a5dab7f3b1b05056935ad71dbc",
+    "docs/qa/t3-accesos-correccion-2026-11-06/runtime-focales.json": "29ce2ee1a7067d0dd172cf56e0b274421d2b5c61464d6147874c1284932b6730",
+    "docs/qa/t3-accesos-correccion-2026-11-06/runtime-lint.json": "7df8ab531311e17b9edccd2626bdfc08ce7b93cc0babea48f43e51d6ac935c7c",
+    "docs/qa/t3-accesos-correccion-2026-11-06/runtime-tests.json": "034c005fc75c4ddd53537a12aa0e296bfef0f2a9ccb890e3c5a43f6aaf13a051",
+    "scripts/qa/t3-access-browser.cjs": "5a71ef627933ae19544fe295c35a2413bcd26541d20f80b2bfa320dc0921db23",
+    "src/modules/recolecciones/RecoleccionesScreen.test.tsx": "1dac18769d26162cb90fe4c2e42d4e2e821f1ab675533cab73efb81d012b8d10",
+    "src/modules/recolecciones/RecoleccionesScreen.tsx": "74a154c326f1ba068c58a74b21bb5ab9cd2103db307420e72e1b8e0a7c9f078b",
+    "src/modules/recolecciones/RecoleccionesValidacionScreen.tsx": "aabb5e0482eb365f752a6f08e05e8071be11a4dd79d589ecf6f6efb757fa186f",
+    "src/modules/vivero/screens/ViveroMaterialScreen.test.tsx": "c3a6c8e47f79a6da733e8ab1f073980fcb47faf1725307ffa6ea7f78832f2ff7",
+    "src/modules/vivero/screens/ViveroMaterialScreen.tsx": "38091a19702c068a3d2084ab07766a3e06ea94d7966b9a953540bfca738634c9"
+  },
+  "artefactos_correccion_sha256": {
+    "docs/qa/t3-accesos-correccion-2026-11-06/conflicto-1280.png": "bccf80358e9a52bd9597326b9548f2f68d7ccfd5d790787d8a45c5157af418c4",
+    "docs/qa/t3-accesos-correccion-2026-11-06/material-consulta-pendiente-390.png": "7082ab1ee9c3750187c3a1dce91dfc7559ee0b73c09597a53b2d99f14124ee49",
+    "docs/qa/t3-accesos-correccion-2026-11-06/cuenta-1280.png": "270deb74e84ce658050742b1d6d2635d7f9c6a62a6713734eb04d382705964ed",
+    "docs/qa/t3-accesos-correccion-2026-11-06/resultado-incierto-390.png": "020b8d82329f46cc94db3117a11bb423549151c3ccbb4d9de7730fb1a2a707d7",
+    "docs/qa/t3-accesos-correccion-2026-11-06/runtime-build.json": "81bad8dfe999d7d541e50f986ad6f94752fa93a5dab7f3b1b05056935ad71dbc",
+    "docs/qa/t3-accesos-correccion-2026-11-06/cuenta-390.png": "a886374f7e4990348ba7f3dfe9ec8a51adee2e159afbcf89c0265f18cd1d4ab5",
+    "docs/qa/t3-accesos-correccion-2026-11-06/cuenta-320.png": "1a77d42e054c1e5febbf874df887c56ea8798181dc7d4038077f0e7dae0e8d80",
+    "docs/qa/t3-accesos-correccion-2026-11-06/revision-desde-menu-sin-m1-390.png": "54e561b87bc452dc1ff3cfcf0e9ed8561deec6d6213a67015ca7b9f312775680",
+    "docs/qa/t3-accesos-correccion-2026-11-06/material-m2-390.png": "c305cc520643451f9bf39ffa06d2677a526083a40af372c6f49327fc5e25f04f",
+    "docs/qa/t3-accesos-correccion-2026-11-06/runtime-focales.json": "29ce2ee1a7067d0dd172cf56e0b274421d2b5c61464d6147874c1284932b6730",
+    "docs/qa/t3-accesos-correccion-2026-11-06/runtime-lint.json": "7df8ab531311e17b9edccd2626bdfc08ce7b93cc0babea48f43e51d6ac935c7c",
+    "docs/qa/t3-accesos-correccion-2026-11-06/recuperacion-sin-admin-390.png": "89d27625c54bb912cb7073c16848e47941b5a3ba6d7644f1b69ddb38d126cd32",
+    "docs/qa/t3-accesos-correccion-2026-11-06/revision-desde-inicio-sin-m1-1280.png": "1fbe06a4486d4b63ce79a0d3183a6e8b96f57bc20df4dff37b07f1949e2f0e5c",
+    "docs/qa/t3-accesos-correccion-2026-11-06/material-observado-390.png": "a7e8413d7c8284b2a354c0d6b43d5b3da66ea0d0cab1413e3831e7bdb90a1b5c",
+    "docs/qa/t3-accesos-correccion-2026-11-06/revision-sin-m1-1280.png": "e059b13b1a831deb7c6dcab56e3c8b229617959ee6c47c061202d22d096fdb92",
+    "docs/qa/t3-accesos-correccion-2026-11-06/resultados.json": "04160e7feb15351a1c001dba984da01ba0e10d668290b7df23837994d03e11f1",
+    "docs/qa/t3-accesos-correccion-2026-11-06/runtime-tests.json": "034c005fc75c4ddd53537a12aa0e296bfef0f2a9ccb890e3c5a43f6aaf13a051",
+    "docs/qa/t3-accesos-correccion-2026-11-06/material-recuperado-1280.png": "d1f8160d179988389e321303750503ea9ffd8e110094e3d7ae473614d528f90f",
+    "docs/qa/t3-accesos-correccion-2026-11-06/logs/navegador.log": "d6e6758f946d5f90b4368744bc906dd8114c66ed8700a2465a8b7932da3edf00",
+    "docs/qa/t3-accesos-correccion-2026-11-06/logs/pwa-build.log": "3faf68b3facec222216cd49b910a7c646f8e16bd0fc34c006efcca0cfe76d027",
+    "docs/qa/t3-accesos-correccion-2026-11-06/logs/pwa-lint.log": "048d63fae7e5d76c35ceb618809e99eb3e0070a664d96e3738600b5270481efd",
+    "docs/qa/t3-accesos-correccion-2026-11-06/logs/pwa-tests.log": "9b08aa76f7a7b6555b43cf6a2d6bbc5ccb88f9c0662939e075d8fc4d02a4344f",
+    "docs/qa/t3-accesos-correccion-2026-11-06/logs/focales.log": "8b0b7d2fe78ad44e2be0e638975ad2f65d314516a816018257227aa94076af7a"
+  },
+  "preservacion": {
+    "manifest_anterior_intacto": true,
+    "artefactos_historicos_verificados": 17,
+    "arbol_backend_sin_cambios": true,
+    "sin_dependencias_nuevas": true,
+    "sin_sql_remoto": true,
+    "sin_commit_push_despliegue": true,
+    "T4_T5_no_iniciadas": true
+  },
+  "limites": [
+    "Pendiente comprobación coordinadora de esta corrección; no acredita cierre de revisión ni corte externo.",
+    "Navegador con HTTP enteramente sintético, sin JWT/RPC/SQL/Storage/WebAuthn reales.",
+    "DESECHO sigue sin comando durable (AUD-007): leer material no demuestra el resultado histórico del POST y no se reenvía automáticamente.",
+    "No se reejecutan build/unitarios/OpenAPI backend en este corte porque no cambia; números previos conservados como antecedente."
+  ],
+  "nota_huellas": "Manifest nuevo, excluido de su propio mapa. No reescribe el corte previo."
+}

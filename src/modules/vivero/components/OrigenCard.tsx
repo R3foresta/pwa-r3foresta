@@ -1,3 +1,5 @@
+import { useOperationalAccess } from '../../accesos/capabilitiesContext'
+import { canAtVivero } from '../../accesos/accessPolicy'
 import { useNavigate } from 'react-router-dom';
 import Icon from '../../../components/Icon';
 import { Button } from '../../../components/ui';
@@ -10,6 +12,8 @@ interface OrigenCardProps {
 
 export default function OrigenCard({ detail }: OrigenCardProps) {
   const navigate = useNavigate();
+  const { m1, m2 } = useOperationalAccess()
+  const canOpenOrigin = m1.status === 'ready' && m1.data?.origen === 'ADMIN' || m2.status === 'ready' && canAtVivero(m2.data, detail.viveroId, 'revisar_documental')
   const formatTipoMaterial = (tipo: string) => tipo ? tipo.charAt(0).toUpperCase() + tipo.slice(1).toLowerCase().replace(/_/g, ' ') : 'No especificado';
   const formatFecha = (fechaStr: string | null) => fechaStr ? new Date(fechaStr).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/D';
 
@@ -19,14 +23,14 @@ export default function OrigenCard({ detail }: OrigenCardProps) {
         <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
           Origen del lote
         </p>
-        <Button
+        {canOpenOrigin && <Button
           variant="secondary"
           size="sm"
           rightIcon="chevron-right"
           onClick={() => navigate(`/app/collections/${detail.recoleccionId}`)}
         >
           Ver ficha
-        </Button>
+        </Button>}
       </header>
 
       <div className="mt-2 flex items-start gap-3">

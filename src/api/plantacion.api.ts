@@ -215,7 +215,7 @@ export async function getSubcampaniaApi(
 }
 
 export async function getSubcampaniaEquipoApi(
-  subcampaniaId: number,
+  subcampaniaId: number | string,
   authId?: string,
 ): Promise<Response> {
   return fetch(`${API_BASE_URL}/subcampanias/${subcampaniaId}/equipo`, {

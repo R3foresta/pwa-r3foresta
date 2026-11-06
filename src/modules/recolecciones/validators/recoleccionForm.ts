@@ -1,3 +1,4 @@
+import { exactId } from '../../accesos/accessPolicy'
 import type { CreateRecoleccionDto } from '../../../services/recolecciones.service'
 import { validateCantidad } from '../../../utils/validations/cantidad'
 import { validateDateInRange, type DateRange } from '../../../utils/validations/date'
@@ -116,7 +117,7 @@ export function mapFormToCreateDto(form: RecoleccionFormData): CreateRecoleccion
     tipo_material,
     planta_id: Number(form.planta_id), 
     metodo_id: Number(form.metodo_id),
-    vivero_id: Number(form.vivero_id),
+    vivero_id: exactId(form.vivero_id),
     observaciones: form.notes || undefined,
     ubicacion: {
       nombre: form.ubicacionNombre || undefined,

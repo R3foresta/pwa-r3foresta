@@ -27,6 +27,7 @@ export interface ViveroLotCardData {
 }
 
 export interface ViveroLotDetailView {
+  viveroId?: string
   id: number
   codigo: string
   estadoLote: EstadoLoteVivero

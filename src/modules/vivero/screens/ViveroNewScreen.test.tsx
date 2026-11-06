@@ -1,21 +1,21 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { m2Fixture, assigned } from '../../accesos/test-fixtures'
+import { OrigenesService } from '../api/origenes.api'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { RecoleccionesService } from '../../../services/recolecciones.service'
 import { LotesViveroService } from '../../../services/lotes-vivero.service'
 import ViveroNewScreen from './ViveroNewScreen'
 
 vi.mock('../../../contexts/AuthContext', () => ({
-  useAuth: () => ({ user: { auth_id: 'auth-test', nombre: 'Ana', apellido: 'Quispe' } }),
+  useAuth: () => ({ user: { id: '7', auth_id: 'auth-test', nombre: 'Ana', apellido: 'Quispe' } }),
 }))
 
 vi.mock('../../../hooks/useViveros', () => ({
   useViveros: () => ({ viveros: [{ id: 7, nombre: 'Vivero Norte', codigo: 'VN' }], loading: false, error: null }),
 }))
 
-vi.mock('../../../services/recolecciones.service', () => ({
-  RecoleccionesService: { list: vi.fn() },
-}))
+vi.mock('../api/origenes.api', () => ({ OrigenesService: { listar: vi.fn() } }))
+vi.mock('../../accesos/capabilitiesContext', () => ({ useOperationalAccess: () => ({ m2: { status: 'ready', data: m2Fixture({ viveros: [assigned('7')] }).data } }) }))
 
 vi.mock('../../../services/lotes-vivero.service', () => ({
   LotesViveroService: {
@@ -25,16 +25,17 @@ vi.mock('../../../services/lotes-vivero.service', () => ({
 }))
 
 beforeEach(() => {
+  localStorage.setItem('authToken', 'synthetic-session')
   vi.stubGlobal('URL', {
     ...URL,
     createObjectURL: vi.fn(() => 'blob:foto'),
     revokeObjectURL: vi.fn(),
   })
-  vi.mocked(RecoleccionesService.list).mockResolvedValue({
+  vi.mocked(OrigenesService.listar).mockResolvedValue({
     data: [{
-      id: 3,
+      recoleccion_id: '3',
       codigo_trazabilidad: 'REC-3',
-      nombre_comercial: 'Algarrobo',
+      nombre_comercial_snapshot: 'Algarrobo',
       tipo_material: 'SEMILLA',
       unidad_canonica: 'G',
       saldo_actual: 5,
@@ -47,7 +48,8 @@ beforeEach(() => {
 })
 
 async function prepareForm() {
-  const { container } = render(<MemoryRouter><ViveroNewScreen /></MemoryRouter>)
+  const view = render(<MemoryRouter><ViveroNewScreen /></MemoryRouter>)
+  const { container } = view
   fireEvent.change(screen.getByRole('combobox'), { target: { value: '7' } })
   await waitFor(() => expect(screen.getByRole('radio')).toBeTruthy())
   fireEvent.click(screen.getByRole('radio'))
@@ -57,6 +59,7 @@ async function prepareForm() {
   fireEvent.change(container.querySelector('input[type="file"]') as HTMLInputElement, {
     target: { files: [new File(['foto'], 'inicio.jpg', { type: 'image/jpeg' })] },
   })
+  return view
 }
 
 describe('INICIO de Vivero', () => {
@@ -74,6 +77,18 @@ describe('INICIO de Vivero', () => {
     expect(LotesViveroService.createLote).not.toHaveBeenCalled()
   })
 
+  it('una carga tardía tras cambiar de cuenta no crea un lote ni reutiliza sus fotos', async () => {
+    let resolve!: (value: Awaited<ReturnType<typeof LotesViveroService.uploadEvidenciasPendientes>>) => void
+    vi.mocked(LotesViveroService.uploadEvidenciasPendientes).mockReturnValueOnce(new Promise(done => { resolve = done }))
+    const view = await prepareForm()
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar inicio de lote' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Crear lote e iniciar' }))
+    await waitFor(() => expect(LotesViveroService.uploadEvidenciasPendientes).toHaveBeenCalledTimes(1))
+    view.unmount(); localStorage.setItem('authToken', 'synthetic-another-account')
+    await act(async () => resolve({ success: true, data: [], evidencia_ids: [12] }))
+    expect(LotesViveroService.createLote).not.toHaveBeenCalled()
+  })
+
   it('doble confirmación crea un solo lote', async () => {
     await prepareForm()
     fireEvent.click(screen.getByRole('button', { name: 'Registrar inicio de lote' }))
@@ -83,5 +98,8 @@ describe('INICIO de Vivero', () => {
 
     await waitFor(() => expect(LotesViveroService.createLote).toHaveBeenCalledTimes(1))
     expect(LotesViveroService.uploadEvidenciasPendientes).toHaveBeenCalledTimes(1)
+    expect(vi.mocked(LotesViveroService.uploadEvidenciasPendientes).mock.calls[0][0].vivero_id).toBe('7')
+    expect(vi.mocked(LotesViveroService.createLote).mock.calls[0][0]).toMatchObject({ vivero_id: '7', recoleccion_id: '3' })
+    expect(OrigenesService.listar).toHaveBeenCalledWith('7', '7', 1, expect.any(AbortSignal))
   })
 })

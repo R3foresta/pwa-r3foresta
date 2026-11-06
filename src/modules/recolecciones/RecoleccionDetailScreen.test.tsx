@@ -1,3 +1,4 @@
+import { m1Fixture } from '../accesos/test-fixtures'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
@@ -6,6 +7,7 @@ import { RecoleccionesService, RecoleccionRequestError, type Recoleccion } from 
 import RecoleccionDetailScreen from './RecoleccionDetailScreen'
 
 const auth = vi.hoisted(() => ({ user: { id: '7', rol: 'GENERAL' } as { id: string; rol: string } | null }))
+vi.mock('../accesos/capabilitiesContext', () => ({ useOperationalAccess: () => ({ m1: { status: 'ready', data: m1Fixture({ origen: auth.user?.rol === 'ADMIN' ? 'ADMIN' : 'EXPLICITO', acceso_efectivo: auth.user?.rol !== 'VOLUNTARIO', capacidades: { crear: true, mantener_propias: auth.user?.rol !== 'VOLUNTARIO', confirmar_propias: false, desechar: false } }).data }, m2: { status: 'ready', data: null } }) }))
 vi.mock('../../contexts/AuthContext', () => ({ useAuth: () => ({ user: auth.user }) }))
 
 const draft: Recoleccion = {

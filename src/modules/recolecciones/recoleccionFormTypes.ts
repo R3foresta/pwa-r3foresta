@@ -54,7 +54,7 @@ export interface RecoleccionFormData {
   // Se llenan durante el proceso y se envían al crear la recolección
   // ============================================================================
   metodo_id?: number;              // ID del método de recolección seleccionado
-  vivero_id?: number;              // ID del vivero de almacenamiento
+  vivero_id?: number | string;              // ID del vivero de almacenamiento
   planta_id?: number;              // ID de la planta (si no es especie nueva)
   nombre_cientifico?: string;      // Nombre científico de la planta
   nombre_comercial?: string;       // Nombre común/comercial de la planta

@@ -1,3 +1,5 @@
+import { useOperationalAccess } from '../accesos/capabilitiesContext'
+import { hasViveroCapability } from '../accesos/accessPolicy'
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
@@ -20,7 +22,10 @@ function HomeScreen() {
 
 function InternalHomeScreen() {
   const navigate = useNavigate()
-  const { user, isProfileComplete } = useAuth()
+  const { user, isProfileComplete, login } = useAuth()
+  const { m1, m2 } = useOperationalAccess()
+  const canM1 = m1.status === 'ready' && Boolean(m1.data?.capacidades.mantener_propias) || m2.status === 'ready' && hasViveroCapability(m2.data, 'revisar_documental')
+  const canM2 = m2.status === 'ready' && hasViveroCapability(m2.data, 'operar')
   const isAdmin = (user?.rol ?? '').toUpperCase() === 'ADMIN'
   const { items: stockItems, loading: stockLoading, error: stockError } =
     useRecoleccionStock(isAdmin)
@@ -163,6 +168,8 @@ function InternalHomeScreen() {
         </div>
       </section>
 
+      {[m1, m2].some(access => access.status === 'loading') && <p role="status" className="mt-4 text-sm">Consultando accesos de Recolección y Vivero…</p>}
+      {[m1, m2].map((access, index) => access.status === 'error' || access.status === 'sessionExpired' ? <div key={index} className="mt-4 rounded-2xl bg-white p-4 text-sm"><p role="alert">{access.error}</p><button className="min-h-11 font-semibold underline" onClick={() => void (access.status === 'sessionExpired' ? login() : access.refresh())}>{access.status === 'sessionExpired' ? 'Recuperar sesión con passkey' : `Reintentar accesos de ${index === 0 ? 'Recolección' : 'Vivero'}`}</button></div> : null)}
       <RegistroParticipanteEntry />
       <GestionAccesosEntry />
       <UsuariosEntry />
@@ -232,7 +239,7 @@ function InternalHomeScreen() {
           </button>
         </div>
         <div className="mt-3 grid grid-cols-2 gap-4">
-          {sections.map((section) => (
+          {sections.filter(section => section.target !== 'collections' || canM1).filter(section => section.target !== 'vivero' || canM2).map((section) => (
             <button
               key={section.label}
               type="button"

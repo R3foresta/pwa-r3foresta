@@ -6,7 +6,7 @@ import { usePwaInstall } from '../contexts/PwaInstallContext'
 import { useAuth } from '../contexts/AuthContext'
 import { hasInternalAppAccess } from '../utils/appAccess'
 import { useParticipacionCapabilities } from '../modules/participacion/hooks/useParticipacionCapabilities'
-import { useHasPendingRoleCommand } from '../modules/usuarios/hooks/useHasPendingRoleCommand'
+import { useHasPendingUserCommand } from '../modules/usuarios/hooks/useHasPendingUserCommand'
 
 type DrawerItem = {
   label: string
@@ -38,13 +38,13 @@ function MenuLateral({ isOpen, onClose }: Props) {
   const navigate = useNavigate()
   const { user } = useAuth()
   const capabilities = useParticipacionCapabilities()
-  const hasPendingRole = useHasPendingRoleCommand(user?.id ?? null)
+  const hasPendingRole = useHasPendingUserCommand(user?.id ?? null)
   const canAssignRoles = capabilities.status === 'ready' && capabilities.data?.data.actor?.usuario_id === user?.id && capabilities.data?.data.actor?.rol_global === 'ADMIN' && capabilities.data?.data.capacidades_globales?.asignar_roles === true
   const items: DrawerItem[] = [
     { label: 'Impacto público', path: '/impacto', icon: 'map' },
     { label: 'Mis registros', path: '/app/participacion/mis-registros', icon: 'leaf' },
     ...(hasInternalAppAccess(user?.rol) ? ITEMS : []),
-    ...(canAssignRoles || hasPendingRole ? [{ label: hasPendingRole ? 'Recuperar cambio de rol' : 'Usuarios y permisos', path: '/app/usuarios', icon: 'shield' as const }] : []),
+    ...(canAssignRoles || hasPendingRole ? [{ label: hasPendingRole ? 'Recuperar permisos' : 'Usuarios y permisos', path: '/app/usuarios', icon: 'shield' as const }] : []),
   ]
   const {
     canInstall,

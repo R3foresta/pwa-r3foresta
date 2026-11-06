@@ -1,3 +1,4 @@
+import { exactId } from '../../accesos/accessPolicy'
 import type { EvidenciaDto, LoteViveroDetalle, LoteViveroItem } from '../types/contracts'
 import type { ViveroLotCardData, ViveroLotDetailView } from '../types/view-models'
 import type { TimelineEventDto, TipoEventoVivero } from '../types/contracts'
@@ -109,6 +110,7 @@ export function mapLoteToDetailView(lot: LoteViveroItem): ViveroLotDetailView {
 
   return {
     id: lot.id,
+    viveroId: exactId(lot.vivero_id),
     codigo: lot.codigo_trazabilidad || `VIV-${lot.id}`,
     estadoLote: lot.estado_lote,
     subetapaActual: lot.subetapa_actual ?? null,

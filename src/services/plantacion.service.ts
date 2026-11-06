@@ -1,3 +1,4 @@
+import { exactId } from '../modules/accesos/accessPolicy'
 import {
   activarSubcampaniaApi,
   cancelarSubcampaniaApi,
@@ -509,19 +510,19 @@ export class PlantacionService {
     return { ...payload.data, poligono: payload.data.poligono ?? payload.data.poligono_geojson ?? null }
   }
 
-  static async getSubcampaniaEquipo(
-    subcampaniaId: number,
-    authId?: string,
-  ): Promise<EquipoMember[]> {
-    if (!Number.isFinite(subcampaniaId) || subcampaniaId <= 0) {
-      throw new Error('ID de subcampaña inválido.')
-    }
-    const response = await getSubcampaniaEquipoApi(subcampaniaId, authId)
-    const payload = await parseJsonResponse<ApiEnvelope<EquipoMember[]>>(
-      response,
-      'Error al cargar el equipo de la subcampaña.',
-    )
-    return Array.isArray(payload.data) ? payload.data : []
+  static async getSubcampaniaEquipoExacto(subcampaniaId: number | string, authId?: string): Promise<(Omit<EquipoMember, 'usuario_id'> & { usuario_id: string })[]> {
+    const response = await getSubcampaniaEquipoApi(exactId(subcampaniaId), authId)
+    const payload = await parseJsonResponse<ApiEnvelope<EquipoMember[]>>(response, 'Error al cargar el equipo de la subcampaña.')
+    return (payload.data ?? []).map(member => ({ ...member, usuario_id: exactId(member.usuario_id) }))
+  }
+
+  static async getSubcampaniaEquipo(subcampaniaId: number, authId?: string): Promise<EquipoMember[]> {
+    const equipo = await this.getSubcampaniaEquipoExacto(subcampaniaId, authId)
+    // Adaptador del editor M3 legado; nunca redondear una cuenta que no representa.
+    return equipo.map(member => {
+      if (BigInt(member.usuario_id) > BigInt(Number.MAX_SAFE_INTEGER)) throw new Error('El editor de equipo legado no admite este ID de cuenta. La lectura logística exacta permanece disponible.')
+      return { ...member, usuario_id: Number(member.usuario_id) }
+    })
   }
 
   static async setSubcampaniaEquipo(

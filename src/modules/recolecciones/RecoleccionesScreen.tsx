@@ -1,5 +1,7 @@
+import { useOperationalAccess } from '../accesos/capabilitiesContext'
+import { hasViveroCapability } from '../accesos/accessPolicy'
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 import Icon from '../../components/Icon'
 import { Button, Card, Chip, SearchBar } from '../../components/ui'
 import {
@@ -7,15 +9,24 @@ import {
   type Recoleccion,
   type TipoMaterialCanonico,
 } from '../../services/recolecciones.service'
-import { useAuth } from '../../contexts/AuthContext'
 import RecoleccionCard from './RecoleccionCard'
 import { resolveEstadoOperativo } from './recoleccionStatus'
 
 type MaterialFilter = 'all' | TipoMaterialCanonico
 
 function RecoleccionesScreen() {
+  const { m1, m2 } = useOperationalAccess()
+  if (m1.status === 'ready' && m1.data?.capacidades.mantener_propias) return <RecoleccionesPropiasScreen />
+  // Esperar M1 evita montar su lista antes de conocer el acceso de esta cuenta.
+  if (m1.status === 'loading') return <p role="status" className="p-6 text-center">Consultando tu acceso de Recolección…</p>
+  if (m2.status === 'ready' && hasViveroCapability(m2.data, 'revisar_documental')) return <Navigate to="/app/collections/validate" replace />
+  // El guard de ruta presenta el error o la falta de acceso cuando tampoco hay revisión M2.
+  return null
+}
+
+function RecoleccionesPropiasScreen() {
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { m1, m2 } = useOperationalAccess()
   const [items, setItems] = useState<Recoleccion[]>([])
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<MaterialFilter>('all')
@@ -23,8 +34,7 @@ function RecoleccionesScreen() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const userRol = (user?.rol ?? '').toUpperCase()
-  const canValidate = userRol === 'ADMIN' || userRol === 'VALIDADOR'
+  const canValidate = m1.status === 'ready' && Boolean(m1.data?.capacidades.mantener_propias) || m2.status === 'ready' && hasViveroCapability(m2.data, 'revisar_documental')
 
   const loadRecolecciones = async (searchValue: string, filterValue: MaterialFilter) => {
     try {
@@ -101,7 +111,7 @@ function RecoleccionesScreen() {
               onClick={() => navigate('/app/collections/validate')}
               className="my-auto ml-2 shrink-0 rounded-full"
             >
-              Validar
+              Pendientes
             </Button>
           )}
         </header>

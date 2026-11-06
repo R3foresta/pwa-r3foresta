@@ -1,3 +1,4 @@
+import { exactId, isExactId } from '../modules/accesos/accessPolicy'
 import type { UbicacionApi, UbicacionCreateInput } from '../types/ubicacion'
 import { mapToCantidadYUnidadCanonica, type UnidadCanonicaRecoleccion } from '../utils/recoleccionUnidad'
 import type { PlantaCatalogo } from '../types/plantas.types';
@@ -32,7 +33,7 @@ export interface MetodoRecoleccionCatalogo {
 }
 
 export interface ViveroCatalogo {
-  id: number
+  id: number | string
   codigo: string
   nombre: string
   ubicacion?: UbicacionApi | null
@@ -93,9 +94,9 @@ export interface Recoleccion {
   tipo_material: string
   especie_nueva: boolean
   observaciones: string | null
-  usuario_id: number
+  usuario_id: number | string
   ubicacion_id?: number | null
-  vivero_id: number | null
+  vivero_id: number | string | null
   metodo_id: number
   planta_id: number | null
   created_at: string
@@ -133,7 +134,7 @@ export interface RecoleccionFilters {
   search?: string
   tipo_material?: TipoMaterialCanonico
   planta_id?: number
-  vivero_id?: number
+  vivero_id?: number | string
   fecha_inicio?: string
   fecha_fin?: string
 }
@@ -169,7 +170,7 @@ export interface CreateRecoleccionDto {
   tipo_material: TipoMaterialCanonico
   planta_id: number
   metodo_id: number
-  vivero_id: number
+  vivero_id: number | string
   observaciones?: string
   ubicacion: UbicacionCreateInput & {
     fuente?: FuenteUbicacionCanonica
@@ -191,7 +192,7 @@ export interface UpdateRecoleccionDraftDto {
   unidad_canonica?: UnidadCanonicaRecoleccion
   tipo_material?: TipoMaterialCanonico
   observaciones?: string
-  vivero_id?: number
+  vivero_id?: number | string
   metodo_id?: number
   planta_id?: number
   ubicacion?: {
@@ -624,10 +625,10 @@ export class RecoleccionesService {
     const payload = await this.parseJsonResponse<ApiEnvelope<ViveroCatalogo[]> | ViveroCatalogo[]>(response)
 
     if (Array.isArray(payload)) {
-      return payload
+      return payload.map(item => ({ ...item, id: exactId(item.id) }))
     }
 
-    return Array.isArray(payload.data) ? payload.data : []
+    return Array.isArray(payload.data) ? payload.data.map(item => ({ ...item, id: exactId(item.id) })) : []
   }
 
   // ─── Helper con rol de usuario ─────────────────────────────────────────────
@@ -773,10 +774,10 @@ export class RecoleccionesService {
   }
 
   static async registrarDesecho(
-    id: number,
+    id: number | string,
     data: RegistrarDesechoDto,
   ): Promise<{ success: boolean; data: RegistroDesechoResult }> {
-    if (!Number.isFinite(id) || id <= 0) {
+    if (!isExactId(id)) {
       throw new Error('ID de recolección inválido.')
     }
 
@@ -908,7 +909,7 @@ export class RecoleccionesService {
     if (!Number.isFinite(data.metodo_id) || data.metodo_id <= 0) {
       throw new Error('Debes seleccionar un método de recolección válido.')
     }
-    if (!Number.isFinite(data.vivero_id) || data.vivero_id <= 0) {
+    if (!isExactId(data.vivero_id)) {
       throw new Error('Debes seleccionar un vivero válido.')
     }
 

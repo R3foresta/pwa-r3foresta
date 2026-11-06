@@ -1,3 +1,5 @@
+import { useOperationalAccess } from '../../accesos/capabilitiesContext'
+import { canAtVivero } from '../../accesos/accessPolicy'
 import { useNavigate } from 'react-router-dom'
 import Icon from '../../../components/Icon'
 import type { IconName } from '../../../components/Icon'
@@ -10,6 +12,8 @@ interface QuickActionsProps {
 
 export default function QuickActions({ detail, onJumpEvidencia }: QuickActionsProps) {
   const navigate = useNavigate()
+  const { m2 } = useOperationalAccess()
+  const canOperate = m2.status === 'ready' && canAtVivero(m2.data, detail.viveroId, 'operar')
   const closed = detail.estadoLote === 'FINALIZADO'
   const yaEmbolsado = detail.plantasVivasIniciales !== null;
   const puedeDescartarPreEmbolsado = detail.puedeDescartarPreEmbolsado
@@ -90,7 +94,7 @@ export default function QuickActions({ detail, onJumpEvidencia }: QuickActionsPr
           <button
             key={a.key}
             type="button"
-            disabled={a.disabled}
+            disabled={a.disabled || !canOperate}
             onClick={a.onClick}
             className={`flex flex-col items-center justify-center gap-1.5 rounded-2xl bg-white px-2 py-3 shadow-soft ring-1 ring-black/5 transition-all active:scale-[0.97] ${
               a.disabled 

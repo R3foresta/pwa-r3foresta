@@ -1,3 +1,5 @@
+import { useOperationalAccess } from '../../accesos/capabilitiesContext'
+import { canMaintain } from '../../accesos/accessPolicy'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ConfirmDialog from '../../../components/ConfirmDialog'
@@ -31,10 +33,12 @@ export default function RecoleccionDeleteAction({ recoleccion, disabled, onLocke
     }
   }, [onLockedChange])
 
+  const { m1 } = useOperationalAccess()
+  const hasAccess = m1.status === 'ready' && canMaintain(m1.data, user?.id, recoleccion.usuario_id)
   const role = String(user?.rol ?? '').toUpperCase()
   const isOwner = user?.id != null && String(user.id) === String(recoleccion.usuario_id)
   // Exigir el estado explícito del servidor: no inferir BORRADOR si falta.
-  const canDelete = recoleccion.estado_registro === 'BORRADOR' && (
+  const canDelete = hasAccess && recoleccion.estado_registro === 'BORRADOR' && (
     role === 'ADMIN' || (isOwner && (role === 'GENERAL' || role === 'VALIDADOR'))
   )
 

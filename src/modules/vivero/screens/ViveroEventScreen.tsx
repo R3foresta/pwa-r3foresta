@@ -1,3 +1,5 @@
+import { useOperationalAccess } from '../../accesos/capabilitiesContext'
+import { canAtVivero } from '../../accesos/accessPolicy'
 import { useEffect, useMemo, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import Icon from '../../../components/Icon'
@@ -31,6 +33,7 @@ function getLotEspecie(lot: LoteViveroDetalle): string {
 function ViveroEventScreen() {
   const { id, tipo } = useParams<{ id: string; tipo: string }>()
   const navigate = useNavigate()
+  const { m2 } = useOperationalAccess()
 
   const loteId = Number(id)
   const isValidId = Number.isFinite(loteId) && loteId > 0
@@ -188,6 +191,8 @@ function ViveroEventScreen() {
       </div>
     )
   }
+
+  if (m2.status !== 'ready' || !canAtVivero(m2.data, lote.vivero_id, 'operar')) return <p role="alert" className="p-6 text-center">No tienes permiso para operar este vivero.</p>
 
   // Si el tab actual no es válido, redirigir al primero disponible.
   // Si no hay ninguno (lote finalizado, sin saldo, tipo desconocido), volvemos

@@ -1,3 +1,4 @@
+import { OperationalAccessProvider } from '../modules/accesos/OperationalAccessProvider'
 import { Link, Outlet } from 'react-router-dom'
 import Icon from '../components/Icon'
 import { useAuth } from '../contexts/AuthContext'
@@ -13,12 +14,12 @@ function AppLayout({ publicMode = false }: { publicMode?: boolean }) {
     <Outlet /><BottomNav publicMode />
   </div>
   return (
-    <ParticipacionCapabilitiesProvider>
+    <OperationalAccessProvider><ParticipacionCapabilitiesProvider>
       <div className="min-h-screen bg-gradient-to-b from-brand-50 to-brand-50 text-brand-700">
         <Outlet />
         <BottomNav />
       </div>
-    </ParticipacionCapabilitiesProvider>
+    </ParticipacionCapabilitiesProvider></OperationalAccessProvider>
   )
 }
 

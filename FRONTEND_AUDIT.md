@@ -1,6 +1,6 @@
 # Auditoría y pendientes del frontend
 
-Corte: 4 de noviembre de 2026. Lista única de deuda frontend. No sustituye el [tablero global](../r3foresta-docs/specs/plantacion/participacion-aliada/implementacion/README.md) ni acredita estado del backend desplegado.
+Corte: 6 de noviembre de 2026. Lista única de deuda frontend. No sustituye el [tablero global](../r3foresta-docs/specs/plantacion/participacion-aliada/implementacion/README.md) ni acredita estado del backend desplegado.
 
 El [histórico de auditoría](docs/archivo/FRONTEND_AUDIT_2026-10-15.md) conserva diagnósticos, cierres y resultados anteriores. Se retiraron de esta entrada los checklists repetidos y diagnósticos de módulos que ya no describían su implementación. Un hallazgo abierto se mantiene pendiente hasta verificar su cierre; este ajuste documental no lo resuelve por sí solo.
 
@@ -10,6 +10,7 @@ Entrega INT06 publicada en PWA `62f55dc`: 32 suites/445 tests, lint y build/Type
 
 | Prioridad | ID | Estado | Qué falta |
 | --- | --- | --- | --- |
+| Alta | AUD-034 | IMPLEMENTADO y REVISADO local · corte externo pendiente | Administración M1/M2, navegación por capacidades y compatibilidad T1/T2 verificadas con fixtures; acreditar el corte externo. |
 | Media | AUD-033 | PENDIENTE · navegación móvil compartida | En 320 px, la barra interna recorta el acceso Mapa. Ajustar distribución sin perder controles/foco y verificar todos los perfiles. |
 | Media | AUD-032 | IMPLEMENTADO local · aceptación visual final pendiente | Historial ADMIN de semillas validadas por especie integrado y probado; repetir navegador tras últimos ajustes y validar dispositivo físico. |
 | Media | AUD-031 | CORREGIDO local · QA de navegador pendiente | Previews de Recolección conservadas entre pasos lazy bajo StrictMode; verificar decodificación real de ambas fotos y liberación al salir en navegador. |
@@ -36,6 +37,14 @@ Entrega INT06 publicada en PWA `62f55dc`: 32 suites/445 tests, lint y build/Type
 El orden de ejecución entre repositorios se decide en el tablero oficial; esta tabla prioriza riesgos de frontend, no introduce nuevas dependencias de producto.
 
 ## Pendientes y criterio de cierre
+
+### AUD-034 — Corte coordinado de accesos M1/M2
+
+6 de noviembre: corregidos los hallazgos coordinadores P2 (entrada y Volver del revisor M2 sin M1) y P3 (consulta única tras DESECHO incierto). La fixture exige M1 en la lista propia y se prueba el recorrido real de Inicio/barra, carga/error y nueva lectura sin reenvío físico. [Nuevo informe y corte conservando el anterior](docs/QA_T3_CORRECCION_2026-11-06.md). [Comprobación coordinadora cerrada](../Backend-r3foresta/docs/evidencia/t3-revision-coordinadora-2026-11-06.json); corte externo pendiente.
+
+T3 amplía Usuarios y permisos y aplica capacidades por operación/vivero en la PWA. [Informe y evidencia](docs/QA_T3_ACCESOS.md). Backend local añade sólo proyecciones a texto de catálogo, vivero del lote y actor logístico para evitar redondear BIGINT; 092–095 e historia preservadas. Las pruebas locales distinguen HTTP simulado, unitarios y contratos; no acreditan JWT/RPC/Storage o despliegue del destino. La edición de equipo M3 legada conserva su contrato numérico seguro; la comprobación logística T3 usa una lectura exacta independiente, sin convertir una cuenta grande al formato legado.
+
+Revisión coordinadora cerrada; faltan aceptación en dispositivo y cotejo/corte cliente-servidor del entorno autorizado. No conceder accesos reales como fixtures ni presentar revisión documental como recepción física. WebAuthn/Storage externos y la idempotencia física conservan AUD-021/AUD-007; T4/T5 quedan separados.
 
 ### AUD-032 — Historial administrativo de semillas por especie
 

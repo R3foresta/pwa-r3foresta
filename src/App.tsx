@@ -1,3 +1,4 @@
+import { OperationalAccessGate } from './modules/accesos/OperationalAccessGate'
 import { lazy, Suspense, useSyncExternalStore } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import AuthLayout from './layouts/AuthLayout'
@@ -58,6 +59,7 @@ const RecoleccionFormUbicacionScreen = lazy(
 const RecoleccionFormResumenScreen = lazy(
   () => import('./modules/recolecciones/RecoleccionFormResumenScreen'),
 )
+const ViveroMaterialScreen = lazy(() => import('./modules/vivero/screens/ViveroMaterialScreen'))
 const ViveroScreen = lazy(() => import('./modules/vivero/screens/ViveroScreen'))
 const ViveroDetailScreen = lazy(
   () => import('./modules/vivero/screens/ViveroDetailScreen'),
@@ -189,7 +191,7 @@ function App() {
             <Route path="participacion/mis-registros" element={<MisRegistrosScreen />} />
             <Route path="participacion/correcciones" element={<CorreccionesScreen />} />
             <Route path="participacion/correcciones/:registroId" element={<CorreccionesScreen />} />
-            <Route path="collections">
+            <Route path="collections" element={<OperationalAccessGate domain="M1" />}>
               <Route index element={<RecoleccionesScreen />} />
               <Route path="stock" element={<RecoleccionStockScreen />} />
               <Route path="stock/:plantaId" element={<RecoleccionStockHistorialScreen />} />
@@ -202,8 +204,9 @@ function App() {
               <Route path=":id" element={<RecoleccionDetailScreen />} />
               <Route path=":id/evidencias/new" element={<RecoleccionNuevaEvidenciaScreen />} />
             </Route>
-            <Route path="vivero">
+            <Route path="vivero" element={<OperationalAccessGate domain="M2" />}>
               <Route index element={<ViveroScreen />} />
+              <Route path="material" element={<ViveroMaterialScreen />} />
               <Route path="new" element={<ViveroNewScreen />} />
               <Route path=":id" element={<ViveroDetailScreen />} />
               <Route path=":id/event" element={<Navigate to="embolsado" replace />} />

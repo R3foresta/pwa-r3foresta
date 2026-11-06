@@ -1,3 +1,6 @@
+import { useOperationalAccess } from '../accesos/capabilitiesContext'
+import { canReview, hasViveroCapability } from '../accesos/accessPolicy'
+import ConfirmDialog from '../../components/ConfirmDialog'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Icon from '../../components/Icon'
@@ -83,9 +86,10 @@ interface PendingCardProps {
   onApprove: () => void
   onReject: () => void
   isActioning: boolean
+  canReviewItem: boolean
 }
 
-function PendingCard({ item, onApprove, onReject, isActioning }: PendingCardProps) {
+function PendingCard({ item, onApprove, onReject, isActioning, canReviewItem }: PendingCardProps) {
   const [expanded, setExpanded] = useState(false)
 
   const fechaFormateada = item.fecha
@@ -333,7 +337,7 @@ function PendingCard({ item, onApprove, onReject, isActioning }: PendingCardProp
           variant="danger"
           size="sm"
           onClick={onReject}
-          disabled={isActioning}
+          disabled={isActioning || !canReviewItem || item.can_reject === false}
           className="flex-1 rounded-xl"
         >
           Rechazar
@@ -342,6 +346,7 @@ function PendingCard({ item, onApprove, onReject, isActioning }: PendingCardProp
           size="sm"
           onClick={onApprove}
           loading={isActioning}
+          disabled={!canReviewItem || item.can_approve === false}
           className="flex-1 rounded-xl"
         >
           {isActioning ? 'Validando...' : 'Aprobar'}
@@ -363,8 +368,11 @@ function RecoleccionesValidacionScreen() {
   const [rejectTarget, setRejectTarget] = useState<Recoleccion | null>(null)
   const [rejectLoading, setRejectLoading] = useState(false)
   const [toastMsg, setToastMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null)
-  const userRol = (user?.rol ?? '').toUpperCase()
-  const canValidate = userRol === 'ADMIN' || userRol === 'VALIDADOR'
+  const { m1, m2 } = useOperationalAccess()
+  const canListOwn = m1.status === 'ready' && Boolean(m1.data?.capacidades.mantener_propias)
+  const canValidate = canListOwn || m2.status === 'ready' && hasViveroCapability(m2.data, 'revisar_documental')
+  const [approveTarget, setApproveTarget] = useState<Recoleccion | null>(null)
+  const canReviewItem = (item: Recoleccion) => m2.status === 'ready' && canReview(m2.data, user?.id, item.usuario_id, item.vivero_id)
 
   const showToast = (text: string, type: 'success' | 'error') => {
     setToastMsg({ text, type })
@@ -402,10 +410,12 @@ function RecoleccionesValidacionScreen() {
   }
 
   const handleApprove = async (item: Recoleccion) => {
+    if (!canReviewItem(item) || item.can_approve === false) return
+    setApproveTarget(null)
     setActioningId(item.id)
     try {
       await RecoleccionesService.approve(item.id)
-      showToast(`Recolección ${item.codigo_trazabilidad} aprobada y NFT acuñado.`, 'success')
+      showToast(`Recolección ${item.codigo_trazabilidad} aprobada documentalmente.`, 'success')
       setItems((prev) => prev.filter((r) => r.id !== item.id))
     } catch (e) {
       showToast(e instanceof Error ? e.message : 'Error al aprobar la recolección.', 'error')
@@ -415,7 +425,7 @@ function RecoleccionesValidacionScreen() {
   }
 
   const handleRejectConfirm = async (motivo: string) => {
-    if (!rejectTarget) return
+    if (!rejectTarget || !canReviewItem(rejectTarget) || rejectTarget.can_reject === false) return
     setRejectLoading(true)
     try {
       await RecoleccionesService.reject(rejectTarget.id, motivo)
@@ -443,7 +453,7 @@ function RecoleccionesValidacionScreen() {
           <button
             type="button"
             aria-label="Volver"
-            onClick={() => navigate('/app/collections')}
+            onClick={() => navigate(canListOwn ? '/app/collections' : '/app/home')}
             className="mr-4 my-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
           >
             <Icon name="arrow-left" className="h-5 w-5" />
@@ -458,8 +468,8 @@ function RecoleccionesValidacionScreen() {
           {/* Nota informativa */}
           <div className="rounded-2xl bg-warning-50 px-4 py-3 ring-1 ring-warning-200">
             <p className="text-xs font-semibold text-warning-800">
-              Al aprobar se generará el NFT en blockchain, lo cual puede tardar unos segundos.
-              Al rechazar el recolector podrá corregir y reenviar.
+              La revisión documental verifica el registro y sus evidencias. No acredita recepción física del material.
+              Al rechazar, el recolector podrá corregir y reenviar.
             </p>
           </div>
 
@@ -492,9 +502,10 @@ function RecoleccionesValidacionScreen() {
                 <PendingCard
                   key={item.id}
                   item={item}
-                  onApprove={() => void handleApprove(item)}
+                  onApprove={() => setApproveTarget(item)}
                   onReject={() => setRejectTarget(item)}
                   isActioning={actioningId === item.id}
+                  canReviewItem={canReviewItem(item)}
                 />
               ))}
             </div>
@@ -516,6 +527,9 @@ function RecoleccionesValidacionScreen() {
       </div>
 
       {/* Modal de rechazo */}
+      <ConfirmDialog open={Boolean(approveTarget && canReviewItem(approveTarget))} title="Confirmar revisión documental" confirmLabel="Aprobar recolección" onCancel={() => setApproveTarget(null)} onConfirm={() => { if (approveTarget) void handleApprove(approveTarget) }}>
+        <p className="mt-3 text-sm">Recolección {approveTarget?.codigo_trazabilidad}. Esta aprobación no acredita recepción física en el vivero.</p>
+      </ConfirmDialog>
       {rejectTarget && (
         <RejectModal
           recoleccion={rejectTarget}

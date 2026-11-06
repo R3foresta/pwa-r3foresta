@@ -1,0 +1,2030 @@
+{
+  "estado": "APROBADO",
+  "fecha_local": "2026-11-06",
+  "registrado_en": "2026-11-06T10:35:38.474Z",
+  "entorno": "SINTETICO_LOCAL_T3_HTTP",
+  "versiones": {
+    "node": "v24.19.0",
+    "navegador": "156.0.8078.80",
+    "playwright": "1.64.1"
+  },
+  "pwa": "http://127.0.0.1:5192",
+  "api": "http://127.0.0.1:3342",
+  "checks": [
+    "sin desborde horizontal: cuenta-390",
+    "sin desborde horizontal: cuenta-320",
+    "sin desborde horizontal: cuenta-1280",
+    "cancelar confirmación no escribe",
+    "solo M1 sin cambiar rol ni M2",
+    "M2 concede viveros BIGINT vecinos como asignaciones independientes",
+    "retirar A conserva B, M1 y rol",
+    "solo M2 tras retirar M1",
+    "ningún acceso tras retiros explícitos independientes",
+    "revisión obsoleta produce rechazo y no concede acceso",
+    "sin desborde horizontal: conflicto-1280",
+    "tras 409 se relee y confirma otra intención con otro UUID",
+    "503 y GET202 conservan el mismo UUID e intención",
+    "sin desborde horizontal: resultado-incierto-390",
+    "recuperación propia tras perder ADMIN usa el recibo original sin directorio",
+    "sin desborde horizontal: recuperacion-sin-admin-390",
+    "ADMIN deriva M1 y todos los viveros sin asignaciones",
+    "VOLUNTARIO conserva historia pero no recibe nuevas asignaciones",
+    "cuenta inactiva permite retirar vigencia conservada y bloquea otorgar",
+    "regresión de rol conserva rechazo de último ADMIN",
+    "cambio de cuenta descarta selección y lectura administrativa tardía",
+    "logout retira datos administrativos antes de ofrecer acceso privado",
+    "multipart INICIO conserva vivero BIGINT exacto",
+    "alta INICIO usa origen mínimo y vivero exactos",
+    "solo M2 inicia con origen mínimo sin pedir ficha/fotos M1 ajenas",
+    "DESECHO usa endpoint existente con cantidad observada",
+    "DESECHO refresca el saldo del servidor después del resultado confirmado",
+    "sin desborde horizontal: material-m2-390",
+    "DESECHO usa endpoint existente con cantidad observada",
+    "DESECHO incierto deshabilita la confirmación física",
+    "durante la consulta no se presenta saldo antiguo ni se prepara otro DESECHO",
+    "sin desborde horizontal: material-consulta-pendiente-390",
+    "una consulta correcta basta para preparar otra operación, sin otra consulta ni POST automático",
+    "sin desborde horizontal: material-observado-390",
+    "DESECHO usa endpoint existente con cantidad observada",
+    "DESECHO incierto deshabilita la confirmación física",
+    "fallar la lectura mantiene bloqueado el material y nunca reenvía DESECHO",
+    "el reintento consulta material sin preparar ni repetir la operación física",
+    "tras una lectura fallida, sólo el reintento correcto habilita preparar otro desecho",
+    "sin desborde horizontal: material-recuperado-1280",
+    "URL directa M1 denegada para operario M2 puro",
+    "URL de lote ajeno no monta el formulario ni sube fotos",
+    "la fixture exige M1 para GET de la lista propia del revisor",
+    "entrada de Inicio para revisor sólo M2 usa la cola y nunca pide la lista propia M1",
+    "sin desborde horizontal: revision-desde-inicio-sin-m1-1280",
+    "Volver del revisor sin M1 sale a Inicio sin bucle a su cola",
+    "entrada del menú para revisor sólo M2 tampoco consulta la lista propia prohibida",
+    "sin desborde horizontal: revision-desde-menu-sin-m1-390",
+    "VALIDADOR sin M1 revisa su vivero y nunca aprueba lo propio",
+    "sin desborde horizontal: revision-sin-m1-1280",
+    "con M1 la entrada normal conserva la lista propia",
+    "M1 permite pendientes propios sin aprobación propia",
+    "Volver con M1 conserva el regreso a la lista propia",
+    "sin M2 no se monta alta por URL: cuenta sintética 9",
+    "M3 conserva su entrada independiente de M2",
+    "sin M2 no se monta alta por URL: cuenta sintética 10",
+    "sin M2 no se monta alta por URL: cuenta sintética 11",
+    "Impacto conserva entrada pública sin consultas de capacidades M1/M2",
+    "UUIDs separados por cada intención y dominio",
+    "ninguna llamada de administración agregó actor o rol al payload"
+  ],
+  "commands": [
+    {
+      "actor": "42",
+      "usuario_id": "7",
+      "domain": "M1",
+      "grant": true,
+      "comando_id": "44d3b95c-e49e-4766-9dcc-1791bf6c6fde",
+      "revision_esperada": "0",
+      "motivo": "Operación de QA sintética"
+    },
+    {
+      "actor": "42",
+      "usuario_id": "7",
+      "domain": "M2",
+      "grant": true,
+      "comando_id": "31640018-98ac-4f0e-b880-c0f08e4ebfe6",
+      "revision_esperada": "0",
+      "motivo": "Operación de QA sintética",
+      "vivero_id": "9007199254740992"
+    },
+    {
+      "actor": "42",
+      "usuario_id": "7",
+      "domain": "M2",
+      "grant": true,
+      "comando_id": "6d564c48-ef00-4228-ac47-207e7811de82",
+      "revision_esperada": "1",
+      "motivo": "Operación de QA sintética",
+      "vivero_id": "9007199254740993"
+    },
+    {
+      "actor": "42",
+      "usuario_id": "7",
+      "domain": "M2",
+      "grant": false,
+      "comando_id": "2bc1098d-3490-4aaf-a819-adf0d1a5c15c",
+      "revision_esperada": "2",
+      "motivo": "Operación de QA sintética",
+      "vivero_id": "9007199254740992"
+    },
+    {
+      "actor": "42",
+      "usuario_id": "7",
+      "domain": "M1",
+      "grant": false,
+      "comando_id": "e3c014f5-30a3-4400-a769-17a9b670d1d3",
+      "revision_esperada": "1",
+      "motivo": "Operación de QA sintética"
+    },
+    {
+      "actor": "42",
+      "usuario_id": "7",
+      "domain": "M2",
+      "grant": false,
+      "comando_id": "cd285e7f-a1fc-40d4-8cb2-a3645ce837b4",
+      "revision_esperada": "3",
+      "motivo": "Operación de QA sintética",
+      "vivero_id": "9007199254740993"
+    },
+    {
+      "actor": "42",
+      "usuario_id": "7",
+      "domain": "M2",
+      "grant": true,
+      "comando_id": "a7c448f5-aa10-4e07-9db7-6035d2bb1457",
+      "revision_esperada": "4",
+      "motivo": "Operación de QA sintética",
+      "vivero_id": "9007199254740992"
+    },
+    {
+      "actor": "42",
+      "usuario_id": "7",
+      "domain": "M2",
+      "grant": true,
+      "comando_id": "bd94025a-b7cb-4b9c-a8b3-9995da2300b5",
+      "revision_esperada": "5",
+      "motivo": "Operación de QA sintética",
+      "vivero_id": "9007199254740993"
+    },
+    {
+      "actor": "42",
+      "usuario_id": "7",
+      "domain": "M2",
+      "grant": true,
+      "comando_id": "4405adf0-dc6b-45a5-aa71-c5223943f24b",
+      "revision_esperada": "6",
+      "motivo": "Operación de QA sintética",
+      "vivero_id": "9007199254740992"
+    }
+  ],
+  "network": [
+    {
+      "actor": "42",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/7/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/7/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/7/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/7/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/7/acceso-recoleccion/otorgamientos",
+      "method": "POST"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/7/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/7/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/7/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/7/acceso-viveros/otorgamientos",
+      "method": "POST"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/7/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/7/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/7/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/7/acceso-viveros/otorgamientos",
+      "method": "POST"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/7/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/7/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/7/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/7/acceso-viveros/retiros",
+      "method": "POST"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/7/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/7/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/7/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/7/acceso-recoleccion/retiros",
+      "method": "POST"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/7/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/7/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/7/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/7/acceso-viveros/retiros",
+      "method": "POST"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/7/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/7/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/7/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/7/acceso-viveros/otorgamientos",
+      "method": "POST"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/7/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/7/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/7/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/7/acceso-viveros/otorgamientos",
+      "method": "POST"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/7/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/7/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/7/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/7/acceso-viveros/otorgamientos",
+      "method": "POST"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/vivero/accesos/comandos/4405adf0-dc6b-45a5-aa71-c5223943f24b",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/vivero/accesos/comandos/4405adf0-dc6b-45a5-aa71-c5223943f24b",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/42/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/42/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/11/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/11/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/12/autoridad",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/12/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/12/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/42/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/42/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/42/autoridad",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/42/roles",
+      "method": "POST"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/7/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "42",
+      "path": "/api/v1/usuarios/7/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "10",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "10",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "10",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "10",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "10",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "10",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/vivero/origenes",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/lotes-vivero/evidencias-pendientes",
+      "method": "POST"
+    },
+    {
+      "actor": "7",
+      "path": "/api/lotes-vivero",
+      "method": "POST"
+    },
+    {
+      "actor": "7",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/vivero/origenes",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/recolecciones/3/desecho",
+      "method": "POST"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/vivero/origenes",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/recolecciones/3/desecho",
+      "method": "POST"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/vivero/origenes",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/recolecciones/3/desecho",
+      "method": "POST"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/vivero/origenes",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/vivero/origenes",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/lotes-vivero/99",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/lotes-vivero/99",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/lotes-vivero/99",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/lotes-vivero/99",
+      "method": "GET"
+    },
+    {
+      "actor": "8",
+      "path": "/api/recolecciones",
+      "method": "GET"
+    },
+    {
+      "actor": "8",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "8",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "8",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "8",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "8",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "8",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "8",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "8",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "8",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "8",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "8",
+      "path": "/api/recolecciones/pending-validation",
+      "method": "GET"
+    },
+    {
+      "actor": "8",
+      "path": "/api/recolecciones/pending-validation",
+      "method": "GET"
+    },
+    {
+      "actor": "8",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "8",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "8",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "8",
+      "path": "/api/recolecciones/pending-validation",
+      "method": "GET"
+    },
+    {
+      "actor": "8",
+      "path": "/api/recolecciones/pending-validation",
+      "method": "GET"
+    },
+    {
+      "actor": "8",
+      "path": "/api/recolecciones/pending-validation",
+      "method": "GET"
+    },
+    {
+      "actor": "8",
+      "path": "/api/recolecciones/pending-validation",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/recolecciones/pending-validation",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/recolecciones/pending-validation",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/recolecciones/pending-validation",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/recolecciones/pending-validation",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/recolecciones",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/campanias",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/campanias/resumen",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/campanias",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/campanias/resumen",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/subcampanias",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/subcampanias",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "10",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "10",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "10",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "10",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "10",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "10",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "10",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "11",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "11",
+      "path": "/api/users/profile",
+      "method": "GET"
+    }
+  ],
+  "screenshots": [
+    "cuenta-390.png",
+    "cuenta-320.png",
+    "cuenta-1280.png",
+    "conflicto-1280.png",
+    "resultado-incierto-390.png",
+    "recuperacion-sin-admin-390.png",
+    "material-m2-390.png",
+    "material-consulta-pendiente-390.png",
+    "material-observado-390.png",
+    "material-recuperado-1280.png",
+    "revision-desde-inicio-sin-m1-1280.png",
+    "revision-desde-menu-sin-m1-390.png",
+    "revision-sin-m1-1280.png"
+  ],
+  "medidas_ui": [
+    {
+      "name": "cuenta-390",
+      "viewport": 390,
+      "document": 390
+    },
+    {
+      "name": "cuenta-320",
+      "viewport": 320,
+      "document": 320
+    },
+    {
+      "name": "cuenta-1280",
+      "viewport": 1280,
+      "document": 1280
+    },
+    {
+      "name": "conflicto-1280",
+      "viewport": 1280,
+      "document": 1280
+    },
+    {
+      "name": "resultado-incierto-390",
+      "viewport": 390,
+      "document": 390
+    },
+    {
+      "name": "recuperacion-sin-admin-390",
+      "viewport": 390,
+      "document": 390
+    },
+    {
+      "name": "material-m2-390",
+      "viewport": 390,
+      "document": 390
+    },
+    {
+      "name": "material-consulta-pendiente-390",
+      "viewport": 390,
+      "document": 390
+    },
+    {
+      "name": "material-observado-390",
+      "viewport": 390,
+      "document": 390
+    },
+    {
+      "name": "material-recuperado-1280",
+      "viewport": 1280,
+      "document": 1280
+    },
+    {
+      "name": "revision-desde-inicio-sin-m1-1280",
+      "viewport": 1280,
+      "document": 1280
+    },
+    {
+      "name": "revision-desde-menu-sin-m1-390",
+      "viewport": 390,
+      "document": 390
+    },
+    {
+      "name": "revision-sin-m1-1280",
+      "viewport": 1280,
+      "document": 1280
+    }
+  ],
+  "errors": [],
+  "limites": [
+    "API HTTP de esta fixture simula perfiles/capacidades/comandos y material. No prueba JWT/RPC/SQL reales ni WebAuthn.",
+    "Sin datos de personas, secretos, SQL remoto, push, despliegue o servicios externos. T4/T5 fuera de alcance.",
+    "El navegador bloquea hosts externos; mapas y Storage reales no acreditados."
+  ]
+}

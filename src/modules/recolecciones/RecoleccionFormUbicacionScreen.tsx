@@ -1,3 +1,4 @@
+import { sameId, exactId } from '../accesos/accessPolicy'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { obtenerComunidad } from '../../api/comunidades.api'
@@ -30,7 +31,7 @@ function RecoleccionFormUbicacionScreen() {
   const [submitting, setSubmitting] = useState(false)
   const [didHydrateSavedComunidad, setDidHydrateSavedComunidad] = useState(false)
   const [catalogoError, setCatalogoError] = useState<string | null>(null)
-  const [selectedViveroId, setSelectedViveroId] = useState<number | null>(formData?.vivero_id ?? null)
+  const [selectedViveroId, setSelectedViveroId] = useState<string | null>(formData?.vivero_id ? exactId(formData.vivero_id) : null)
   const [loadingLocation, setLoadingLocation] = useState(false)
   const [errors, setErrors] = useState({
     coordinates: false,
@@ -181,7 +182,7 @@ function RecoleccionFormUbicacionScreen() {
       return
     }
 
-    const selectedVivero = viveros.find((vivero) => vivero.id === resolvedSelectedViveroId)
+    const selectedVivero = viveros.find((vivero) => sameId(vivero.id, resolvedSelectedViveroId))
 
     try {
       setSubmitting(true)
@@ -548,7 +549,7 @@ function RecoleccionFormUbicacionScreen() {
                       <select
                         value={resolvedSelectedViveroId ?? ''}
                         onChange={(event) => {
-                          const nextId = event.target.value ? Number(event.target.value) : null
+                          const nextId = event.target.value ? exactId(event.target.value) : null
                           setSelectedViveroId(nextId)
                           if (nextId !== null) {
                             setErrors((prev) => ({ ...prev, vivero: false }))

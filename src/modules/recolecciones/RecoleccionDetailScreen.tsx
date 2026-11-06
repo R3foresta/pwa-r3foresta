@@ -1,3 +1,5 @@
+import { useOperationalAccess } from '../accesos/capabilitiesContext'
+import { canAtVivero, canMaintain } from '../accesos/accessPolicy'
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import Icon from '../../components/Icon'
@@ -40,6 +42,7 @@ function RecoleccionDetailScreen() {
   const location = useLocation()
   const { id } = useParams()
   const { user } = useAuth()
+  const { m1, m2 } = useOperationalAccess()
   const stockReturn = (user?.rol ?? '').toUpperCase() === 'ADMIN' ? readStockHistorialReturn(location.state) : null
 
   const [recoleccion, setRecoleccion] = useState<Recoleccion | null>(null)
@@ -109,7 +112,7 @@ function RecoleccionDetailScreen() {
   }, [evidenciasFallback, recoleccion?.evidencias])
 
   const handleSubmitForValidation = async () => {
-    if (!recoleccion || deletionLocked || !getRecoleccionFormActions(recoleccion, user).canSubmit) {
+    if (!recoleccion || deletionLocked || !getRecoleccionFormActions(recoleccion, m1.status === 'ready' && canMaintain(m1.data, user?.id, recoleccion.usuario_id) ? user : null).canSubmit) {
       return
     }
 
@@ -143,7 +146,7 @@ function RecoleccionDetailScreen() {
   }
 
   const handleDiscard = async () => {
-    if (!recoleccion) return
+    if (!recoleccion || m2.status !== 'ready' || !canAtVivero(m2.data, recoleccion.vivero_id, 'desechar_semillas')) return
 
     const quantity = Number(discardQuantity.replace(',', '.'))
     const available = Number(recoleccion.saldo_actual ?? 0)
@@ -234,14 +237,12 @@ function RecoleccionDetailScreen() {
   const estadoOperativo = resolveEstadoOperativo(recoleccion)
   const cantidadActual = recoleccion.saldo_actual ?? 0
   const unidadDisplay = formatUnidadCanonicaDisplay(recoleccion.unidad_canonica, cantidadActual)
-  const formActions = getRecoleccionFormActions(recoleccion, user)
-  const esCreador = Number(user?.id) === Number(recoleccion.usuario_id)
-  const esAdmin = String(user?.rol ?? '').toUpperCase() === 'ADMIN'
+  const formActions = getRecoleccionFormActions(recoleccion, m1.status === 'ready' && canMaintain(m1.data, user?.id, recoleccion.usuario_id) ? user : null)
   const puedeDesechar =
     estadoRegistro === 'VALIDADO' &&
     estadoOperativo === 'ABIERTO' &&
     cantidadActual > 0 &&
-    (esCreador || esAdmin)
+    m2.status === 'ready' && canAtVivero(m2.data, recoleccion.vivero_id, 'desechar_semillas')
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-brand-50 to-brand-50 text-brand-700">

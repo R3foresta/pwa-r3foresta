@@ -1,10 +1,11 @@
+import { sameId } from '../accesos/accessPolicy'
 type EstadoRegistroSource = {
   estado_registro?: string | null
   estadoRegistro?: string | null
   estadoRegistroRecoleccion?: string | null
   usuario_validacion_id?: number | null
   fecha_validacion?: string | null
-  usuario_id?: number | null
+  usuario_id?: number | string | null
   can_edit?: boolean
   can_submit_for_validation?: boolean
 }
@@ -46,7 +47,7 @@ export function getRecoleccionFormActions(recoleccion: EstadoRegistroSource, use
   const estado = resolveEstadoRegistro(recoleccion)
   const autorizado = Boolean(user && (
     String(user.rol ?? '').toUpperCase() === 'ADMIN' ||
-    (user.id != null && recoleccion.usuario_id != null && Number(user.id) === Number(recoleccion.usuario_id))
+    (user.id != null && recoleccion.usuario_id != null && sameId(user.id, recoleccion.usuario_id))
   ))
   return {
     canEdit: autorizado && (estado === 'BORRADOR' || estado === 'RECHAZADO') && recoleccion.can_edit !== false,

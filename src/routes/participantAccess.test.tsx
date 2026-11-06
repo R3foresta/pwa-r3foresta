@@ -1,3 +1,4 @@
+import { m1Fixture, m2Fixture } from '../modules/accesos/test-fixtures'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -17,6 +18,7 @@ const state = vi.hoisted(() => ({
   privateScreen: vi.fn(),
 }))
 
+vi.mock('../modules/accesos/capabilitiesContext', () => ({ useOperationalAccess: () => ({ m1: { status: 'ready', data: m1Fixture({ capacidades: { crear: true, mantener_propias: true, confirmar_propias: false, desechar: true } }).data }, m2: { status: 'ready', data: m2Fixture().data } }) }))
 vi.mock('../contexts/AuthContext', () => ({ useAuth: () => state.auth }))
 vi.mock('../modules/participacion/hooks/useParticipacionCapabilities', () => ({
   useParticipacionCapabilities: () => ({ data: { data: { subcampanias: [] } }, status: 'ready', error: null, refresh: vi.fn() }),

@@ -41,7 +41,7 @@ describe('Entrada de administración de usuarios', () => {
     expect(screen.queryByRole('link')).toBeNull()
     localStorage.setItem(roleCommandStorageKey('42'), '{}')
     view.rerender(<MemoryRouter><UsuariosEntry /></MemoryRouter>)
-    expect(screen.getByRole('link', { name: 'Recuperar cambio de rol' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Recuperar permisos' })).toBeTruthy()
     expect(screen.queryByRole('link', { name: 'Administrar usuarios' })).toBeNull()
   })
 })

@@ -1,0 +1,240 @@
+{
+  "tarea": "T3_ADMINISTRACION_ACCESOS_M1_M2",
+  "fecha_local": "2026-11-05",
+  "zona": "America/La_Paz",
+  "registrado_en": "2026-11-06T01:44:49.837255+00:00",
+  "estado": "IMPLEMENTADA_Y_VERIFICADA_LOCALMENTE_PENDIENTE_REVISION_COORDINADORA",
+  "chat_coordinador": "01a18a33-5969-7261-b845-25979ea63c2f",
+  "pwa": {
+    "repositorio": "/Users/pabloandresfernandezcari/Projects/R3foresta/pwa-r3foresta",
+    "base": "dbcedc51eac388045a5d383d6a326e241c40b312",
+    "estado_inicial": "LIMPIO",
+    "sin_commit_de_entrega": true,
+    "archivos_t3_sha256": {
+      "FRONTEND_AUDIT.md": "38b471a7f2c02d91960363b83430115747ecdbceb1a0ab3d1dda059650644d03",
+      "FRONTEND_GUIDE.md": "8e83c3315250f3e1634edfe56cc6078f9eafd4650622d9ab773d365c81c26ffa",
+      "README.md": "96730e9591a12d23631e7b94e331895c4c5490d3b83f41964bd8c1af9886f0d0",
+      "docs/QA_T3_ACCESOS.md": "19e270478df3b779c210a0496ec4016b65da02ef57c4903fc23cb6f03410aa7b",
+      "docs/README.md": "da63d50c75e43b9d46beb758c93e05ee7e6b5f0b8eefe3fcbba7d5a524aaad80",
+      "docs/evidencia/t3-base-2026-11-05.json": "f91ba7e6e10a818999b7ab7839cfe5baf3e023fba5dc1f0e173763c12fd8cd26",
+      "docs/evidencia/t3-documentacion-base-2026-11-05.json": "edb161513b5d75805036017ee6c7d3db33dd3195c7e706c9aba92088480b86e6",
+      "docs/qa/t3-accesos/conflicto-1280.png": "694f097eba313b246396952bfd215d714af1de3055f5ee60f62a8be7181c6747",
+      "docs/qa/t3-accesos/cuenta-1280.png": "270deb74e84ce658050742b1d6d2635d7f9c6a62a6713734eb04d382705964ed",
+      "docs/qa/t3-accesos/cuenta-320.png": "334337d758c388b7fee82394b39685a2b26bd553319c55a7a00d80717338219f",
+      "docs/qa/t3-accesos/cuenta-390.png": "a886374f7e4990348ba7f3dfe9ec8a51adee2e159afbcf89c0265f18cd1d4ab5",
+      "docs/qa/t3-accesos/material-m2-390.png": "c305cc520643451f9bf39ffa06d2677a526083a40af372c6f49327fc5e25f04f",
+      "docs/qa/t3-accesos/recuperacion-sin-admin-390.png": "f1ed4779d84be64baed19166b1d54dabf9256ae590245ec98243d9ed29958fed",
+      "docs/qa/t3-accesos/resultado-incierto-390.png": "f74cb3f8adb6031c28ca1567e6909c620ea4e5891c457a3d4923cc973dccecc0",
+      "docs/qa/t3-accesos/resultados.json": "684f5afccd65d87e9b912da4a47bd515e8ee0fc79bee96b9ef2be6367391279c",
+      "docs/qa/t3-accesos/revision-sin-m1-1280.png": "adb0f4d6397f95c845daa96995f1356398b81e4515d375a8e5874ab2aeba45f3",
+      "scripts/qa/t3-access-browser.cjs": "68b1c201d5df7275eb96942e6f722a9b18869e625fa8dd3c7f37b1c32e93593c",
+      "src/App.tsx": "c8c0c1c7538d5e48b3fc38c917d7acce19be5500147814ead0bd1ec02a9aa690",
+      "src/api/lotes-vivero.api.ts": "4c9cc7499d2afe5fb15f6c660f157f5782d12a48e8b9b2b16d864216881ab1fd",
+      "src/api/plantacion.api.ts": "63dc6f456b5bf660dcf13a1ea566933cb80722b331c9aa2c31e6201d4b1d2fcd",
+      "src/components/BottomNav.tsx": "3ab6d14070f759cce341a9cc8105590e5962c52797a7eb154125ba36aa4e173d",
+      "src/components/MenuLateral.tsx": "3876f20e460821b79ec41fd049bcc79b3d8c8ec6be027b133a94d12fda61b880",
+      "src/hooks/useViveros.ts": "34ef5182a0edcf76e81fc96c7dd0f2fafee16cf878c047b6f082a2a89e7e2c32",
+      "src/layouts/AppLayout.tsx": "542c6692ca9671052d21ef44b641f3c7e54fed871bde08543e4f322db43e7f21",
+      "src/modules/accesos/OperationalAccessGate.tsx": "91dae3a915cffa3eb3f829f68c058294ec822fb3f479a2584706b581da9b38fa",
+      "src/modules/accesos/OperationalAccessProvider.tsx": "232c0b8e291dc17f1f18b714bac744664277bf6b709dbc6d240a20eb41ad7b30",
+      "src/modules/accesos/README.md": "5ce83a065acd65c1589f831a3fba606538f7801953f3e5f7954179e55d1aef51",
+      "src/modules/accesos/accesos.api.test.ts": "85d5128af1b112b85dbfbf91b08b0d1af6d5e0af403aefcd24c47ff7e644a53b",
+      "src/modules/accesos/accesos.api.ts": "594796fb6f221578e4cefab68043963778b492b2a7d0ce9504792fe11e15fc6d",
+      "src/modules/accesos/accesos.contract.ts": "dc4397a64d2415f934b4b57b49849a5d8690dce87a127985550134e43d0b976d",
+      "src/modules/accesos/accessPolicy.ts": "1f8d1944093c2a26d4bfac8efad9e39136716079fa88ffecd2db61e1d3edcde6",
+      "src/modules/accesos/capabilitiesContext.ts": "2c22bc8e008b3377af8118b346e2578d6d32a7020220fd5be6a9657ec8a85b24",
+      "src/modules/accesos/moduleCommandStore.ts": "02f0521dd563e9a92bfe84d5d7d055534e985e85433b9e43bd411dfcb6580b59",
+      "src/modules/accesos/moduleCommands.test.tsx": "f9c807880b8e1067bc5cb7d1001448ca899c14887df6312eb55dfd102f78ac98",
+      "src/modules/accesos/operationalAccess.test.tsx": "f516fb3e9aff502254adcc774f6d22991423faba895d3aa06e314d0d15320b4d",
+      "src/modules/accesos/test-fixtures.ts": "6a72684e9abe6e62f24356df3abb65c7d50c6a89215fb0975333f0df4d948d05",
+      "src/modules/accesos/types.ts": "f4c21f6ddfe002f7f3cada8b839ea99e1b1154efafe80a40babce1d8069cb7d2",
+      "src/modules/accesos/useModuleCommand.ts": "1676202201f1af2bb8cd6509585bc889e647c92381403cf3bba171b64df5480b",
+      "src/modules/home/HomeScreen.tsx": "c805400ae8c95b35462bff7b06710c195d8378043e25661ea7b47e7ef371e935",
+      "src/modules/recolecciones/RecoleccionDetailScreen.test.tsx": "f5f0b8e8bcd68f15bb0150b9de0445fa2bb0745ed50a98f727cd753f6e6cf548",
+      "src/modules/recolecciones/RecoleccionDetailScreen.tsx": "9ddc4960728e49b72453516290772f6a180db810a4ab85aea260f8c460d8388a",
+      "src/modules/recolecciones/RecoleccionFormUbicacionScreen.tsx": "650eaa19354997abe295733c8676b64917665d6ba2b829819f1c353773f79cf9",
+      "src/modules/recolecciones/RecoleccionesScreen.tsx": "e27ddd63b79dd38f9fde56e5883209e0012a47629c3a2b3523aafc4e5620008a",
+      "src/modules/recolecciones/RecoleccionesValidacionScreen.tsx": "36e1549947bd56f9daeb0088189fdb7412cae5ebc20e3e60bfd31166d63adb3e",
+      "src/modules/recolecciones/components/RecoleccionDeleteAction.tsx": "bf7c784a2a37ac941201960482ade0e210ee7ff98c24eea33e71c022fd043fd5",
+      "src/modules/recolecciones/recoleccionFormTypes.ts": "26a52088cb5661da51a6fa61171aff6c6e677713b667d2f1776fa0c4ad44be84",
+      "src/modules/recolecciones/recoleccionStatus.ts": "788e6236d9fe4772ff20d2497dd1933351b01e35f06711f9ddad782e64d8f04f",
+      "src/modules/recolecciones/validators/recoleccionForm.ts": "dd14251fa89f3d2663e2c883de9c9f1793f39972e5e49ba7b9fbbdaebfe61d5b",
+      "src/modules/usuarios/README.md": "7e07a27136ad22420597dc3736176876e652afda157fda54580c8b6cc4dc11d1",
+      "src/modules/usuarios/components/ModuleCommandStatus.tsx": "1e1d21219bd6a562a95d11d5e2fdfc03a76ba583cb8fbc6a7936f01067709551",
+      "src/modules/usuarios/components/UsuarioModuleAccess.test.tsx": "2233787a2db5c8d3df8cef27cb59b9f6e70737c0fc7506f80e458575d4afbe28",
+      "src/modules/usuarios/components/UsuarioModuleAccess.tsx": "b06b16aecf95d1b04a0754e4e85c2a58e76e3bda5d08a58f40281403497a24cb",
+      "src/modules/usuarios/components/UsuarioPorId.tsx": "8812aab90f7fce281c4da65b4150bab2fe51e7b9f9b0d0cada767d195822c31f",
+      "src/modules/usuarios/components/UsuarioRoleForm.tsx": "880fdc9dce132c2b4679611710379c6fd18aa7500a61ad1af8c3cfbba8668ab1",
+      "src/modules/usuarios/components/UsuariosEntry.test.tsx": "8f09ecb28dc9d8de59e566e32718ded158162b87f83e318f3cf2738071a27f8f",
+      "src/modules/usuarios/components/UsuariosEntry.tsx": "fc1e0ba740d8c1bfddbf7def18f570ed86666eb13db26a62b93423f92c4ba633",
+      "src/modules/usuarios/hooks/useHasPendingUserCommand.ts": "2203c45e338082ec8504fa4d838ec4d460ba0d3ce09532cb2a0955ec75f3b895",
+      "src/modules/usuarios/pages/GestionUsuariosScreen.tsx": "bf2668b999bb340b73bd938b2fc43e988169c175bab7334857ac8ee27c7912a9",
+      "src/modules/usuarios/types.ts": "54e0c5ab04414f9fa447d694806488905216a3f1a58fe5b9cf664b001fe60893",
+      "src/modules/vivero/README.md": "be237e356b4b6fdb79d5ec55bd87d13d440ea328c16fe2be84c3ca9d2ec3039c",
+      "src/modules/vivero/api/origenes.api.test.ts": "68cf5a12c2aba4538d91102850a75949efaeaaf03068a762337ba9ad0b57b99a",
+      "src/modules/vivero/api/origenes.api.ts": "16ccb76ace519b0632ed41e9f1dd08dcdab03f5bc506ce3b33c49334de1c9f85",
+      "src/modules/vivero/components/OrigenCard.tsx": "92819760c9a38f8f2bd792bd9dcb451a4e571a8a016e5e609b0b7428f4af17e2",
+      "src/modules/vivero/components/QuickActions.tsx": "5d2cf2046cbb9b8b8f1753cafe15d20cf562bfd226e0d50974fb993d8bd03ac5",
+      "src/modules/vivero/components/ViveroLotAsignacionesTab.tsx": "b3e640b52b7d12abda795a751d89270988184f8a8f698c6c47fd24474a388a06",
+      "src/modules/vivero/components/event/forms/AsignacionForm.tsx": "a70eb6eff030f954b6dddde6e7a36ca71bfd24662f41fb12a13b6cc16ef249e6",
+      "src/modules/vivero/hooks/useM2Logistics.test.tsx": "4350cdd3b60d47822c451144b62b05c464bbd933f3316c3c2dec7a5374b38709",
+      "src/modules/vivero/hooks/useM2Logistics.ts": "a80b88fc2aef9ac5ecd86bd861e491e27d822e2122aa0998e2c0431fc5ff598d",
+      "src/modules/vivero/hooks/useOrigenes.ts": "f292f4eecdbb27db7092c073d07f3b986a92fb4571d3fe4f3a25d8922850d407",
+      "src/modules/vivero/mappers/lote.mapper.ts": "9d2dad32e9113829f723f6a5f9fc3b67f9af5fb763ebf4e2afd63e2d2fb39329",
+      "src/modules/vivero/screens/ViveroEventScreen.tsx": "a33a8af306f7c95f53f23a5acdfc82dbf78391ca3e9cf5c7921bf9d87b70a89d",
+      "src/modules/vivero/screens/ViveroMaterialScreen.tsx": "8de089430d354eefc8761f963bfae8e33ab2cb2d0237a0c338a83053a54845b7",
+      "src/modules/vivero/screens/ViveroNewScreen.test.tsx": "a4a6c15ad2263f6a806885e58a645a30d2023d61c791924956c853aa69bccd40",
+      "src/modules/vivero/screens/ViveroNewScreen.tsx": "555535efc024a75579cab1750777241d92a96e8b2657fabab3483ccd535ae6a8",
+      "src/modules/vivero/screens/ViveroScreen.tsx": "83ab7cb2a8c5eb5b374b83988aacd3c02a7d5fcdf498e44a18703b5014be9037",
+      "src/modules/vivero/types/contracts.ts": "170866135b04c0b9bff6072e56cfab1fcba13c00450fab0856d0dfc7fbfc0796",
+      "src/modules/vivero/types/view-models.ts": "22e3d63a43cdca40ab3cdee8c14e3a77316ada8e994be85b19ea32d8df77b599",
+      "src/routes/participantAccess.test.tsx": "d9bf5f579f4bb978f65e1ed02cad7d76d725226c39379844ebac211d02b44aa3",
+      "src/services/lotes-vivero.service.ts": "99a6d8f102b729349c0c402938951b46cad3f6e41391faff055c6c46fbb747e6",
+      "src/services/plantacion.service.ts": "0091e9e734698d8e0ab9adb17d973db0f5f3ebc53775f8284b937cd20db7c49a",
+      "src/services/recolecciones.service.ts": "9a794358d934631602f63352c9fa261a6ec4c3e20f35d9a370fd98fc37ddfa02"
+    }
+  },
+  "backend": {
+    "repositorio": "/Users/pabloandresfernandezcari/Projects/R3foresta/Backend-r3foresta",
+    "base": "6f59263c349c664c15893528df1c129a7d25ef0d",
+    "arbol_previo": "T1/T2 y correcciones locales, conservados; ver base con huellas completas.",
+    "archivos_t3_sha256": {
+      "docs/README.md": "ef219a5f39e7eff4fbce553a63f0ae821446e850ae9d5eb3e786fadfb254b927",
+      "docs/t3-proyecciones-compatibilidad.md": "84a856e4d6fdfbc00e197bcce6e4a4fd0a4cc676136c79645a51a4ed3f8b414b",
+      "src/lotes-vivero/application/vivero-consultas.service.ts": "9625cf9bbb9b2953a711396c5b8b3cec93626ceb7997c859146eda88840ceec4",
+      "src/lotes-vivero/tests/vivero-consultas.service.spec.ts": "7c7cd466d8d7e0636ad857dfa2001ff77293b29ef47cd7cbc361ab11b99180a0",
+      "src/subcampanias/application/subcampanias-equipo.service.ts": "99203b9f351f7ccde05691cbffcccb086bf1c0c21e89793c947a20168c92c2fa",
+      "src/subcampanias/tests/subcampanias-equipo.service.spec.ts": "1d17a369a8b8a4c20ec2d42d66cea84d789e84ba81f1e086a4fd542cc9617900",
+      "src/viveros/viveros.service.spec.ts": "3355fd4ff0e8e7737d4c3e5f8f73ec396ce254ea470f3a9641ff9cdb8e5f28e2",
+      "src/viveros/viveros.service.ts": "dfb9a638fd317f49bfc99e0d4e19a952f8fb0283e0a2f5591587b6bd852b35c5"
+    },
+    "archivos_ajenos_preexistentes_sin_cambio": 769,
+    "migraciones_preservadas": {
+      "migrations/092_usuario_acceso_recoleccion.sql": {
+        "sha256_antes": "74c2c01468f130c5ca072b17727f9d7b37470cddd4c21033315d509aa5d91fcc",
+        "sha256_despues": "74c2c01468f130c5ca072b17727f9d7b37470cddd4c21033315d509aa5d91fcc",
+        "sin_cambios": true
+      },
+      "migrations/093_recoleccion_acceso_explicito.sql": {
+        "sha256_antes": "27ece38fb0860ce87dba5e30338fed63ae3d0d09ec7b49c8588385531e3b0b27",
+        "sha256_despues": "27ece38fb0860ce87dba5e30338fed63ae3d0d09ec7b49c8588385531e3b0b27",
+        "sin_cambios": true
+      },
+      "migrations/094_usuario_vivero.sql": {
+        "sha256_antes": "7b18997966852c51a7a1baf55b8ac6209da2b37961cd5f61432f224b6387693d",
+        "sha256_despues": "7b18997966852c51a7a1baf55b8ac6209da2b37961cd5f61432f224b6387693d",
+        "sin_cambios": true
+      },
+      "migrations/095_vivero_operacion_por_ambito.sql": {
+        "sha256_antes": "ec4ffc511d67ad80fcb042886470c0cd2cb92643b2e25d97e5af3e91490b0d96",
+        "sha256_despues": "ec4ffc511d67ad80fcb042886470c0cd2cb92643b2e25d97e5af3e91490b0d96",
+        "sin_cambios": true
+      }
+    }
+  },
+  "estado_canonico": {
+    "base": "1dffbbf94355b1263b64ea25befa38513f1fe22a",
+    "ruta": "../r3foresta-docs/ESTADO.md",
+    "sha256_antes": "f27951729b206fd911d00084f01ca603431ddbb192efdcb192ff1722805d399c",
+    "sha256_despues": "50e99184e75ed96ec2a77c181e40994c352f6c057c104625236f3816484dfe3d",
+    "alcance": "Sólo nueva entrada T3 pendiente de revisión; al retirarla se reconstruye exactamente el texto previo."
+  },
+  "verificacion": {
+    "pwa": {
+      "archivos_test": 89,
+      "pruebas": 1241,
+      "lint": "APROBADO",
+      "build_typescript_vite_pwa": "APROBADO",
+      "typecheck_script": "NO_EXISTE; TypeScript incluido en build",
+      "diff_check": "APROBADO",
+      "aviso_build": "Chunk MapLibre > límite configurado, ya conocido."
+    },
+    "backend": {
+      "suites": 88,
+      "pruebas_unitarias": 1256,
+      "build": "APROBADO",
+      "openapi": {
+        "t2_rutas": 36,
+        "t1_rutas": 5,
+        "participacion_rutas": 41,
+        "participacion_schemas": 86,
+        "resultado": "COINCIDENTE; checks ejecutados sobre controllers reales"
+      },
+      "lint_global": "NO_ACREDITADO",
+      "sql_http_postgis": "NO_REEJECUTADO; sólo proyecciones cambiadas, SQL intacto"
+    },
+    "navegador": {
+      "estado": "APROBADO",
+      "comprobaciones": 40,
+      "capturas": 8,
+      "errores": [],
+      "versiones": {
+        "node": "v24.19.0",
+        "navegador": "156.0.8078.80",
+        "playwright": "1.64.1"
+      },
+      "anchos": [
+        320,
+        390,
+        1280
+      ],
+      "resultado_sha256": "684f5afccd65d87e9b912da4a47bd515e8ee0fc79bee96b9ef2be6367391279c",
+      "entorno": "SINTETICO_LOCAL_T3_HTTP"
+    },
+    "logs": [
+      {
+        "comando": "TMPDIR=/private/tmp npm run test -- --maxWorkers=2",
+        "exit_code": 0,
+        "log": "docs/qa/t3-accesos/logs/pwa-tests.log",
+        "sha256": "bdf9c690d669cbcb82c589c75d883e66a1aecb24294fd26fbc4bca584e3cdc7b"
+      },
+      {
+        "comando": "TMPDIR=/private/tmp npm run lint",
+        "exit_code": 0,
+        "log": "docs/qa/t3-accesos/logs/pwa-lint.log",
+        "sha256": "fa7e6a0ee0b7839ef5a74dc7f4017288198642fbe55ba898bd02ab74da551948"
+      },
+      {
+        "comando": "TMPDIR=/private/tmp npm run build",
+        "exit_code": 0,
+        "log": "docs/qa/t3-accesos/logs/pwa-build.log",
+        "sha256": "808a8541064c33c478e91be16ea93fb1ab2fb31aca6a930dbdf19e001c6898d8"
+      },
+      {
+        "comando": "npm run build",
+        "exit_code": 0,
+        "log": "docs/qa/t3-accesos/logs/backend-build.log",
+        "sha256": "0de4692e4208e8b05bf233ccc10cde3bb2f3a7a6e1e6fe4bdbff027b1b647179"
+      },
+      {
+        "comando": "npm run test:unit -- --runInBand",
+        "exit_code": 0,
+        "log": "docs/qa/t3-accesos/logs/backend-unitarios.log",
+        "sha256": "ed53ae86a7725d7e3c7dcaa388de43fd0fdcdecb7c88925bcfb2d165ded885f4"
+      },
+      {
+        "comando": "PLAYWRIGHT_MODULE_PATH=… T3_QA_CHROMIUM=… node scripts/qa/t3-access-browser.cjs",
+        "exit_code": 0,
+        "log": "docs/qa/t3-accesos/logs/navegador.log",
+        "sha256": "f43c1016debf9c655989dbe835b462ed35fee431bbb963882e0c67c1117af8ea"
+      }
+    ]
+  },
+  "preservacion": {
+    "dto_y_comandos_participacion_sin_cambios": true,
+    "092_095_sin_cambios": true,
+    "evidencias_historicas_sin_cambios": true,
+    "sin_sql_remoto": true,
+    "sin_push": true,
+    "sin_despliegue": true,
+    "sin_dependencias_nuevas": true
+  },
+  "limites": [
+    "Pendiente revisión coordinadora y aceptación/dispositivo/cotejo/corte externo.",
+    "QA de navegador con API HTTP enteramente sintética; no acredita JWT/RPC/SQL/Storage o WebAuthn reales.",
+    "Operaciones físicas sin comando durable: AUD-007 permanece.",
+    "No migración global de IDs del editor M3 legado; la lectura logística T3 usa IDs exactos y el adaptador legado rechaza números inseguros.",
+    "T4/T5 no iniciadas; sin SQL remoto, commit de entrega, push o despliegue."
+  ],
+  "nota_huellas": "Este manifest no se incluye en su propio mapa SHA-256. Las bases y evidencias históricas no se reescriben."
+}

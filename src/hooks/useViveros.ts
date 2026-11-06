@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import { RecoleccionesService } from '../services/recolecciones.service';
 import type { ViveroCatalogo as Vivero } from '../services/recolecciones.service';
 
-export function useViveros() {
+export function useViveros(enabled = true) {
+  const [version, setVersion] = useState(0);
   const [viveros, setViveros] = useState<Vivero[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!enabled) return;
     let isMounted = true;
 
     const loadViveros = async () => {
@@ -34,7 +36,7 @@ export function useViveros() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [enabled, version]);
 
-  return { viveros, loading, error };
+  return { viveros, loading: enabled && loading, error, refresh: () => setVersion(value => value + 1) };
 }

@@ -1,3 +1,4 @@
+import { exactId } from '../modules/accesos/accessPolicy'
 import type {
   CreateLoteViveroInput,
   ListLotesViveroQuery,
@@ -129,7 +130,7 @@ export async function uploadEvidenciasPendientesViveroApi(
   return fetch(`${API_BASE_URL}/lotes-vivero/evidencias-pendientes`, {
     method: 'POST',
     headers: getAuthHeaders({ authId, includeContentType: false }),
-    body: buildEvidenceFormData(input),
+    body: (() => { const form = buildEvidenceFormData(input); form.append('vivero_id', exactId(input.vivero_id)); return form })(),
   })
 }
 

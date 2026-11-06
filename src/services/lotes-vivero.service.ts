@@ -109,6 +109,7 @@ export type EspecieStockVivero = {
 }
 
 export type AsignacionViveroResumen = {
+  subcampania_id?: number | string
   id: number
   proposito?: string | null
   fecha_asignacion?: string | null
@@ -500,7 +501,7 @@ export class LotesViveroService {
   // Mensaje reutilizable: el backend responde 403/422 cuando quien opera no es
   // ADMIN ni coordinador de la subcampania destino (asignar/devolver).
   private static readonly PERMISO_ASIGNACION_MSG =
-    'Necesitas ser ADMIN o coordinador de la subcampana para realizar esta operacion.'
+    'Necesitas ser ADMIN o tener acceso a este vivero y ser coordinador de la subcampaña para realizar esta operación.'
 
   // Mapea el error de los endpoints de asignacion/devolucion. Si es un 403/422
   // con mensaje generico, lo traducimos al copy de permisos; si el backend ya

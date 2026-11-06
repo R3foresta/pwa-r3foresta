@@ -31,6 +31,14 @@ src/services/
 6. Los filtros por etapa se construyen en dos niveles: pre-filtro backend (`estado_lote`) y post-filtro local (`utils/stageFilters.ts`) para mantener consistencia de UX.
 7. Los hooks no deben conocer detalles de consulta backend; consumen solo métodos de service y exponen `refetch`.
 
+## Compatibilidad T1/T2 desde T3
+
+Acceso efectivo mediante `OperationalAccessProvider` y capacidades por vivero; el catálogo no concede permisos. `api/origenes.api.ts` consume únicamente material mínimo paginado de `GET /api/v1/vivero/origenes?vivero_id=…`; el alta no consulta fichas/fotos M1 de otro recolector. `vivero_id` permanece como cadena exacta en selección y carga previa de fotos. Cambiar vivero invalida evidencias preparadas; un envío en curso congela su selección. Cambiar cuenta/desmontar impide que una subida tardía dispare el alta con otra sesión.
+
+`/app/vivero/material` permite consultar material y registrar DESECHO con capacidad del almacenamiento, sin M1 ni permiso por autoría. El saldo procede del servidor. Ante incertidumbre se consulta de nuevo antes de preparar otra operación; las operaciones físicas siguen sin comando durable (AUD-007).
+
+La entrega usa `/:lote/despacho/evidencias-pendientes`; INICIO usa la ruta genérica con `vivero_id`. `useM2Logistics` cruza operación M2 por vivero con COORDINADOR del equipo M3 leído del servidor; ADMIN deriva autoridad. El consumo M3 no incorpora un requisito de acceso al vivero. La revisión documental previa no acredita recepción física: T4/T5 no están implementadas aquí. [QA T3 y límites](../../../docs/QA_T3_ACCESOS.md).
+
 ## Estado actual
 
 Las pantallas de `EMBOLSADO`, `ADAPTABILIDAD`, `MERMA`, `DESPACHO`, `DESCARTE_PRE_EMBOLSADO`, el timeline, las evidencias, las asignaciones físicas y las devoluciones ya están conectadas al service/API correspondiente.

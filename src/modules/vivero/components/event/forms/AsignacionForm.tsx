@@ -1,3 +1,4 @@
+import { useM2Logistics } from '../../../hooks/useM2Logistics'
 import { useEffect, useRef, useState } from 'react'
 import Icon from '../../../../../components/Icon'
 import ConfirmDialog from '../../../../../components/ConfirmDialog'
@@ -129,6 +130,7 @@ function AsignacionForm({ lote, onCompleted }: Props) {
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [assignmentSuccess, setAssignmentSuccess] = useState<AsignacionSuccess | null>(null)
 
+  const logistics = useM2Logistics(lote.vivero_id, subcampaniaId)
   const cantidadNum = Number(cantidad)
   const cantidadValid =
     Number.isFinite(cantidadNum) &&
@@ -141,6 +143,7 @@ function AsignacionForm({ lote, onCompleted }: Props) {
   const fechaValid = !!fecha && fecha >= fechaMin && fecha <= fechaMax
   const canCreate =
     !!authId &&
+    logistics.allowed &&
     !submitting &&
     loteActivo &&
     maxAsignable > 0 &&
@@ -257,7 +260,9 @@ function AsignacionForm({ lote, onCompleted }: Props) {
       const selectedProposito = PROPOSITOS.find((item) => item.key === proposito)
 
       // Paso 1 — subir la evidencia de la entrega y obtener los evidencia_ids.
-      const upload = await LotesViveroService.uploadEvidenciasPendientes(
+      const upload = await LotesViveroService.uploadEvidenciasEvento(
+        lote.id,
+        'DESPACHO',
         {
           fotos: photos.map((p) => p.file),
           titulo: 'Entrega a subcampania',
@@ -278,7 +283,7 @@ function AsignacionForm({ lote, onCompleted }: Props) {
           cantidad_asignada: cantidadNum,
           proposito,
           fecha_asignacion: fecha,
-          evidencia_ids: upload.evidencia_ids,
+          evidencia_ids: upload.data.evidencia_ids,
         },
         authId,
       )
@@ -312,6 +317,9 @@ function AsignacionForm({ lote, onCompleted }: Props) {
 
   return (
     <>
+      {logistics.loading && <p role="status" className="text-sm">Comprobando responsabilidad logística…</p>}
+      {logistics.error && <div role="alert" className="text-sm"><p>{logistics.error}</p><button type="button" className="min-h-11 underline" onClick={logistics.refresh}>Reintentar responsabilidad</button></div>}
+      {subcampaniaId && !logistics.loading && !logistics.error && !logistics.allowed && <p className="text-sm text-neutral-600">La entrega requiere operar este vivero y ser COORDINADOR de la subcampaña, o tener autoridad ADMIN global.</p>}
       <form id={FORM_ID} onSubmit={handleSubmit} className="flex flex-col gap-4 pb-[230px]">
         <div className="flex items-start gap-2 rounded-2xl bg-success-50 px-3 py-2.5 text-xs font-semibold text-success-800 ring-1 ring-success-200">
           <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-success-600" />

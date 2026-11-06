@@ -5,6 +5,7 @@ import { ROLE_LABELS } from './rolesPresentation'
 
 type Props = {
   person: UsuarioAdministracion
+  roleLocked?: boolean
   role: RolGlobal
   reason: string
   reasonValid: boolean
@@ -18,7 +19,7 @@ type Props = {
   onReview: () => void
 }
 
-export default function UsuarioRoleForm({ person, role, reason, reasonValid, locked, canReview, loading, error, onChangeUser, onRoleChange, onReasonChange, onReview }: Props) {
+export default function UsuarioRoleForm({ person, roleLocked = false, role, reason, reasonValid, locked, canReview, loading, error, onChangeUser, onRoleChange, onReasonChange, onReview }: Props) {
   const titleRef = useRef<HTMLHeadingElement>(null)
   useEffect(() => {
     titleRef.current?.focus({ preventScroll: true })
@@ -40,13 +41,13 @@ export default function UsuarioRoleForm({ person, role, reason, reasonValid, loc
     <form className="space-y-4 p-4 sm:p-5" onSubmit={(event) => { event.preventDefault(); if (canReview && !loading) onReview() }}>
       <label className="block space-y-1.5 text-sm font-semibold text-brand-800">
         <span>Rol a asignar</span>
-        <select value={role} disabled={locked} onChange={(event) => onRoleChange(event.target.value as RolGlobal)} className={inputClasses(false)}>
+        <select value={role} disabled={locked || roleLocked} onChange={(event) => onRoleChange(event.target.value as RolGlobal)} className={inputClasses(false)}>
           {ROLES_GLOBALES.map((value) => <option key={value} value={value}>{ROLE_LABELS[value]}</option>)}
         </select>
       </label>
       <div className="space-y-1.5">
         <label htmlFor="usuario-role-reason" className="block text-sm font-semibold text-brand-800">Motivo del cambio</label>
-        <textarea id="usuario-role-reason" value={reason} rows={2} maxLength={1000} disabled={locked} onChange={(event) => onReasonChange(event.target.value)} className={`${inputClasses(Boolean(reason) && !reasonValid)} resize-y`} placeholder="Por qué se asigna este rol" aria-invalid={Boolean(reason) && !reasonValid} aria-describedby="usuario-role-reason-hint" />
+        <textarea id="usuario-role-reason" value={reason} rows={2} maxLength={1000} disabled={locked || roleLocked} onChange={(event) => onReasonChange(event.target.value)} className={`${inputClasses(Boolean(reason) && !reasonValid)} resize-y`} placeholder="Por qué se asigna este rol" aria-invalid={Boolean(reason) && !reasonValid} aria-describedby="usuario-role-reason-hint" />
         <p id="usuario-role-reason-hint" className={`text-xs ${reason && !reasonValid ? 'text-danger-700' : 'text-neutral-500'}`}>Entre 3 y 1000 caracteres. Quedará registrado con el cambio.</p>
       </div>
       {error && <p role="alert" className="text-sm text-danger-700">{error}</p>}

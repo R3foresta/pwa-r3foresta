@@ -1,3 +1,4 @@
+import { useM2Logistics } from '../hooks/useM2Logistics'
 import { useEffect, useMemo, useState } from 'react'
 import Icon from '../../../components/Icon'
 import { Button } from '../../../components/ui'
@@ -138,6 +139,7 @@ function DevolucionDialog({
     destino: string,
   ) => void
 }) {
+  const logistics = useM2Logistics(lote.viveroId, asignacion.subcampania_id)
   const maxDevolver = numberOrZero(asignacion.saldo_asignado_disponible)
   const destino = asignacion.subcampania_nombre || 'la subcampania'
   const today = todayLocalISO()
@@ -161,7 +163,7 @@ function DevolucionDialog({
   const motivoValid = motivo.trim().length >= 3
   const fechaValid = !!fecha && fecha >= fechaMin && fecha <= fechaMax
   const canSubmit =
-    !!authId && !submitting && maxDevolver > 0 && cantidadValid && motivoValid && fechaValid
+    !!authId && logistics.allowed && !submitting && maxDevolver > 0 && cantidadValid && motivoValid && fechaValid
 
   const cantidadError = !cantidad
     ? 'Ingresa la cantidad a devolver.'
@@ -342,6 +344,13 @@ function DevolucionDialog({
 // asignaciones vive ahora en `AsignacionForm` (accion propia de Vivero); esta
 // pestaña solo lista lo que devuelve `GET /lotes-vivero/:id/asignaciones` y
 // permite devolver stock al vivero.
+function DevolverButton({ lote, asignacion, exhausted, onClick }: { lote: ViveroLotDetailView; asignacion: AsignacionViveroResumen; exhausted: boolean; onClick: () => void }) {
+  const logistics = useM2Logistics(lote.viveroId, asignacion.subcampania_id)
+  if (logistics.error) return <button className="min-h-11 text-xs underline" onClick={logistics.refresh}>Reintentar permisos</button>
+  if (!logistics.allowed && !logistics.loading) return null
+  return <Button variant="secondary" size="sm" disabled={exhausted || !logistics.allowed} onClick={onClick}>{logistics.loading ? 'Verificando…' : 'Devolver al vivero'}</Button>
+}
+
 function ViveroLotAsignacionesTab({ lote, onLoteChanged }: Props) {
   const { user } = useAuth()
   const authId = user?.auth_id?.trim() || ''
@@ -505,18 +514,7 @@ function ViveroLotAsignacionesTab({ lote, onLoteChanged }: Props) {
                       ? 'Sin saldo disponible para devolver.'
                       : `Podes devolver hasta ${saldoDisponible} plantas al vivero.`}
                   </p>
-                  <button
-                    type="button"
-                    disabled={isExhausted}
-                    onClick={() => setDevolucionTarget(asig)}
-                    className={`shrink-0 rounded-xl px-3 py-2 text-[11px] font-extrabold ring-1 transition ${
-                      isExhausted
-                        ? 'cursor-not-allowed bg-white text-neutral-400 ring-neutral-200'
-                        : 'bg-white text-info-700 ring-info-200 hover:bg-info-50'
-                    }`}
-                  >
-                    Devolver al vivero
-                  </button>
+                  <DevolverButton lote={lote} asignacion={asig} exhausted={isExhausted} onClick={() => setDevolucionTarget(asig)} />
                 </div>
               </article>
             )
