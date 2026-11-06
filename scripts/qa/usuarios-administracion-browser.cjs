@@ -116,13 +116,13 @@ async function run() {
     await page.getByRole('combobox', { name: 'Filtrar por rol', exact: true }).selectOption('')
     await page.getByRole('button', { name: 'Buscar usuarios', exact: true }).click()
     await page.getByRole('button', { name: selectedName, exact: true }).click()
-    await page.getByRole('combobox', { name: 'Rol a asignar', exact: true }).waitFor()
+    await page.getByRole('combobox', { name: 'Nuevo rol', exact: true }).waitFor()
   }
   async function propose(page, query, selectedName, role, reason) {
     await select(page, query, selectedName)
-    await page.getByRole('combobox', { name: 'Rol a asignar', exact: true }).selectOption(role)
+    await page.getByRole('combobox', { name: 'Nuevo rol', exact: true }).selectOption(role)
     await page.getByRole('textbox', { name: 'Motivo del cambio', exact: true }).fill(reason)
-    await page.getByRole('button', { name: 'Revisar cambio de rol', exact: true }).click()
+    await page.getByRole('button', { name: 'Cambiar rol', exact: true }).click()
     await heading(page, 'Confirmar cambio de rol').waitFor()
   }
   async function confirm(page) {
@@ -157,12 +157,12 @@ async function run() {
   check('ADMIN: selector real disponible con identidad contrastada por API/DB', network.some(item => item.profile === 'admin' && item.method === 'GET' && item.path === '/api/v1/usuarios'))
   await screenshot(page, 'usuarios-mobile.png')
   await page.getByRole('button', { name: 'Seleccionar a Responsable de logística (preview-logistica)', exact: true }).click()
-  await heading(page, 'Asignar rol').waitFor()
+  await heading(page, 'Cambiar rol').waitFor()
   check('seleccionar oculta buscador y otras cuentas', await page.getByRole('textbox', { name: 'Buscar por nombre o usuario', exact: true }).count() === 0 && await page.getByRole('button', { name: /^Seleccionar a / }).count() === 0)
-  check('el foco pasa al encabezado del formulario sin abrir el teclado', await heading(page, 'Asignar rol').evaluate(element => element === document.activeElement))
+  check('el foco pasa al encabezado del formulario sin abrir el teclado', await heading(page, 'Cambiar rol').evaluate(element => element === document.activeElement))
   for (const viewport of [{ width: 320, height: 740 }, { width: 390, height: 844 }, { width: 1280, height: 900 }]) {
     await page.setViewportSize(viewport)
-    const reviewButton = page.getByRole('button', { name: 'Revisar cambio de rol', exact: true })
+    const reviewButton = page.getByRole('button', { name: 'Cambiar rol', exact: true })
     const button = await reviewButton.boundingBox()
     check(`${viewport.width}px: tarea enfocada sin navegación ni acciones superpuestas`, await page.getByRole('navigation', { name: 'Navegación principal', exact: true }).count() === 0 && await page.getByRole('button', { name: 'Abrir acciones rápidas', exact: true }).count() === 0)
     check(`${viewport.width}px: revisar cambio visible sin scroll ni obstrucciones`, button.y >= 0 && button.y + button.height < viewport.height && await reviewButton.evaluate(element => { const rect = element.getBoundingClientRect(); return element.contains(document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2)) }))
@@ -180,7 +180,7 @@ async function run() {
   const beforeCancel = commands.length
   await page.getByRole('button', { name: 'Cancelar', exact: true }).click()
   check('cancelar confirmación no envía POST ni modifica autoridad', commands.length === beforeCancel && (await authority('604')).revision_autoridad === '0')
-  await page.getByRole('button', { name: 'Revisar cambio de rol', exact: true }).click()
+  await page.getByRole('button', { name: 'Cambiar rol', exact: true }).click()
   await confirm(page)
   await closeSuccess(page)
   const first = await authority('604')
@@ -202,7 +202,7 @@ async function run() {
   await heading(page, 'Cambio de rol sin confirmar').waitFor()
   const second = await authority('604')
   check('se pierde solo la respuesta posterior a commit real: VALIDADOR/revisión 2', !!lostCommand && committedResult.revision_nueva === '2' && second.rol_global === 'VALIDADOR' && second.revision_autoridad === '2')
-  check('incertidumbre conserva clave por cuenta y oculta otras asignaciones', await page.evaluate(() => !!localStorage.getItem('r3foresta:usuarios:rol:v1:600')) && await page.getByRole('button', { name: 'Buscar usuarios', exact: true }).count() === 0 && await page.getByRole('combobox', { name: 'Rol a asignar', exact: true }).count() === 0)
+  check('incertidumbre conserva clave por cuenta y oculta otras asignaciones', await page.evaluate(() => !!localStorage.getItem('r3foresta:usuarios:rol:v1:600')) && await page.getByRole('button', { name: 'Buscar usuarios', exact: true }).count() === 0 && await page.getByRole('combobox', { name: 'Nuevo rol', exact: true }).count() === 0)
   await screenshot(page, 'sin-confirmar-mobile.png')
   const postsAtLoss = commands.length
   const otherAccountAt = network.length

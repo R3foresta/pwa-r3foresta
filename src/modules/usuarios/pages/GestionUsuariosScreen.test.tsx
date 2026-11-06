@@ -61,7 +61,7 @@ async function attemptRead(operation: ReadOperation) {
   if (operation === 'autoridad') {
     await user.click(await screen.findByRole('button', { name: 'Seleccionar a Ana Pérez (ana)' }))
     await user.type(screen.getByLabelText('Motivo del cambio'), 'Asignación de funciones')
-    await user.click(screen.getByRole('button', { name: 'Revisar cambio de rol' }))
+    await user.click(screen.getByRole('button', { name: 'Cambiar rol' }))
   } else if (operation === 'paginación') await user.click(await screen.findByRole('button', { name: 'Cargar más usuarios' }))
   return user
 }
@@ -108,7 +108,7 @@ describe('Usuarios y permisos', () => {
     const user = await attemptRead(operation)
     expect((await screen.findByRole('alert')).textContent).toContain('Ya no puedes gestionar roles.')
     expect(screen.queryByLabelText('Buscar por nombre o usuario')).toBeNull()
-    expect(screen.queryByLabelText('Rol a asignar')).toBeNull()
+    expect(screen.queryByLabelText('Nuevo rol')).toBeNull()
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(mocks.confirm).not.toHaveBeenCalled()
     const readsBeforeRefresh = vi.mocked(UsuariosService.listar).mock.calls.length
@@ -124,9 +124,9 @@ describe('Usuarios y permisos', () => {
   it('relee autoridad, muestra antes/después y confirma IDs y revisión sin pérdida', async () => {
     open()
     const user = await selectAna()
-    await user.selectOptions(screen.getByLabelText('Rol a asignar'), 'VALIDADOR')
+    await user.selectOptions(screen.getByLabelText('Nuevo rol'), 'VALIDADOR')
     await user.type(screen.getByLabelText('Motivo del cambio'), '  Validación de campo  ')
-    await user.click(screen.getByRole('button', { name: 'Revisar cambio de rol' }))
+    await user.click(screen.getByRole('button', { name: 'Cambiar rol' }))
     const dialog = await screen.findByRole('dialog')
     expect(within(dialog).getByText('General')).toBeTruthy()
     expect(within(dialog).getByText('Validador')).toBeTruthy()
@@ -136,8 +136,8 @@ describe('Usuarios y permisos', () => {
     expect(screen.getByText('Ana Pérez')).toBeTruthy()
     expect(screen.queryByLabelText('Buscar por nombre o usuario')).toBeNull()
     expect((screen.getByLabelText('Motivo del cambio') as HTMLTextAreaElement).value).toBe('  Validación de campo  ')
-    await user.selectOptions(screen.getByLabelText('Rol a asignar'), 'ADMIN')
-    await user.click(screen.getByRole('button', { name: 'Revisar cambio de rol' }))
+    await user.selectOptions(screen.getByLabelText('Nuevo rol'), 'ADMIN')
+    await user.click(screen.getByRole('button', { name: 'Cambiar rol' }))
     await user.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Confirmar rol' }))
     expect(UsuariosService.autoridad).toHaveBeenCalledTimes(2)
     expect(mocks.confirm).toHaveBeenCalledWith({ usuario_id: ana.usuario_id, rol_global: 'ADMIN', revision_esperada: '9007199254740997', motivo: 'Validación de campo' })
@@ -149,7 +149,7 @@ describe('Usuarios y permisos', () => {
     open()
     const user = await selectAna()
     await user.type(screen.getByLabelText('Motivo del cambio'), 'Revisar campo')
-    await user.click(screen.getByRole('button', { name: 'Revisar cambio de rol' }))
+    await user.click(screen.getByRole('button', { name: 'Cambiar rol' }))
     await user.type(screen.getByLabelText('Motivo del cambio'), ' actualizado')
     await act(async () => resolve({ data: { usuario_id: ana.usuario_id, nombre: ana.nombre, rol_global: 'VOLUNTARIO', activo: true, revision_autoridad: '9' }, observado_en: observed }))
     expect(screen.queryByRole('dialog')).toBeNull()
@@ -170,10 +170,10 @@ describe('Usuarios y permisos', () => {
     expect(screen.queryByText('Ana Pérez')).toBeNull()
     expect(UsuariosService.listar).toHaveBeenLastCalledWith('42', { consulta: 'Luis', rol_global: 'VOLUNTARIO', limite: 20 }, expect.any(AbortSignal))
     await user.click(screen.getByRole('button', { name: /Seleccionar a Luis Prado/ }))
-    expect(screen.getByLabelText('Rol a asignar')).toBeTruthy()
+    expect(screen.getByLabelText('Nuevo rol')).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Cambiar usuario' }))
     await user.type(screen.getByLabelText('Buscar por nombre o usuario'), ' nuevo')
-    expect(screen.queryByLabelText('Rol a asignar')).toBeNull()
+    expect(screen.queryByLabelText('Nuevo rol')).toBeNull()
     expect((screen.getByRole('button', { name: /Seleccionar a Luis Prado/ }) as HTMLButtonElement).disabled).toBe(true)
   })
 
@@ -201,7 +201,7 @@ describe('Usuarios y permisos', () => {
     expect(screen.queryByLabelText('Buscar por nombre o usuario')).toBeNull()
     expect(screen.queryByLabelText('Filtrar por rol')).toBeNull()
     expect(screen.queryByRole('button', { name: /Seleccionar a/ })).toBeNull()
-    expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Asignar rol' }))
+    expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Cambiar rol' }))
     expect(mocks.confirm).not.toHaveBeenCalled()
   })
 
@@ -231,7 +231,7 @@ describe('Usuarios y permisos', () => {
     expect(mocks.confirm).not.toHaveBeenCalled()
     await user.click(screen.getByRole('button', { name: /Seleccionar a Ana Pérez/ }))
     expect((screen.getByLabelText('Motivo del cambio') as HTMLTextAreaElement).value).toBe('')
-    expect((screen.getByLabelText('Rol a asignar') as HTMLSelectElement).value).toBe(ana.rol_global)
+    expect((screen.getByLabelText('Nuevo rol') as HTMLSelectElement).value).toBe(ana.rol_global)
   })
 
   it('cambiar usuario cancela la autoridad pendiente y limpia el motivo antes de otra selección', async () => {
@@ -241,7 +241,7 @@ describe('Usuarios y permisos', () => {
     open()
     const user = await selectAna()
     await user.type(screen.getByLabelText('Motivo del cambio'), 'Asignación anterior')
-    await user.click(screen.getByRole('button', { name: 'Revisar cambio de rol' }))
+    await user.click(screen.getByRole('button', { name: 'Cambiar rol' }))
     await user.click(screen.getByRole('button', { name: 'Cambiar usuario' }))
     expect(vi.mocked(UsuariosService.autoridad).mock.calls[0][2]?.aborted).toBe(true)
     await user.click(screen.getByRole('button', { name: /Seleccionar a Luis Prado/ }))
@@ -258,7 +258,7 @@ describe('Usuarios y permisos', () => {
     if (state === 'confirmed') await waitFor(() => expect(mocks.refresh).toHaveBeenCalledTimes(1))
     expect(screen.queryByLabelText('Buscar por nombre o usuario')).toBeNull()
     expect(screen.queryByLabelText('Filtrar por rol')).toBeNull()
-    expect(screen.queryByLabelText('Rol a asignar')).toBeNull()
+    expect(screen.queryByLabelText('Nuevo rol')).toBeNull()
     expect(screen.queryByRole('button', { name: /Seleccionar a/ })).toBeNull()
     expect(screen.getByText(state === 'confirmed' ? 'Cambio de rol confirmado' : 'Cambio de rol sin confirmar')).toBeTruthy()
   })
@@ -307,10 +307,10 @@ describe('Usuarios y permisos', () => {
   it('cambiar de cuenta borra selección y no muestra datos de la cuenta anterior', async () => {
     const view = open()
     await selectAna()
-    expect(screen.getByLabelText('Rol a asignar')).toBeTruthy()
+    expect(screen.getByLabelText('Nuevo rol')).toBeTruthy()
     mocks.actorId = '43'
     view.rerender(<MemoryRouter><GestionUsuariosScreen /></MemoryRouter>)
-    expect(screen.queryByLabelText('Rol a asignar')).toBeNull()
+    expect(screen.queryByLabelText('Nuevo rol')).toBeNull()
     expect(screen.queryByText('Ana Pérez')).toBeNull()
     expect(mocks.hook).toHaveBeenLastCalledWith('43')
   })

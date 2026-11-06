@@ -225,7 +225,7 @@ async function main() {
   await page.getByText('Consultar cuenta por ID, incluidas inactivas').click(); await page.getByLabel('ID de cuenta').fill('12'); await page.getByRole('button', { name: 'Consultar cuenta', exact: true }).click()
   await page.getByRole('button', { name: 'Retirar Vivero sintético A' }).waitFor()
   check('cuenta inactiva permite retirar vigencia conservada y bloquea otorgar', !await page.getByRole('button', { name: 'Retirar Vivero sintético A' }).isDisabled() && await page.getByRole('button', { name: 'Asignar vivero' }).isDisabled())
-  await homeSelect('42'); await page.getByLabel('Rol a asignar').selectOption('GENERAL'); await page.getByLabel('Motivo del cambio').fill('Ensayo de último ADMIN'); await page.getByRole('button', { name: 'Revisar cambio de rol' }).click(); await page.getByRole('dialog').getByRole('button', { name: 'Confirmar rol' }).click(); await page.getByText(/último administrador sintético/).waitFor()
+  await homeSelect('42'); await page.getByLabel('Nuevo rol').selectOption('GENERAL'); await page.getByLabel('Motivo del cambio').fill('Ensayo de último ADMIN'); await page.getByRole('button', { name: 'Cambiar rol' }).click(); await page.getByRole('dialog').getByRole('button', { name: 'Confirmar rol' }).click(); await page.getByText(/último administrador sintético/).waitFor()
   check('regresión de rol conserva rechazo de último ADMIN', accounts.get('42').role === 'ADMIN')
   await context.close()
   // Cambio de cuenta y respuesta administrativa tardía dentro del mismo navegador.

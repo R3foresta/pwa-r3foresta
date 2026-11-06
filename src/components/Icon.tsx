@@ -5,6 +5,7 @@ export type IconName =
   | 'scan'
   | 'report'
   | 'user'
+  | 'user-refresh'
   | 'search'
   | 'leaf'
   | 'vivero'
@@ -101,6 +102,13 @@ function Icon({ name, className }: Props) {
           <path strokeLinecap="round" d="M9 9.5h6" />
           <path strokeLinecap="round" d="M9 13h6" />
           <path strokeLinecap="round" d="M9 16.5h3" />
+        </svg>
+      )
+    case 'user-refresh':
+      return (
+        <svg className={`${common} ${className ?? ''}`} viewBox="0 0 24 24" fill="none" strokeWidth="1.8" aria-hidden="true">
+          <circle cx="9" cy="6" r="4" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M14 14.5A7 7 0 0 0 2 19v1h8M14 17a4 4 0 0 1 7-2l1 1m0-4v4h-4M22 20a4 4 0 0 1-7 2l-1-1m0 3v-3h4" />
         </svg>
       )
     case 'user':
