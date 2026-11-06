@@ -50,7 +50,6 @@ export default function UsuarioRoleForm({ person, roleLocked = false, role, reas
         <div className="flex flex-wrap items-center gap-2">
           <label htmlFor="usuario-role-reason" className="text-sm font-semibold text-brand-800">Motivo del cambio</label>
           <span aria-hidden="true" className="text-sm font-semibold text-danger-700">*</span>
-          <Badge variant="danger" size="sm">Obligatorio</Badge>
         </div>
         <textarea id="usuario-role-reason" value={reason} rows={2} required minLength={3} maxLength={1000} disabled={locked || roleLocked} onChange={(event) => onReasonChange(event.target.value)} className={`${inputClasses(Boolean(reason) && !reasonValid)} resize-y`} placeholder="Indica el motivo por el que se cambia el rol." aria-invalid={Boolean(reason) && !reasonValid} aria-describedby="usuario-role-reason-hint" />
         <p id="usuario-role-reason-hint" className={`flex items-start gap-2 text-xs ${reason && !reasonValid ? 'text-danger-700' : 'text-neutral-600'}`}><span aria-hidden="true"><Icon name="info" className="h-4 w-4 shrink-0 text-brand-700" /></span><span>Escribe un motivo entre 3 y 1000 caracteres para habilitar el cambio.</span></p>

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import ConfirmDialog from '../../../components/ConfirmDialog'
+import Icon from '../../../components/Icon'
 import { Badge, Button, Card, inputClasses } from '../../../components/ui'
 import { useViveros } from '../../../hooks/useViveros'
 import { AccesosService } from '../../accesos/accesos.api'
@@ -83,11 +84,17 @@ function AccessPanel({ actorId, usuarioId, nombre, domain, locked, command, onAc
         {catalogLoading ? <p role="status" className="text-sm">Cargando catálogo de viveros…</p> : catalogError ? <div><p role="alert" className="text-sm text-danger-700">{catalogError}</p><Button variant="secondary" disabled={unavailable} onClick={refreshCatalog}>Reintentar catálogo de viveros</Button></div> : <div className="space-y-2"><label className="block text-sm font-semibold">Vivero a asignar<select className={inputClasses(false)} value={selectedVivero} disabled={unavailable || !eligible} onChange={event => { setSelectedVivero(event.target.value); changeTarget(null) }}><option value="">Escoge un vivero</option>{viveros.filter(item => !m2.viveros.some(row => sameId(item.id, row.vivero_id))).map(item => <option key={item.id} value={exactId(item.id)}>{item.nombre} · {item.codigo}</option>)}</select></label><Button disabled={unavailable || !eligible || !selectedVivero} onClick={() => changeTarget({ otorgar: true, viveroId: selectedVivero })}>Asignar vivero</Button></div>}
       </>}
       {!eligible && <p className="text-sm text-neutral-600">Solo cuentas GENERAL o VALIDADOR activas reciben accesos explícitos. Las vigencias conservadas pueden retirarse.</p>}
-      {target && <form className="space-y-3 border-t border-neutral-100 pt-3" onSubmit={event => { event.preventDefault(); void reviewChange() }}>
-        <p className="text-sm font-semibold">{target.otorgar ? 'Otorgar' : 'Retirar'} {domain === 'M1' ? 'Recolección' : labelVivero(target.viveroId!)} a {nombre}</p>
-        <label className="block text-sm font-semibold">Motivo de {domain}<textarea className={inputClasses(Boolean(reason) && !validReason)} rows={2} maxLength={1000} value={reason} disabled={unavailable} onChange={event => { request.current?.abort(); setBusy(false); setReason(event.target.value); setReview(null) }} /></label>
-        <p className="text-xs text-neutral-500">Entre 3 y 1000 caracteres. Se conserva en el historial.</p>
-        <div className="flex flex-wrap gap-2"><Button type="submit" disabled={unavailable || !validReason}>Revisar cambio de {domain}</Button><Button variant="ghost" disabled={unavailable} onClick={() => changeTarget(null)}>Cancelar cambio de {domain}</Button></div>
+      {target && <form className="space-y-4 border-t border-neutral-100 pt-4" onSubmit={event => { event.preventDefault(); void reviewChange() }}>
+        <p className="break-words text-sm font-semibold text-brand-800">{target.otorgar ? 'Otorgar' : 'Retirar'} {domain === 'M1' ? 'Recolección' : labelVivero(target.viveroId!)} a {nombre}</p>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2">
+            <label htmlFor={`access-reason-${domain}`} className="text-sm font-semibold text-brand-800">Motivo de {domain}</label>
+            <span aria-hidden="true" className="text-sm font-semibold text-danger-700">*</span>
+          </div>
+          <textarea id={`access-reason-${domain}`} className={`${inputClasses(Boolean(reason) && !validReason)} resize-y`} rows={2} required minLength={3} maxLength={1000} value={reason} disabled={unavailable} placeholder="Indica el motivo por el que se cambia el acceso." aria-invalid={Boolean(reason) && !validReason} aria-describedby={`access-reason-hint-${domain}`} onChange={event => { request.current?.abort(); setBusy(false); setReason(event.target.value); setReview(null) }} />
+          <p id={`access-reason-hint-${domain}`} className={`flex items-start gap-2 text-xs ${reason && !validReason ? 'text-danger-700' : 'text-neutral-600'}`}><span aria-hidden="true"><Icon name="info" className="h-4 w-4 shrink-0 text-brand-700" /></span><span>Escribe un motivo entre 3 y 1000 caracteres para habilitar el cambio. Se conservará en el historial.</span></p>
+        </div>
+        <div className="flex flex-wrap gap-2"><Button type="submit" leftIcon={target.otorgar ? 'user-check' : 'minus'} disabled={unavailable || !validReason}>{target.otorgar ? 'Otorgar acceso' : 'Retirar acceso'}</Button><Button variant="secondary" disabled={unavailable} onClick={() => changeTarget(null)}>Cancelar cambio</Button></div>
       </form>}
       <details className="border-t border-neutral-100 pt-3"><summary className="cursor-pointer text-sm font-semibold">Historial auditable de {domain}</summary><ul className="mt-3 space-y-3 text-sm">{data.historial.map(item => <li className="break-words rounded-2xl bg-neutral-50 p-3" key={item.id}><p className="font-semibold">{item.evento === 'ACCESO_OTORGADO' ? 'Otorgado' : 'Retirado'}{item.vivero_id ? ` · ${labelVivero(item.vivero_id)}` : ''}</p><p>{item.motivo}</p><p className="text-xs text-neutral-500">{new Date(item.creado_en).toLocaleString('es-BO')} · Actor {item.actor_id} · Revisión {item.revision_anterior} → {item.revision_nueva}</p><p className="break-all text-xs text-neutral-500">Comando {item.comando_id}</p></li>)}</ul>{!data.historial.length && <p className="mt-2 text-sm text-neutral-500">Sin cambios registrados.</p>}{data.siguiente_antes_de_id && <Button variant="secondary" disabled={unavailable} onClick={() => { setReview(null); void read(data.siguiente_antes_de_id!) }}>Cargar más historial de {domain}</Button>}</details>
     </>}

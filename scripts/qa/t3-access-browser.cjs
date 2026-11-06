@@ -167,7 +167,7 @@ async function main() {
     else if (grant) { await page.getByLabel('Vivero a asignar').selectOption(vivero); await page.getByRole('button', { name: 'Asignar vivero' }).click() }
     else await page.getByRole('button', { name: `Retirar Vivero sintético ${vivero === A ? 'A' : 'B'}` }).click()
     await page.getByLabel(`Motivo de ${domain}`).fill(reason)
-    await page.getByRole('button', { name: `Revisar cambio de ${domain}` }).click()
+    await page.getByRole('region', { name: domain === 'M1' ? 'Acceso de Recolección (M1)' : 'Viveros asignados (M2)', exact: true }).getByRole('button', { name: grant ? 'Otorgar acceso' : 'Retirar acceso', exact: true }).click()
     const dialog = page.getByRole('dialog'); await dialog.waitFor()
     return dialog
   }
@@ -182,7 +182,7 @@ async function main() {
   const postsBefore = commands.length
   await dialog.getByRole('button', { name: 'Cancelar' }).click()
   check('cancelar confirmación no escribe', commands.length === postsBefore && !accounts.get('7').m1)
-  await page.getByRole('button', { name: 'Revisar cambio de M1' }).click(); dialog = page.getByRole('dialog')
+  await page.getByRole('button', { name: 'Otorgar acceso' }).click(); dialog = page.getByRole('dialog')
   await confirm('M1', dialog)
   check('solo M1 sin cambiar rol ni M2', accounts.get('7').m1 && accounts.get('7').m2.size === 0 && accounts.get('7').role === 'GENERAL')
   await close('M1')
