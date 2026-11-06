@@ -50,7 +50,7 @@ La documentación de dominio y el estado global de entregas viven en [r3foresta-
 | Área | Qué existe |
 | --- | --- |
 | Recolección | Borrador, evidencia, corrección de rechazados, validación y stock de origen. |
-| Vivero | Inicio, eventos, timeline, evidencias y operaciones físicas hacia Plantación. [Módulo](src/modules/vivero/README.md). |
+| Vivero | Recepción de semillas y «Recibir y validar», incidencias, inicio, eventos y operaciones físicas hacia Plantación. [Módulo](src/modules/vivero/README.md), [revisión T4](docs/QA_T4_REVISION_2026-11-06.md); conciliación/096/corte externo pendientes. |
 | Plantación interna | Campañas/subcampañas, equipo logístico, plan, polígono y cierre; inicial compartida con v1 y cliente de reposición con ámbito/origen explícitos. |
 | Usuarios y permisos | Rol global, M1 y asignaciones M2 por vivero con comandos recuperables separados. [QA y revisión T3](docs/QA_T3_CORRECCION_2026-11-06.md), corte externo pendiente. |
 | Identidad/perfil | Passkey, perfil propio y afiliación opcional. [Módulo](src/modules/user_profile/README.md). |

@@ -60,6 +60,7 @@ function ViveroScreen() {
 
   return (
     <div className="relative min-h-screen bg-brand-50 text-brand-700">
+      <div className="mx-auto max-w-md px-5 pt-4"><Link to="/app/recepciones-semillas" className="inline-flex min-h-12 items-center rounded-2xl bg-brand-600 px-4 py-3 font-semibold text-white">Recibir y validar material</Link></div>
       <div className="mx-auto max-w-md px-5 pt-4"><Link to="/app/vivero/material" className="inline-flex min-h-11 items-center rounded-2xl bg-white px-4 py-2 text-sm font-semibold text-brand-700 shadow-soft">Material de origen y desecho</Link></div>
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-28">
         <div className="flex items-start gap-3 px-5 pt-10">

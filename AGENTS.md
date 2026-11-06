@@ -88,7 +88,7 @@ Estas reglas no son negociables desde frontend.
 - Una recolección es el lote origen del sistema.
 - Estados de registro: `BORRADOR`, `PENDIENTE_VALIDACION`, `VALIDADO`, `RECHAZADO`.
 - Estado operativo: `ABIERTO` o `CERRADO`, derivado del saldo.
-- Solo una recolección `VALIDADO` y `ABIERTO` puede alimentar Vivero.
+- Solo una recolección `VALIDADO`, `ABIERTO` y con recepción física total conforme puede alimentar nuevos consumos de Vivero (T4/096). El nuevo DESECHO también exige recepción; VALIDADO histórico no la acredita.
 - `BORRADOR` y `RECHAZADO` pueden editarse según permisos.
 - `PENDIENTE_VALIDACION` queda congelado mientras se revisa.
 - `VALIDADO` no se edita: solo permite movimientos posteriores.

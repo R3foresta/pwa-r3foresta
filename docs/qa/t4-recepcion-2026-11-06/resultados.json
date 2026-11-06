@@ -1,0 +1,691 @@
+{
+  "estado": "APROBADO",
+  "fecha_local": "2026-11-06",
+  "entorno": "PWA_REAL_API_HTTP_SINTETICA",
+  "versiones": {
+    "node": "v24.19.0",
+    "navegador": "156.0.8078.80",
+    "playwright": "1.64.1"
+  },
+  "pwa": "http://127.0.0.1:5194",
+  "api": "http://127.0.0.1:3344",
+  "checks": [
+    "entrada real desde Vivero para GENERAL solo M2",
+    "sin desborde cola-390",
+    "sin desborde cola-320",
+    "sin desborde cola-1280",
+    "cancelar no envía ni confirma recepción",
+    "sin desborde confirmacion-1280",
+    "evidencia multipart sin actor/vivero concedidos por cliente",
+    "confirmación conserva IDs y revisión BIGINT exactos",
+    "recepción no duplica saldo M1",
+    "sin desborde conforme-1280",
+    "evidencia multipart sin actor/vivero concedidos por cliente",
+    "sin desborde incidencia-390",
+    "diferencia no valida ni consume",
+    "evidencia multipart sin actor/vivero concedidos por cliente",
+    "sin desborde resolucion-390",
+    "resolución conserva observado y nueva comprobación",
+    "autorrecepción bloqueada",
+    "sin desborde historico-390",
+    "histórico conserva saldo remanente sin recepción ficticia",
+    "URL directa de otro vivero denegada",
+    "evidencia multipart sin actor/vivero concedidos por cliente",
+    "sin desborde incierto-390",
+    "503/202 conserva intención sin reenvío automático",
+    "sin desborde recuperacion-sin-m2-390",
+    "recuperación propia tras perder M2 y rol interno no duplica comandos",
+    "solo M1 o VOLUNTARIO no recibe 9",
+    "solo M1 o VOLUNTARIO no recibe 11",
+    "sin errores de página/API sintética"
+  ],
+  "network": [
+    {
+      "actor": "7",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/subcampanias",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/lotes-vivero",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/subcampanias",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/lotes-vivero",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/subcampanias",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/lotes-vivero",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/subcampanias",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/lotes-vivero",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/recepcion-semillas",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/recepcion-semillas/9007199254740993",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/recepcion-semillas/9007199254740993/evidencias",
+      "method": "POST"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/recepcion-semillas/9007199254740993/recibir-validar",
+      "method": "POST"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/recepcion-semillas/9007199254740993",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/recepcion-semillas/102",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/recepcion-semillas/102/evidencias",
+      "method": "POST"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/recepcion-semillas/102/recibir-validar",
+      "method": "POST"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/recepcion-semillas/102",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/recepcion-semillas/102/evidencias",
+      "method": "POST"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/recepcion-semillas/102/recibir-validar",
+      "method": "POST"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/recepcion-semillas/102",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/recepcion-semillas/103",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/recepcion-semillas/104",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/recepcion-semillas/105",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/recepcion-semillas/106",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/recepcion-semillas/106/evidencias",
+      "method": "POST"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/recepcion-semillas/106/recibir-validar",
+      "method": "POST"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/recepcion-semillas/comandos/7d50b699-d855-47bf-9d77-4b7c71bac1e9",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "7",
+      "path": "/api/v1/recepcion-semillas/comandos/7d50b699-d855-47bf-9d77-4b7c71bac1e9",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "9",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    },
+    {
+      "actor": "11",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "11",
+      "path": "/api/users/profile",
+      "method": "GET"
+    },
+    {
+      "actor": "11",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "11",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "11",
+      "path": "/api/v1/participacion/capacidades",
+      "method": "GET"
+    },
+    {
+      "actor": "11",
+      "path": "/api/v1/me/acceso-recoleccion",
+      "method": "GET"
+    },
+    {
+      "actor": "11",
+      "path": "/api/v1/me/acceso-viveros",
+      "method": "GET"
+    }
+  ],
+  "commands": [
+    {
+      "actor": "7",
+      "origen": "9007199254740993",
+      "revision_esperada": "9007199254740992",
+      "cantidad_recibida": 100,
+      "unidad_recibida": "G",
+      "fecha_recepcion": "2026-11-06",
+      "comando_id": "12785b9d-a0c7-4a4c-a4e6-302f5735dd27",
+      "evidencia_ids": [
+        "9007199254740995"
+      ]
+    },
+    {
+      "actor": "7",
+      "origen": "102",
+      "revision_esperada": "9007199254740992",
+      "cantidad_recibida": 80,
+      "unidad_recibida": "G",
+      "fecha_recepcion": "2026-11-06",
+      "comando_id": "a883ca96-70c9-4ede-b64b-522e6d601945",
+      "evidencia_ids": [
+        "9007199254740996"
+      ]
+    },
+    {
+      "actor": "7",
+      "origen": "102",
+      "revision_esperada": "9007199254740993",
+      "cantidad_recibida": 100,
+      "unidad_recibida": "G",
+      "fecha_recepcion": "2026-11-06",
+      "incidencia_id": "22",
+      "motivo_resolucion": "Nueva comprobación física total conforme",
+      "comando_id": "6e098c9a-2093-4010-8143-41d328da7260",
+      "evidencia_ids": [
+        "9007199254740997"
+      ]
+    },
+    {
+      "actor": "7",
+      "origen": "106",
+      "revision_esperada": "9007199254740992",
+      "cantidad_recibida": 100,
+      "unidad_recibida": "G",
+      "fecha_recepcion": "2026-11-06",
+      "comando_id": "7d50b699-d855-47bf-9d77-4b7c71bac1e9",
+      "evidencia_ids": [
+        "9007199254740998"
+      ]
+    }
+  ],
+  "screenshots": [
+    "cola-390.png",
+    "cola-320.png",
+    "cola-1280.png",
+    "confirmacion-1280.png",
+    "conforme-1280.png",
+    "incidencia-390.png",
+    "resolucion-390.png",
+    "historico-390.png",
+    "incierto-390.png",
+    "recuperacion-sin-m2-390.png"
+  ],
+  "errors": [],
+  "measures": [
+    {
+      "name": "cola-390",
+      "viewport": 390,
+      "document": 390
+    },
+    {
+      "name": "cola-320",
+      "viewport": 320,
+      "document": 320
+    },
+    {
+      "name": "cola-1280",
+      "viewport": 1280,
+      "document": 1280
+    },
+    {
+      "name": "confirmacion-1280",
+      "viewport": 1280,
+      "document": 1280
+    },
+    {
+      "name": "conforme-1280",
+      "viewport": 1280,
+      "document": 1280
+    },
+    {
+      "name": "incidencia-390",
+      "viewport": 390,
+      "document": 390
+    },
+    {
+      "name": "resolucion-390",
+      "viewport": 390,
+      "document": 390
+    },
+    {
+      "name": "historico-390",
+      "viewport": 390,
+      "document": 390
+    },
+    {
+      "name": "incierto-390",
+      "viewport": 390,
+      "document": 390
+    },
+    {
+      "name": "recuperacion-sin-m2-390",
+      "viewport": 390,
+      "document": 390
+    }
+  ],
+  "limites": [
+    "JWT/cuentas/capacidades/recibos/saldos/Storage simulados en esta QA",
+    "SQL/PostGIS/HTTP real independiente en Backend",
+    "Sin WebAuthn/servicios reales/despliegue"
+  ]
+}

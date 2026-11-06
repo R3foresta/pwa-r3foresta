@@ -111,6 +111,8 @@ export interface Recoleccion {
   estado_operativo: 'ABIERTO' | 'CERRADO' | null
   usuario_validacion_id: number | null
   fecha_validacion: string | null
+  recepcion_conforme?: boolean
+  recepcion?: { id: string; fecha_recepcion: string; recibido_por: string; registrado_en: string } | null
   elegible_para_vivero?: boolean
   motivo_no_elegibilidad_para_vivero?: string | null
   cantidad_solicitada_vivero_evaluada?: number | null

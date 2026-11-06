@@ -77,6 +77,8 @@ El perfil visible está ligado al token que lo verificó. Al cambiar token por l
 
 Vivero usa orígenes mínimos por `GET /api/v1/vivero/origenes`, sin completar con ficha/fotos M1 ajenas. INICIO envía `vivero_id` exacto en multipart; eventos/entregas usan contexto del lote (entrega: evidencia DESPACHO). Tras un DESECHO incierto, una sola lectura posterior correcta permite preparar otra operación; durante carga o error no se reutiliza el saldo anterior ni se repite el POST. [Corrección T3 y evidencia](docs/QA_T3_CORRECCION_2026-11-06.md). La logística sigue exigiendo operación M2 en ese vivero y COORDINADOR M3, salvo ADMIN. Las comprobaciones de autoridad usan lectura de equipo con IDs exactos; el adaptador del editor M3 legado sólo representa IDs numéricos seguros.
 
+T4 añade `/app/recepciones-semillas` para operar con solo M2 y recuperar recibos propios aun tras perder ese acceso/rol. La recepción total conforme se confirma con evidencia; diferencias generan incidencia, sin aprobar ni consumir. Comparar cantidades decimales sin tolerancias y descartar cola/detalle/fotos al cambiar los viveros autorizados. VALIDADO documental no acredita recepción ni habilita consumo/desecho por sí solo. [Contrato y revisión local](docs/QA_T4_REVISION_2026-11-06.md); conciliación y aplicación096/corte externos pendientes.
+
 ## Plan de Plantación
 
 Reutilizar `PlanMetaEspeciesForm`, `usePlanMetaEspeciesForm` y utilidades del módulo. Asistente y detalle conservan su propia carga, autorización, confirmación y persistencia.

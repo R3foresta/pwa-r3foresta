@@ -146,7 +146,7 @@ function RecoleccionDetailScreen() {
   }
 
   const handleDiscard = async () => {
-    if (!recoleccion || m2.status !== 'ready' || !canAtVivero(m2.data, recoleccion.vivero_id, 'desechar_semillas')) return
+    if (!recoleccion || recoleccion.recepcion_conforme !== true || m2.status !== 'ready' || !canAtVivero(m2.data, recoleccion.vivero_id, 'desechar_semillas')) return
 
     const quantity = Number(discardQuantity.replace(',', '.'))
     const available = Number(recoleccion.saldo_actual ?? 0)
@@ -240,6 +240,7 @@ function RecoleccionDetailScreen() {
   const formActions = getRecoleccionFormActions(recoleccion, m1.status === 'ready' && canMaintain(m1.data, user?.id, recoleccion.usuario_id) ? user : null)
   const puedeDesechar =
     estadoRegistro === 'VALIDADO' &&
+    recoleccion.recepcion_conforme === true &&
     estadoOperativo === 'ABIERTO' &&
     cantidadActual > 0 &&
     m2.status === 'ready' && canAtVivero(m2.data, recoleccion.vivero_id, 'desechar_semillas')
@@ -370,6 +371,12 @@ function RecoleccionDetailScreen() {
                 <span className="text-neutral-500">Usuario</span>
                 <span className="text-right">{recoleccion.usuario?.username || 'No disponible'}</span>
               </p>
+            </div>
+
+            <div className="mt-4 rounded-2xl bg-brand-50 p-3 text-sm">
+              <p>Recepción física: {recoleccion.recepcion_conforme === true ? 'conforme acreditada' : 'sin recepción conforme acreditada'}.</p>
+              {estadoRegistro === 'VALIDADO' && recoleccion.recepcion_conforme !== true && <p>VALIDADO acredita aprobación documental. Consumo y desecho requieren recepción conforme.</p>}
+              {m2.status === 'ready' && canAtVivero(m2.data, recoleccion.vivero_id, 'operar') && ['PENDIENTE_VALIDACION','VALIDADO'].includes(estadoRegistro) && <Button variant="secondary" onClick={() => navigate(`/app/recepciones-semillas/${recoleccion.id}`)}>Consultar recepción en Vivero</Button>}
             </div>
 
             {(formActions.canEdit || formActions.canSubmit) && (

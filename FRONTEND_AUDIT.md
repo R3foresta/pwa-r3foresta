@@ -40,6 +40,8 @@ El orden de ejecución entre repositorios se decide en el tablero oficial; esta 
 
 ### AUD-034 — Corte coordinado de accesos M1/M2
 
+T4 también está implementada y revisada localmente: recepción/validación por M2, incidencia/resolución y recuperación propia. Corregidas comparación decimal y retirada de datos al perder un vivero. [Cierre y evidencia](docs/QA_T4_REVISION_2026-11-06.md). No cierra AUD-034: faltan conciliación del legado, cotejo/aplicación096 y corte del entorno; T5 sigue pendiente.
+
 6 de noviembre: corregidos los hallazgos coordinadores P2 (entrada y Volver del revisor M2 sin M1) y P3 (consulta única tras DESECHO incierto). La fixture exige M1 en la lista propia y se prueba el recorrido real de Inicio/barra, carga/error y nueva lectura sin reenvío físico. [Nuevo informe y corte conservando el anterior](docs/QA_T3_CORRECCION_2026-11-06.md). [Comprobación coordinadora cerrada](../Backend-r3foresta/docs/evidencia/t3-revision-coordinadora-2026-11-06.json); corte externo pendiente.
 
 T3 amplía Usuarios y permisos y aplica capacidades por operación/vivero en la PWA. [Informe y evidencia](docs/QA_T3_ACCESOS.md). Backend local añade sólo proyecciones a texto de catálogo, vivero del lote y actor logístico para evitar redondear BIGINT; 092–095 e historia preservadas. Las pruebas locales distinguen HTTP simulado, unitarios y contratos; no acreditan JWT/RPC/Storage o despliegue del destino. La edición de equipo M3 legada conserva su contrato numérico seguro; la comprobación logística T3 usa una lectura exacta independiente, sin convertir una cuenta grande al formato legado.

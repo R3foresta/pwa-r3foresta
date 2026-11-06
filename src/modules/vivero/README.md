@@ -50,3 +50,6 @@ El flujo principal de eventos reutiliza:
 3. `utils/validators.ts` para reglas de cantidad, unidad y fecha.
 
 La ruta legacy de Embolsado ya redirige al formulario unificado (`AUD-006`, resuelto). Continúan la idempotencia durable/recuperación de eventos físicos y su QA integrado (`AUD-007`); no confundirla con el motor de comandos C04–C09 de Participación. Consultar la [auditoría vigente](../../../FRONTEND_AUDIT.md) antes de retomar pendientes.
+
+
+T4 añade localmente [recepción de semillas y esquejes](../../../docs/QA_T4_RECEPCION.md) desde Vivero, con cola/detalle propios, confirmación e incidencia/resolución recuperables. Requiere096 y revisión/corte coordinados; M3 y plantas externas conservan su alcance separado.

@@ -59,6 +59,7 @@ const RecoleccionFormUbicacionScreen = lazy(
 const RecoleccionFormResumenScreen = lazy(
   () => import('./modules/recolecciones/RecoleccionFormResumenScreen'),
 )
+const RecepcionScreen = lazy(() => import('./modules/vivero/recepcion/RecepcionScreen'))
 const ViveroMaterialScreen = lazy(() => import('./modules/vivero/screens/ViveroMaterialScreen'))
 const ViveroScreen = lazy(() => import('./modules/vivero/screens/ViveroScreen'))
 const ViveroDetailScreen = lazy(
@@ -204,6 +205,8 @@ function App() {
               <Route path=":id" element={<RecoleccionDetailScreen />} />
               <Route path=":id/evidencias/new" element={<RecoleccionNuevaEvidenciaScreen />} />
             </Route>
+            <Route path="recepciones-semillas" element={<RecepcionScreen />} />
+            <Route path="recepciones-semillas/:id" element={<RecepcionScreen />} />
             <Route path="vivero" element={<OperationalAccessGate domain="M2" />}>
               <Route index element={<ViveroScreen />} />
               <Route path="material" element={<ViveroMaterialScreen />} />
