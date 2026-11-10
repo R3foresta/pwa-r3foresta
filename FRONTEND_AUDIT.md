@@ -48,6 +48,12 @@ T3 amplía Usuarios y permisos y aplica capacidades por operación/vivero en la 
 
 Revisión coordinadora cerrada; faltan aceptación en dispositivo y cotejo/corte cliente-servidor del entorno autorizado. No conceder accesos reales como fixtures ni presentar revisión documental como recepción física. WebAuthn/Storage externos y la idempotencia física conservan AUD-021/AUD-007; T4/T5 quedan separados.
 
+Actualización local del 9 de noviembre. La ficha histórica de Vivero y los
+orígenes conservan IDs y cantidades exactos con 097. Las pantallas legadas de
+detalle, embolsado y eventos del lote admiten IDs hasta `MAX_SAFE_INTEGER` y
+rechazan los mayores para impedir alias. Queda pendiente extender ese flujo
+legado a cadenas BIGINT. [Contrato, evidencia y límites](../Backend-r3foresta/docs/vivero-conciliacion-historica.md).
+
 ### AUD-032 — Historial administrativo de semillas por especie
 
 4 de noviembre: tarjetas de Inicio/Stock abren la consulta ADMIN global por especie, paginada, con semillas validadas de todos los autores, incluidas cerradas y saldo cero. Reutiliza detalle, conserva especie/página y muestra snapshot de recolector, cantidad original y saldo. Disponibilidad independiente, errores/vacío separados, cancelación de respuestas obsoletas y validación del contrato. Backend añade lectura específica con actor Bearer verificado sin cambiar listado propio. Sin migraciones ni dependencias nuevas.

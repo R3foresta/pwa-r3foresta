@@ -1,4 +1,6 @@
 import type { TipoMaterialVivero, UnidadMedidaVivero } from '../types/contracts'
+import { formatCantidadVivero } from './format'
+import { DECIMALES_GRAMOS_INICIO, DIGITOS_ENTEROS_INICIO } from '../../../config/vivero'
 import { todayLocalISO } from '../../../utils/validations/date'
 
 const YMD_PATTERN = /^\d{4}-\d{2}-\d{2}$/
@@ -20,24 +22,22 @@ export function isFutureDateYmd(value: string, today = new Date()): boolean {
   return value > todayYmd
 }
 
-export function countDecimals(value: number): number {
-  if (!Number.isFinite(value)) return 0
-  const text = value.toString()
-  if (!text.includes('.')) return 0
-  return text.split('.')[1]?.length ?? 0
+function cantidadEnUnidadMinima(texto: string, unidad: UnidadMedidaVivero, truncar: boolean): bigint | null {
+  const formato = /^(\d+)(?:\.(\d+))?$/.exec(texto)
+  if (!formato) return null
+  const [, entero, fraccion = ''] = formato
+  const decimales = unidad === 'G' ? DECIMALES_GRAMOS_INICIO : 0
+  if (!truncar && fraccion.length > decimales) return null
+  return BigInt(entero + fraccion.slice(0, decimales).padEnd(decimales, '0'))
 }
 
-export function hasUpToOneDecimal(value: number): boolean {
-  return countDecimals(value) <= 1
+export function saldoEnUnidadMinima(texto: string, unidad: UnidadMedidaVivero): bigint | null {
+  return cantidadEnUnidadMinima(texto, unidad, true)
 }
 
-export function isPositiveNumber(value: number): boolean {
-  return Number.isFinite(value) && value > 0
-}
-
-export function isIntegerWhenUnidad(unidad: UnidadMedidaVivero, value: number): boolean {
-  if (unidad !== 'UNIDAD') return true
-  return Number.isInteger(value)
+export function cantidadMaximaInicio(unidad: UnidadMedidaVivero): bigint {
+  const decimales = unidad === 'G' ? DECIMALES_GRAMOS_INICIO : 0
+  return 10n ** BigInt(DIGITOS_ENTEROS_INICIO + decimales) - 1n
 }
 
 export function isUnidadCompatibleWithRecoleccion(
@@ -52,51 +52,55 @@ export function isUnidadCompatibleWithRecoleccion(
 
 export type CantidadValidationResult = {
   isValid: boolean
+  cantidad: bigint | null
   message?: string
 }
 
 export function validateCantidadInicial(options: {
-  cantidad: number
+  cantidad: string
   unidad: UnidadMedidaVivero
   recoleccionTipoMaterial: TipoMaterialVivero
-  maxCantidad?: number | null
+  maxCantidad: bigint | null
 }): CantidadValidationResult {
-  const { cantidad, unidad, recoleccionTipoMaterial, maxCantidad } = options
-
-  if (!isPositiveNumber(cantidad)) {
+  const { unidad, recoleccionTipoMaterial, maxCantidad } = options
+  const cantidad = cantidadEnUnidadMinima(options.cantidad, unidad, false)
+  if (cantidad === null) {
     return {
       isValid: false,
-      message: 'La cantidad inicial debe ser mayor a 0.',
+      cantidad,
+      message: unidad === 'G'
+        ? `Ingresa una cantidad en G con hasta ${DECIMALES_GRAMOS_INICIO} decimales.`
+        : 'Ingresa una cantidad entera para UNIDAD.',
     }
   }
 
-  if (unidad === 'G' && !hasUpToOneDecimal(cantidad)) {
-    return {
-      isValid: false,
-      message: 'Cuando la unidad es G, la cantidad admite máximo 1 decimal.',
-    }
+  if (cantidad === 0n) {
+    return { isValid: false, cantidad, message: 'La cantidad inicial debe ser mayor a 0.' }
   }
 
-  if (!isIntegerWhenUnidad(unidad, cantidad)) {
+  if (cantidad > cantidadMaximaInicio(unidad)) {
     return {
       isValid: false,
-      message: 'Cuando la unidad es UNIDAD, la cantidad debe ser entera.',
+      cantidad,
+      message: `La cantidad inicial admite hasta ${DIGITOS_ENTEROS_INICIO} dígitos enteros.`,
     }
   }
 
   if (!isUnidadCompatibleWithRecoleccion(unidad, recoleccionTipoMaterial)) {
+    return { isValid: false, cantidad, message: 'Las recolecciones de ESQUEJE solo permiten unidad UNIDAD.' }
+  }
+
+  if (maxCantidad === null) {
+    return { isValid: false, cantidad, message: 'No se pudo comprobar el saldo disponible.' }
+  }
+
+  if (cantidad > maxCantidad) {
     return {
       isValid: false,
-      message: 'Las recolecciones de ESQUEJE solo permiten unidad UNIDAD.',
+      cantidad,
+      message: `La cantidad no puede superar el saldo disponible (${formatCantidadVivero(maxCantidad, unidad)} ${unidad}).`,
     }
   }
 
-  if (typeof maxCantidad === 'number' && Number.isFinite(maxCantidad) && cantidad > maxCantidad) {
-    return {
-      isValid: false,
-      message: `La cantidad no puede superar el saldo disponible (${maxCantidad} ${unidad}).`,
-    }
-  }
-
-  return { isValid: true }
+  return { isValid: true, cantidad }
 }

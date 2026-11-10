@@ -52,4 +52,8 @@ El flujo principal de eventos reutiliza:
 La ruta legacy de Embolsado ya redirige al formulario unificado (`AUD-006`, resuelto). Continúan la idempotencia durable/recuperación de eventos físicos y su QA integrado (`AUD-007`); no confundirla con el motor de comandos C04–C09 de Participación. Consultar la [auditoría vigente](../../../FRONTEND_AUDIT.md) antes de retomar pendientes.
 
 
-T4 añade localmente [recepción de semillas y esquejes](../../../docs/QA_T4_RECEPCION.md) desde Vivero, con cola/detalle propios, confirmación e incidencia/resolución recuperables. Requiere096 y revisión/corte coordinados; M3 y plantas externas conservan su alcance separado.
+T4 añade localmente [recepción de semillas y esquejes](../../../docs/QA_T4_RECEPCION.md) desde Vivero, con cola/detalle propios, confirmación e incidencia/resolución recuperables. Requiere 096 y revisión/corte coordinados.
+
+INICIO y Material consultan `/api/v1/vivero/origenes?incluir_pendientes=true`. El servidor distingue el saldo habilitado por recepción ordinaria o conciliación histórica del saldo pendiente o con incidencia. INICIO añade `incluir_requisitos_inicio=true` (099) para mostrar el requisito faltante y conservar el saldo decimal exacto. Ofrece el alta cuando el origen cumple los requisitos previos y envía cantidades en texto decimal. DESECHO exige habilitación física y capacidad de la custodia. Una respuesta vacía y un fallo de consulta tienen estados separados. Los enlaces apuntan a la recepción T4 o a la ficha M2 `/app/vivero/conciliaciones/:id` cuando el servidor concede lectura. La ficha muestra el cotejo y las referencias con IDs y cantidades exactos. La comprobación física y los cambios de padrón del piloto se ejecutan vía API autenticada. M3 y plantas externas conservan su alcance separado.
+
+[Contrato de conciliación, pruebas y procedimiento del piloto](../../../../Backend-r3foresta/docs/vivero-conciliacion-historica.md).

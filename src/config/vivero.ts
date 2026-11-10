@@ -1,3 +1,5 @@
 export const MAX_DIAS_VIVERO = 10
+export const DECIMALES_GRAMOS_INICIO = 6
+export const DIGITOS_ENTEROS_INICIO = 24
 export const DEFAULT_VIVERO_LIST_PAGE = 1
 export const DEFAULT_VIVERO_LIST_LIMIT = 20

@@ -14,7 +14,10 @@ vi.mock('../../../hooks/useViveros', () => ({
   useViveros: () => ({ viveros: [{ id: 7, nombre: 'Vivero Norte', codigo: 'VN' }], loading: false, error: null }),
 }))
 
-vi.mock('../api/origenes.api', () => ({ OrigenesService: { listar: vi.fn() } }))
+vi.mock('../api/origenes.api', async importOriginal => ({
+  ...await importOriginal<typeof import('../api/origenes.api')>(),
+  OrigenesService: { listar: vi.fn() },
+}))
 vi.mock('../../accesos/capabilitiesContext', () => ({ useOperationalAccess: () => ({ m2: { status: 'ready', data: m2Fixture({ viveros: [assigned('7')] }).data } }) }))
 
 vi.mock('../../../services/lotes-vivero.service', () => ({
@@ -39,22 +42,26 @@ beforeEach(() => {
       tipo_material: 'SEMILLA',
       unidad_canonica: 'G',
       saldo_actual: 5,
+      saldo_actual_exacto: '5',
+      motivo_no_inicio: null,
       estado_registro: 'VALIDADO',
       estado_operativo: 'ABIERTO',
+      estado_habilitacion: 'RECEPCION_CONFORME',
+      puede_consultar_conciliacion: false,
     }],
   } as never)
   vi.mocked(LotesViveroService.uploadEvidenciasPendientes).mockResolvedValue({ evidencia_ids: [12] } as never)
   vi.mocked(LotesViveroService.createLote).mockResolvedValue({ data: { lote_vivero_id: 99 } } as never)
 })
 
-async function prepareForm() {
+async function prepareForm(cantidad = '2.5') {
   const view = render(<MemoryRouter><ViveroNewScreen /></MemoryRouter>)
   const { container } = view
   fireEvent.change(screen.getByRole('combobox'), { target: { value: '7' } })
   await waitFor(() => expect(screen.getByRole('radio')).toBeTruthy())
   fireEvent.click(screen.getByRole('radio'))
   fireEvent.change(container.querySelector('input[inputmode="decimal"]') as HTMLInputElement, {
-    target: { value: '2.5' },
+    target: { value: cantidad },
   })
   fireEvent.change(container.querySelector('input[type="file"]') as HTMLInputElement, {
     target: { files: [new File(['foto'], 'inicio.jpg', { type: 'image/jpeg' })] },
@@ -63,6 +70,46 @@ async function prepareForm() {
 }
 
 describe('INICIO de Vivero', () => {
+  it('muestra saldos bloqueados y solo permite seleccionar material habilitado', async () => {
+    vi.mocked(OrigenesService.listar).mockResolvedValue({
+      data: [
+        { recoleccion_id: '9007199254740993', codigo_trazabilidad: 'REC-H', tipo_material: 'SEMILLA',
+          saldo_actual: 2.5, unidad_canonica: 'G', estado_habilitacion: 'PENDIENTE_CONCILIACION', puede_consultar_conciliacion: true },
+        { recoleccion_id: '4', codigo_trazabilidad: 'REC-T4', tipo_material: 'SEMILLA',
+          saldo_actual: 3, unidad_canonica: 'G', estado_habilitacion: 'PENDIENTE_RECEPCION', puede_consultar_conciliacion: false },
+        { recoleccion_id: '5', codigo_trazabilidad: 'REC-ADMIN', tipo_material: 'SEMILLA',
+          saldo_actual: 7, unidad_canonica: 'G', estado_habilitacion: 'PENDIENTE_CONCILIACION', puede_consultar_conciliacion: false },
+        { recoleccion_id: '6', codigo_trazabilidad: 'REC-C', tipo_material: 'SEMILLA',
+          saldo_actual: 5, saldo_actual_exacto: '5', motivo_no_inicio: null, unidad_canonica: 'G', estado_habilitacion: 'CONCILIACION_CONFORME', puede_consultar_conciliacion: true },
+        { recoleccion_id: '8', codigo_trazabilidad: '', tipo_material: 'SEMILLA',
+          saldo_actual: 10, saldo_actual_exacto: '10', motivo_no_inicio: 'La ficha del origen no tiene código de trazabilidad.',
+          unidad_canonica: 'G', estado_habilitacion: 'RECEPCION_CONFORME', puede_consultar_conciliacion: false },
+      ],
+      pagination: { page: 1, limit: 20, total: 5 },
+    } as never)
+    render(<MemoryRouter><ViveroNewScreen /></MemoryRouter>)
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: '7' } })
+    await screen.findByText('Material que aún no puede iniciar un lote')
+    expect(screen.getByText('La ficha del origen no tiene código de trazabilidad.')).toBeTruthy()
+    expect(screen.getAllByRole('radio')).toHaveLength(1)
+    expect(screen.getByRole('link', { name: 'Ver conciliación de REC-H' }).getAttribute('href')).toBe('/app/vivero/conciliaciones/9007199254740993')
+    expect(screen.getByRole('link', { name: 'Ver recepción de REC-T4' }).getAttribute('href')).toBe('/app/recepciones-semillas/4')
+    expect(screen.queryByRole('link', { name: 'Ver conciliación de REC-ADMIN' })).toBeNull()
+    expect(screen.getByText('Solicita a Administración la revisión de este origen.')).toBeTruthy()
+  })
+
+  it('muestra fallo de consulta por separado y sólo indica ausencia tras una lectura válida', async () => {
+    vi.mocked(OrigenesService.listar)
+      .mockRejectedValueOnce(new Error('No se pudo consultar el material.'))
+      .mockResolvedValueOnce({ success: true, data: [], pagination: { page: 1, limit: 20, total: 0 } })
+    render(<MemoryRouter><ViveroNewScreen /></MemoryRouter>)
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: '7' } })
+    expect((await screen.findByRole('alert')).textContent).toContain('No se pudo consultar el material.')
+    expect(screen.queryByText('No hay recolecciones validadas con saldo en este vivero.')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Reintentar orígenes' }))
+    await screen.findByText('No hay recolecciones validadas con saldo en este vivero.')
+  })
+
   it('muestra el origen y efecto; cancelar no sube evidencia ni crea lote', async () => {
     await prepareForm()
     fireEvent.click(screen.getByRole('button', { name: 'Registrar inicio de lote' }))
@@ -89,6 +136,56 @@ describe('INICIO de Vivero', () => {
     expect(LotesViveroService.createLote).not.toHaveBeenCalled()
   })
 
+  it.each([
+    ['0.0001', '0.0001', 'CONCILIACION_CONFORME'],
+    ['1.1234567', '1.123456', 'RECEPCION_CONFORME'],
+    ['9007199254740993.000001', '9007199254740993.000001', 'CONCILIACION_CONFORME'],
+  ] as const)('preserva el saldo %s y envía el máximo operativo %s', async (saldo, cantidad, estado) => {
+    vi.mocked(OrigenesService.listar).mockResolvedValueOnce({
+      success: true,
+      data: [{
+        recoleccion_id: '3',
+        vivero_almacenamiento_id: '7',
+        recolector_id: '8',
+        planta_id: '9',
+        codigo_trazabilidad: 'REC-3',
+        fecha: '2026-11-01',
+        nombre_comercial_snapshot: 'Algarrobo',
+        nombre_cientifico_snapshot: null,
+        variedad_snapshot: null,
+        tipo_material: 'SEMILLA',
+        unidad_canonica: 'G',
+        saldo_actual: Number(saldo),
+        saldo_actual_exacto: saldo,
+        estado_registro: 'VALIDADO',
+        estado_operativo: 'ABIERTO',
+        estado_habilitacion: estado,
+        puede_consultar_conciliacion: true,
+        motivo_no_inicio: null,
+      }],
+      pagination: { page: 1, limit: 20, total: 1 },
+    } as never)
+    const { container } = await prepareForm('0,0001')
+    const input = container.querySelector('input[inputmode="decimal"]') as HTMLInputElement
+    expect(input.value).toBe('0.0001')
+    expect(screen.getByRole('button', { name: 'Registrar inicio de lote' })).toBeTruthy()
+    expect(screen.getByText(`${saldo} G`)).toBeTruthy()
+
+    fireEvent.change(input, { target: { value: '0.0000001' } })
+    expect(input.value).toBe('0.0000001')
+    expect(screen.getByText('Ingresa una cantidad en G con hasta 6 decimales.')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Registrar inicio de lote' })).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: '100%' }))
+    expect(input.value).toBe(cantidad)
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar inicio de lote' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Crear lote e iniciar' }))
+    await waitFor(() => expect(LotesViveroService.createLote).toHaveBeenCalledWith(
+      expect.objectContaining({ cantidad_inicial_en_proceso: cantidad }),
+      'auth-test',
+    ))
+  })
+
   it('doble confirmación crea un solo lote', async () => {
     await prepareForm()
     fireEvent.click(screen.getByRole('button', { name: 'Registrar inicio de lote' }))
@@ -100,6 +197,6 @@ describe('INICIO de Vivero', () => {
     expect(LotesViveroService.uploadEvidenciasPendientes).toHaveBeenCalledTimes(1)
     expect(vi.mocked(LotesViveroService.uploadEvidenciasPendientes).mock.calls[0][0].vivero_id).toBe('7')
     expect(vi.mocked(LotesViveroService.createLote).mock.calls[0][0]).toMatchObject({ vivero_id: '7', recoleccion_id: '3' })
-    expect(OrigenesService.listar).toHaveBeenCalledWith('7', '7', 1, expect.any(AbortSignal))
+    expect(OrigenesService.listar).toHaveBeenCalledWith('7', '7', 1, expect.any(AbortSignal), true)
   })
 })

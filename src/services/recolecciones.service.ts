@@ -1,4 +1,5 @@
 import { exactId, isExactId } from '../modules/accesos/accessPolicy'
+import type { EstadoHabilitacion } from '../modules/vivero/api/origenes.api'
 import type { UbicacionApi, UbicacionCreateInput } from '../types/ubicacion'
 import { mapToCantidadYUnidadCanonica, type UnidadCanonicaRecoleccion } from '../utils/recoleccionUnidad'
 import type { PlantaCatalogo } from '../types/plantas.types';
@@ -112,6 +113,7 @@ export interface Recoleccion {
   usuario_validacion_id: number | null
   fecha_validacion: string | null
   recepcion_conforme?: boolean
+  m2_estado_habilitacion?: EstadoHabilitacion | null
   recepcion?: { id: string; fecha_recepcion: string; recibido_por: string; registrado_en: string } | null
   elegible_para_vivero?: boolean
   motivo_no_elegibilidad_para_vivero?: string | null

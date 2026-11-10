@@ -36,7 +36,7 @@ function ViveroEventScreen() {
   const { m2 } = useOperationalAccess()
 
   const loteId = Number(id)
-  const isValidId = Number.isFinite(loteId) && loteId > 0
+  const isValidId = Number.isSafeInteger(loteId) && loteId > 0
   const [lote, setLote] = useState<LoteViveroDetalle | null>(null)
   const [loading, setLoading] = useState(isValidId)
   const [error, setError] = useState<string | null>(isValidId ? null : 'Lote inválido')

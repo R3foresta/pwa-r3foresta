@@ -220,20 +220,20 @@ export interface CreateLoteViveroInput {
   vivero_id: number | string
   fecha_inicio: string
   fecha_evento: string
-  cantidad_inicial_en_proceso: number
+  cantidad_inicial_en_proceso: string | number
   unidad_medida_inicial: UnidadMedidaVivero
   evidencia_ids: number[]
   observaciones?: string
 }
 
 export interface CreateLoteViveroResult {
-  lote_vivero_id: number
-  evento_inicio_id: number
-  recoleccion_movimiento_id: number
+  lote_vivero_id: number | string
+  evento_inicio_id: number | string
+  recoleccion_movimiento_id: number | string
   codigo_trazabilidad: string
   saldo_recoleccion_antes: number
   saldo_recoleccion_despues: number
-  evidencia_inicio_ids: number[]
+  evidencia_inicio_ids: (number | string)[]
 }
 
 export interface CreateLoteViveroResponse {

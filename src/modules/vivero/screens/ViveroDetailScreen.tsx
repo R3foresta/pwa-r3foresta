@@ -29,7 +29,7 @@ export default function ViveroDetailScreen() {
   const { id } = useParams()
   const [searchParams] = useSearchParams()
   const lotId = Number(id)
-  const isInvalidId = !Number.isFinite(lotId) || lotId <= 0
+  const isInvalidId = !Number.isSafeInteger(lotId) || lotId <= 0
 
   // 1. Lógica delegada al Custom Hook (Fix QA4)
   const { detail, events, loading, error, refetch } = useViveroDetail(lotId, isInvalidId)

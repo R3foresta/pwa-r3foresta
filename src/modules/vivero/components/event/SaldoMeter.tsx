@@ -3,15 +3,16 @@ import type { UnidadMedidaVivero } from '../../types/contracts'
 import { formatCantidadVivero } from '../../utils/format'
 
 type Props = {
-  saldo: number
-  cantidad: number
+  saldo: bigint
+  saldoRegistrado: string
+  cantidad: bigint
   unidad: UnidadMedidaVivero
 }
 
-function SaldoMeter({ saldo, cantidad, unidad }: Props) {
-  const ratio = saldo > 0 ? Math.max(0, cantidad / saldo) : 0
+function SaldoMeter({ saldo, saldoRegistrado, cantidad, unidad }: Props) {
+  const ratio = saldo > 0n ? Number(cantidad) / Number(saldo) : 0
   const pct = Math.round(Math.min(1, ratio) * 100)
-  const overLimit = ratio > 1
+  const overLimit = cantidad > saldo
   const tone = overLimit
     ? 'bg-danger-500'
     : ratio >= 0.9
@@ -25,8 +26,8 @@ function SaldoMeter({ saldo, cantidad, unidad }: Props) {
       <div className="flex items-end justify-between text-[11px] font-bold text-brand-500">
         <span>{overLimit ? 'Excede el saldo disponible' : `Usando ${pct}% del saldo`}</span>
         <span className="text-brand-700">
-          {formatCantidadVivero(Math.min(cantidad, saldo), unidad)} /{' '}
-          {formatCantidadVivero(saldo, unidad)} {formatUnidadCanonicaDisplay(unidad, saldo)}
+          {formatCantidadVivero(overLimit ? saldo : cantidad, unidad)} /{' '}
+          {saldoRegistrado} {formatUnidadCanonicaDisplay(unidad, Number(saldoRegistrado))}
         </span>
       </div>
       <div className="h-2 w-full overflow-hidden rounded-full bg-brand-50">

@@ -10,7 +10,7 @@ import ViveroMaterialScreen from './ViveroMaterialScreen'
 vi.mock('../../../contexts/AuthContext', () => ({ useAuth: () => ({ user: { id: '7' } }) }))
 vi.mock('../../../hooks/useViveros', () => ({ useViveros: () => ({ viveros: [{ id: '9007199254740993', nombre: 'Vivero sintético B', codigo: 'SB' }], loading: false, error: null }) }))
 vi.mock('../../accesos/capabilitiesContext', () => ({ useOperationalAccess: () => ({ m2: { status: 'ready', data: m2Fixture({ viveros: [assigned('9007199254740993')] }).data } }) }))
-const item: OrigenMaterial = { recoleccion_id: '3', vivero_almacenamiento_id: VIVERO_B, recolector_id: '9', planta_id: '2', codigo_trazabilidad: 'SINT-3', fecha: '2026-11-06', tipo_material: 'SEMILLA', nombre_cientifico_snapshot: 'Especie sintética', nombre_comercial_snapshot: 'Árbol sintético', variedad_snapshot: null, estado_registro: 'VALIDADO', estado_operativo: 'ABIERTO', saldo_actual: 5, unidad_canonica: 'G' }
+const item: OrigenMaterial = { recoleccion_id: '3', vivero_almacenamiento_id: VIVERO_B, recolector_id: '9', planta_id: '2', codigo_trazabilidad: 'SINT-3', fecha: '2026-11-06', tipo_material: 'SEMILLA', nombre_cientifico_snapshot: 'Especie sintética', nombre_comercial_snapshot: 'Árbol sintético', variedad_snapshot: null, estado_registro: 'VALIDADO', estado_operativo: 'ABIERTO', saldo_actual: 5, unidad_canonica: 'G', estado_habilitacion: 'CONCILIACION_CONFORME', puede_consultar_conciliacion: true }
 function reading(saldo: number): OrigenesLectura { return { success: true, data: saldo > 0 ? [{ ...item, saldo_actual: saldo }] : [], pagination: { page: 1, limit: 20, total: saldo > 0 ? 1 : 0 } } }
 function deferred<T>() {
   let resolve!: (value: T) => void
@@ -60,7 +60,7 @@ describe('recuperación de DESECHO sin reenvío automático', () => {
       expect(prepare.disabled).toBe(false)
       await user.click(prepare)
       expect(screen.getByRole('dialog')).toBeTruthy()
-    } else expect(screen.getByText('Sin material disponible en este vivero.')).toBeTruthy()
+    } else expect(screen.getByText('No hay recolecciones validadas con saldo en este vivero.')).toBeTruthy()
     expect(OrigenesService.listar).toHaveBeenCalledTimes(2)
     expect(RecoleccionesService.registrarDesecho).toHaveBeenCalledTimes(1)
   })
@@ -82,4 +82,18 @@ describe('recuperación de DESECHO sin reenvío automático', () => {
     expect(screen.queryByRole('button', { name: 'Consultar material actual' })).toBeNull()
     expect(RecoleccionesService.registrarDesecho).toHaveBeenCalledTimes(1)
   })
+})
+
+it('el remanente con incidencia conserva saldo visible y no ofrece DESECHO', async () => {
+  vi.mocked(OrigenesService.listar).mockReset().mockResolvedValue({
+    ...reading(5),
+    data: [{ ...item, estado_habilitacion: 'INCIDENCIA_CONCILIACION' }],
+  })
+  const user = userEvent.setup()
+  render(<MemoryRouter><ViveroMaterialScreen /></MemoryRouter>)
+  await user.selectOptions(screen.getByLabelText('Vivero de almacenamiento'), VIVERO_B)
+  await screen.findByText('Remanente bloqueado por una incidencia de conciliación.')
+  expect(screen.getByText('Saldo: 5 G')).toBeTruthy()
+  expect(screen.getByRole('link', { name: 'Ver conciliación de SINT-3' }).getAttribute('href')).toBe('/app/vivero/conciliaciones/3')
+  expect(screen.queryByRole('button', { name: 'Registrar desecho de SINT-3' })).toBeNull()
 })

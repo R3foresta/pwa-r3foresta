@@ -17,6 +17,14 @@ import { getRecoleccionFormActions, resolveEstadoOperativo, resolveEstadoRegistr
 import { readStockHistorialReturn, stockHistorialPath } from './stockHistorialNavigation'
 import RecoleccionDeleteAction from './components/RecoleccionDeleteAction'
 
+const MENSAJES_HABILITACION = {
+  RECEPCION_CONFORME: 'Material habilitado por recepción física conforme.',
+  CONCILIACION_CONFORME: 'Remanente habilitado por conciliación histórica conforme.',
+  PENDIENTE_RECEPCION: 'Pendiente de recepción física conforme.',
+  PENDIENTE_CONCILIACION: 'Pendiente de conciliar el remanente histórico.',
+  INCIDENCIA_CONCILIACION: 'Remanente bloqueado por una incidencia de conciliación.',
+} satisfies Record<NonNullable<Recoleccion['m2_estado_habilitacion']>, string>
+
 function formatDate(value: string) {
   return new Date(value).toLocaleDateString('es-BO', {
     day: '2-digit',
@@ -111,6 +119,18 @@ function RecoleccionDetailScreen() {
     return evidenciasFallback
   }, [evidenciasFallback, recoleccion?.evidencias])
 
+  const estadoRegistro = resolveEstadoRegistro(recoleccion ?? {})
+  const estadoOperativo = resolveEstadoOperativo(recoleccion ?? {})
+  const cantidadActual = recoleccion?.saldo_actual ?? 0
+  const estadoHabilitacion = recoleccion?.m2_estado_habilitacion
+  const materialHabilitado = estadoHabilitacion === undefined
+    ? recoleccion?.recepcion_conforme === true
+    : estadoHabilitacion === 'RECEPCION_CONFORME' || estadoHabilitacion === 'CONCILIACION_CONFORME'
+  const puedeDesechar =
+    estadoRegistro === 'VALIDADO' && materialHabilitado &&
+    estadoOperativo === 'ABIERTO' && cantidadActual > 0 &&
+    m2.status === 'ready' && canAtVivero(m2.data, recoleccion?.vivero_id, 'desechar_semillas')
+
   const handleSubmitForValidation = async () => {
     if (!recoleccion || deletionLocked || !getRecoleccionFormActions(recoleccion, m1.status === 'ready' && canMaintain(m1.data, user?.id, recoleccion.usuario_id) ? user : null).canSubmit) {
       return
@@ -146,7 +166,7 @@ function RecoleccionDetailScreen() {
   }
 
   const handleDiscard = async () => {
-    if (!recoleccion || recoleccion.recepcion_conforme !== true || m2.status !== 'ready' || !canAtVivero(m2.data, recoleccion.vivero_id, 'desechar_semillas')) return
+    if (!recoleccion || !puedeDesechar) return
 
     const quantity = Number(discardQuantity.replace(',', '.'))
     const available = Number(recoleccion.saldo_actual ?? 0)
@@ -233,17 +253,8 @@ function RecoleccionDetailScreen() {
   const ubicacionDisplay = getUbicacionDisplay(recoleccion.ubicacion)
   const ubicacionDivision = getUbicacionDivision(recoleccion.ubicacion)
   const ubicacionCoords = getUbicacionCoords(recoleccion.ubicacion)
-  const estadoRegistro = resolveEstadoRegistro(recoleccion)
-  const estadoOperativo = resolveEstadoOperativo(recoleccion)
-  const cantidadActual = recoleccion.saldo_actual ?? 0
   const unidadDisplay = formatUnidadCanonicaDisplay(recoleccion.unidad_canonica, cantidadActual)
   const formActions = getRecoleccionFormActions(recoleccion, m1.status === 'ready' && canMaintain(m1.data, user?.id, recoleccion.usuario_id) ? user : null)
-  const puedeDesechar =
-    estadoRegistro === 'VALIDADO' &&
-    recoleccion.recepcion_conforme === true &&
-    estadoOperativo === 'ABIERTO' &&
-    cantidadActual > 0 &&
-    m2.status === 'ready' && canAtVivero(m2.data, recoleccion.vivero_id, 'desechar_semillas')
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-brand-50 to-brand-50 text-brand-700">
@@ -375,7 +386,9 @@ function RecoleccionDetailScreen() {
 
             <div className="mt-4 rounded-2xl bg-brand-50 p-3 text-sm">
               <p>Recepción física: {recoleccion.recepcion_conforme === true ? 'conforme acreditada' : 'sin recepción conforme acreditada'}.</p>
-              {estadoRegistro === 'VALIDADO' && recoleccion.recepcion_conforme !== true && <p>VALIDADO acredita aprobación documental. Consumo y desecho requieren recepción conforme.</p>}
+              {estadoRegistro === 'VALIDADO' && recoleccion.recepcion_conforme !== true && <p>VALIDADO acredita aprobación documental.</p>}
+              {estadoHabilitacion && <p>{MENSAJES_HABILITACION[estadoHabilitacion]}</p>}
+              {estadoRegistro === 'VALIDADO' && estadoHabilitacion === undefined && recoleccion.recepcion_conforme !== true && <p>Consumo y desecho requieren recepción conforme.</p>}
               {m2.status === 'ready' && canAtVivero(m2.data, recoleccion.vivero_id, 'operar') && ['PENDIENTE_VALIDACION','VALIDADO'].includes(estadoRegistro) && <Button variant="secondary" onClick={() => navigate(`/app/recepciones-semillas/${recoleccion.id}`)}>Consultar recepción en Vivero</Button>}
             </div>
 

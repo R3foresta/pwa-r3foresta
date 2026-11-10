@@ -1,4 +1,5 @@
-import { m1Fixture } from '../accesos/test-fixtures'
+import { assigned, m1Fixture, m2Fixture, VIVERO_A, VIVERO_B } from '../accesos/test-fixtures'
+import type { AccesoM2 } from '../accesos/types'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
@@ -6,8 +7,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { RecoleccionesService, RecoleccionRequestError, type Recoleccion } from '../../services/recolecciones.service'
 import RecoleccionDetailScreen from './RecoleccionDetailScreen'
 
-const auth = vi.hoisted(() => ({ user: { id: '7', rol: 'GENERAL' } as { id: string; rol: string } | null }))
-vi.mock('../accesos/capabilitiesContext', () => ({ useOperationalAccess: () => ({ m1: { status: 'ready', data: m1Fixture({ origen: auth.user?.rol === 'ADMIN' ? 'ADMIN' : 'EXPLICITO', acceso_efectivo: auth.user?.rol !== 'VOLUNTARIO', capacidades: { crear: true, mantener_propias: auth.user?.rol !== 'VOLUNTARIO', confirmar_propias: false, desechar: false } }).data }, m2: { status: 'ready', data: null } }) }))
+const auth = vi.hoisted(() => ({ user: { id: '7', rol: 'GENERAL' } as { id: string; rol: string } | null, m2: null as AccesoM2 | null }))
+vi.mock('../accesos/capabilitiesContext', () => ({ useOperationalAccess: () => ({ m1: { status: 'ready', data: m1Fixture({ origen: auth.user?.rol === 'ADMIN' ? 'ADMIN' : 'EXPLICITO', acceso_efectivo: auth.user?.rol !== 'VOLUNTARIO', capacidades: { crear: true, mantener_propias: auth.user?.rol !== 'VOLUNTARIO', confirmar_propias: false, desechar: false } }).data }, m2: { status: 'ready', data: auth.m2 } }) }))
 vi.mock('../../contexts/AuthContext', () => ({ useAuth: () => ({ user: auth.user }) }))
 
 const draft: Recoleccion = {
@@ -52,6 +53,7 @@ function DetailRoute() {
 
 beforeEach(() => {
   auth.user = { id: '7', rol: 'GENERAL' }
+  auth.m2 = null
   vi.spyOn(RecoleccionesService, 'getById').mockResolvedValue({ success: true, data: draft })
   vi.spyOn(RecoleccionesService, 'getEvidenciasByRecoleccion').mockResolvedValue({ success: true, data: [] })
   vi.spyOn(RecoleccionesService, 'deleteDraft').mockResolvedValue(confirmation)
@@ -182,4 +184,80 @@ describe('eliminar borrador desde el detalle de Recolección', () => {
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(screen.queryByRole('button', { name: 'Eliminar borrador' })).toBeNull()
   })
+})
+
+describe('habilitación de Vivero en el detalle de Recolección', () => {
+  const validada: Recoleccion = {
+    ...draft,
+    estado_registro: 'VALIDADO',
+    vivero_id: VIVERO_A,
+    recepcion_conforme: false,
+    m2_estado_habilitacion: 'CONCILIACION_CONFORME',
+  }
+
+  it('distingue conciliación de recepción total y permite el descarte en la custodia autorizada', async () => {
+    const user = userEvent.setup()
+    auth.m2 = m2Fixture({ viveros: [assigned(VIVERO_A)] }).data
+    vi.mocked(RecoleccionesService.getById)
+      .mockResolvedValueOnce({ success: true, data: validada })
+      .mockResolvedValueOnce({ success: true, data: { ...validada, saldo_actual: 75 } })
+    const descarte = vi.spyOn(RecoleccionesService, 'registrarDesecho').mockResolvedValue({
+      success: true,
+      data: {
+        message: 'Descarte confirmado.',
+        recoleccion_movimiento_id: 31,
+        recoleccion_id: 292,
+        cantidad_desechada: 25,
+        unidad_medida: 'G',
+        saldo_antes: 100,
+        saldo_despues: 75,
+        estado_operativo: 'ABIERTO',
+      },
+    })
+    render(<DetailRoute />)
+    expect(await screen.findByText('Remanente habilitado por conciliación histórica conforme.')).toBeTruthy()
+    expect(screen.getByText('Recepción física: sin recepción conforme acreditada.')).toBeTruthy()
+    expect(screen.queryByText('Consumo y desecho requieren recepción conforme.')).toBeNull()
+    await user.click(screen.getByRole('button', { name: 'Registrar pérdida o descarte' }))
+    const cantidad = screen.getByRole('spinbutton', { name: /cantidad a desechar/i })
+    await user.clear(cantidad)
+    await user.type(cantidad, '25')
+    await user.click(screen.getByRole('button', { name: 'Confirmar descarte' }))
+    expect(await screen.findByText('Descarte confirmado.')).toBeTruthy()
+    expect(descarte).toHaveBeenCalledExactlyOnceWith(292, { cantidad: 25 })
+    descarte.mockRestore()
+  })
+
+  it('muestra la habilitación sin ofrecer descarte a un operador de otra custodia', async () => {
+    auth.m2 = m2Fixture({ viveros: [assigned(VIVERO_B)] }).data
+    vi.mocked(RecoleccionesService.getById).mockResolvedValue({ success: true, data: validada })
+    render(<DetailRoute />)
+    expect(await screen.findByText('Remanente habilitado por conciliación histórica conforme.')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Registrar pérdida o descarte' })).toBeNull()
+  })
+
+  it('mantiene bloqueado el descarte si la conciliación tiene una incidencia', async () => {
+    auth.m2 = m2Fixture({ viveros: [assigned(VIVERO_A)] }).data
+    vi.mocked(RecoleccionesService.getById).mockResolvedValue({
+      success: true,
+      data: { ...validada, m2_estado_habilitacion: 'INCIDENCIA_CONCILIACION' },
+    })
+    render(<DetailRoute />)
+    expect(await screen.findByText('Remanente bloqueado por una incidencia de conciliación.')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Registrar pérdida o descarte' })).toBeNull()
+  })
+
+  it.each([[undefined, true], [null, false]] as const)(
+    'con recepción T4, distingue la ausencia del campo de su valor explícito %s',
+    async (estado, visible) => {
+      auth.m2 = m2Fixture({ viveros: [assigned(VIVERO_A)] }).data
+      vi.mocked(RecoleccionesService.getById).mockResolvedValue({
+        success: true,
+        data: { ...validada, recepcion_conforme: true, m2_estado_habilitacion: estado },
+      })
+      render(<DetailRoute />)
+      expect(await screen.findByText('Recepción física: conforme acreditada.')).toBeTruthy()
+      expect(Boolean(screen.queryByRole('button', { name: 'Registrar pérdida o descarte' }))).toBe(visible)
+    },
+  )
 })

@@ -88,7 +88,7 @@ Estas reglas no son negociables desde frontend.
 - Una recolección es el lote origen del sistema.
 - Estados de registro: `BORRADOR`, `PENDIENTE_VALIDACION`, `VALIDADO`, `RECHAZADO`.
 - Estado operativo: `ABIERTO` o `CERRADO`, derivado del saldo.
-- Solo una recolección `VALIDADO`, `ABIERTO` y con recepción física total conforme puede alimentar nuevos consumos de Vivero (T4/096). El nuevo DESECHO también exige recepción; VALIDADO histórico no la acredita.
+- El consumo de Vivero y DESECHO exigen saldo habilitado por recepción física total conforme (096) o conciliación histórica conforme (097), además del estado `VALIDADO`, `ABIERTO` y el acceso por custodia. INICIO consulta los requisitos del origen con 099.
 - `BORRADOR` y `RECHAZADO` pueden editarse según permisos.
 - `PENDIENTE_VALIDACION` queda congelado mientras se revisa.
 - `VALIDADO` no se edita: solo permite movimientos posteriores.
@@ -100,7 +100,7 @@ Estas reglas no son negociables desde frontend.
 - Persistencia oficial: `UNIDAD` y `G`.
 - `kg` puede existir como input de UI, pero no se persiste.
 - No usar `GR`. Usar siempre `G`.
-- `G` permite 1 decimal.
+- `G` permite 1 decimal en captura ordinaria. INICIO y la conciliación histórica admiten hasta 6 decimales en la unidad canónica.
 - `UNIDAD` no permite decimales.
 - `ESQUEJE` siempre usa `UNIDAD`, entero estricto.
 - Desde `EMBOLSADO`, el saldo vivo siempre se maneja en `UNIDAD`.

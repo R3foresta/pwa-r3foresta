@@ -2,13 +2,14 @@ import { WebAuthnService } from '../../../services/webauthn.service'
 import { useOperationalAccess } from '../../accesos/capabilitiesContext'
 import { canAtVivero, exactId, sameId } from '../../accesos/accessPolicy'
 import { useOrigenes } from '../hooks/useOrigenes'
-import type { OrigenMaterial } from '../api/origenes.api'
+import { esMaterialHabilitado, esOrigenAptoParaInicio, type OrigenMaterial } from '../api/origenes.api'
+import EstadoOrigenMaterial from '../components/EstadoOrigenMaterial'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Icon from '../../../components/Icon'
 import ConfirmDialog from '../../../components/ConfirmDialog'
 import { Button } from '../../../components/ui'
-import { MAX_DIAS_VIVERO } from '../../../config/vivero'
+import { DECIMALES_GRAMOS_INICIO, MAX_DIAS_VIVERO } from '../../../config/vivero'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useViveros } from '../../../hooks/useViveros'
 import { LotesViveroService } from '../../../services/lotes-vivero.service'
@@ -32,7 +33,7 @@ import SectionCard from '../components/event/SectionCard'
 import type { StepStatus } from '../components/event/SectionCard'
 import type { TipoMaterialVivero, UnidadMedidaVivero } from '../types/contracts'
 import { formatCantidadVivero } from '../utils/format'
-import { isValidYmdDate, validateCantidadInicial } from '../utils/validators'
+import { cantidadMaximaInicio, isValidYmdDate, saldoEnUnidadMinima, validateCantidadInicial } from '../utils/validators'
 
 type UploadPhase = 'idle' | 'uploading' | 'creating'
 
@@ -60,59 +61,15 @@ const formatShortDate = (value: string) => {
   return Number.isNaN(date.getTime()) ? value : shortDateFmt.format(date)
 }
 
-const isTipoMaterialVivero = (value: string | null | undefined): value is TipoMaterialVivero =>
-  value === 'SEMILLA' || value === 'ESQUEJE'
-
 const isUnidadMedidaVivero = (value: string | null | undefined): value is UnidadMedidaVivero =>
   value === 'UNIDAD' || value === 'G'
 
-function sanitizeCantidad(value: string, unidad: UnidadMedidaVivero | null): string {
-  if (!value) return ''
-  let clean = value.trim().replace(',', '.')
-
-  if (unidad === 'UNIDAD') {
-    return clean.replace(/[^\d]/g, '').replace(/^0+(?=\d)/, '')
-  }
-
-  clean = clean.replace(/[^\d.]/g, '')
-  if (clean.startsWith('.')) clean = `0${clean}`
-
-  const dotIdx = clean.indexOf('.')
-  if (dotIdx !== -1) {
-    clean = clean.slice(0, dotIdx + 1) + clean.slice(dotIdx + 1).replace(/\./g, '').slice(0, 1)
-  }
-
-  clean = clean.replace(/^0+(?=\d)/, '')
-  if (clean.startsWith('.')) clean = `0${clean}`
-  return clean
-}
-
-function getCantidadSugerida(saldo: number, unidad: UnidadMedidaVivero, pct: number): string {
-  const raw = (saldo * pct) / 100
-  if (unidad === 'UNIDAD') {
-    const rounded = Math.round(raw)
-    return formatCantidadVivero(Math.min(saldo, Math.max(1, rounded)), unidad)
-  }
-  const rounded = Math.round(raw * 10) / 10
-  const normalized = rounded > 0 ? rounded : 0.1
-  return formatCantidadVivero(Math.min(saldo, normalized), unidad)
+function normalizeCantidad(value: string): string {
+  const texto = value.trim().replace(',', '.')
+  return texto.startsWith('.') ? `0${texto}` : texto
 }
 
 const getRecoleccionLabel = (item: OrigenMaterial) => item.nombre_comercial_snapshot || item.nombre_cientifico_snapshot || `Recolección #${item.recoleccion_id}`
-
-const isRecoleccionElegible = (item: OrigenMaterial) => {
-  if (!isTipoMaterialVivero(item.tipo_material)) return false
-  if (!item.codigo_trazabilidad?.trim()) return false
-  const estadoRegistro = String(item.estado_registro ?? '').toUpperCase()
-  const estadoOperativo = String(item.estado_operativo ?? '').toUpperCase()
-  const saldoActual = Number(item.saldo_actual ?? 0)
-  return (
-    estadoRegistro === 'VALIDADO' &&
-    estadoOperativo === 'ABIERTO' &&
-    saldoActual > 0 &&
-    isUnidadMedidaVivero(item.unidad_canonica)
-  )
-}
 
 function ViveroNewScreen() {
   const navigate = useNavigate()
@@ -127,7 +84,9 @@ function ViveroNewScreen() {
 
   const [originPage, setOriginPage] = useState(1)
   const [originVersion, setOriginVersion] = useState(0)
-  const origins = useOrigenes(user?.id ?? null, selectedViveroId, originPage, originVersion)
+  const viveroAutorizado = selectedViveroId && viveros.some(vivero => sameId(vivero.id, selectedViveroId))
+    ? selectedViveroId : null
+  const origins = useOrigenes(user?.id ?? null, viveroAutorizado, originPage, originVersion, true)
   const recolecciones = origins.items, recoleccionLoading = origins.loading, recoleccionError = origins.error
   const [selectedRecoleccionId, setSelectedRecoleccionId] = useState<string | null>(null)
   const [pickingRecoleccion, setPickingRecoleccion] = useState(true)
@@ -154,7 +113,7 @@ function ViveroNewScreen() {
   const [submitError, setSubmitError] = useState<string | null>(null)
 
   const selectedRecoleccion = useMemo(
-    () => recolecciones.find((item) => item.recoleccion_id === selectedRecoleccionId) ?? null,
+    () => recolecciones.find((item) => item.recoleccion_id === selectedRecoleccionId && esOrigenAptoParaInicio(item)) ?? null,
     [recolecciones, selectedRecoleccionId],
   )
 
@@ -163,10 +122,8 @@ function ViveroNewScreen() {
     [selectedViveroId, viveros],
   )
 
-  const recoleccionesDisponibles = useMemo(
-    () => recolecciones.filter(isRecoleccionElegible),
-    [recolecciones],
-  )
+  const recoleccionesDisponibles = recolecciones.filter(esOrigenAptoParaInicio)
+  const recoleccionesPendientes = recolecciones.filter(item => !esOrigenAptoParaInicio(item))
 
   const unidadMedida = useMemo<UnidadMedidaVivero | null>(() => {
     if (!selectedRecoleccion) return null
@@ -175,11 +132,12 @@ function ViveroNewScreen() {
       : null
   }, [selectedRecoleccion])
 
-  const saldoDisponible = useMemo(() => {
-    if (!selectedRecoleccion) return null
-    const value = Number(selectedRecoleccion.saldo_actual ?? NaN)
-    return Number.isFinite(value) ? value : null
-  }, [selectedRecoleccion])
+  const saldoRegistrado = selectedRecoleccion
+    ? selectedRecoleccion.saldo_actual_exacto ?? String(selectedRecoleccion.saldo_actual)
+    : null
+  const saldoDisponible = saldoRegistrado !== null && unidadMedida
+    ? saldoEnUnidadMinima(saldoRegistrado, unidadMedida)
+    : null
 
   const photosRef = useRef(photos)
   useEffect(() => {
@@ -193,17 +151,16 @@ function ViveroNewScreen() {
     [],
   )
 
-  const cantidadValue = Number(cantidadInicio)
-
   const cantidadValidation =
     selectedRecoleccion && unidadMedida
       ? validateCantidadInicial({
-          cantidad: cantidadValue,
+          cantidad: cantidadInicio,
           unidad: unidadMedida,
           recoleccionTipoMaterial: selectedRecoleccion.tipo_material as TipoMaterialVivero,
           maxCantidad: saldoDisponible,
         })
-      : { isValid: false, message: 'Selecciona una recolección válida.' }
+      : { isValid: false, cantidad: null, message: 'Selecciona una recolección válida.' }
+  const cantidadValidada = cantidadValidation.cantidad
 
   const fechaInicioCheck = validateDateInRange(fechaInicio, fechaRange)
   const validation = {
@@ -215,11 +172,7 @@ function ViveroNewScreen() {
     fotos: photos.length < 1 || photos.length > 5,
   }
 
-  const overSaldo =
-    unidadMedida !== null &&
-    saldoDisponible !== null &&
-    Number.isFinite(cantidadValue) &&
-    cantidadValue > saldoDisponible
+  const overSaldo = saldoDisponible !== null && cantidadValidada !== null && cantidadValidada > saldoDisponible
 
   const stepFlags = [
     !validation.fecha,
@@ -269,24 +222,18 @@ function ViveroNewScreen() {
     setPickingRecoleccion(true)
   }
 
-  const handleCantidadChange = (value: string) => {
-    setCantidadInicio(sanitizeCantidad(value, unidadMedida))
-  }
-
   const handleCantidadBlur = () => {
-    if (!cantidadInicio || !unidadMedida) return
-    if (unidadMedida === 'UNIDAD') {
-      setCantidadInicio(sanitizeCantidad(cantidadInicio, unidadMedida))
-      return
-    }
-    if (cantidadInicio.endsWith('.')) {
+    if (unidadMedida === 'G' && cantidadInicio.endsWith('.')) {
       setCantidadInicio(cantidadInicio.slice(0, -1))
     }
   }
 
   const applyQuickPercentage = (pct: number) => {
-    if (!unidadMedida || saldoDisponible === null || saldoDisponible <= 0) return
-    setCantidadInicio(getCantidadSugerida(saldoDisponible, unidadMedida, pct))
+    if (!unidadMedida || saldoDisponible === null || saldoDisponible <= 0n) return
+    const proporcion = (saldoDisponible * BigInt(pct) + 50n) / 100n
+    const maximo = cantidadMaximaInicio(unidadMedida)
+    const sugerida = proporcion > maximo ? maximo : proporcion
+    setCantidadInicio(formatCantidadVivero(sugerida > 0n ? sugerida : 1n, unidadMedida))
   }
 
   const addPhotos = (files: File[]) => {
@@ -327,7 +274,8 @@ function ViveroNewScreen() {
       !canSubmit ||
       !selectedRecoleccion ||
       !selectedViveroId ||
-      !unidadMedida
+      !unidadMedida ||
+      cantidadValidada === null
     ) return
     const current = () => mounted.current && WebAuthnService.getToken() === confirmationToken.current
     if (!current()) return
@@ -372,7 +320,7 @@ function ViveroNewScreen() {
           vivero_id: selectedViveroId,
           fecha_inicio: fechaInicioCheck.normalized,
           fecha_evento: fechaInicioCheck.normalized,
-          cantidad_inicial_en_proceso: cantidadValue,
+          cantidad_inicial_en_proceso: formatCantidadVivero(cantidadValidada, unidadMedida),
           unidad_medida_inicial: unidadMedida,
           evidencia_ids: evidenceIds,
           observaciones: observaciones.trim() || undefined,
@@ -381,7 +329,7 @@ function ViveroNewScreen() {
       )
 
       if (!current()) return
-      navigate(`/app/vivero/${createResponse.data.lote_vivero_id}`, { replace: true });
+      navigate(`/app/vivero/${exactId(createResponse.data.lote_vivero_id)}`, { replace: true })
     } catch (error) {
       if (!current()) return
       if (creating) setNeedsObservation(true)
@@ -512,7 +460,7 @@ function ViveroNewScreen() {
           status={stepStatus(2)}
           icon="leaf"
           title="Recolección origen"
-          hint="Origen validado con saldo disponible."
+          hint="Elige un origen con saldo habilitado para iniciar el lote."
           badge={
             selectedRecoleccion && !pickingRecoleccion ? (
               <span className="rounded-full bg-success-100 px-3 py-1 text-[11px] font-bold text-success-700">
@@ -525,15 +473,19 @@ function ViveroNewScreen() {
             <p className="rounded-2xl bg-brand-50 px-3 py-3 text-sm font-semibold text-brand-600">
               Primero elige un vivero para listar sus recolecciones.
             </p>
+          ) : !viveroAutorizado ? (
+            <p className="rounded-2xl bg-brand-50 px-3 py-3 text-sm font-semibold text-brand-600">
+              No se pudo comprobar tu acceso a este vivero.
+            </p>
           ) : recoleccionLoading ? (
             <p className="rounded-2xl bg-brand-50 px-3 py-3 text-sm font-semibold text-brand-600">
               Cargando recolecciones…
             </p>
           ) : recoleccionError ? (
-            <p className="rounded-2xl bg-danger-50 px-3 py-3 text-sm font-semibold text-danger-600">
-              {recoleccionError}
+            <div className="space-y-2 rounded-2xl bg-danger-50 px-3 py-3 text-sm font-semibold text-danger-600">
+              <p role="alert">{recoleccionError}</p>
               <Button type="button" variant="secondary" onClick={() => setOriginVersion(value => value + 1)}>Reintentar orígenes</Button>
-            </p>
+            </div>
           ) : selectedRecoleccion && !pickingRecoleccion && unidadMedida ? (
             <div className="space-y-3 rounded-2xl border border-success-200 bg-success-50/70 p-4">
               <div className="flex items-start justify-between gap-3">
@@ -542,7 +494,7 @@ function ViveroNewScreen() {
                     {getRecoleccionLabel(selectedRecoleccion)}
                   </p>
                   <p className="text-xs font-semibold text-success-700">
-                    #{selectedRecoleccion.codigo_trazabilidad} · {formatDate(selectedRecoleccion.fecha)}
+                    #{selectedRecoleccion.codigo_trazabilidad?.trim() || selectedRecoleccion.recoleccion_id} · {formatDate(selectedRecoleccion.fecha)}
                   </p>
                 </div>
                 <button
@@ -553,14 +505,15 @@ function ViveroNewScreen() {
                   Quitar
                 </button>
               </div>
+              <EstadoOrigenMaterial origen={selectedRecoleccion} />
               <div className="grid grid-cols-2 gap-2">
                 <div className="rounded-2xl bg-white px-3 py-2.5 ring-1 ring-success-100">
                   <p className="text-[10px] font-extrabold uppercase tracking-wider text-brand-500">
                     Saldo
                   </p>
                   <p className="mt-1 text-base font-extrabold text-brand-700">
-                    {saldoDisponible !== null
-                      ? `${formatCantidadVivero(saldoDisponible, unidadMedida)} ${formatUnidadCanonicaDisplay(unidadMedida, saldoDisponible)}`
+                    {saldoRegistrado !== null
+                      ? `${saldoRegistrado} ${formatUnidadCanonicaDisplay(unidadMedida, Number(saldoRegistrado))}`
                       : '—'}
                   </p>
                 </div>
@@ -574,21 +527,22 @@ function ViveroNewScreen() {
                 </div>
               </div>
             </div>
-          ) : recoleccionesDisponibles.length === 0 ? (
-            <p className="rounded-2xl bg-brand-50 px-3 py-3 text-sm font-semibold text-brand-600">
-              No hay recolecciones con saldo disponible en este vivero.
-            </p>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-3">
+              {origins.pagination?.total === 0 && (
+                <p className="rounded-2xl bg-brand-50 px-3 py-3 text-sm font-semibold text-brand-600">
+                  No hay recolecciones validadas con saldo en este vivero.
+                </p>
+              )}
+              {recoleccionesDisponibles.length > 0 && <h3 className="text-sm font-bold text-brand-700">Material disponible para iniciar lote</h3>}
               {recoleccionesDisponibles.map((item) => {
                 const isSelected = selectedRecoleccionId === item.recoleccion_id
                 const unidadItem = isUnidadMedidaVivero(item.unidad_canonica)
                   ? item.unidad_canonica
                   : null
-                const saldoItem =
-                  typeof item.saldo_actual === 'number' && unidadItem
-                    ? `${formatCantidadVivero(item.saldo_actual, unidadItem)} ${formatUnidadCanonicaDisplay(unidadItem, item.saldo_actual)}`
-                    : '—'
+                const saldoItem = unidadItem
+                  ? `${item.saldo_actual_exacto ?? item.saldo_actual} ${formatUnidadCanonicaDisplay(unidadItem, item.saldo_actual)}`
+                  : '—'
 
                 return (
                   <label
@@ -613,7 +567,7 @@ function ViveroNewScreen() {
                           {getRecoleccionLabel(item)}
                         </p>
                         <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-brand-600 ring-1 ring-brand-100">
-                          #{item.codigo_trazabilidad}
+                          #{item.codigo_trazabilidad?.trim() || item.recoleccion_id}
                         </span>
                       </div>
                       <p className="text-xs font-semibold text-brand-500">
@@ -627,6 +581,22 @@ function ViveroNewScreen() {
                   </label>
                 )
               })}
+              {recoleccionesPendientes.length > 0 && (
+                <section aria-label="Orígenes bloqueados para INICIO" className="space-y-2 rounded-2xl border border-amber-200 bg-amber-50 p-3">
+                  <h3 className="text-sm font-bold text-amber-900">Material que aún no puede iniciar un lote</h3>
+                  {recoleccionesPendientes.map(item => (
+                    <div key={item.recoleccion_id} className="space-y-1 rounded-xl bg-white p-3 text-sm">
+                      <p className="font-semibold">{getRecoleccionLabel(item)} · #{item.codigo_trazabilidad?.trim() || item.recoleccion_id}</p>
+                      <p>Saldo registrado: {item.saldo_actual_exacto ?? item.saldo_actual} {item.unidad_canonica}</p>
+                      <EstadoOrigenMaterial origen={item} />
+                      {esMaterialHabilitado(item) && <p>{item.motivo_no_inicio ?? 'No se pudieron comprobar los requisitos de INICIO.'}</p>}
+                    </div>
+                  ))}
+                </section>
+              )}
+              {origins.pagination && origins.pagination.total > 0 && recolecciones.length === 0 && (
+                <p className="text-sm">La página quedó vacía. Vuelve a la página anterior para consultar el saldo actual.</p>
+              )}
             </div>
           )}
 
@@ -646,7 +616,7 @@ function ViveroNewScreen() {
           icon="balance"
           title="Cantidad inicial"
         >
-          {!unidadMedida || saldoDisponible === null ? (
+          {!unidadMedida || saldoRegistrado === null || saldoDisponible === null ? (
             <p className="rounded-2xl bg-brand-50 px-3 py-3 text-sm font-semibold text-brand-600">
               Selecciona una recolección para habilitar la captura.
             </p>
@@ -654,19 +624,20 @@ function ViveroNewScreen() {
             <div className="space-y-4">
               <CantidadInputCard
                 value={cantidadInicio}
-                onChange={handleCantidadChange}
+                onChange={value => setCantidadInicio(normalizeCantidad(value))}
                 onBlur={handleCantidadBlur}
                 unidadDisplay={formatUnidadCanonicaDisplay(unidadMedida)}
                 label="Cantidad inicial en proceso"
                 inputMode={unidadMedida === 'UNIDAD' ? 'numeric' : 'decimal'}
                 placeholder={unidadMedida === 'G' ? '0.0' : '0'}
-                hint={unidadMedida === 'UNIDAD' ? 'Solo enteros.' : 'Máximo 1 decimal.'}
+                hint={unidadMedida === 'UNIDAD' ? 'Solo enteros.' : `Hasta ${DECIMALES_GRAMOS_INICIO} decimales.`}
                 disabled={isSubmitting}
               />
 
               <SaldoMeter
                 saldo={saldoDisponible}
-                cantidad={Number.isFinite(cantidadValue) ? cantidadValue : 0}
+                saldoRegistrado={saldoRegistrado}
+                cantidad={cantidadValidada ?? 0n}
                 unidad={unidadMedida}
               />
 
@@ -675,8 +646,8 @@ function ViveroNewScreen() {
                   <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0" />
                   <span>
                     La cantidad supera el saldo disponible (
-                    {formatCantidadVivero(saldoDisponible, unidadMedida)}{' '}
-                    {formatUnidadCanonicaDisplay(unidadMedida, saldoDisponible)}). Ajustá el valor
+                    {saldoRegistrado}{' '}
+                    {formatUnidadCanonicaDisplay(unidadMedida, Number(saldoRegistrado))}). Ajustá el valor
                     para continuar.
                   </span>
                 </div>
@@ -688,7 +659,7 @@ function ViveroNewScreen() {
                 disabled={isSubmitting}
               />
 
-              {showErrors && validation.cantidad && !overSaldo && (
+              {(showErrors || cantidadInicio.length > 0) && validation.cantidad && !overSaldo && (
                 <p className="text-xs font-semibold text-danger-500">
                   {cantidadValidation.message ?? 'Cantidad inválida.'}
                 </p>
@@ -807,7 +778,7 @@ function ViveroNewScreen() {
       >
         <dl className="mt-4 max-h-[45vh] space-y-2 overflow-y-auto rounded-2xl bg-brand-50 px-4 py-3 text-sm ring-1 ring-brand-100">
           {[
-            ['Recolección origen', selectedRecoleccion?.codigo_trazabilidad ?? '—'],
+            ['Recolección origen', selectedRecoleccion?.codigo_trazabilidad?.trim() || selectedRecoleccion?.recoleccion_id || '—'],
             ['Vivero', viveroSeleccionado?.nombre ?? '—'],
             ['Evento', 'INICIO'],
             ['Cantidad y unidad', `${cantidadInicio} ${unidadMedida ?? ''}`],

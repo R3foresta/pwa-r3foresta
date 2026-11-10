@@ -5,7 +5,7 @@ function ViveroEmbolsadoScreen() {
   const { id } = useParams<{ id: string }>()
   const loteId = Number(id)
 
-  if (!Number.isInteger(loteId) || loteId <= 0) {
+  if (!Number.isSafeInteger(loteId) || loteId <= 0) {
     return <Navigate to="/app/vivero" replace />
   }
 
