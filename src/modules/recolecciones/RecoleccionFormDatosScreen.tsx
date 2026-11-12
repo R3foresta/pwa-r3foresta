@@ -27,7 +27,7 @@ function RecoleccionFormDatosScreen() {
   );
   // Estados locales para manejo de UI fluida
   const [quantity, setQuantity] = useState(formData?.quantity || "0");
-  const [unit, setUnit] = useState<Unit>(formData?.unit || "kg");
+  const [unit, setUnit] = useState<Unit>(formData?.unit || "units");
   const [notes, setNotes] = useState(formData?.notes || "");
 
   const [type, setType] = useState<MaterialType>(formData?.type || "seed");
@@ -312,7 +312,7 @@ function RecoleccionFormDatosScreen() {
             value={type}
             onChange={(newType) => {
               setType(newType)
-              setUnit(newType === 'cutting' ? 'units' : 'kg')
+              setUnit('units')
               setErrors((prev) => ({ ...prev, tipoMaterial: false }))
             }}
           />
@@ -433,17 +433,18 @@ function RecoleccionFormDatosScreen() {
             }}
           />
           {type === 'seed' ? (
-            <div className="flex gap-2 flex-wrap">
+            <div className="grid w-full grid-cols-3 gap-2" role="group" aria-label="Unidad de medida">
               {[
-                { label: 'Kg', value: 'kg' as Unit },
-                { label: 'G', value: 'g' as Unit },
                 { label: 'Unidades', value: 'units' as Unit },
+                { label: 'G', value: 'g' as Unit },
+                { label: 'kg', value: 'kg' as Unit },
               ].map((option) => (
                 <button
                   key={option.value}
                   type="button"
                   onClick={() => setUnit(option.value)}
-                  className={`rounded-xl border px-3 py-2 text-sm font-bold transition ${
+                  aria-pressed={unit === option.value}
+                  className={`min-h-12 rounded-xl border px-2 py-3 text-center text-sm font-bold transition ${
                     unit === option.value
                       ? 'border-brand-500 bg-brand-500 text-white shadow-sm'
                       : 'border-neutral-200 bg-white text-neutral-600 hover:border-brand-300 hover:bg-brand-50'

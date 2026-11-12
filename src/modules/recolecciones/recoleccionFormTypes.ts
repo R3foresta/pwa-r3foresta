@@ -71,7 +71,7 @@ export const initialFormData: RecoleccionFormData = {
   species: "",
   method: "",
   quantity: "0",
-  unit: "kg",
+  unit: "units",
   notes: "",
   isNewFind: false,
   placePhotos: [],

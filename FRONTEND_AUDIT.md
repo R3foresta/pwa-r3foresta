@@ -50,6 +50,8 @@ Cotejo del contrato: el OpenAPI local declara `historial.fecha` como `date`, per
 
 Verificación frontend de esta iteración: 96 archivos/1.335 pruebas aprobadas con `npm run test -- --maxWorkers=2`; lint, build/TypeScript/PWA y diff-check aprobados. Persiste el aviso conocido de tamaño MapLibre. El navegador volvió a indicar uso local deshabilitado en Work; no se acredita recorrido autenticado contra backend ni aceptación visual. [Detalle, alcance y límites](docs/QA_RECEPCION_UNICA.md).
 
+Confirmación posterior del usuario, 12 de noviembre: ambos recorridos (recepción directa y rechazo/corrección/reenvío/recepción) llegaron correctamente al uso en Vivero y los accesos con otros roles funcionaron. Se registra como aceptación manual reportada, sin logs ni IDs reproducibles. Sigue pendiente la verificación manual de respuesta perdida, recepción simultánea y los demás límites del corte; esta confirmación no cierra AUD-036.
+
 ### AUD-036 — Fecha original en correcciones antiguas
 
 Revisión estática del 12 de noviembre: `RecoleccionFormDatosScreen.tsx` y `RecoleccionFormResumenScreen.tsx` usan `buildPastRange(MAX_DIAS_RECOLECCION)` y `validateRecoleccionForm` aplica esa ventana también en edición. El contrato 100 permite conservar una fecha capturada válidamente aunque envejezca; el frontend puede bloquear corregir una ficha antigua antes de enviarla. Es previo a la nueva pantalla de recepción y no se modifica en esta primera iteración.

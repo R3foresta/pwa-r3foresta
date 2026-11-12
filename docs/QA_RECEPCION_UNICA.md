@@ -31,6 +31,12 @@ Las pruebas de recepción cubren semillas/esquejes, confirmación explícita, re
 
 Los dos archivos con cambios locales previos (`RecoleccionFormDatosScreen.tsx` y `recoleccionFormTypes.ts`) permanecieron intactos durante la verificación y se excluyen del commit de esta iteración. Los tests se ejecutaron con esos cambios presentes en el workspace. No se instalaron dependencias.
 
+### Confirmación manual y cierre
+
+El 12 de noviembre Pablo confirmó en este chat que funcionaron creación/envío/recepción/uso en Vivero y borrador/envío/rechazo/corrección/reenvío/recepción/uso. También confirmó los accesos con otros roles. Es validación manual reportada por el usuario; no se adjuntaron logs, actores ni IDs para reproducirla. Pérdida de respuesta y recepción simultánea mantienen su cobertura simulada y su comprobación manual pendiente.
+
+Al autorizar commit y merge a main, se incorporan también los dos ajustes de captura antes preservados: Unidades como selección inicial y opciones Unidades/G/kg con estado accesible y distribución uniforme. Su contenido coincide con el workspace sobre el que pasaron los checks anteriores.
+
 ## Límites y corte
 
 Se releyeron las actualizaciones del chat «Analizar flujo de recolección» durante el cierre. Pablo confirmó allí el reinicio operativo y la ejecución exitosa de 100; el backend quedó en el commit local `6e5e756`, sin push según ese chat. Esta entrega toma esa aplicación como reportada por el usuario: no vuelve a ejecutar el reinicio ni acredita por sí sola catálogo remoto, publicación de API/PWA o limpieza física de Storage. Los informes T4/096/097 anteriores permanecen históricos.
