@@ -6,10 +6,7 @@ import { fail, object, row, text } from '../../accesos/accesos.contract'
 
 const ESTADOS_HABILITACION = [
   'RECEPCION_CONFORME',
-  'CONCILIACION_CONFORME',
   'PENDIENTE_RECEPCION',
-  'PENDIENTE_CONCILIACION',
-  'INCIDENCIA_CONCILIACION',
 ] as const
 export type EstadoHabilitacion = typeof ESTADOS_HABILITACION[number]
 
@@ -18,12 +15,11 @@ export type OrigenMaterial = {
   codigo_trazabilidad: string | null; fecha: string; tipo_material: 'SEMILLA' | 'ESQUEJE'
   nombre_cientifico_snapshot: string | null; nombre_comercial_snapshot: string | null; variedad_snapshot: string | null
   estado_registro: 'VALIDADO'; estado_operativo: 'ABIERTO'; saldo_actual: number; unidad_canonica: 'G' | 'UNIDAD'
-  estado_habilitacion: EstadoHabilitacion; puede_consultar_conciliacion: boolean
+  estado_habilitacion: EstadoHabilitacion
   motivo_no_inicio?: string | null; saldo_actual_exacto?: string
 }
 export function esMaterialHabilitado(origen: OrigenMaterial): boolean {
-  return origen.estado_habilitacion === 'RECEPCION_CONFORME' ||
-    origen.estado_habilitacion === 'CONCILIACION_CONFORME'
+  return origen.estado_habilitacion === 'RECEPCION_CONFORME'
 }
 
 export function esOrigenAptoParaInicio(origen: OrigenMaterial): boolean {
@@ -49,7 +45,7 @@ export function validarOrigenes(value: unknown, viveroId: string, page: number, 
       'recoleccion_id', 'vivero_almacenamiento_id', 'recolector_id', 'codigo_trazabilidad', 'fecha',
       'planta_id', 'tipo_material', 'nombre_cientifico_snapshot', 'nombre_comercial_snapshot',
       'variedad_snapshot', 'estado_registro', 'estado_operativo', 'saldo_actual', 'unidad_canonica',
-      'estado_habilitacion', 'puede_consultar_conciliacion',
+      'estado_habilitacion',
       ...(incluirRequisitosInicio ? ['motivo_no_inicio', 'saldo_actual_exacto'] : []),
     ])
     const estado = ESTADOS_HABILITACION.find(estado => estado === item.estado_habilitacion)
@@ -58,14 +54,14 @@ export function validarOrigenes(value: unknown, viveroId: string, page: number, 
       item.estado_registro !== 'VALIDADO' || item.estado_operativo !== 'ABIERTO' ||
       item.unidad_canonica !== 'G' && item.unidad_canonica !== 'UNIDAD' ||
       typeof item.saldo_actual !== 'number' || !Number.isFinite(item.saldo_actual) || item.saldo_actual <= 0 ||
-      (item.codigo_trazabilidad !== null && typeof item.codigo_trazabilidad !== 'string') || !estado || typeof item.puede_consultar_conciliacion !== 'boolean') return fail()
+      (item.codigo_trazabilidad !== null && typeof item.codigo_trazabilidad !== 'string') || !estado) return fail()
 
     let requisitosInicio: Pick<OrigenMaterial, 'motivo_no_inicio' | 'saldo_actual_exacto'> = {}
     if (incluirRequisitosInicio) {
       const motivo = item.motivo_no_inicio === null ? null : text(item.motivo_no_inicio)
       const saldoExacto = text(item.saldo_actual_exacto)
       if (!/^(0|[1-9][0-9]*)(\.[0-9]+)?$/.test(saldoExacto) || Number(saldoExacto) !== item.saldo_actual ||
-        (motivo === null && estado !== 'RECEPCION_CONFORME' && estado !== 'CONCILIACION_CONFORME')) return fail()
+        (motivo === null && estado !== 'RECEPCION_CONFORME')) return fail()
       requisitosInicio = { motivo_no_inicio: motivo, saldo_actual_exacto: saldoExacto }
     }
     return {
@@ -85,7 +81,6 @@ export function validarOrigenes(value: unknown, viveroId: string, page: number, 
       saldo_actual: item.saldo_actual,
       unidad_canonica: item.unidad_canonica,
       estado_habilitacion: estado,
-      puede_consultar_conciliacion: item.puede_consultar_conciliacion,
     }
   })
   if (new Set(data.map(item => item.recoleccion_id)).size !== data.length || data.length > 20) return fail()

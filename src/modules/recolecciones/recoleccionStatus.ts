@@ -3,8 +3,6 @@ type EstadoRegistroSource = {
   estado_registro?: string | null
   estadoRegistro?: string | null
   estadoRegistroRecoleccion?: string | null
-  usuario_validacion_id?: number | null
-  fecha_validacion?: string | null
   usuario_id?: number | string | null
   can_edit?: boolean
   can_submit_for_validation?: boolean
@@ -36,11 +34,7 @@ export function resolveEstadoRegistro(recoleccion: EstadoRegistroSource) {
     return normalizedFromApi
   }
 
-  const hasValidationData =
-    Boolean(recoleccion.usuario_validacion_id) ||
-    Boolean(recoleccion.fecha_validacion)
-
-  return hasValidationData ? 'VALIDADO' : 'BORRADOR'
+  return 'BORRADOR'
 }
 
 export function getRecoleccionFormActions(recoleccion: EstadoRegistroSource, user: UsuarioActual) {

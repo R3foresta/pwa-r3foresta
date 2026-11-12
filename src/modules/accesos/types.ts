@@ -16,11 +16,11 @@ export type AccesoM1 = CuentaAcceso & {
   capacidades: { crear: boolean; mantener_propias: boolean; confirmar_propias: false; desechar: boolean }
   vigencia_actual: { id: string; otorgado_en: string; otorgado_por: string } | null
 }
-export type CapacidadVivero = 'operar' | 'consultar_material' | 'desechar_semillas' | 'revisar_documental'
+export type CapacidadVivero = 'operar' | 'consultar_material' | 'desechar_semillas' | 'recibir_y_validar'
 export type AccesoM2 = CuentaAcceso & {
   alcance_global: boolean
   viveros: { id: string; vivero_id: string; otorgado_en: string; otorgado_por: string; acceso_efectivo: boolean; capacidades: Record<CapacidadVivero, boolean> }[]
-  capacidades_globales: { administrar: boolean; operar_cualquier_vivero: boolean; desechar_semillas_cualquier_vivero: boolean; revisar_documental_cualquier_vivero: boolean }
+  capacidades_globales: { administrar: boolean; operar_cualquier_vivero: boolean; desechar_semillas_cualquier_vivero: boolean; recibir_y_validar_cualquier_vivero: boolean }
 }
 export type LecturaAcceso<T> = { data: T; observado_en: string }
 export type AccesoEntrada = { comando_id: string; revision_esperada: string; motivo: string; vivero_id?: string }

@@ -1,556 +1,204 @@
-import { useOperationalAccess } from '../accesos/capabilitiesContext'
-import { canReview, hasViveroCapability } from '../accesos/accessPolicy'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import ConfirmDialog from '../../components/ConfirmDialog'
-import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import Icon from '../../components/Icon'
-import { Badge, Button, statusVariant } from '../../components/ui'
+import SuccessModal from '../../components/SuccessModal'
+import { Button, Card } from '../../components/ui'
 import { useAuth } from '../../contexts/AuthContext'
-import { RecoleccionesService, type Recoleccion } from '../../services/recolecciones.service'
-import { formatUnidadCanonicaDisplay } from '../../utils/recoleccionUnidad'
-import {
-  getUbicacionCoords,
-  getUbicacionDisplay,
-  getUbicacionDivision,
-} from '../../utils/ubicacion'
-import { resolveEstadoOperativo, resolveEstadoRegistro } from './recoleccionStatus'
+import { canReview, hasViveroCapability, sameId } from '../accesos/accessPolicy'
+import { useOperationalAccess } from '../accesos/capabilitiesContext'
+import RecepcionForm from '../vivero/recepcion/RecepcionForm'
+import { RecepcionService } from '../vivero/recepcion/recepcion.api'
+import type { DetalleRecepcion, OrigenRecepcion } from '../vivero/recepcion/recepcion.contract'
+import { useRecepcionCommand } from '../vivero/recepcion/useRecepcionCommand'
+import RecoleccionRecepcionCard from './components/RecoleccionRecepcionCard'
+import { useRecepcionCatalogos } from './hooks/useRecepcionCatalogos'
 
-// ─── Modal de rechazo ────────────────────────────────────────────────────────
+const BASE = '/app/collections/validate'
+type DetailState = { data?: DetalleRecepcion; error?: string }
+type ReadState = { key: string; list: OrigenRecepcion[]; next: string | null; details: Record<string, DetailState>; error?: string }
+type RejectSelection = { key: string; detalle: DetalleRecepcion }
 
-interface RejectModalProps {
-  recoleccion: Recoleccion
-  onConfirm: (motivo: string) => void
-  onCancel: () => void
-  loading: boolean
+function scrollReturn(value: unknown, actor: string): number {
+  if (!value || typeof value !== 'object' || !('recepcionReturn' in value)) return 0
+  const back = value.recepcionReturn
+  if (!back || typeof back !== 'object' || !('actor' in back) || back.actor !== actor || !('scrollY' in back)) return 0
+  return typeof back.scrollY === 'number' && Number.isFinite(back.scrollY) && back.scrollY >= 0 ? back.scrollY : 0
 }
 
-function RejectModal({ recoleccion, onConfirm, onCancel, loading }: RejectModalProps) {
-  const [motivo, setMotivo] = useState('')
-  const isValid = motivo.trim().length >= 10
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center">
-      <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
-        <div className="mb-4 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-danger-100">
-            <Icon name="info" className="h-5 w-5 text-danger-600" />
-          </div>
-          <div>
-            <h2 className="text-lg font-extrabold text-neutral-800">Rechazar recolección</h2>
-            <p className="text-xs font-medium text-neutral-500">{recoleccion.codigo_trazabilidad}</p>
-          </div>
-        </div>
-
-        <p className="mb-3 text-sm font-medium text-neutral-600">
-          Explica el motivo del rechazo. El recolector podrá corregir y reenviar.
-        </p>
-
-        <textarea
-          value={motivo}
-          onChange={(e) => setMotivo(e.target.value)}
-          placeholder="Ej: Las fotos no son legibles. Por favor volver a subir con mejor iluminación."
-          maxLength={500}
-          rows={4}
-          className="w-full resize-none rounded-2xl border border-neutral-200 bg-neutral-50 p-3 text-sm text-neutral-800 outline-none ring-0 transition focus:border-danger-400 focus:ring-2 focus:ring-danger-100"
-        />
-        <p className="mt-1 text-right text-xs text-neutral-400">{motivo.length}/500</p>
-
-        <div className="mt-4 flex gap-3">
-          <Button
-            variant="secondary"
-            onClick={onCancel}
-            disabled={loading}
-            className="flex-1"
-          >
-            Cancelar
-          </Button>
-          <Button
-            variant="danger"
-            onClick={() => onConfirm(motivo.trim())}
-            disabled={!isValid}
-            loading={loading}
-            className="flex-1"
-          >
-            {loading ? 'Rechazando...' : 'Rechazar'}
-          </Button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ─── Tarjeta pendiente ───────────────────────────────────────────────────────
-
-interface PendingCardProps {
-  item: Recoleccion
-  onApprove: () => void
-  onReject: () => void
-  isActioning: boolean
-  canReviewItem: boolean
-}
-
-function PendingCard({ item, onApprove, onReject, isActioning, canReviewItem }: PendingCardProps) {
-  const [expanded, setExpanded] = useState(false)
-
-  const fechaFormateada = item.fecha
-    ? new Date(item.fecha + 'T00:00:00').toLocaleDateString('es-BO', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-      })
-    : '—'
-
-  const plantaNombre =
-    item.nombre_comun_principal ??
-    item.nombre_comercial ??
-    item.planta?.nombre_comun_principal ??
-    item.planta?.especie ??
-    '—'
-  const nombreCientifico = item.nombre_cientifico ?? item.planta?.nombre_cientifico ?? null
-
-  const ubicacionDisplay = getUbicacionDisplay(item.ubicacion)
-  const ubicacionDivision = getUbicacionDivision(item.ubicacion)
-  const ubicacionCoords = getUbicacionCoords(item.ubicacion)
-  const estadoRegistro = resolveEstadoRegistro(item)
-  const estadoOperativo = resolveEstadoOperativo(item)
-  const cantidadActual = item.saldo_actual ?? 0
-  const unidadDisplay = formatUnidadCanonicaDisplay(item.unidad_canonica, cantidadActual)
-
-  const evidencias = item.fotos ?? []
-  const fotoPrincipal = evidencias.find((f) => f.es_principal) ?? evidencias[0] ?? null
-  const imageUrl = fotoPrincipal?.url ?? null
-
-  return (
-    <article className="overflow-hidden rounded-3xl bg-white shadow-soft ring-1 ring-black/5">
-
-      {/* ── Cuerpo clickable para expandir detalle ───────────────── */}
-      <button
-        type="button"
-        onClick={() => setExpanded((v) => !v)}
-        className="w-full p-4 text-left transition hover:bg-neutral-50/60 active:bg-neutral-100/60"
-      >
-        <div className="flex gap-3">
-          {/* ─ Datos principales ─ */}
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold uppercase tracking-wide text-brand-600">
-              {item.codigo_trazabilidad}
-            </p>
-            <h3 className="truncate text-lg font-extrabold text-neutral-800">{plantaNombre}</h3>
-            <p className="truncate text-sm italic text-neutral-500">
-              {nombreCientifico ?? 'Sin nombre científico'}
-            </p>
-
-            <div className="mt-3 space-y-1 text-sm font-semibold text-neutral-600">
-              <p className="flex items-center gap-2">
-                <Icon name="package" className="h-4 w-4 shrink-0 text-brand-500" />
-                {cantidadActual} {unidadDisplay}
-              </p>
-              <p className="flex items-center gap-2">
-                <Icon name="date" className="h-4 w-4 shrink-0 text-brand-500" />
-                {fechaFormateada}
-              </p>
-              <p className="flex items-center gap-2">
-                <Icon name="pin" className="h-4 w-4 shrink-0 text-brand-500" />
-                <span className="truncate">{ubicacionDisplay}</span>
-              </p>
-            </div>
-          </div>
-
-          {/* ─ Thumbnail ─ */}
-          <div className="h-24 w-24 shrink-0 overflow-hidden rounded-2xl bg-neutral-100">
-            {imageUrl ? (
-              <img
-                src={imageUrl}
-                alt={plantaNombre}
-                className="h-full w-full object-cover"
-                loading="lazy"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center">
-                <Icon name="photo" className="h-8 w-8 text-neutral-400" />
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* ─ Badges + indicador de expansión ─ */}
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <Badge variant={item.tipo_material === 'SEMILLA' ? 'success' : item.tipo_material === 'ESQUEJE' ? 'warning' : 'neutral'}>
-            {item.tipo_material}
-          </Badge>
-          <Badge variant={statusVariant(estadoRegistro)}>{estadoRegistro}</Badge>
-          <Badge variant={statusVariant(estadoOperativo)}>{estadoOperativo}</Badge>
-          <Badge variant="neutral">Evidencias: {evidencias.length}</Badge>
-          <Icon
-            name="chevron-down"
-            className={`ml-auto h-4 w-4 text-neutral-400 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
-          />
-        </div>
-      </button>
-
-      {/* ── Detalle expandible ───────────────────────────────────── */}
-      {expanded && (
-        <div className="space-y-3 border-t border-neutral-100 px-4 pb-4 pt-3">
-
-          {/* Material */}
-          <section className="rounded-2xl bg-brand-50 p-4 ring-1 ring-black/5">
-            <h2 className="text-base font-extrabold text-brand-700">Material</h2>
-            <div className="mt-3 space-y-2 text-sm font-semibold text-neutral-700">
-              <p className="flex items-center justify-between gap-4">
-                <span className="text-neutral-500">Nombre comercial</span>
-                <span className="text-right">{plantaNombre}</span>
-              </p>
-              <p className="flex items-center justify-between gap-4">
-                <span className="text-neutral-500">Nombre científico</span>
-                <span className="text-right italic">{nombreCientifico ?? 'No disponible'}</span>
-              </p>
-              <p className="flex items-center justify-between gap-4">
-                <span className="text-neutral-500">Tipo material</span>
-                <span>{item.tipo_material}</span>
-              </p>
-              <p className="flex items-center justify-between gap-4">
-                <span className="text-neutral-500">Saldo actual</span>
-                <span>
-                  {cantidadActual} {unidadDisplay}
-                </span>
-              </p>
-              <p className="flex items-center justify-between gap-4">
-                <span className="text-neutral-500">Estado registro</span>
-                <Badge variant={statusVariant(estadoRegistro)}>{estadoRegistro}</Badge>
-              </p>
-              <p className="flex items-center justify-between gap-4">
-                <span className="text-neutral-500">Estado operativo</span>
-                <Badge variant={statusVariant(estadoOperativo)}>{estadoOperativo}</Badge>
-              </p>
-              <p className="flex items-center justify-between gap-4">
-                <span className="text-neutral-500">Método</span>
-                <span className="text-right">{item.metodo?.nombre ?? 'No disponible'}</span>
-              </p>
-              <p className="flex items-center justify-between gap-4">
-                <span className="text-neutral-500">Vivero</span>
-                <span className="text-right">{item.vivero?.nombre ?? 'No disponible'}</span>
-              </p>
-              {item.observaciones && (
-                <p className="flex flex-col gap-1">
-                  <span className="text-neutral-500">Observaciones</span>
-                  <span className="text-sm text-neutral-700">{item.observaciones}</span>
-                </p>
-              )}
-              {item.especie_nueva && (
-                <div className="flex items-center gap-2 rounded-xl bg-warning-50 px-3 py-2 ring-1 ring-warning-200">
-                  <span className="text-sm">⭐</span>
-                  <p className="text-xs font-bold text-warning-800">
-                    Especie nueva — requiere revisión adicional
-                  </p>
-                </div>
-              )}
-            </div>
-          </section>
-
-          {/* Ubicación */}
-          <section className="rounded-2xl bg-brand-50 p-4 ring-1 ring-black/5">
-            <h2 className="text-base font-extrabold text-brand-700">Ubicación</h2>
-            <div className="mt-3 space-y-1 text-sm font-semibold text-neutral-700">
-              <p>{ubicacionDisplay}</p>
-              {ubicacionDivision && <p className="text-neutral-600">{ubicacionDivision}</p>}
-              {ubicacionCoords && <p className="text-xs text-neutral-500">{ubicacionCoords}</p>}
-            </div>
-          </section>
-
-          {/* Evidencias */}
-          <section className="rounded-2xl bg-brand-50 p-4 ring-1 ring-black/5">
-            <h2 className="text-base font-extrabold text-brand-700">
-              Evidencias ({evidencias.length})
-            </h2>
-            {evidencias.length > 0 ? (
-              <div className="mt-3 grid grid-cols-3 gap-3">
-                {evidencias.map((foto, idx) => (
-                  <a
-                    key={foto.id ?? idx}
-                    href={foto.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div className="h-24 overflow-hidden rounded-2xl bg-neutral-200">
-                      <img
-                        src={foto.url}
-                        alt={foto.titulo ?? `Foto ${idx + 1}`}
-                        className="h-full w-full object-cover transition hover:opacity-90"
-                        loading="lazy"
-                      />
-                    </div>
-                    <p className="mt-1 text-center text-[11px] font-semibold text-neutral-500">
-                      {foto.titulo ?? `Foto ${idx + 1}`}
-                    </p>
-                  </a>
-                ))}
-              </div>
-            ) : (
-              <p className="mt-3 text-sm font-semibold text-neutral-500">
-                No hay evidencias registradas.
-              </p>
-            )}
-          </section>
-
-          {/* Auditoría */}
-          <section className="rounded-2xl bg-brand-50 p-4 ring-1 ring-black/5">
-            <h2 className="text-base font-extrabold text-brand-700">Auditoría</h2>
-            <div className="mt-3 space-y-2 text-sm font-semibold text-neutral-700">
-              <p className="flex items-center justify-between gap-4">
-                <span className="text-neutral-500">Recolector</span>
-                <span className="text-right">
-                  {item.usuario?.nombre ?? item.usuario?.username ?? 'No disponible'}
-                </span>
-              </p>
-              <p className="flex items-center justify-between gap-4">
-                <span className="text-neutral-500">Creado en</span>
-                <span className="text-right">
-                  {item.created_at
-                    ? new Date(item.created_at).toLocaleString('es-BO', {
-                        dateStyle: 'medium',
-                        timeStyle: 'short',
-                      })
-                    : 'No disponible'}
-                </span>
-              </p>
-              {item.fecha_validacion && (
-                <p className="flex items-center justify-between gap-4">
-                  <span className="text-neutral-500">Validado en</span>
-                  <span className="text-right">
-                    {new Date(item.fecha_validacion).toLocaleString('es-BO', {
-                      dateStyle: 'medium',
-                      timeStyle: 'short',
-                    })}
-                  </span>
-                </p>
-              )}
-            </div>
-          </section>
-
-        </div>
-      )}
-
-      {/* ── Acciones ─────────────────────────────────────────────── */}
-      <div className="flex gap-2 border-t border-neutral-100 px-4 py-3">
-        <Button
-          variant="danger"
-          size="sm"
-          onClick={onReject}
-          disabled={isActioning || !canReviewItem || item.can_reject === false}
-          className="flex-1 rounded-xl"
-        >
-          Rechazar
-        </Button>
-        <Button
-          size="sm"
-          onClick={onApprove}
-          loading={isActioning}
-          disabled={!canReviewItem || item.can_approve === false}
-          className="flex-1 rounded-xl"
-        >
-          {isActioning ? 'Validando...' : 'Aprobar'}
-        </Button>
-      </div>
-    </article>
-  )
-}
-
-// ─── Pantalla principal ──────────────────────────────────────────────────────
-
-function RecoleccionesValidacionScreen() {
+function RecepcionWorkspace({ actor, actorName }: { actor: string; actorName: string }) {
+  const { id } = useParams()
+  const [params] = useSearchParams()
+  const location = useLocation()
   const navigate = useNavigate()
-  const { user } = useAuth()
-  const [items, setItems] = useState<Recoleccion[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [actioningId, setActioningId] = useState<number | null>(null)
-  const [rejectTarget, setRejectTarget] = useState<Recoleccion | null>(null)
-  const [rejectLoading, setRejectLoading] = useState(false)
-  const [toastMsg, setToastMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null)
-  const { m1, m2 } = useOperationalAccess()
-  const canListOwn = m1.status === 'ready' && Boolean(m1.data?.capacidades.mantener_propias)
-  const canValidate = canListOwn || m2.status === 'ready' && hasViveroCapability(m2.data, 'revisar_documental')
-  const [approveTarget, setApproveTarget] = useState<Recoleccion | null>(null)
-  const canReviewItem = (item: Recoleccion) => m2.status === 'ready' && canReview(m2.data, user?.id, item.usuario_id, item.vivero_id)
-
-  const showToast = (text: string, type: 'success' | 'error') => {
-    setToastMsg({ text, type })
-    setTimeout(() => setToastMsg(null), 3500)
-  }
-
-  const load = async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const res = await RecoleccionesService.getPendingValidation({ page: 1, limit: 50 })
-      setItems(res.data)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'No se pudieron cargar las recolecciones pendientes.')
-    } finally {
-      setLoading(false)
-    }
-  }
+  const { login } = useAuth()
+  const { m2 } = useOperationalAccess()
+  const command = useRecepcionCommand(actor)
+  const allowed = m2.status === 'ready' && hasViveroCapability(m2.data, 'recibir_y_validar')
+  const catalogos = useRecepcionCatalogos(actor, allowed)
+  const scopeKey = JSON.stringify([m2.status, m2.data])
+  const [version, setVersion] = useState(0)
+  const cursor = params.get('antes_de_id') ?? undefined
+  const key = JSON.stringify([scopeKey, id, cursor, version, command.receipt?.estado === 'CONFIRMADO' ? command.receipt.comando_id : null])
+  const [read, setRead] = useState<ReadState | null>(null)
+  const visible = allowed && read?.key === key ? read : null
+  const [rejectSelection, setRejectSelection] = useState<RejectSelection | null>(null)
+  const rejectTarget = rejectSelection?.key === key ? rejectSelection.detalle : null
+  const [rejectLookup, setRejectLookup] = useState<{ key: string; id: string } | null>(null)
+  const rejectLoading = rejectLookup?.key === key ? rejectLookup.id : null
+  const [actionError, setActionError] = useState<{ key: string; text: string } | null>(null)
+  const [retryConfirm, setRetryConfirm] = useState(false)
+  const extraControllers = useRef(new Set<AbortController>())
+  const handledReceipt = useRef<string | null>(null)
+  const restoredKey = useRef<string | null>(null)
 
   useEffect(() => {
-    if (!canValidate) {
-      navigate('/app/collections', { replace: true })
+    const controller = new AbortController()
+    const extras = extraControllers.current
+    if (allowed) void (async () => {
+      try {
+        if (id) {
+          const data = await RecepcionService.detalle(actor, id, controller.signal)
+          if (!controller.signal.aborted) setRead({ key, list: [data], next: null, details: { [data.recoleccion_id]: { data } } })
+          return
+        }
+        const response = await RecepcionService.cola(actor, cursor, controller.signal)
+        if (controller.signal.aborted) return
+        setRead({ key, list: response.data, next: response.siguiente_antes_de_id, details: {} })
+        // La cola es mínima; enriquecer cada página sin saturar las lecturas del servidor.
+        let position = 0
+        const enrich = async () => {
+          while (position < response.data.length && !controller.signal.aborted) {
+            const item = response.data[position++]
+            let result: DetailState
+            try { result = { data: await RecepcionService.detalle(actor, item.recoleccion_id, controller.signal) } }
+            catch (error) { result = { error: error instanceof Error ? error.message : 'No se pudo cargar la ficha y sus fotos.' } }
+            if (!controller.signal.aborted) setRead(previous => previous?.key === key ? { ...previous, details: { ...previous.details, [item.recoleccion_id]: result } } : previous)
+          }
+        }
+        await Promise.all(Array.from({ length: Math.min(3, response.data.length) }, enrich))
+      } catch (error) {
+        if (!controller.signal.aborted) setRead({ key, list: [], next: null, details: {}, error: error instanceof Error ? error.message : 'No se pudieron cargar las recolecciones.' })
+      }
+    })()
+    return () => {
+      controller.abort()
+      extras.forEach(current => current.abort())
+      extras.clear()
     }
-  }, [canValidate, navigate])
+  }, [actor, allowed, cursor, id, key])
 
   useEffect(() => {
-    if (!canValidate) {
-      return
-    }
-    void load()
-  }, [canValidate])
+    if (id || !visible || restoredKey.current === key) return
+    restoredKey.current = key
+    window.scrollTo({ top: scrollReturn(location.state, actor) })
+  }, [actor, id, key, location.state, visible])
 
-  if (!canValidate) {
-    return null
-  }
+  useEffect(() => {
+    if (!id || command.receipt?.estado !== 'CONFIRMADO' || handledReceipt.current === command.receipt.comando_id) return
+    handledReceipt.current = command.receipt.comando_id
+    navigate(`${BASE}${location.search}`, { replace: true, state: location.state })
+  }, [command.receipt, id, location.search, location.state, navigate])
 
-  const handleApprove = async (item: Recoleccion) => {
-    if (!canReviewItem(item) || item.can_approve === false) return
-    setApproveTarget(null)
-    setActioningId(item.id)
+  const permitted = (detail: DetalleRecepcion, action: 'recibir' | 'rechazar') => allowed
+    && canReview(m2.data, actor, detail.recolector_id, detail.vivero_id)
+    && (action === 'recibir' ? detail.puede_recibir_validar : detail.puede_rechazar)
+
+  const retryDetail = async (recoleccionId: string) => {
+    const controller = new AbortController()
+    extraControllers.current.add(controller)
+    setRead(previous => previous?.key === key ? { ...previous, details: { ...previous.details, [recoleccionId]: {} } } : previous)
     try {
-      await RecoleccionesService.approve(item.id)
-      showToast(`Recolección ${item.codigo_trazabilidad} aprobada documentalmente.`, 'success')
-      setItems((prev) => prev.filter((r) => r.id !== item.id))
-    } catch (e) {
-      showToast(e instanceof Error ? e.message : 'Error al aprobar la recolección.', 'error')
-    } finally {
-      setActioningId(null)
-    }
+      const data = await RecepcionService.detalle(actor, recoleccionId, controller.signal)
+      if (!controller.signal.aborted) setRead(previous => previous?.key === key ? { ...previous, details: { ...previous.details, [recoleccionId]: { data } } } : previous)
+    } catch (error) {
+      if (!controller.signal.aborted) setRead(previous => previous?.key === key ? { ...previous, details: { ...previous.details, [recoleccionId]: { error: error instanceof Error ? error.message : 'No se pudo consultar la ficha.' } } } : previous)
+    } finally { extraControllers.current.delete(controller) }
   }
 
-  const handleRejectConfirm = async (motivo: string) => {
-    if (!rejectTarget || !canReviewItem(rejectTarget) || rejectTarget.can_reject === false) return
-    setRejectLoading(true)
+  const openReject = async (recoleccionId: string) => {
+    const controller = new AbortController()
+    extraControllers.current.add(controller)
+    setRejectLookup({ key, id: recoleccionId })
+    setActionError(null)
     try {
-      await RecoleccionesService.reject(rejectTarget.id, motivo)
-      showToast(`Recolección ${rejectTarget.codigo_trazabilidad} rechazada.`, 'success')
-      setItems((prev) => prev.filter((r) => r.id !== rejectTarget.id))
-      setRejectTarget(null)
-    } catch (e) {
-      showToast(e instanceof Error ? e.message : 'Error al rechazar la recolección.', 'error')
+      const detalle = await RecepcionService.detalle(actor, recoleccionId, controller.signal)
+      if (controller.signal.aborted) return
+      if (!permitted(detalle, 'rechazar')) throw new Error('Esta ficha ya no permite el rechazo por tu cuenta. Actualiza la bandeja.')
+      setRejectSelection({ key, detalle })
+    } catch (error) {
+      if (!controller.signal.aborted) setActionError({ key, text: error instanceof Error ? error.message : 'No se pudo preparar el rechazo.' })
     } finally {
-      setRejectLoading(false)
+      extraControllers.current.delete(controller)
+      if (!controller.signal.aborted) setRejectLookup(null)
     }
   }
 
-  const subtitle = loading
-    ? 'Cargando...'
-    : error
-      ? 'Error al cargar'
-      : `${items.length} pendiente${items.length !== 1 ? 's' : ''}`
+  const returnState = { recepcionReturn: { actor, scrollY: id ? scrollReturn(location.state, actor) : window.scrollY } }
+  const back = () => navigate(`${BASE}${location.search}`, { state: returnState })
+  const detail = id ? visible?.details[id]?.data : undefined
+  const locked = command.busy || Boolean(command.pending || command.receipt)
+  const subtitle = !allowed ? 'Recepción y recuperación de operaciones propias' : !visible ? 'Cargando…' : visible.error ? 'Error al cargar' : id ? detail?.codigo_trazabilidad : `${visible.list.length} pendiente${visible.list.length === 1 ? '' : 's'} en esta página`
 
-  return (
-    <div className="relative min-h-screen bg-brand-50 text-brand-700">
-      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-32">
-        {/* Header */}
-        <header className="mb-3 flex rounded-b-3xl bg-brand-600 px-5 pb-12 pt-10 text-white shadow-soft">
-          <button
-            type="button"
-            aria-label="Volver"
-            onClick={() => navigate(canListOwn ? '/app/collections' : '/app/home')}
-            className="mr-4 my-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
-          >
-            <Icon name="arrow-left" className="h-5 w-5" />
-          </button>
-          <div>
-            <h1 className="text-3xl font-extrabold leading-tight">Validar</h1>
-            <p className="text-sm font-medium text-white/90">{subtitle}</p>
-          </div>
-        </header>
-
-        <div className="-mt-10 space-y-4 px-5">
-          {/* Nota informativa */}
-          <div className="rounded-2xl bg-warning-50 px-4 py-3 ring-1 ring-warning-200">
-            <p className="text-xs font-semibold text-warning-800">
-              La revisión documental verifica el registro y sus evidencias. No acredita recepción física del material.
-              Al rechazar, el recolector podrá corregir y reenviar.
-            </p>
-          </div>
-
-          {/* Estado de carga */}
-          {loading && (
-            <div className="rounded-3xl bg-white px-4 py-6 text-center text-sm font-semibold text-neutral-600 shadow-soft ring-1 ring-black/5">
-              Cargando recolecciones pendientes...
-            </div>
-          )}
-
-          {/* Error */}
-          {error && !loading && (
-            <div className="rounded-3xl bg-danger-50 px-4 py-6 text-center text-sm font-semibold text-danger-700 shadow-soft ring-1 ring-danger-200">
-              <p>{error}</p>
-              <Button
-                variant="danger"
-                size="sm"
-                onClick={() => void load()}
-                className="mt-3 rounded-xl"
-              >
-                Reintentar
-              </Button>
-            </div>
-          )}
-
-          {/* Lista de pendientes */}
-          {!loading && !error && items.length > 0 && (
-            <div className="space-y-3">
-              {items.map((item) => (
-                <PendingCard
-                  key={item.id}
-                  item={item}
-                  onApprove={() => setApproveTarget(item)}
-                  onReject={() => setRejectTarget(item)}
-                  isActioning={actioningId === item.id}
-                  canReviewItem={canReviewItem(item)}
-                />
-              ))}
-            </div>
-          )}
-
-          {/* Vacío */}
-          {!loading && !error && items.length === 0 && (
-            <div className="rounded-3xl bg-white px-4 py-10 text-center shadow-soft ring-1 ring-black/5">
-              <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-success-50">
-                <Icon name="check" className="h-8 w-8 text-success-500" />
-              </div>
-              <p className="text-base font-bold text-neutral-700">Todo al día</p>
-              <p className="mt-1 text-sm font-medium text-neutral-500">
-                No hay recolecciones pendientes de validación.
-              </p>
-            </div>
-          )}
-        </div>
+  return <main className="min-h-screen bg-brand-50 text-brand-700">
+    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-32">
+      <header className="mb-3 flex rounded-b-3xl bg-brand-600 px-5 pb-12 pt-10 text-white shadow-soft">
+        <button type="button" aria-label="Volver" disabled={command.busy} onClick={() => id ? back() : navigate('/app/home')} className="my-auto mr-4 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-white disabled:opacity-50"><Icon name="arrow-left" className="h-5 w-5" /></button>
+        <div><h1 className="text-3xl font-extrabold leading-tight">{id ? 'Recepcionar' : 'Recepción'}</h1><p className="mt-1 text-sm font-medium text-white/90">Semillas y esquejes</p><p className="mt-1 text-xs font-medium text-white/90">{subtitle}</p></div>
+      </header>
+      <div className="-mt-10 space-y-4 px-5">
+        <Card className="bg-warning-50 text-xs font-semibold text-warning-800">La recepción física conforme valida la recolección. Si la ficha o el material no corresponden, rechaza con un motivo para que el recolector pueda corregir y reenviar.</Card>
+        {catalogos.warning && <p className="text-xs font-semibold text-warning-800">{catalogos.warning}</p>}
+        {command.pending && <Card className="space-y-3 border border-warning-200 bg-warning-50">
+          <h2 className="font-extrabold">Operación pendiente de confirmar</h2>
+          <p className="text-sm">{command.pending.accion === 'RECHAZAR' ? 'Rechazo' : 'Recepción'} de recolección {command.pending.recoleccion_id}.</p>
+          <p className="text-xs">Conservamos la misma intención. Consulta su resultado antes de realizar otra operación.</p>
+          <Button disabled={command.busy} loading={command.busy} onClick={() => void command.recuperar()}>Recuperar resultado</Button>
+          {command.missing && <Button variant="secondary" disabled={command.busy} onClick={() => setRetryConfirm(true)}>Reenviar la misma intención</Button>}
+        </Card>}
+        {command.error && <p role="alert" className="rounded-2xl bg-danger-50 p-4 text-sm font-semibold text-danger-700">{command.error}</p>}
+        {actionError?.key === key && <p role="alert" className="rounded-2xl bg-danger-50 p-4 text-sm font-semibold text-danger-700">{actionError.text}</p>}
+        {command.receipt?.estado === 'RECHAZADO' && <Card className="space-y-3"><p role="alert" className="text-sm">La operación no pudo confirmarse: {command.receipt.error?.codigo}. Consulta la ficha antes de preparar otra decisión.</p><Button onClick={() => { command.clearReceipt(); setVersion(value => value + 1) }}>Actualizar ficha</Button></Card>}
+        {!allowed && <Card className="space-y-3 text-sm">{m2.status === 'loading' ? <p role="status">Consultando acceso de recepción…</p> : m2.status === 'error' || m2.status === 'sessionExpired' ? <><p role="alert">{m2.error}</p><Button onClick={() => void (m2.status === 'sessionExpired' ? login() : m2.refresh())}>Reintentar acceso</Button></> : <p>Tu cuenta no tiene permiso actual para recibir material. Puedes recuperar el resultado de una operación propia pendiente.</p>}</Card>}
+        {allowed && !visible && <Card><p role="status">Cargando recolecciones y permisos…</p></Card>}
+        {visible?.error && <Card className="space-y-3 bg-danger-50"><p role="alert" className="text-sm text-danger-700">{visible.error}</p><Button variant="secondary" onClick={() => setVersion(value => value + 1)}>Reintentar consulta</Button></Card>}
+        {visible && !visible.error && !id && <>
+          {visible.list.length === 0 ? <Card className="py-8 text-center"><Icon name="check" className="mx-auto mb-3 h-10 w-10 text-success-500" /><h2 className="font-extrabold text-neutral-700">Todo al día</h2><p className="mt-1 text-sm text-neutral-500">No hay recolecciones pendientes de recepción en esta página.</p></Card> : <div className="space-y-3">{visible.list.map(item => {
+            const entry = visible.details[item.recoleccion_id]
+            const current = entry?.data
+            // El detalle actual es la versión revisable, también para las cantidades de la tarjeta.
+            return <RecoleccionRecepcionCard key={item.recoleccion_id} item={current ?? item} detalle={current} viveroNombre={catalogos.viveros[item.vivero_id]} metodoNombre={current?.metodo_id ? catalogos.metodos[current.metodo_id] : undefined} loading={!entry || !entry.data && !entry.error} error={entry?.error} busy={locked || Boolean(rejectLoading)} ownCollection={sameId(actor, item.recolector_id)} canReceive={Boolean(current && permitted(current, 'recibir'))} canReject={Boolean(current && permitted(current, 'rechazar'))} onRetry={() => void retryDetail(item.recoleccion_id)} onReceive={() => navigate(`${BASE}/${item.recoleccion_id}${location.search}`, { state: returnState })} onReject={() => void openReject(item.recoleccion_id)} />
+          })}</div>}
+          <nav aria-label="Páginas de recepción" className="flex flex-wrap justify-between gap-3 text-sm font-semibold">{cursor && <Link className="inline-flex min-h-11 items-center underline" to={BASE}>Primera página</Link>}{visible.next && <Link className="inline-flex min-h-11 items-center underline" to={`${BASE}?antes_de_id=${encodeURIComponent(visible.next)}`}>Siguiente página</Link>}</nav>
+        </>}
+        {detail && <>
+          <RecoleccionRecepcionCard item={detail} detalle={detail} showActions={false} viveroNombre={catalogos.viveros[detail.vivero_id]} metodoNombre={detail.metodo_id ? catalogos.metodos[detail.metodo_id] : undefined} />
+          <p className="text-xs text-neutral-500">Puedes desplegar la ficha para revisar las fotos, la ubicación y el historial. La declaración es de solo lectura.</p>
+          {sameId(actor, detail.recolector_id) && <Card>Tu recolección necesita otra persona autorizada para recibirla o rechazarla, incluso si eres ADMIN.</Card>}
+          {detail.recepcion ? <Card>Recepción física conforme registrada. La recolección está validada; los datos y las evidencias se conservan para consulta.</Card> : !sameId(actor, detail.recolector_id) && !permitted(detail, 'recibir') && <Card>Esta ficha no está disponible para recepción por tu cuenta. Puede haber cambiado de estado o de autorización.</Card>}
+          {permitted(detail, 'recibir') && !command.pending && !command.receipt && <RecepcionForm key={`${key}:${detail.revision}`} origen={detail} actor={actorName} viveroNombre={catalogos.viveros[detail.vivero_id]} busy={command.busy} onCancel={back} onConfirm={(entrada, fotos) => command.confirmar(detail.recoleccion_id, entrada, fotos)} />}
+          {permitted(detail, 'rechazar') && !locked && <Button variant="danger" fullWidth disabled={Boolean(rejectLoading)} onClick={() => void openReject(detail.recoleccion_id)}>Rechazar recolección</Button>}
+        </>}
       </div>
-
-      {/* Modal de rechazo */}
-      <ConfirmDialog open={Boolean(approveTarget && canReviewItem(approveTarget))} title="Confirmar revisión documental" confirmLabel="Aprobar recolección" onCancel={() => setApproveTarget(null)} onConfirm={() => { if (approveTarget) void handleApprove(approveTarget) }}>
-        <p className="mt-3 text-sm">Recolección {approveTarget?.codigo_trazabilidad}. Esta aprobación no acredita recepción física en el vivero.</p>
-      </ConfirmDialog>
-      {rejectTarget && (
-        <RejectModal
-          recoleccion={rejectTarget}
-          onConfirm={(motivo) => void handleRejectConfirm(motivo)}
-          onCancel={() => setRejectTarget(null)}
-          loading={rejectLoading}
-        />
-      )}
-
-      {/* Toast de resultado */}
-      {toastMsg && (
-        <div
-          className={`fixed bottom-28 left-1/2 z-50 -translate-x-1/2 rounded-2xl px-5 py-3 text-sm font-bold text-white shadow-2xl transition-all ${
-            toastMsg.type === 'success' ? 'bg-success-600' : 'bg-danger-600'
-          }`}
-        >
-          {toastMsg.text}
-        </div>
-      )}
     </div>
-  )
+    {rejectTarget && permitted(rejectTarget, 'rechazar') && !locked && <RejectionDialog key={`${key}:${rejectTarget.revision}`} detalle={rejectTarget} actor={actorName} viveroNombre={catalogos.viveros[rejectTarget.vivero_id]} onCancel={() => setRejectSelection(null)} onConfirm={motivo => { setRejectSelection(null); void command.rechazar(rejectTarget.recoleccion_id, rejectTarget.revision, motivo) }} />}
+    <ConfirmDialog open={retryConfirm} title="Reenviar la misma intención" description="Se conservarán la acción, clave, revisión y datos originales. No se crea otra operación." confirmLabel="Reenviar misma intención" loading={command.busy} onCancel={() => setRetryConfirm(false)} onConfirm={() => { setRetryConfirm(false); void command.reenviar() }} />
+    {command.receipt?.estado === 'CONFIRMADO' && <SuccessModal title={command.receipt.resultado?.accion === 'RECHAZAR' ? 'Recolección rechazada' : 'Recepción confirmada'} description={command.receipt.resultado?.accion === 'RECHAZAR' ? 'El recolector podrá corregir la misma ficha y reenviarla.' : 'El material fue recibido y la recolección quedó validada.'} summaryText={`Recolección ${command.receipt.resultado?.recoleccion_id}`} primaryLabel="Continuar en recepción" onPrimaryAction={() => command.clearReceipt()} />}
+  </main>
 }
 
-export default RecoleccionesValidacionScreen
+function RejectionDialog({ detalle, actor, viveroNombre, onCancel, onConfirm }: { detalle: DetalleRecepcion; actor: string; viveroNombre?: string; onCancel: () => void; onConfirm: (motivo: string) => void }) {
+  const [motivo, setMotivo] = useState('')
+  return <ConfirmDialog open title="Rechazar recolección" description="El recolector podrá corregir la misma ficha y reenviarla." confirmLabel="Confirmar rechazo" variant="danger" confirmDisabled={motivo.trim().length < 10 || motivo.trim().length > 500} onCancel={onCancel} onConfirm={() => onConfirm(motivo.trim())}>
+    <div className="mt-3 space-y-3 text-sm font-semibold text-neutral-600">
+      <p>{detalle.codigo_trazabilidad} · {detalle.cantidad_declarada} {detalle.unidad_declarada} · {viveroNombre ?? `Vivero ${detalle.vivero_id}`}</p><p>Responsable: {actor}</p>
+      <label className="block">Motivo del rechazo<textarea minLength={10} maxLength={500} value={motivo} onChange={event => setMotivo(event.target.value)} rows={4} className="mt-2 w-full resize-none rounded-2xl border border-neutral-200 bg-neutral-50 p-3 focus:border-danger-400 focus:outline-none focus:ring-2 focus:ring-danger-100" /></label><p className="text-right text-xs text-neutral-500">{motivo.length}/500 · mínimo 10 caracteres</p>
+    </div>
+  </ConfirmDialog>
+}
+
+export default function RecoleccionesValidacionScreen() {
+  const { user } = useAuth()
+  if (!user) return null
+  return <RecepcionWorkspace key={`${user.id}:${user.auth_id}:${localStorage.getItem('authToken') ?? ''}`} actor={user.id} actorName={user.nombre ? `${user.nombre} (${user.id})` : user.id} />
+}

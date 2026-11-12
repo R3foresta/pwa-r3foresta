@@ -19,10 +19,7 @@ import RecoleccionDeleteAction from './components/RecoleccionDeleteAction'
 
 const MENSAJES_HABILITACION = {
   RECEPCION_CONFORME: 'Material habilitado por recepción física conforme.',
-  CONCILIACION_CONFORME: 'Remanente habilitado por conciliación histórica conforme.',
   PENDIENTE_RECEPCION: 'Pendiente de recepción física conforme.',
-  PENDIENTE_CONCILIACION: 'Pendiente de conciliar el remanente histórico.',
-  INCIDENCIA_CONCILIACION: 'Remanente bloqueado por una incidencia de conciliación.',
 } satisfies Record<NonNullable<Recoleccion['m2_estado_habilitacion']>, string>
 
 function formatDate(value: string) {
@@ -125,7 +122,7 @@ function RecoleccionDetailScreen() {
   const estadoHabilitacion = recoleccion?.m2_estado_habilitacion
   const materialHabilitado = estadoHabilitacion === undefined
     ? recoleccion?.recepcion_conforme === true
-    : estadoHabilitacion === 'RECEPCION_CONFORME' || estadoHabilitacion === 'CONCILIACION_CONFORME'
+    : estadoHabilitacion === 'RECEPCION_CONFORME'
   const puedeDesechar =
     estadoRegistro === 'VALIDADO' && materialHabilitado &&
     estadoOperativo === 'ABIERTO' && cantidadActual > 0 &&
@@ -371,9 +368,13 @@ function RecoleccionDetailScreen() {
                 <span className="text-right">{formatDateTime(recoleccion.created_at)}</span>
               </p>
               <p className="flex items-center justify-between gap-4">
-                <span className="text-neutral-500">Validado en</span>
-                <span className="text-right">{formatDateTime(recoleccion.fecha_validacion)}</span>
+                <span className="text-neutral-500">Recibido físicamente el</span>
+                <span className="text-right">{recoleccion.recepcion ? formatDate(recoleccion.recepcion.fecha_recepcion) : 'No disponible'}</span>
               </p>
+              {recoleccion.recepcion && <>
+                <p className="flex items-center justify-between gap-4"><span className="text-neutral-500">Registrado en</span><span className="text-right">{formatDateTime(recoleccion.recepcion.registrado_en)}</span></p>
+                <p className="flex items-center justify-between gap-4"><span className="text-neutral-500">Receptor</span><span className="text-right">Usuario {recoleccion.recepcion.recibido_por}</span></p>
+              </>}
               <p className="flex items-center justify-between gap-4">
                 <span className="text-neutral-500">Responsable</span>
                 <span className="text-right">{recoleccion.usuario?.nombre || recoleccion.usuario?.username || 'No disponible'} {recoleccion.usuario?.apellido}</span>
@@ -386,10 +387,9 @@ function RecoleccionDetailScreen() {
 
             <div className="mt-4 rounded-2xl bg-brand-50 p-3 text-sm">
               <p>Recepción física: {recoleccion.recepcion_conforme === true ? 'conforme acreditada' : 'sin recepción conforme acreditada'}.</p>
-              {estadoRegistro === 'VALIDADO' && recoleccion.recepcion_conforme !== true && <p>VALIDADO acredita aprobación documental.</p>}
               {estadoHabilitacion && <p>{MENSAJES_HABILITACION[estadoHabilitacion]}</p>}
               {estadoRegistro === 'VALIDADO' && estadoHabilitacion === undefined && recoleccion.recepcion_conforme !== true && <p>Consumo y desecho requieren recepción conforme.</p>}
-              {m2.status === 'ready' && canAtVivero(m2.data, recoleccion.vivero_id, 'operar') && ['PENDIENTE_VALIDACION','VALIDADO'].includes(estadoRegistro) && <Button variant="secondary" onClick={() => navigate(`/app/recepciones-semillas/${recoleccion.id}`)}>Consultar recepción en Vivero</Button>}
+              {m2.status === 'ready' && canAtVivero(m2.data, recoleccion.vivero_id, 'recibir_y_validar') && ['PENDIENTE_VALIDACION','VALIDADO'].includes(estadoRegistro) && <Button variant="secondary" onClick={() => navigate(`/app/collections/validate/${recoleccion.id}`)}>Consultar recepción</Button>}
             </div>
 
             {(formActions.canEdit || formActions.canSubmit) && (

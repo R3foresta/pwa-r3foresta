@@ -9,9 +9,10 @@ export function canOpenAppPath(path: string, role: string | null | undefined): b
   if (!/^\/app(?:\/|$)/.test(pathname)) return false
   if (hasInternalAppAccess(role)) return true
   // La pantalla verifica capacidades del servidor; esta excepción no abre el módulo interno.
-  return ['/app', '/app/home', '/app/profile', '/app/edit-profile', '/app/usuarios', '/app/participacion/accesos', '/app/participacion/registrar', '/app/participacion/borradores', '/app/participacion/mis-registros', '/app/participacion/correcciones', '/app/recepciones-semillas'].includes(pathname)
+  return ['/app', '/app/home', '/app/profile', '/app/edit-profile', '/app/usuarios', '/app/participacion/accesos', '/app/participacion/registrar', '/app/participacion/borradores', '/app/participacion/mis-registros', '/app/participacion/correcciones', '/app/recepciones-semillas', '/app/collections/validate'].includes(pathname)
     // Recuperación propia después de perder rol/M2; la pantalla y API niegan nuevas operaciones.
     || /^\/app\/recepciones-semillas\/[1-9]\d*$/.test(pathname)
+    || /^\/app\/collections\/validate\/[1-9]\d*$/.test(pathname)
     || /^\/app\/planting\/subcampanias\/[1-9]\d*$/.test(pathname)
     || /^\/app\/participacion\/subcampanias\/[1-9]\d*\/registrar$/.test(pathname)
     || /^\/app\/participacion\/registros\/[1-9]\d*$/.test(pathname)

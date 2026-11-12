@@ -33,8 +33,6 @@ const draft: Recoleccion = {
   cantidad_inicial_canonica: 100,
   saldo_actual: 100,
   estado_operativo: 'ABIERTO',
-  usuario_validacion_id: null,
-  fecha_validacion: null,
 }
 
 const confirmation = {
@@ -191,11 +189,12 @@ describe('habilitación de Vivero en el detalle de Recolección', () => {
     ...draft,
     estado_registro: 'VALIDADO',
     vivero_id: VIVERO_A,
-    recepcion_conforme: false,
-    m2_estado_habilitacion: 'CONCILIACION_CONFORME',
+    recepcion_conforme: true,
+    m2_estado_habilitacion: 'RECEPCION_CONFORME',
+    recepcion: { id: '10', fecha_recepcion: '2026-11-04', recibido_por: '9007199254740993', registrado_en: '2026-11-04T18:00:00Z' },
   }
 
-  it('distingue conciliación de recepción total y permite el descarte en la custodia autorizada', async () => {
+  it('muestra recepción física y permite el descarte en la custodia autorizada', async () => {
     const user = userEvent.setup()
     auth.m2 = m2Fixture({ viveros: [assigned(VIVERO_A)] }).data
     vi.mocked(RecoleccionesService.getById)
@@ -215,9 +214,11 @@ describe('habilitación de Vivero en el detalle de Recolección', () => {
       },
     })
     render(<DetailRoute />)
-    expect(await screen.findByText('Remanente habilitado por conciliación histórica conforme.')).toBeTruthy()
-    expect(screen.getByText('Recepción física: sin recepción conforme acreditada.')).toBeTruthy()
+    expect(await screen.findByText('Material habilitado por recepción física conforme.')).toBeTruthy()
+    expect(screen.getByText('Recepción física: conforme acreditada.')).toBeTruthy()
     expect(screen.queryByText('Consumo y desecho requieren recepción conforme.')).toBeNull()
+    expect(screen.getByText('Usuario 9007199254740993')).toBeTruthy()
+    expect(screen.queryByText(/aprobación documental/)).toBeNull()
     await user.click(screen.getByRole('button', { name: 'Registrar pérdida o descarte' }))
     const cantidad = screen.getByRole('spinbutton', { name: /cantidad a desechar/i })
     await user.clear(cantidad)
@@ -232,18 +233,18 @@ describe('habilitación de Vivero en el detalle de Recolección', () => {
     auth.m2 = m2Fixture({ viveros: [assigned(VIVERO_B)] }).data
     vi.mocked(RecoleccionesService.getById).mockResolvedValue({ success: true, data: validada })
     render(<DetailRoute />)
-    expect(await screen.findByText('Remanente habilitado por conciliación histórica conforme.')).toBeTruthy()
+    expect(await screen.findByText('Material habilitado por recepción física conforme.')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Registrar pérdida o descarte' })).toBeNull()
   })
 
-  it('mantiene bloqueado el descarte si la conciliación tiene una incidencia', async () => {
+  it('mantiene bloqueado el descarte si falta recepción conforme', async () => {
     auth.m2 = m2Fixture({ viveros: [assigned(VIVERO_A)] }).data
     vi.mocked(RecoleccionesService.getById).mockResolvedValue({
       success: true,
-      data: { ...validada, m2_estado_habilitacion: 'INCIDENCIA_CONCILIACION' },
+      data: { ...validada, recepcion_conforme: false, recepcion: null, m2_estado_habilitacion: 'PENDIENTE_RECEPCION' },
     })
     render(<DetailRoute />)
-    expect(await screen.findByText('Remanente bloqueado por una incidencia de conciliación.')).toBeTruthy()
+    expect(await screen.findByText('Pendiente de recepción física conforme.')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Registrar pérdida o descarte' })).toBeNull()
   })
 

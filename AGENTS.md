@@ -88,7 +88,9 @@ Estas reglas no son negociables desde frontend.
 - Una recolección es el lote origen del sistema.
 - Estados de registro: `BORRADOR`, `PENDIENTE_VALIDACION`, `VALIDADO`, `RECHAZADO`.
 - Estado operativo: `ABIERTO` o `CERRADO`, derivado del saldo.
-- El consumo de Vivero y DESECHO exigen saldo habilitado por recepción física total conforme (096) o conciliación histórica conforme (097), además del estado `VALIDADO`, `ABIERTO` y el acceso por custodia. INICIO consulta los requisitos del origen con 099.
+- Recepción física y validación son una sola operación (100): ADMIN global o VALIDADOR con asignación vigente al vivero, siempre distinto del autor. No hay aprobación documental separada, incidencia ni conciliación histórica en el flujo vigente.
+- El consumo de Vivero y DESECHO exigen recepción total conforme, estado `VALIDADO`, `ABIERTO`, saldo suficiente y acceso por custodia. INICIO consulta los requisitos del origen con 099/100.
+- Las diferencias se rechazan con motivo; el recolector corrige la misma ficha/código conservando la ubicación. El historial conserva los valores rechazados. La recepción confirma la cantidad declarada, no la ajusta.
 - `BORRADOR` y `RECHAZADO` pueden editarse según permisos.
 - `PENDIENTE_VALIDACION` queda congelado mientras se revisa.
 - `VALIDADO` no se edita: solo permite movimientos posteriores.
@@ -100,7 +102,7 @@ Estas reglas no son negociables desde frontend.
 - Persistencia oficial: `UNIDAD` y `G`.
 - `kg` puede existir como input de UI, pero no se persiste.
 - No usar `GR`. Usar siempre `G`.
-- `G` permite 1 decimal en captura ordinaria. INICIO y la conciliación histórica admiten hasta 6 decimales en la unidad canónica.
+- `G` permite 1 decimal en captura ordinaria. INICIO y la comprobación de recepción admiten hasta 6 decimales en la unidad canónica conforme a su contrato.
 - `UNIDAD` no permite decimales.
 - `ESQUEJE` siempre usa `UNIDAD`, entero estricto.
 - Desde `EMBOLSADO`, el saldo vivo siempre se maneja en `UNIDAD`.

@@ -1,8 +1,9 @@
-import { m1Fixture, m2Fixture } from '../modules/accesos/test-fixtures'
+import { assigned, m1Fixture, m2Fixture } from '../modules/accesos/test-fixtures'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import ProtectedRoute from './ProtectedRoute'
+import { canOpenAppPath } from '../utils/appAccess'
 import GuestRoute from './GuestRoute'
 import HomeScreen from '../modules/home/HomeScreen'
 import BottomNav from '../components/BottomNav'
@@ -16,9 +17,10 @@ const state = vi.hoisted(() => ({
   },
   stock: vi.fn(() => ({ items: [], loading: false, error: null })),
   privateScreen: vi.fn(),
+  m1Enabled: true, receives: false, operates: false,
 }))
 
-vi.mock('../modules/accesos/capabilitiesContext', () => ({ useOperationalAccess: () => ({ m1: { status: 'ready', data: m1Fixture({ capacidades: { crear: true, mantener_propias: true, confirmar_propias: false, desechar: true } }).data }, m2: { status: 'ready', data: m2Fixture().data } }) }))
+vi.mock('../modules/accesos/capabilitiesContext', () => ({ useOperationalAccess: () => ({ m1: { status: 'ready', data: m1Fixture({ capacidades: { crear: state.m1Enabled, mantener_propias: state.m1Enabled, confirmar_propias: false, desechar: false } }).data }, m2: { status: 'ready', data: m2Fixture({ rol_global: state.auth.user.rol as 'GENERAL' | 'VALIDADOR', viveros: state.operates ? [assigned(undefined, state.receives)] : [] }).data } }) }))
 vi.mock('../contexts/AuthContext', () => ({ useAuth: () => state.auth }))
 vi.mock('../modules/participacion/hooks/useParticipacionCapabilities', () => ({
   useParticipacionCapabilities: () => ({ data: { data: { subcampanias: [] } }, status: 'ready', error: null, refresh: vi.fn() }),
@@ -44,9 +46,36 @@ beforeEach(() => {
   state.auth.user.rol = 'VOLUNTARIO'
   state.auth.isAuthenticated = true
   state.auth.hydrated = true
+  state.m1Enabled = true; state.receives = false; state.operates = false
 })
 
 describe('Acceso de una cuenta de voluntariado', () => {
+  it('el receptor entra desde Inicio sin abrir Recolección M1', () => {
+    state.auth.user.rol = 'VALIDADOR'; state.m1Enabled = false; state.receives = true; state.operates = true
+    render(<MemoryRouter initialEntries={['/app/home']}><Routes>
+      <Route path="/app/home" element={<HomeScreen />} />
+      <Route path="/app/collections/validate" element={<p>Bandeja de recepción</p>} />
+    </Routes></MemoryRouter>)
+    expect(screen.queryByRole('button', { name: 'Recolección: Ver recolecciones' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: /Recepción de semillas y esquejes/ }))
+    expect(screen.getByText('Bandeja de recepción')).toBeTruthy()
+  })
+
+  it('GENERAL asignado conserva Germinación sin recibir material', () => {
+    state.auth.user.rol = 'GENERAL'; state.operates = true
+    render(<MemoryRouter><HomeScreen /></MemoryRouter>)
+    expect(screen.queryByRole('button', { name: /Recepción de semillas y esquejes/ })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Germinación: Ver lotes' })).toBeTruthy()
+  })
+
+  it('recuperar recepción tras perder rol no abre otras rutas de Recolección', () => {
+    expect(canOpenAppPath('/app/collections/validate', 'VOLUNTARIO')).toBe(true)
+    expect(canOpenAppPath('/app/collections/validate/9007199254740993', 'VOLUNTARIO')).toBe(true)
+    for (const path of ['/app/collections', '/app/collections/new', '/app/collections/3', '/app/collections/validate/3/edit', '/app/collections/validate/no-id']) {
+      expect(canOpenAppPath(path, 'VOLUNTARIO')).toBe(false)
+    }
+  })
+
   it('el inicio interno conserva inventario real y navegación sin métricas o actividad simuladas', () => {
     state.auth.user.rol = 'ADMIN'
     render(

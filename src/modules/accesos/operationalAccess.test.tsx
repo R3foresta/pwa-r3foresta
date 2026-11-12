@@ -27,10 +27,10 @@ describe('URLs directas por acceso efectivo', () => {
     gate('/app/vivero/new', state(m1 ? effectiveM1() : m1Fixture().data), state(m2Fixture({ viveros: m2 ? [assigned()] : [] }).data))
     expect(Boolean(screen.queryByText('Operación montada'))).toBe(m2)
   })
-  it('VALIDADOR con M2 y sin M1 abre revisión documental pero no captura', () => {
+  it('la recepción no abre las rutas M1 de captura o ficha', () => {
     const m2 = state(m2Fixture({ rol_global: 'VALIDADOR', viveros: [assigned(VIVERO_A, true)] }).data)
-    const view = gate('/app/collections/validate', state(m1Fixture().data), m2)
-    expect(screen.getByText('Operación montada')).toBeTruthy()
+    const view = gate('/app/collections/3', state(m1Fixture().data), m2)
+    expect(screen.queryByText('Operación montada')).toBeNull()
     view.unmount()
     gate('/app/collections/new', state(m1Fixture().data), m2)
     expect(screen.queryByText('Operación montada')).toBeNull()

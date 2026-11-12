@@ -56,12 +56,12 @@ function RecoleccionFormResumenScreen() {
     : '/app/collections/new/location';
   const successTitle =
     successMode === 'validacion'
-      ? 'Recolección enviada a validación'
+      ? 'Recolección enviada a recepción'
       : 'Borrador guardado';
   const successDescription =
     successMode === 'validacion'
-      ? 'El registro quedó pendiente de revisión.'
-      : 'Puedes volver luego para completarlo o enviarlo a validación.';
+      ? 'El registro quedó pendiente de revisión y recepción física en el vivero.'
+      : 'Puedes volver luego para completarlo o enviarlo a recepción.';
 
   useEffect(() => {
     const urls = newDraftFiles.map((file) => URL.createObjectURL(file));
@@ -493,7 +493,7 @@ function RecoleccionFormResumenScreen() {
 
             <div className="rounded-2xl border border-brand-100 bg-brand-50 px-4 py-3">
               <p className="text-sm font-semibold text-brand-700">
-                Puedes guardar este registro como borrador o enviarlo directamente a validación cuando esté listo.
+                Puedes guardar este registro como borrador o enviarlo a recepción cuando esté listo. El receptor revisará y validará la entrega en el vivero.
               </p>
             </div>
 
@@ -507,7 +507,7 @@ function RecoleccionFormResumenScreen() {
                 disabled={loadingType !== null}
                 loading={loadingType === 'validacion'}
               >
-                {loadingType === 'validacion' ? 'Enviando a validación...' : 'Enviar a Validación'}
+                {loadingType === 'validacion' ? 'Enviando a recepción...' : 'Enviar a recepción'}
               </Button>
 
               <Button

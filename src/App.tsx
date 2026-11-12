@@ -59,7 +59,6 @@ const RecoleccionFormUbicacionScreen = lazy(
 const RecoleccionFormResumenScreen = lazy(
   () => import('./modules/recolecciones/RecoleccionFormResumenScreen'),
 )
-const ConciliacionScreen = lazy(() => import('./modules/vivero/conciliacion/ConciliacionScreen'))
 const RecepcionScreen = lazy(() => import('./modules/vivero/recepcion/RecepcionScreen'))
 const ViveroMaterialScreen = lazy(() => import('./modules/vivero/screens/ViveroMaterialScreen'))
 const ViveroScreen = lazy(() => import('./modules/vivero/screens/ViveroScreen'))
@@ -202,16 +201,16 @@ function App() {
                 <Route path="location" element={<RecoleccionFormUbicacionScreen />} />
                 <Route path="summary" element={<RecoleccionFormResumenScreen />} />
               </Route>
-              <Route path="validate" element={<RecoleccionesValidacionScreen />} />
               <Route path=":id" element={<RecoleccionDetailScreen />} />
               <Route path=":id/evidencias/new" element={<RecoleccionNuevaEvidenciaScreen />} />
             </Route>
+            <Route path="collections/validate" element={<RecoleccionesValidacionScreen />} />
+            <Route path="collections/validate/:id" element={<RecoleccionesValidacionScreen />} />
             <Route path="recepciones-semillas" element={<RecepcionScreen />} />
             <Route path="recepciones-semillas/:id" element={<RecepcionScreen />} />
             <Route path="vivero" element={<OperationalAccessGate domain="M2" />}>
               <Route index element={<ViveroScreen />} />
               <Route path="material" element={<ViveroMaterialScreen />} />
-              <Route path="conciliaciones/:id" element={<ConciliacionScreen />} />
               <Route path="new" element={<ViveroNewScreen />} />
               <Route path=":id" element={<ViveroDetailScreen />} />
               <Route path=":id/event" element={<Navigate to="embolsado" replace />} />

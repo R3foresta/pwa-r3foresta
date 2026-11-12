@@ -1,6 +1,6 @@
 # Índice de dominio para frontend
 
-Corte documental: 15 de octubre de 2026. Es un mapa de consulta, no otro contrato. Las reglas/ADR/esquema aceptados viven en `r3foresta-docs`; la implementación local y los informes de QA acreditan sólo su alcance explícito. Ante una contradicción o contrato faltante, contrastar la fuente y pedir aclaración antes de cambiar negocio.
+Corte documental: 12 de noviembre de 2026 para recepción única; las demás áreas conservan su corte anterior. Es un mapa de consulta, no otro contrato. Las reglas/ADR/esquema aceptados viven en `r3foresta-docs`; la implementación local y los informes de QA acreditan sólo su alcance explícito. Ante una contradicción o contrato faltante, contrastar la fuente y pedir aclaración antes de cambiar negocio.
 
 ## Fuentes oficiales
 
@@ -8,6 +8,7 @@ Corte documental: 15 de octubre de 2026. Es un mapa de consulta, no otro contrat
 | --- | --- |
 | General: personas, roles, plantas, ubicaciones, evidencias | [00-general-module](../r3foresta-docs/00-general-module/README.md) |
 | Recolección: estados, snapshots, unidades y saldo origen | [01-recoleccion-module](../r3foresta-docs/01-recoleccion-module/README.md) |
+| Recepción y validación únicas (contrato local 100) | [Contrato backend](../Backend-r3foresta/docs/t4-recepcion-semillas.md), [verificación frontend](docs/QA_RECEPCION_UNICA.md) |
 | Vivero: etapas, eventos y saldo vivo | [02-vivero-module](../r3foresta-docs/02-vivero-module/README.md) |
 | Plantación: stock, plan y cierre | [03-plantacion-module](../r3foresta-docs/03-plantacion-module/README.md) |
 | Participación Aliada: specs y ejecución | [Specs](../r3foresta-docs/specs/plantacion/participacion-aliada/README.md), [tablero](../r3foresta-docs/specs/plantacion/participacion-aliada/implementacion/README.md) |
@@ -30,11 +31,13 @@ Sin checkout hermano, usar [r3foresta-docs remoto](https://github.com/R3foresta/
 | Estado | Comportamiento |
 | --- | --- |
 | BORRADOR / RECHAZADO | Edición según permiso. La corrección de rechazado guarda BORRADOR antes del envío. |
-| PENDIENTE_VALIDACION | Congelado mientras se revisa. |
-| VALIDADO | Sellado; sólo movimientos posteriores, sin editar snapshots/ficha. |
+| PENDIENTE_VALIDACION | Congelado mientras espera revisión y recepción física. |
+| VALIDADO | Recibido conforme y sellado; sólo movimientos posteriores, sin editar snapshots/ficha. |
 | ABIERTO / CERRADO | Estado operativo derivado del saldo, no seleccionable. |
 
-Sólo VALIDADO + ABIERTO con saldo puede alimentar Vivero. INICIO registra el consumo negativo `CONSUMO_A_VIVERO`; no ofrecer consumo manual paralelo desde Recolección. Movimientos append-only.
+La recepción confirma y valida en una operación: ADMIN global o VALIDADOR asignado al vivero, sin autorrecepción ni exigencia de M1. Las diferencias se rechazan con motivo y se corrige la misma ficha/código sin recapturar ubicación; el historial conserva los valores revisados. No existen aprobación documental autónoma, incidencia, recuento ni conciliación histórica en el contrato 100. La asignación al vivero mantiene sus capacidades operativas actuales.
+
+Sólo VALIDADO + ABIERTO con recepción conforme y saldo puede alimentar Vivero. INICIO registra el consumo negativo `CONSUMO_A_VIVERO`; no ofrecer consumo manual paralelo desde Recolección. Movimientos append-only. La instalación de 100 y el reinicio remoto de datos de prueba requieren un corte coordinado; el código local no acredita su aplicación.
 
 ### Vivero
 
@@ -54,6 +57,7 @@ Eventos append-only: no editar/borrar ni ocultar historial salvo filtros visuale
 - Evidencia por `tipo_entidad_id` + `entidad_id`; para eventos Vivero, apunta al ID de `EVENTO_LOTE_VIVERO`.
 - INICIO/EMBOLSADO/MERMA/DESPACHO requieren mínimo una foto válida; ADAPTABILIDAD es opcional. No añadir evidencias tardías a eventos obligatorios del MVP.
 - Recolección requiere mínimo dos fotos en el flujo vigente. Conservar metadatos y mostrar preview sólo con recurso seguro; bucket/ruta no son URL pública.
+- Recibir exige 1–5 fotos nuevas de hasta 15 MiB y fecha física entre recolección y hoy en America/La_Paz. Rechazar requiere motivo de 10–500 caracteres, sin foto obligatoria. Actor y vivero se derivan en el servidor; revisión/UUID y evidencias se conservan ante incertidumbre.
 - Distinguir fecha operativa y de registro, sin futuro. Ventanas y zona horaria se contrastan con el contrato: no reutilizar validadores de otro módulo por similitud.
 - Blockchain no reemplaza ni condiciona la persistencia base salvo contrato explícito.
 

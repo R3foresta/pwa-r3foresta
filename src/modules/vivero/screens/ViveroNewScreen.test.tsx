@@ -46,8 +46,7 @@ beforeEach(() => {
       motivo_no_inicio: null,
       estado_registro: 'VALIDADO',
       estado_operativo: 'ABIERTO',
-      estado_habilitacion: 'RECEPCION_CONFORME',
-      puede_consultar_conciliacion: false,
+      estado_habilitacion: 'RECEPCION_CONFORME'
     }],
   } as never)
   vi.mocked(LotesViveroService.uploadEvidenciasPendientes).mockResolvedValue({ evidencia_ids: [12] } as never)
@@ -74,16 +73,16 @@ describe('INICIO de Vivero', () => {
     vi.mocked(OrigenesService.listar).mockResolvedValue({
       data: [
         { recoleccion_id: '9007199254740993', codigo_trazabilidad: 'REC-H', tipo_material: 'SEMILLA',
-          saldo_actual: 2.5, unidad_canonica: 'G', estado_habilitacion: 'PENDIENTE_CONCILIACION', puede_consultar_conciliacion: true },
+          saldo_actual: 2.5, unidad_canonica: 'G', estado_habilitacion: 'PENDIENTE_RECEPCION' },
         { recoleccion_id: '4', codigo_trazabilidad: 'REC-T4', tipo_material: 'SEMILLA',
-          saldo_actual: 3, unidad_canonica: 'G', estado_habilitacion: 'PENDIENTE_RECEPCION', puede_consultar_conciliacion: false },
+          saldo_actual: 3, unidad_canonica: 'G', estado_habilitacion: 'PENDIENTE_RECEPCION' },
         { recoleccion_id: '5', codigo_trazabilidad: 'REC-ADMIN', tipo_material: 'SEMILLA',
-          saldo_actual: 7, unidad_canonica: 'G', estado_habilitacion: 'PENDIENTE_CONCILIACION', puede_consultar_conciliacion: false },
+          saldo_actual: 7, unidad_canonica: 'G', estado_habilitacion: 'PENDIENTE_RECEPCION' },
         { recoleccion_id: '6', codigo_trazabilidad: 'REC-C', tipo_material: 'SEMILLA',
-          saldo_actual: 5, saldo_actual_exacto: '5', motivo_no_inicio: null, unidad_canonica: 'G', estado_habilitacion: 'CONCILIACION_CONFORME', puede_consultar_conciliacion: true },
+          saldo_actual: 5, saldo_actual_exacto: '5', motivo_no_inicio: null, unidad_canonica: 'G', estado_habilitacion: 'RECEPCION_CONFORME' },
         { recoleccion_id: '8', codigo_trazabilidad: '', tipo_material: 'SEMILLA',
           saldo_actual: 10, saldo_actual_exacto: '10', motivo_no_inicio: 'La ficha del origen no tiene código de trazabilidad.',
-          unidad_canonica: 'G', estado_habilitacion: 'RECEPCION_CONFORME', puede_consultar_conciliacion: false },
+          unidad_canonica: 'G', estado_habilitacion: 'RECEPCION_CONFORME' },
       ],
       pagination: { page: 1, limit: 20, total: 5 },
     } as never)
@@ -92,10 +91,10 @@ describe('INICIO de Vivero', () => {
     await screen.findByText('Material que aún no puede iniciar un lote')
     expect(screen.getByText('La ficha del origen no tiene código de trazabilidad.')).toBeTruthy()
     expect(screen.getAllByRole('radio')).toHaveLength(1)
-    expect(screen.getByRole('link', { name: 'Ver conciliación de REC-H' }).getAttribute('href')).toBe('/app/vivero/conciliaciones/9007199254740993')
-    expect(screen.getByRole('link', { name: 'Ver recepción de REC-T4' }).getAttribute('href')).toBe('/app/recepciones-semillas/4')
-    expect(screen.queryByRole('link', { name: 'Ver conciliación de REC-ADMIN' })).toBeNull()
-    expect(screen.getByText('Solicita a Administración la revisión de este origen.')).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Ver recepción de REC-H' }).getAttribute('href')).toBe('/app/collections/validate/9007199254740993')
+    expect(screen.getByRole('link', { name: 'Ver recepción de REC-T4' }).getAttribute('href')).toBe('/app/collections/validate/4')
+    expect(screen.getByRole('link', { name: 'Ver recepción de REC-ADMIN' }).getAttribute('href')).toBe('/app/collections/validate/5')
+    expect(screen.queryByRole('link', { name: /conciliación/ })).toBeNull()
   })
 
   it('muestra fallo de consulta por separado y sólo indica ausencia tras una lectura válida', async () => {
@@ -137,9 +136,9 @@ describe('INICIO de Vivero', () => {
   })
 
   it.each([
-    ['0.0001', '0.0001', 'CONCILIACION_CONFORME'],
+    ['0.0001', '0.0001', 'RECEPCION_CONFORME'],
     ['1.1234567', '1.123456', 'RECEPCION_CONFORME'],
-    ['9007199254740993.000001', '9007199254740993.000001', 'CONCILIACION_CONFORME'],
+    ['9007199254740993.000001', '9007199254740993.000001', 'RECEPCION_CONFORME'],
   ] as const)('preserva el saldo %s y envía el máximo operativo %s', async (saldo, cantidad, estado) => {
     vi.mocked(OrigenesService.listar).mockResolvedValueOnce({
       success: true,
@@ -160,7 +159,6 @@ describe('INICIO de Vivero', () => {
         estado_registro: 'VALIDADO',
         estado_operativo: 'ABIERTO',
         estado_habilitacion: estado,
-        puede_consultar_conciliacion: true,
         motivo_no_inicio: null,
       }],
       pagination: { page: 1, limit: 20, total: 1 },

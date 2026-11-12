@@ -4,7 +4,7 @@ Contratos T1/T2 separados de Participación: [M1](../../../../Backend-r3foresta/
 
 - `accesos.api.ts` y `accesos.contract.ts`: lecturas propias/ADMIN, historia y recibos de cada dominio; Bearer, cancelación y timeout del transporte existente. IDs/revisiones decimales exactos, con `BigInt` sólo para comprobar orden/incrementos.
 - `OperationalAccessProvider`: lecturas propias independientes por cuenta/token. Un error de M1 no concede ni retira M2. Las fronteras de cuenta descartan formularios/respuestas anteriores; un refresco explícito invalida datos operativos. No refrescar al abrir/cerrar el selector de fotos desmontando el formulario.
-- `accessPolicy.ts`: capacidades por operación/vivero. M1 mantiene lo propio; revisión documental exige capacidad del vivero y otra autoría. DESECHO nunca se obtiene por autoría. Los Numbers inseguros se rechazan.
+- `accessPolicy.ts`: capacidades por operación/vivero. M1 mantiene lo propio; `recibir_y_validar` exige ADMIN o VALIDADOR asignado y otra autoría, conforme al contrato 100. La misma asignación mantiene las capacidades de operación M2. DESECHO nunca se obtiene por autoría. Los Numbers inseguros se rechazan.
 - `OperationalAccessGate`: URL directa antes de montar los flujos. Las acciones por objeto comprueban además su vivero; backend decide en cada request/RPC. M3 y las rutas públicas conservan sus guards.
 - `moduleCommandStore.ts` / `useModuleCommand`: intención inmutable guardada antes del POST; slot/lock por actor y dominio (`M1`/`M2`), separados del rol y de Participación. Reutilizan `CommandLifecycle` y Web Locks. No se borran pendientes al salir ni caducan por tiempo.
 

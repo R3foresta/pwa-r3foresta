@@ -1,6 +1,6 @@
 # Auditoría y pendientes del frontend
 
-Corte: 6 de noviembre de 2026. Lista única de deuda frontend. No sustituye el [tablero global](../r3foresta-docs/specs/plantacion/participacion-aliada/implementacion/README.md) ni acredita estado del backend desplegado.
+Corte: 12 de noviembre de 2026 para recepción única. Lista única de deuda frontend. No sustituye el [tablero global](../r3foresta-docs/specs/plantacion/participacion-aliada/implementacion/README.md) ni acredita estado del backend desplegado.
 
 El [histórico de auditoría](docs/archivo/FRONTEND_AUDIT_2026-10-15.md) conserva diagnósticos, cierres y resultados anteriores. Se retiraron de esta entrada los checklists repetidos y diagnósticos de módulos que ya no describían su implementación. Un hallazgo abierto se mantiene pendiente hasta verificar su cierre; este ajuste documental no lo resuelve por sí solo.
 
@@ -10,6 +10,8 @@ Entrega INT06 publicada en PWA `62f55dc`: 32 suites/445 tests, lint y build/Type
 
 | Prioridad | ID | Estado | Qué falta |
 | --- | --- | --- | --- |
+| Alta | AUD-035 | Corte y aceptación pendientes | Recepción única 100: acreditar backend/migración, reinicio coordinado, recorrido autenticado y aceptación móvil en el destino. [Alcance y verificación](docs/QA_RECEPCION_UNICA.md). |
+| Media | AUD-036 | PENDIENTE · captura legada | Revisar corrección de fichas cuya fecha original supera 45 días: el formulario aún aplica la ventana de captura a toda edición. |
 | Alta | AUD-034 | IMPLEMENTADO y REVISADO local · corte externo pendiente | Administración M1/M2, navegación por capacidades y compatibilidad T1/T2 verificadas con fixtures; acreditar el corte externo. |
 | Media | AUD-033 | PENDIENTE · navegación móvil compartida | En 320 px, la barra interna recorta el acceso Mapa. Ajustar distribución sin perder controles/foco y verificar todos los perfiles. |
 | Media | AUD-032 | IMPLEMENTADO local · aceptación visual final pendiente | Historial ADMIN de semillas validadas por especie integrado y probado; repetir navegador tras últimos ajustes y validar dispositivo físico. |
@@ -38,9 +40,25 @@ El orden de ejecución entre repositorios se decide en el tablero oficial; esta 
 
 ## Pendientes y criterio de cierre
 
+### AUD-035 — Recepción única: corte y aceptación
+
+12 de noviembre: la primera iteración sustituye aprobación documental, incidencias/resolución y conciliación por recepción y validación conjuntas o rechazo para corregir la misma ficha. Reutiliza las cards desplegables y el uploader, mantiene la asignación M2 y separa la entrada visual. Contratos de permisos/material, auditoría y recuperación se coordinan con backend 100 (`6e5e756`). En «Analizar flujo de recolección», Pablo confirmó el reinicio y la aplicación exitosa de 100; se registra como aplicación reportada, con cotejo del destino, Storage y corte API/PWA separados. Los informes T4/096/097 conservan evidencia histórica; no acreditan el contrato nuevo.
+
+Cerrar con backend 100 instalado en el destino autorizado, corte coordinado de cliente/API/datos de prueba y QA autenticado: ADMIN, VALIDADOR asignado sin M1, GENERAL operador sin recepción, autorrecepción, corrección conservando ubicación e historial, fotos, respuesta perdida y retiro de acceso. No ejecutar el reinicio remoto desde esta tarea frontend. La revisión del navegador está condicionada a que el uso local esté habilitado en Work.
+
+Cotejo del contrato: el OpenAPI local declara `historial.fecha` como `date`, pero 100 proyecta `recoleccion_historial.created_at`, definido como `TIMESTAMPTZ` en 014. La PWA admite ambos formatos explícitos y conserva el instante cuando existe. Corregir el formato documental backend y contrastarlo con el destino antes de cerrar el corte.
+
+Verificación frontend de esta iteración: 96 archivos/1.335 pruebas aprobadas con `npm run test -- --maxWorkers=2`; lint, build/TypeScript/PWA y diff-check aprobados. Persiste el aviso conocido de tamaño MapLibre. El navegador volvió a indicar uso local deshabilitado en Work; no se acredita recorrido autenticado contra backend ni aceptación visual. [Detalle, alcance y límites](docs/QA_RECEPCION_UNICA.md).
+
+### AUD-036 — Fecha original en correcciones antiguas
+
+Revisión estática del 12 de noviembre: `RecoleccionFormDatosScreen.tsx` y `RecoleccionFormResumenScreen.tsx` usan `buildPastRange(MAX_DIAS_RECOLECCION)` y `validateRecoleccionForm` aplica esa ventana también en edición. El contrato 100 permite conservar una fecha capturada válidamente aunque envejezca; el frontend puede bloquear corregir una ficha antigua antes de enviarla. Es previo a la nueva pantalla de recepción y no se modifica en esta primera iteración.
+
+Cerrar conservando la fecha original verificada al hidratar la ficha, permitiendo mantenerla sin ampliar la ventana para fechas nuevas y verificando corrección/reenvío/recepción después de 45 días. El backend mantiene la validación final; no ampliar globalmente `MAX_DIAS_RECOLECCION`.
+
 ### AUD-034 — Corte coordinado de accesos M1/M2
 
-T4 también está implementada y revisada localmente: recepción/validación por M2, incidencia/resolución y recuperación propia. Corregidas comparación decimal y retirada de datos al perder un vivero. [Cierre y evidencia](docs/QA_T4_REVISION_2026-11-06.md). No cierra AUD-034: faltan conciliación del legado, cotejo/aplicación096 y corte del entorno; T5 sigue pendiente.
+El corte T4 del 6 de noviembre implementó recepción/validación por M2, incidencia/resolución y recuperación propia. [Cierre y evidencia históricos](docs/QA_T4_REVISION_2026-11-06.md). El contrato 100 del 12 de noviembre sustituye ese recorrido y retira conciliación; el nuevo corte se sigue en AUD-035. No extrapolar las verificaciones anteriores a la nueva API ni declarar aplicado 100 por tener el código local.
 
 6 de noviembre: corregidos los hallazgos coordinadores P2 (entrada y Volver del revisor M2 sin M1) y P3 (consulta única tras DESECHO incierto). La fixture exige M1 en la lista propia y se prueba el recorrido real de Inicio/barra, carga/error y nueva lectura sin reenvío físico. [Nuevo informe y corte conservando el anterior](docs/QA_T3_CORRECCION_2026-11-06.md). [Comprobación coordinadora cerrada](../Backend-r3foresta/docs/evidencia/t3-revision-coordinadora-2026-11-06.json); corte externo pendiente.
 

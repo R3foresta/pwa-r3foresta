@@ -25,7 +25,7 @@ describe('intersección M2 y responsabilidad M3', () => {
     expect(view.result.current.allowed).toBe(false)
   })
   it('ADMIN deriva operación global sin consultar un equipo para inventar asignación', () => {
-    account.access = m2Fixture({ rol_global: 'ADMIN', alcance_global: true, capacidades_globales: { administrar: true, operar_cualquier_vivero: true, desechar_semillas_cualquier_vivero: true, revisar_documental_cualquier_vivero: true } }).data
+    account.access = m2Fixture({ rol_global: 'ADMIN', alcance_global: true, capacidades_globales: { administrar: true, operar_cualquier_vivero: true, desechar_semillas_cualquier_vivero: true, recibir_y_validar_cualquier_vivero: true } }).data
     const read = vi.spyOn(PlantacionService, 'getSubcampaniaEquipoExacto')
     const view = renderHook(() => useM2Logistics(VIVERO_A, '31'))
     expect(view.result.current.allowed).toBe(true)

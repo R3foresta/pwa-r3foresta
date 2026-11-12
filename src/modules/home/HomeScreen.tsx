@@ -24,7 +24,8 @@ function InternalHomeScreen() {
   const navigate = useNavigate()
   const { user, isProfileComplete, login } = useAuth()
   const { m1, m2 } = useOperationalAccess()
-  const canM1 = m1.status === 'ready' && Boolean(m1.data?.capacidades.mantener_propias) || m2.status === 'ready' && hasViveroCapability(m2.data, 'revisar_documental')
+  const canM1 = m1.status === 'ready' && Boolean(m1.data?.capacidades.mantener_propias)
+  const canReceive = m2.status === 'ready' && hasViveroCapability(m2.data, 'recibir_y_validar')
   const canM2 = m2.status === 'ready' && hasViveroCapability(m2.data, 'operar')
   const isAdmin = (user?.rol ?? '').toUpperCase() === 'ADMIN'
   const { items: stockItems, loading: stockLoading, error: stockError } =
@@ -226,6 +227,14 @@ function InternalHomeScreen() {
           )}
         </div>
       )}
+
+      {canReceive && <section className="mt-5">
+        <button type="button" onClick={() => navigate('/app/collections/validate')} className="flex min-h-16 w-full items-center gap-3 rounded-2xl bg-white p-4 text-left shadow-soft ring-1 ring-brand-100">
+          <Icon name="check-circle" className="h-7 w-7 shrink-0 text-brand-600" />
+          <span className="flex-1"><span className="block font-bold text-brand-800">Recepción de semillas y esquejes</span><span className="text-sm text-neutral-600">Revisar el material recibido y validar la recolección.</span></span>
+          <Icon name="chevron-right" className="h-5 w-5 shrink-0 text-brand-600" />
+        </button>
+      </section>}
 
       <section className="mt-7">
         <div className="flex items-center justify-between">

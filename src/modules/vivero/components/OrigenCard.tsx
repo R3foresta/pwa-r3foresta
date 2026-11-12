@@ -13,7 +13,7 @@ interface OrigenCardProps {
 export default function OrigenCard({ detail }: OrigenCardProps) {
   const navigate = useNavigate();
   const { m1, m2 } = useOperationalAccess()
-  const canOpenOrigin = m1.status === 'ready' && m1.data?.origen === 'ADMIN' || m2.status === 'ready' && canAtVivero(m2.data, detail.viveroId, 'revisar_documental')
+  const canOpenOrigin = m1.status === 'ready' && m1.data?.origen === 'ADMIN' || m2.status === 'ready' && canAtVivero(m2.data, detail.viveroId, 'recibir_y_validar')
   const formatTipoMaterial = (tipo: string) => tipo ? tipo.charAt(0).toUpperCase() + tipo.slice(1).toLowerCase().replace(/_/g, ' ') : 'No especificado';
   const formatFecha = (fechaStr: string | null) => fechaStr ? new Date(fechaStr).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/D';
 
@@ -27,7 +27,7 @@ export default function OrigenCard({ detail }: OrigenCardProps) {
           variant="secondary"
           size="sm"
           rightIcon="chevron-right"
-          onClick={() => navigate(`/app/collections/${detail.recoleccionId}`)}
+          onClick={() => navigate(m1.data?.origen === 'ADMIN' ? `/app/collections/${detail.recoleccionId}` : `/app/collections/validate/${detail.recoleccionId}`)}
         >
           Ver ficha
         </Button>}

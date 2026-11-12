@@ -37,7 +37,7 @@ Acceso efectivo mediante `OperationalAccessProvider` y capacidades por vivero; e
 
 `/app/vivero/material` permite consultar material y registrar DESECHO con capacidad del almacenamiento, sin M1 ni permiso por autoría. El saldo procede del servidor. Ante incertidumbre se consulta de nuevo antes de preparar otra operación; las operaciones físicas siguen sin comando durable (AUD-007).
 
-La entrega usa `/:lote/despacho/evidencias-pendientes`; INICIO usa la ruta genérica con `vivero_id`. `useM2Logistics` cruza operación M2 por vivero con COORDINADOR del equipo M3 leído del servidor; ADMIN deriva autoridad. El consumo M3 no incorpora un requisito de acceso al vivero. La revisión documental previa no acredita recepción física: T4/T5 no están implementadas aquí. [QA T3 y límites](../../../docs/QA_T3_ACCESOS.md).
+La entrega usa `/:lote/despacho/evidencias-pendientes`; INICIO usa la ruta genérica con `vivero_id`. `useM2Logistics` cruza operación M2 por vivero con COORDINADOR del equipo M3 leído del servidor; ADMIN deriva autoridad. El consumo M3 no incorpora un requisito de acceso al vivero. [QA T3 histórico y límites](../../../docs/QA_T3_ACCESOS.md).
 
 ## Estado actual
 
@@ -52,8 +52,12 @@ El flujo principal de eventos reutiliza:
 La ruta legacy de Embolsado ya redirige al formulario unificado (`AUD-006`, resuelto). Continúan la idempotencia durable/recuperación de eventos físicos y su QA integrado (`AUD-007`); no confundirla con el motor de comandos C04–C09 de Participación. Consultar la [auditoría vigente](../../../FRONTEND_AUDIT.md) antes de retomar pendientes.
 
 
-T4 añade localmente [recepción de semillas y esquejes](../../../docs/QA_T4_RECEPCION.md) desde Vivero, con cola/detalle propios, confirmación e incidencia/resolución recuperables. Requiere 096 y revisión/corte coordinados.
+## Recepción única (contrato 100)
 
-INICIO y Material consultan `/api/v1/vivero/origenes?incluir_pendientes=true`. El servidor distingue el saldo habilitado por recepción ordinaria o conciliación histórica del saldo pendiente o con incidencia. INICIO añade `incluir_requisitos_inicio=true` (099) para mostrar el requisito faltante y conservar el saldo decimal exacto. Ofrece el alta cuando el origen cumple los requisitos previos y envía cantidades en texto decimal. DESECHO exige habilitación física y capacidad de la custodia. Una respuesta vacía y un fallo de consulta tienen estados separados. Los enlaces apuntan a la recepción T4 o a la ficha M2 `/app/vivero/conciliaciones/:id` cuando el servidor concede lectura. La ficha muestra el cotejo y las referencias con IDs y cantidades exactos. La comprobación física y los cambios de padrón del piloto se ejecutan vía API autenticada. M3 y plantas externas conservan su alcance separado.
+`/app/collections/validate` es la bandeja de recepción de semillas y esquejes; `/:id` abre su detalle. Las rutas antiguas de recepción redirigen allí. El receptor accede sin pasar por operación de Vivero ni exigir M1; ADMIN tiene alcance global y VALIDADOR necesita asignación vigente al vivero. Se conserva la prohibición de autorrecepción, también para ADMIN.
 
-[Contrato de conciliación, pruebas y procedimiento del piloto](../../../../Backend-r3foresta/docs/vivero-conciliacion-historica.md).
+La recepción total conforme y la validación son una transacción. La mini pantalla confirma la cantidad declarada con fecha y fotos nuevas. Una diferencia se rechaza con motivo para corregir la misma ficha; no hay incidencia, recuento ni conciliación histórica. Los comandos y su recuperación sobreviven a recarga y pérdida de acceso; un resultado incierto no autoriza crear otra intención. El anclaje externo se intenta después y no revierte la recepción.
+
+INICIO y Material consultan `/api/v1/vivero/origenes?incluir_pendientes=true`. El servidor distingue saldo habilitado por recepción conforme del material pendiente. INICIO añade `incluir_requisitos_inicio=true` para mostrar el requisito faltante y conservar el saldo decimal exacto; ofrece el alta cuando el origen cumple los requisitos previos y envía cantidades en texto decimal. DESECHO exige habilitación física y capacidad de la custodia. Una respuesta vacía y un fallo de consulta tienen estados separados. M3 y plantas externas conservan su alcance separado.
+
+[Contrato vigente](../../../../Backend-r3foresta/docs/t4-recepcion-semillas.md), [verificación frontend y límites](../../../docs/QA_RECEPCION_UNICA.md). Requiere backend/migración 100 y corte coordinado; los informes T4/096/097 anteriores conservan su fecha y no acreditan este contrato.

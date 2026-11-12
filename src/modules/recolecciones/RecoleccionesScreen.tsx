@@ -1,7 +1,7 @@
 import { useOperationalAccess } from '../accesos/capabilitiesContext'
 import { hasViveroCapability } from '../accesos/accessPolicy'
 import { useEffect, useMemo, useState } from 'react'
-import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import Icon from '../../components/Icon'
 import { Button, Card, Chip, SearchBar } from '../../components/ui'
 import {
@@ -15,18 +15,8 @@ import { resolveEstadoOperativo } from './recoleccionStatus'
 type MaterialFilter = 'all' | TipoMaterialCanonico
 
 function RecoleccionesScreen() {
-  const { m1, m2 } = useOperationalAccess()
-  if (m1.status === 'ready' && m1.data?.capacidades.mantener_propias) return <RecoleccionesPropiasScreen />
-  // Esperar M1 evita montar su lista antes de conocer el acceso de esta cuenta.
-  if (m1.status === 'loading') return <p role="status" className="p-6 text-center">Consultando tu acceso de Recolección…</p>
-  if (m2.status === 'ready' && hasViveroCapability(m2.data, 'revisar_documental')) return <Navigate to="/app/collections/validate" replace />
-  // El guard de ruta presenta el error o la falta de acceso cuando tampoco hay revisión M2.
-  return null
-}
-
-function RecoleccionesPropiasScreen() {
   const navigate = useNavigate()
-  const { m1, m2 } = useOperationalAccess()
+  const { m2 } = useOperationalAccess()
   const [items, setItems] = useState<Recoleccion[]>([])
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<MaterialFilter>('all')
@@ -34,7 +24,7 @@ function RecoleccionesPropiasScreen() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const canValidate = m1.status === 'ready' && Boolean(m1.data?.capacidades.mantener_propias) || m2.status === 'ready' && hasViveroCapability(m2.data, 'revisar_documental')
+  const canValidate = m2.status === 'ready' && hasViveroCapability(m2.data, 'recibir_y_validar')
 
   const loadRecolecciones = async (searchValue: string, filterValue: MaterialFilter) => {
     try {
@@ -111,7 +101,7 @@ function RecoleccionesPropiasScreen() {
               onClick={() => navigate('/app/collections/validate')}
               className="my-auto ml-2 shrink-0 rounded-full"
             >
-              Pendientes
+              Recepción
             </Button>
           )}
         </header>

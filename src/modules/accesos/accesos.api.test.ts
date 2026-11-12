@@ -23,7 +23,7 @@ describe('T3 contratos independientes y autoridad por vivero', () => {
     expect(validarM1(m1Fixture(), '7')).toEqual(m1Fixture())
     const data = m2Fixture({ viveros: [assigned(VIVERO_A), { ...assigned(VIVERO_B), id: '13' }] })
     expect(validarM2(data, '7').data.viveros.map(row => row.vivero_id)).toEqual([VIVERO_A, VIVERO_B])
-    const admin = m2Fixture({ alcance_global: true, rol_global: 'ADMIN', capacidades_globales: { administrar: true, operar_cualquier_vivero: true, desechar_semillas_cualquier_vivero: true, revisar_documental_cualquier_vivero: true } })
+    const admin = m2Fixture({ alcance_global: true, rol_global: 'ADMIN', capacidades_globales: { administrar: true, operar_cualquier_vivero: true, desechar_semillas_cualquier_vivero: true, recibir_y_validar_cualquier_vivero: true } })
     expect(validarM2(admin, '7').data.viveros).toEqual([])
     expect(canAtVivero(admin.data, VIVERO_B, 'operar')).toBe(true)
     expect(() => exactId(Number(VIVERO_B))).toThrow()
@@ -38,7 +38,7 @@ describe('T3 contratos independientes y autoridad por vivero', () => {
     expect(() => validarIntentoAcceso({ ...accessIntent(), dominio: 'M1' })).toThrow()
     expect(() => validarIntentoAcceso({ ...accessIntent('M1'), payload: { ...accessIntent('M1').payload, vivero_id: VIVERO_A } })).toThrow()
   })
-  it('no transforma autoría, M1 o el vivero vecino en autoridad M2; prohíbe aprobación propia', () => {
+  it('no transforma autoría, M1 o el vivero vecino en autoridad M2; prohíbe recepción propia', () => {
     const m2 = m2Fixture({ viveros: [assigned(VIVERO_B, true)] }).data
     expect(canAtVivero(m2, VIVERO_A, 'desechar_semillas')).toBe(false)
     expect(canAtVivero(m2, Number(VIVERO_B), 'desechar_semillas')).toBe(false)
@@ -49,8 +49,16 @@ describe('T3 contratos independientes y autoridad por vivero', () => {
     expect(canReview(m2, '7', Number(VIVERO_B), VIVERO_B)).toBe(false)
     expect(canMaintain(m1Fixture({ acceso_efectivo: true, capacidades: { crear: true, mantener_propias: true, confirmar_propias: false, desechar: false } }).data, VIVERO_A, VIVERO_B)).toBe(false)
   })
+  it('GENERAL asignado opera sin recibir; VALIDADOR asignado recibe sin requerir M1', () => {
+    const general = m2Fixture({ rol_global: 'GENERAL', viveros: [assigned()] }).data
+    const receptor = m2Fixture({ rol_global: 'VALIDADOR', viveros: [assigned(VIVERO_A, true)] }).data
+    expect(canAtVivero(general, VIVERO_A, 'operar')).toBe(true)
+    expect(canAtVivero(general, VIVERO_A, 'recibir_y_validar')).toBe(false)
+    expect(canReview(general, '7', '8', VIVERO_A)).toBe(false)
+    expect(canReview(receptor, '7', '8', VIVERO_A)).toBe(true)
+  })
   it.each(['GENERAL', 'VALIDADOR', 'VOLUNTARIO', 'ADMIN'] as const)('una vigencia sin efectividad no concede operaciones con rol %s', role => {
-    const vigencia = { ...assigned(), acceso_efectivo: false, capacidades: { operar: false, consultar_material: false, desechar_semillas: false, revisar_documental: false } }
+    const vigencia = { ...assigned(), acceso_efectivo: false, capacidades: { operar: false, consultar_material: false, desechar_semillas: false, recibir_y_validar: false } }
     expect(canAtVivero(m2Fixture({ rol_global: role, viveros: [vigencia] }).data, VIVERO_A, 'operar')).toBe(false)
   })
   it('recibos contrastan UUID, operación, usuario, vivero y revisión BIGINT exacta', () => {

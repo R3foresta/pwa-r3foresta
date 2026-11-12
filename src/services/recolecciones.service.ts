@@ -110,8 +110,6 @@ export interface Recoleccion {
   cantidad_inicial_canonica: number | null
   saldo_actual: number | null
   estado_operativo: 'ABIERTO' | 'CERRADO' | null
-  usuario_validacion_id: number | null
-  fecha_validacion: string | null
   recepcion_conforme?: boolean
   m2_estado_habilitacion?: EstadoHabilitacion | null
   recepcion?: { id: string; fecha_recepcion: string; recibido_por: string; registrado_en: string } | null
@@ -120,8 +118,6 @@ export interface Recoleccion {
   cantidad_solicitada_vivero_evaluada?: number | null
   can_edit?: boolean
   can_submit_for_validation?: boolean
-  can_approve?: boolean
-  can_reject?: boolean
   usuario?: UsuarioResumen
   vivero?: ViveroCatalogo | null
   metodo?: MetodoRecoleccionCatalogo | null
@@ -810,59 +806,6 @@ export class RecoleccionesService {
       success: true,
       data: payload as RegistroDesechoResult,
     }
-  }
-
-  static async getPendingValidation(filters?: {
-    page?: number
-    limit?: number
-    fecha_inicio?: string
-    fecha_fin?: string
-    search?: string
-  }): Promise<ListRecoleccionesResult> {
-    const params = new URLSearchParams()
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          params.append(key, String(value))
-        }
-      })
-    }
-    const query = params.toString()
-    const url = `${API_URL}/api/recolecciones/pending-validation${query ? `?${query}` : ''}`
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: this.getAuthHeadersWithRole(),
-    })
-    const payload = await this.parseJsonResponse<unknown>(response)
-    return this.normalizeListResponse(payload)
-  }
-
-  static async approve(id: number): Promise<{ success: boolean; data: Recoleccion }> {
-    const response = await fetch(`${API_URL}/api/recolecciones/${id}/approve`, {
-      method: 'PATCH',
-      headers: this.getAuthHeadersWithRole({ includeContentType: false }),
-    })
-    const payload = await this.parseJsonResponse<ApiEnvelope<Recoleccion> | Recoleccion>(response)
-    if ('data' in (payload as ApiEnvelope<Recoleccion>) && (payload as ApiEnvelope<Recoleccion>).data) {
-      return { success: true, data: (payload as ApiEnvelope<Recoleccion>).data as Recoleccion }
-    }
-    return { success: true, data: payload as Recoleccion }
-  }
-
-  static async reject(
-    id: number,
-    motivo_rechazo: string,
-  ): Promise<{ success: boolean; data: Recoleccion }> {
-    const response = await fetch(`${API_URL}/api/recolecciones/${id}/reject`, {
-      method: 'PATCH',
-      headers: this.getAuthHeadersWithRole(),
-      body: JSON.stringify({ motivo_rechazo }),
-    })
-    const payload = await this.parseJsonResponse<ApiEnvelope<Recoleccion> | Recoleccion>(response)
-    if ('data' in (payload as ApiEnvelope<Recoleccion>) && (payload as ApiEnvelope<Recoleccion>).data) {
-      return { success: true, data: (payload as ApiEnvelope<Recoleccion>).data as Recoleccion }
-    }
-    return { success: true, data: payload as Recoleccion }
   }
 
   // ─── Validación de payload ───────────────────────────────────────────────────

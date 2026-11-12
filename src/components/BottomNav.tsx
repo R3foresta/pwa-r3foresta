@@ -33,7 +33,7 @@ function BottomNav({ publicMode = false }: { publicMode?: boolean }) {
   const [showProfileWarning, setShowProfileWarning] = useState(false)
   const hasInternalAccess = !publicMode && hasInternalAppAccess(user?.rol)
   const access = useOperationalAccess()
-  const showM1 = access.m1.status === 'ready' && Boolean(access.m1.data?.capacidades.mantener_propias) || access.m2.status === 'ready' && hasViveroCapability(access.m2.data, 'revisar_documental')
+  const showM1 = access.m1.status === 'ready' && Boolean(access.m1.data?.capacidades.mantener_propias)
   const showM2 = access.m2.status === 'ready' && hasViveroCapability(access.m2.data, 'operar')
   const navItems = hasInternalAccess ? NAV_ITEMS.filter(item => item.screen !== 'collections' || showM1).filter(item => item.screen !== 'vivero' || showM2) : PARTICIPANT_NAV_ITEMS
 

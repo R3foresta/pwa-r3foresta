@@ -66,9 +66,9 @@ export function validarM2(value: unknown, user: string): LecturaAcceso<AccesoM2>
     const vivero_id = validarId(item.vivero_id)
     if (ids.has(vivero_id)) return fail()
     ids.add(vivero_id)
-    return { id: validarId(item.id), vivero_id, otorgado_en: instant(item.otorgado_en), otorgado_por: validarId(item.otorgado_por), acceso_efectivo: bool(item.acceso_efectivo), capacidades: flags(item.capacidades, ['operar', 'consultar_material', 'desechar_semillas', 'revisar_documental']) }
+    return { id: validarId(item.id), vivero_id, otorgado_en: instant(item.otorgado_en), otorgado_por: validarId(item.otorgado_por), acceso_efectivo: bool(item.acceso_efectivo), capacidades: flags(item.capacidades, ['operar', 'consultar_material', 'desechar_semillas', 'recibir_y_validar']) }
   })
-  return { data: { ...cuenta, alcance_global: bool(input.alcance_global), viveros, capacidades_globales: flags(input.capacidades_globales, ['administrar', 'operar_cualquier_vivero', 'desechar_semillas_cualquier_vivero', 'revisar_documental_cualquier_vivero']) }, observado_en: instant(envelope.observado_en) }
+  return { data: { ...cuenta, alcance_global: bool(input.alcance_global), viveros, capacidades_globales: flags(input.capacidades_globales, ['administrar', 'operar_cualquier_vivero', 'desechar_semillas_cualquier_vivero', 'recibir_y_validar_cualquier_vivero']) }, observado_en: instant(envelope.observado_en) }
 }
 export function validarIntentoAcceso(value: unknown): IntentoAcceso {
   const input = row(value, ['actor_id', 'dominio', 'operacion', 'usuario_id', 'payload'])

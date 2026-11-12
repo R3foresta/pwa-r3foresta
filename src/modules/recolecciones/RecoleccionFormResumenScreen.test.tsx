@@ -63,7 +63,7 @@ describe('resumen de corrección de Recolección', () => {
   it('muestra 0.1 G y guarda RECHAZADO antes de reenviar', async () => {
     render(<MemoryRouter><RecoleccionFormResumenScreen /></MemoryRouter>)
     expect(screen.getByText('0.1 G')).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Enviar a Validación' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar a recepción' }))
     await waitFor(() => expect(RecoleccionesService.submit).toHaveBeenCalledWith(12))
     expect(RecoleccionesService.updateDraft).toHaveBeenCalledWith(
       12,
@@ -80,7 +80,7 @@ describe('resumen de corrección de Recolección', () => {
       resetForm: vi.fn(),
     })
     render(<MemoryRouter><RecoleccionFormResumenScreen /></MemoryRouter>)
-    fireEvent.click(screen.getByRole('button', { name: 'Enviar a Validación' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar a recepción' }))
     await waitFor(() => expect(screen.getByText(/máximo un decimal/)).toBeTruthy())
     expect(RecoleccionesService.updateDraft).not.toHaveBeenCalled()
     expect(RecoleccionesService.submit).not.toHaveBeenCalled()
