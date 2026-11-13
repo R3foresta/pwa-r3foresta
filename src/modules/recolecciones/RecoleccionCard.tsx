@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import Icon, { type IconName } from '../../components/Icon'
 import { Badge, Card, statusVariant } from '../../components/ui'
 import type { Recoleccion } from '../../services/recolecciones.service'
-import { formatUnidadCanonicaDisplay } from '../../utils/recoleccionUnidad'
+import { formatRecoleccionCantidad, formatRecoleccionDate } from './recoleccionPresentation'
 import { getUbicacionComunidadDisplay } from '../../utils/ubicacion'
 import { resolveEstadoOperativo, resolveEstadoRegistro } from './recoleccionStatus'
 import { getEstadoOperativoLabel, getEstadoRegistroLabel } from './recoleccionStatusPresentation'
@@ -11,27 +11,6 @@ type Props = {
   recoleccion: Recoleccion
   compact?: boolean
   canEdit?: boolean
-}
-
-type RecoleccionCompat = Recoleccion & {
-  estadoRegistro?: string | null
-  estadoRegistroRecoleccion?: string | null
-}
-
-function formatDate(value: string) {
-  if (Number.isNaN(Date.parse(value))) return 'No disponible'
-  return new Date(value).toLocaleDateString('es-BO', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    timeZone: 'UTC',
-  })
-}
-
-function formatCantidad(value: number | null | undefined, unidad: Recoleccion['unidad_canonica']) {
-  if (value == null || !Number.isFinite(value) || unidad == null) return 'No disponible'
-  const cantidad = new Intl.NumberFormat('es-BO', { maximumFractionDigits: 6 }).format(value)
-  return `${cantidad} ${formatUnidadCanonicaDisplay(unidad, value)}`
 }
 
 const ESTADO_ICONS: Readonly<Record<string, IconName>> = {
@@ -43,17 +22,16 @@ const ESTADO_ICONS: Readonly<Record<string, IconName>> = {
 
 function RecoleccionCard({ recoleccion, compact = false, canEdit = false }: Props) {
   const nombreComercial = recoleccion.nombre_comercial || 'Sin nombre comercial'
-  const recoleccionCompat = recoleccion as RecoleccionCompat
-  const estadoRegistro = resolveEstadoRegistro(recoleccionCompat)
+  const estadoRegistro = resolveEstadoRegistro(recoleccion)
   const estadoOperativo = resolveEstadoOperativo(recoleccion)
   const recibida = estadoRegistro === 'VALIDADO' && recoleccion.recepcion_conforme === true
   const fechaRecepcion = recibida && recoleccion.recepcion?.fecha_recepcion
-    ? formatDate(recoleccion.recepcion.fecha_recepcion)
+    ? formatRecoleccionDate(recoleccion.recepcion.fecha_recepcion)
     : null
   const detallePath = `/app/collections/${recoleccion.id}`
   const mostrarAccion = canEdit && estadoRegistro === 'BORRADOR'
   const estadoIcon = estadoRegistro === 'VALIDADO' && !recibida ? 'info' : ESTADO_ICONS[estadoRegistro] ?? 'info'
-  const sinSaldo = estadoOperativo === 'CERRADO' && (recoleccion.estado_operativo != null || recoleccion.saldo_actual != null)
+  const sinSaldo = estadoOperativo === 'CERRADO'
   const material = recoleccion.tipo_material === 'SEMILLA' ? 'Semilla' : recoleccion.tipo_material === 'ESQUEJE' ? 'Esqueje' : recoleccion.tipo_material
 
   const evidenciaPrincipal = recoleccion.evidencias?.find((item) => item.es_principal)
@@ -63,8 +41,8 @@ function RecoleccionCard({ recoleccion, compact = false, canEdit = false }: Prop
   const evidencia = evidenciaPrincipal || fallbackEvidencia
   const foto = fotoPrincipal || fallbackFoto
   const imageUrl = evidencia?.public_url ?? foto?.url ?? null
-  const cantidadDeclarada = formatCantidad(recoleccion.cantidad_inicial_canonica, recoleccion.unidad_canonica)
-  const cantidadPrincipal = recibida ? formatCantidad(recoleccion.saldo_actual, recoleccion.unidad_canonica) : cantidadDeclarada
+  const cantidadDeclarada = formatRecoleccionCantidad(recoleccion.cantidad_inicial_canonica, recoleccion.unidad_canonica)
+  const cantidadPrincipal = recibida ? formatRecoleccionCantidad(recoleccion.saldo_actual, recoleccion.unidad_canonica) : cantidadDeclarada
 
   return (
     <Card as="article" padding={compact ? 'sm' : 'md'} className="relative isolate transition hover:shadow-md">
@@ -87,7 +65,7 @@ function RecoleccionCard({ recoleccion, compact = false, canEdit = false }: Prop
             <p className="flex items-center gap-2">
               <Icon name="date" className="h-4 w-4 text-brand-500" />
               <span className="sr-only">Fecha de recolección: </span>
-              {formatDate(recoleccion.fecha)}
+              {formatRecoleccionDate(recoleccion.fecha)}
             </p>
             <p className="flex items-center gap-2">
               <Icon name="pin" className="h-4 w-4 text-brand-500" />

@@ -57,7 +57,6 @@ describe('historial administrativo de semillas', () => {
   it('consulta la especie y página del servidor, muestra a otros recolectores y vuelve desde el detalle a la página', async () => {
     const user = userEvent.setup()
     vi.spyOn(RecoleccionesService, 'getById').mockResolvedValue({ success: true, data: { ...registro, planta_id: 2, usuario_id: 8, observaciones: null, evidencias: [], created_at: '2026-11-03', unidad_canonica: 'G' } as unknown as Recoleccion })
-    vi.spyOn(RecoleccionesService, 'getEvidenciasByRecoleccion').mockResolvedValue({ success: true, data: [] })
     vi.mocked(fetch).mockImplementation(input => {
       const url = String(input)
       const data = url.includes('page=2') ? [{ ...registro, id: 293, codigo_trazabilidad: 'REC-293', nombre_recolector_snapshot: 'Otro recolector', unidad_canonica: 'UNIDAD', cantidad_inicial_canonica: 8, saldo_actual: 3, estado_operativo: 'ABIERTO' }] : [registro]
@@ -142,7 +141,6 @@ describe('historial administrativo de semillas', () => {
 
   it('conserva la especie y página al volver desde un detalle que falla', async () => {
     vi.spyOn(RecoleccionesService, 'getById').mockRejectedValue(new Error('No disponible'))
-    vi.spyOn(RecoleccionesService, 'getEvidenciasByRecoleccion').mockResolvedValue({ success: true, data: [] })
     render(<AppRoutes initial="/app/collections/stock/2?page=2" />)
     await userEvent.click(await screen.findByRole('link', { name: /REC-292/ }))
     expect(await screen.findByText('No se pudo cargar la recolección')).toBeTruthy()

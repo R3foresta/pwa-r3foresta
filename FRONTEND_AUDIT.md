@@ -1,6 +1,6 @@
 # Auditoría y pendientes del frontend
 
-Corte: 12 de noviembre de 2026 para recepción única. Lista única de deuda frontend. No sustituye el [tablero global](../r3foresta-docs/specs/plantacion/participacion-aliada/implementacion/README.md) ni acredita estado del backend desplegado.
+Corte: 13 de noviembre de 2026 para consulta y detalle de Recolección. Lista única de deuda frontend. No sustituye el [tablero global](../r3foresta-docs/specs/plantacion/participacion-aliada/implementacion/README.md) ni acredita estado del backend desplegado.
 
 El [histórico de auditoría](docs/archivo/FRONTEND_AUDIT_2026-10-15.md) conserva diagnósticos, cierres y resultados anteriores. Se retiraron de esta entrada los checklists repetidos y diagnósticos de módulos que ya no describían su implementación. Un hallazgo abierto se mantiene pendiente hasta verificar su cierre; este ajuste documental no lo resuelve por sí solo.
 
@@ -10,6 +10,7 @@ Entrega INT06 publicada en PWA `62f55dc`: 32 suites/445 tests, lint y build/Type
 
 | Prioridad | ID | Estado | Qué falta |
 | --- | --- | --- | --- |
+| Media | AUD-037 | Consulta corregida local · contrato histórico pendiente | Lectura autorizada para el autor de fotos de recepción, historial completo, movimientos y destinos de su origen. |
 | Alta | AUD-035 | Corte y aceptación pendientes | Recepción única 100: acreditar backend/migración, reinicio coordinado, recorrido autenticado y aceptación móvil en el destino. [Alcance y verificación](docs/QA_RECEPCION_UNICA.md). |
 | Media | AUD-036 | PENDIENTE · captura legada | Revisar corrección de fichas cuya fecha original supera 45 días: el formulario aún aplica la ventana de captura a toda edición. |
 | Alta | AUD-034 | IMPLEMENTADO y REVISADO local · corte externo pendiente | Administración M1/M2, navegación por capacidades y compatibilidad T1/T2 verificadas con fixtures; acreditar el corte externo. |
@@ -39,6 +40,18 @@ Entrega INT06 publicada en PWA `62f55dc`: 32 suites/445 tests, lint y build/Type
 El orden de ejecución entre repositorios se decide en el tablero oficial; esta tabla prioriza riesgos de frontend, no introduce nuevas dependencias de producto.
 
 ## Pendientes y criterio de cierre
+
+### AUD-037 — Consulta y detalle de Recolección
+
+13 de noviembre: revisión del chat «Analizar detalle y consulta de recolecciones» y de la implementación actual. Se corrigieron el falso vacío inicial, las respuestas fuera de orden y la ausencia de navegación después de los primeros 30 registros. Las consultas se separan en hooks con cancelación y aislamiento por ficha/cuenta/token. Un estado ausente no concede edición ni se presenta como saldo cero/cierre. El detalle usa nombres históricos, secciones de lectura y la galería compartida con Recepción; `canReview` evita enviar al autor a la API operativa prohibida. Confirmación y éxito usan los diálogos existentes. Envío y descarte bloquean doble clic y requieren una nueva lectura después de un resultado incierto; un fallo al actualizar después del éxito no habilita repetir la escritura.
+
+El backend local ya entrega `evidencias` en `GET /api/recolecciones/:id`: se retiraron la segunda petición, su cliente y los mocks exclusivos. Se eliminaron `hooks/usePhotoUpload.ts` y `index.ts` de Recolecciones tras comprobar que no tenían consumidores, el DTO `CreatePlantaDto` sin uso, aliases de estado no emitidos por el contrato y el TODO que proponía sustituir snapshots por catálogo vivo. Se conservan las rutas activas de evidencia, la redirección de Recepción y los informes históricos de QA. Sin dependencias nuevas ni cambios backend.
+
+El detalle propio no proyecta fotos de recepción ni movimientos/historial completo; el listado M2 de lotes puede estar limitado por custodia. Cerrar el pendiente con contrato de consulta por autor/ADMIN que defina los datos de cada destino, evidencias autorizadas y paginación, seguido de pruebas de aislamiento y recorrido autenticado. No reconstruir movimientos restando saldos ni abrir la API operativa al autor. La unificación de «Germinación»/«Vivero» en navegación del análisis original queda fuera de esta limpieza.
+
+Comprobación visual local autenticada: lista y REC-2026-006, resumen de recepción sin enlace operativo para el autor, fecha de recolección consistente y fotos de origen visibles; detalle revisado a 390 px. No se enviaron, eliminaron ni desecharon registros reales. El historial ampliado y el QA en dispositivo físico siguen pendientes.
+
+Verificación: `npm run test -- --maxWorkers=2` aprobó 97 archivos/1.369 pruebas; la pasada final del área aprobó 12 archivos/164 pruebas. `npm run lint`, `npm run build` (TypeScript/PWA) y `git diff --check` aprobados. Quince regresiones nuevas cubren carga inicial, búsquedas/respuestas tardías, cuenta/ficha, paginación, datos ausentes, lectura única con snapshots/fotos, autorrecepción, confirmación explícita y actualización después de un resultado incierto o confirmado. TypeScript detectó un campo obligatorio omitido en una fixture nueva; se completó antes del build final. El grafo de imports desde `src/main.tsx` no encontró archivos de producción huérfanos en Recolecciones y no quedan referencias activas a los símbolos retirados. Se mantiene el aviso conocido de tamaño de MapLibre. Sin commit, push ni despliegue.
 
 ### AUD-035 — Recepción única: corte y aceptación
 
@@ -271,6 +284,8 @@ Cerrar con diagnóstico actual del lockfile, actualización revisada y pruebas d
 ### AUD-004 — Formatters
 
 Revisar `subcampaniaFormatters.ts` y formateos en dashboards antes de extraer utilidades de fecha/zona horaria. Cerrar al reutilizar lo compartido sin cambiar presentación deliberada; no hacer un refactor global por esta lista.
+
+13 de noviembre: card, detalle y bandeja de Recepción comparten `recoleccionPresentation.ts`. Los días operativos usan UTC; los instantes de registro usan `America/La_Paz` explícita. La revisión de los otros módulos permanece pendiente.
 
 ### AUD-005 — Tipos de campaña
 

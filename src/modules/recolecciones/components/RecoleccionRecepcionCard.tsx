@@ -3,6 +3,8 @@ import Icon from '../../../components/Icon'
 import { Badge, Button, Card, statusVariant } from '../../../components/ui'
 import type { DetalleRecepcion, OrigenRecepcion } from '../../vivero/recepcion/recepcion.contract'
 import { getEstadoRegistroLabel } from '../recoleccionStatusPresentation'
+import { formatRecoleccionDate, formatRecoleccionDateTime } from '../recoleccionPresentation'
+import RecoleccionEvidencias from './RecoleccionEvidencias'
 
 type Props = {
   item: OrigenRecepcion
@@ -21,9 +23,7 @@ type Props = {
   onRetry?: () => void
 }
 
-const fecha = (value: string) => value.includes('T')
-  ? new Date(value).toLocaleString('es-BO', { timeZone: 'America/La_Paz', dateStyle: 'medium', timeStyle: 'short' })
-  : new Date(`${value}T00:00:00`).toLocaleDateString('es-BO')
+const fecha = (value: string) => value.includes('T') ? formatRecoleccionDateTime(value) : formatRecoleccionDate(value)
 
 export default function RecoleccionRecepcionCard({ item, detalle, error, loading, busy, canReceive, canReject, ownCollection, showActions = true, viveroNombre, metodoNombre, onReceive, onReject, onRetry }: Props) {
   const [expanded, setExpanded] = useState(false)
@@ -90,10 +90,7 @@ export default function RecoleccionRecepcionCard({ item, detalle, error, loading
         </section>
         <section className="rounded-2xl bg-brand-50 p-4 ring-1 ring-black/5">
           <h4 className="text-base font-extrabold text-brand-700">Evidencias ({fotos.length})</h4>
-          {fotos.length ? <div className="mt-3 grid grid-cols-3 gap-3">{fotos.map((evidencia, index) => <figure key={evidencia.id}>
-            <a href={evidencia.public_url} target="_blank" rel="noopener noreferrer"><img src={evidencia.public_url} alt={evidencia.titulo ?? `Foto ${index + 1}`} className="h-24 w-full rounded-2xl object-cover" loading="lazy" /></a>
-            <figcaption className="mt-1 text-center text-[11px] font-semibold text-neutral-500">{evidencia.titulo ?? `Foto ${index + 1}`}<span className="block">{evidencia.recepcion_id ? 'Recepción' : 'Recolección'} · {evidencia.mime_type}</span></figcaption>
-          </figure>)}</div> : <p className="mt-3 text-sm text-neutral-500">No hay evidencias registradas.</p>}
+          <RecoleccionEvidencias evidencias={fotos} />
         </section>
         <section className="rounded-2xl bg-brand-50 p-4 ring-1 ring-black/5">
           <h4 className="text-base font-extrabold text-brand-700">Auditoría</h4>

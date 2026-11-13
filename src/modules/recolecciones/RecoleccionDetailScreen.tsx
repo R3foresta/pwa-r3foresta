@@ -1,535 +1,197 @@
-import { useOperationalAccess } from '../accesos/capabilitiesContext'
-import { canAtVivero, canMaintain } from '../accesos/accessPolicy'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import Icon from '../../components/Icon'
 import ConfirmDialog from '../../components/ConfirmDialog'
-import { Badge, Button, Card, Field, Input, statusVariant } from '../../components/ui'
+import SuccessModal from '../../components/SuccessModal'
+import { Button, Card } from '../../components/ui'
 import { useAuth } from '../../contexts/AuthContext'
-import {
-  RecoleccionesService,
-  type EvidenciaTrazabilidad,
-  type Recoleccion,
-} from '../../services/recolecciones.service'
-import { formatUnidadCanonicaDisplay, mapToCantidadYUnidadCanonica } from '../../utils/recoleccionUnidad'
-import { getUbicacionCoords, getUbicacionDisplay, getUbicacionDivision } from '../../utils/ubicacion'
-import { getRecoleccionFormActions, resolveEstadoOperativo, resolveEstadoRegistro } from './recoleccionStatus'
-import { getEstadoOperativoLabel, getEstadoRegistroDescription, getEstadoRegistroLabel } from './recoleccionStatusPresentation'
+import { RecoleccionesService } from '../../services/recolecciones.service'
+import { useOperationalAccess } from '../accesos/capabilitiesContext'
+import { canMaintain, canReview } from '../accesos/accessPolicy'
+import { getRecoleccionFormActions, resolveEstadoRegistro } from './recoleccionStatus'
+import { formatRecoleccionCantidad } from './recoleccionPresentation'
 import { readStockHistorialReturn, stockHistorialPath } from './stockHistorialNavigation'
+import { useRecoleccionDetail } from './hooks/useRecoleccionDetail'
+import {
+  RecoleccionDatosRegistro,
+  RecoleccionOrigen,
+  RecoleccionRecepcionResumen,
+  RecoleccionResumen,
+} from './components/RecoleccionDetailSections'
 import RecoleccionDeleteAction from './components/RecoleccionDeleteAction'
+import RecoleccionDiscardAction from './components/RecoleccionDiscardAction'
 
-const MENSAJES_HABILITACION = {
-  RECEPCION_CONFORME: 'Material habilitado por recepción física conforme.',
-  PENDIENTE_RECEPCION: 'Pendiente de recepción física conforme.',
-} satisfies Record<NonNullable<Recoleccion['m2_estado_habilitacion']>, string>
-
-function formatDate(value: string) {
-  return new Date(value).toLocaleDateString('es-BO', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-    timeZone: 'UTC',
-  })
-}
-
-function formatDateTime(value: string | null | undefined) {
-  if (!value) {
-    return 'No disponible'
-  }
-
-  return new Date(value).toLocaleString('es-BO', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  })
-}
-
-function RecoleccionDetailScreen() {
+function RecoleccionDetail({ id, token }: { id: string | undefined; token: string | null }) {
   const navigate = useNavigate()
   const location = useLocation()
-  const { id } = useParams()
   const { user } = useAuth()
   const { m1, m2 } = useOperationalAccess()
+  const { recoleccion, loading, error, reload, update } = useRecoleccionDetail(id, token)
   const stockReturn = (user?.rol ?? '').toUpperCase() === 'ADMIN' ? readStockHistorialReturn(location.state) : null
-
-  const [recoleccion, setRecoleccion] = useState<Recoleccion | null>(null)
-  const [evidenciasFallback, setEvidenciasFallback] = useState<EvidenciaTrazabilidad[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [submittingToValidation, setSubmittingToValidation] = useState(false)
-  const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
-  const [showValidationPopup, setShowValidationPopup] = useState(false)
-  const [showDiscardDialog, setShowDiscardDialog] = useState(false)
-  const [discardQuantity, setDiscardQuantity] = useState('')
-  const [discardError, setDiscardError] = useState<string | null>(null)
-  const [discarding, setDiscarding] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitConfirm, setSubmitConfirm] = useState(false)
+  const [submitSuccess, setSubmitSuccess] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const [deletionLocked, setDeletionLocked] = useState(false)
-  const [reloadKey, setReloadKey] = useState(0)
+  const pending = useRef(false)
+  const active = useRef(false)
 
   useEffect(() => {
-    const parsedId = Number(id)
-    if (!Number.isFinite(parsedId)) {
-      setError('ID de recolección inválido.')
-      setLoading(false)
-      return
-    }
+    active.current = true
+    return () => { active.current = false }
+  }, [])
+  const current = () => active.current && localStorage.getItem('authToken') === token
+  const formActions = getRecoleccionFormActions(
+    recoleccion ?? {},
+    recoleccion && m1.status === 'ready' && canMaintain(m1.data, user?.id, recoleccion.usuario_id) ? user : null,
+  )
 
-    let mounted = true
-
-    const loadData = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-
-        const [recoleccionResponse, evidenciasResponse] = await Promise.all([
-          RecoleccionesService.getById(parsedId),
-          RecoleccionesService.getEvidenciasByRecoleccion(parsedId),
-        ])
-
-        if (!mounted) {
-          return
-        }
-
-        setRecoleccion(recoleccionResponse.data)
-        setEvidenciasFallback(evidenciasResponse.data)
-      } catch (loadError) {
-        if (!mounted) {
-          return
-        }
-        setError(loadError instanceof Error ? loadError.message : 'No se pudo cargar el detalle.')
-      } finally {
-        if (mounted) {
-          setLoading(false)
-        }
-      }
-    }
-
-    void loadData()
-
-    return () => {
-      mounted = false
-    }
-  }, [id, reloadKey])
-
-  const evidencias = useMemo(() => {
-    if (recoleccion?.evidencias && recoleccion.evidencias.length > 0) {
-      return recoleccion.evidencias
-    }
-    return evidenciasFallback
-  }, [evidenciasFallback, recoleccion?.evidencias])
-
-  const estadoRegistro = resolveEstadoRegistro(recoleccion ?? {})
-  const estadoOperativo = resolveEstadoOperativo(recoleccion ?? {})
-  const cantidadActual = recoleccion?.saldo_actual ?? 0
-  const estadoHabilitacion = recoleccion?.m2_estado_habilitacion
-  const materialHabilitado = estadoHabilitacion === undefined
-    ? recoleccion?.recepcion_conforme === true
-    : estadoHabilitacion === 'RECEPCION_CONFORME'
-  const puedeDesechar =
-    estadoRegistro === 'VALIDADO' && materialHabilitado &&
-    estadoOperativo === 'ABIERTO' && cantidadActual > 0 &&
-    m2.status === 'ready' && canAtVivero(m2.data, recoleccion?.vivero_id, 'desechar_semillas')
-
-  const handleSubmitForValidation = async () => {
-    if (!recoleccion || deletionLocked || !getRecoleccionFormActions(recoleccion, m1.status === 'ready' && canMaintain(m1.data, user?.id, recoleccion.usuario_id) ? user : null).canSubmit) {
-      return
-    }
-
+  async function submit() {
+    if (!recoleccion || pending.current || deletionLocked || submitError || !formActions.canSubmit) return
+    pending.current = true
+    setSubmitting(true)
+    let confirmed = false
     try {
-      setSubmittingToValidation(true)
-      setActionMessage(null)
       await RecoleccionesService.submit(recoleccion.id)
-
+      if (!current()) return
+      confirmed = true
+      setSubmitConfirm(false)
+      setSubmitSuccess(true)
       const refreshed = await RecoleccionesService.getById(recoleccion.id)
-      setRecoleccion(refreshed.data)
-      setShowValidationPopup(true)
-    } catch (submitError) {
-      setActionMessage({
-        type: 'error',
-        text:
-          submitError instanceof Error
-            ? submitError.message
-            : 'No se pudo enviar la recolección a recepción.',
-      })
+      if (current()) update(refreshed.data)
+    } catch (requestError) {
+      if (!current()) return
+      setSubmitConfirm(false)
+      setSubmitError(confirmed
+        ? 'Envío confirmado, pero no se pudo actualizar la ficha.'
+        : requestError instanceof Error ? requestError.message : 'No se pudo confirmar el envío a recepción.')
     } finally {
-      setSubmittingToValidation(false)
+      pending.current = false
+      if (current()) setSubmitting(false)
     }
   }
 
-  const handleOpenDiscardDialog = () => {
-    if (!recoleccion) return
-
-    setDiscardQuantity(String(recoleccion.saldo_actual ?? 0))
-    setDiscardError(null)
-    setShowDiscardDialog(true)
-  }
-
-  const handleDiscard = async () => {
-    if (!recoleccion || !puedeDesechar) return
-
-    const quantity = Number(discardQuantity.replace(',', '.'))
-    const available = Number(recoleccion.saldo_actual ?? 0)
-
-    if (!Number.isFinite(quantity) || quantity <= 0) {
-      setDiscardError('Ingresa una cantidad mayor que cero.')
-      return
-    }
-
-    if (quantity > available) {
-      setDiscardError(`La cantidad no puede superar el saldo actual de ${available}.`)
-      return
-    }
-
-    if (recoleccion.unidad_canonica === 'G' || recoleccion.unidad_canonica === 'UNIDAD') {
-      try {
-        mapToCantidadYUnidadCanonica(discardQuantity, recoleccion.unidad_canonica === 'G' ? 'g' : 'units')
-      } catch (precisionError) {
-        setDiscardError(precisionError instanceof Error ? precisionError.message : 'Cantidad inválida.')
-        return
-      }
-    }
-
-    try {
-      setDiscarding(true)
-      setDiscardError(null)
-      const result = await RecoleccionesService.registrarDesecho(recoleccion.id, {
-        cantidad: quantity,
-      })
-      const refreshed = await RecoleccionesService.getById(recoleccion.id)
-      setRecoleccion(refreshed.data)
-      setShowDiscardDialog(false)
-      setActionMessage({ type: 'success', text: result.data.message })
-    } catch (discardRequestError) {
-      setDiscardError(
-        discardRequestError instanceof Error
-          ? discardRequestError.message
-          : 'No se pudo registrar el descarte.',
-      )
-    } finally {
-      setDiscarding(false)
-    }
+  function reloadAfterSubmit() {
+    setSubmitError(null)
+    reload()
   }
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-brand-50 to-brand-50">
-        <div className="text-center">
-          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-brand-500 border-t-transparent" />
-          <p className="mt-4 text-sm font-semibold text-brand-700">Cargando detalle...</p>
-        </div>
-      </div>
-    )
+    return <div role="status" className="flex min-h-screen items-center justify-center bg-brand-50 text-sm font-semibold text-brand-700">Cargando detalle...</div>
   }
-
   if (error || !recoleccion) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-brand-50 to-brand-50 px-5">
-        <div className="rounded-3xl bg-white p-6 text-center shadow-soft ring-1 ring-black/5">
-          <p className="text-lg font-bold text-neutral-800">No se pudo cargar la recolección</p>
-          <p className="mt-1 text-sm text-neutral-600">{error || 'Registro no encontrado.'}</p>
-          <Button
-            type="button"
-            variant="primary"
-            onClick={() => navigate(stockReturn ? stockHistorialPath(stockReturn) : '/app/collections')}
-            className="mt-4"
-          >
-            Volver al listado
-          </Button>
-        </div>
+      <div className="flex min-h-screen items-center justify-center bg-brand-50 px-5">
+        <Card className="text-center">
+          <h1 className="text-lg font-bold text-neutral-800">No se pudo cargar la recolección</h1>
+          <p role="alert" className="mt-1 text-sm text-neutral-600">{error || 'Registro no encontrado.'}</p>
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            <Button variant="secondary" onClick={reload}>Reintentar</Button>
+            <Button onClick={() => navigate(stockReturn ? stockHistorialPath(stockReturn) : '/app/collections')}>
+              Volver al listado
+            </Button>
+          </div>
+        </Card>
       </div>
     )
   }
 
-  // TODO: (VERIFICAR) Acá estámos usando algo pasado. Tenemos que usar los datos directamente de la tabla planta. Ver de donde se están trayendo los daots.
-  const plantaNombre =
-    recoleccion.planta?.nombre_comun_principal ||
-    recoleccion.nombre_comun_principal ||
-    recoleccion.planta?.especie ||
-    recoleccion.nombre_comercial ||
-    'Sin nombre comercial'
-  const nombreCientifico = recoleccion.planta?.nombre_cientifico || recoleccion.nombre_cientifico
-
-  const ubicacionDisplay = getUbicacionDisplay(recoleccion.ubicacion)
-  const ubicacionDivision = getUbicacionDivision(recoleccion.ubicacion)
-  const ubicacionCoords = getUbicacionCoords(recoleccion.ubicacion)
-  const unidadDisplay = formatUnidadCanonicaDisplay(recoleccion.unidad_canonica, cantidadActual)
-  const formActions = getRecoleccionFormActions(recoleccion, m1.status === 'ready' && canMaintain(m1.data, user?.id, recoleccion.usuario_id) ? user : null)
-  const recibida = estadoRegistro === 'VALIDADO' && recoleccion.recepcion_conforme === true
-  const descripcionEstado = estadoRegistro === 'VALIDADO' && !recibida
-    ? 'La recepción física no está acreditada en esta ficha.'
-    : getEstadoRegistroDescription(estadoRegistro)
-  const motivoRechazo = recoleccion.motivo_rechazo?.trim()
+  const estado = resolveEstadoRegistro(recoleccion)
+  const mayReview = m2.status === 'ready'
+    && canReview(m2.data, user?.id, recoleccion.usuario_id, recoleccion.vivero_id)
+    && ['PENDIENTE_VALIDACION', 'VALIDADO'].includes(estado)
+  const locked = submitting || deletionLocked || Boolean(submitError) || submitSuccess
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-brand-50 to-brand-50 text-brand-700">
+    <div className="min-h-screen bg-brand-50 text-brand-700">
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-24">
-        <header className="relative px-5 pb-4 pt-6 text-center">
+        <header className="flex items-start gap-3 px-5 pb-4 pt-6">
           <button
             type="button"
             aria-label="Volver"
             onClick={() => stockReturn && recoleccion.planta_id === stockReturn.plantaId ? navigate(stockHistorialPath(stockReturn)) : navigate(-1)}
-            disabled={deletionLocked}
-            className="absolute left-4 top-6 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-brand-700 shadow-soft transition hover:bg-white"
+            disabled={submitting || deletionLocked}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/90 text-brand-700 shadow-soft transition hover:bg-white"
           >
             <Icon name="arrow-left" className="h-5 w-5" />
           </button>
-
-          <p className="text-xs font-semibold uppercase tracking-wide text-brand-600">
-            {recoleccion.codigo_trazabilidad}
-          </p>
-          <h1 className="text-2xl font-extrabold text-brand-700">Detalle de Recolección</h1>
-          <p className="text-sm font-semibold text-brand-500">{formatDate(recoleccion.fecha)}</p>
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-wide text-brand-600">{recoleccion.codigo_trazabilidad}</p>
+            <h1 className="text-2xl font-extrabold">Detalle de Recolección</h1>
+          </div>
         </header>
 
         <div className="space-y-4 px-5 pb-8">
-          <Card as="section">
-            <h2 className="text-lg font-extrabold text-brand-700">Material</h2>
-            <div className="mt-3 space-y-2 text-sm font-semibold text-neutral-700">
-              <p className="flex items-center justify-between gap-4">
-                <span className="text-neutral-500">Nombre comercial</span>
-                <span className="text-right">{plantaNombre}</span>
-              </p>
-              <p className="flex items-center justify-between gap-4">
-                <span className="text-neutral-500">Nombre científico</span>
-                <span className="text-right italic">{nombreCientifico || 'No disponible'}</span>
-              </p>
-              <p className="flex items-center justify-between gap-4">
-                <span className="text-neutral-500">Tipo material</span>
-                <span>{recoleccion.tipo_material}</span>
-              </p>
-              <p className="flex items-center justify-between gap-4">
-                <span className="text-neutral-500">Saldo actual</span>
-                <span>
-                  {cantidadActual} {unidadDisplay}
-                </span>
-              </p>
-              <p className="flex items-center justify-between gap-4">
-                <span className="text-neutral-500">Estado de la ficha</span>
-                <Badge variant={statusVariant(estadoRegistro)}>{getEstadoRegistroLabel(estadoRegistro, recibida)}</Badge>
-              </p>
-              <p className="flex items-center justify-between gap-4">
-                <span className="text-neutral-500">Estado del saldo</span>
-                <Badge variant={statusVariant(estadoOperativo)}>{getEstadoOperativoLabel(estadoOperativo)}</Badge>
-              </p>
-              <p className="flex items-center justify-between gap-4">
-                <span className="text-neutral-500">Método</span>
-                <span className="text-right">{recoleccion.metodo?.nombre || 'No disponible'}</span>
-              </p>
-              <p className="flex items-center justify-between gap-4">
-                <span className="text-neutral-500">{recibida ? 'Vivero de recepción' : estadoRegistro === 'VALIDADO' ? 'Vivero asignado' : 'Destino previsto'}</span>
-                <span className="text-right">{recoleccion.vivero?.nombre || 'No disponible'}</span>
-              </p>
-              {recibida && recoleccion.recepcion && <p className="flex items-center justify-between gap-4">
-                <span className="text-neutral-500">Fecha de recepción</span>
-                <span className="text-right">{formatDate(recoleccion.recepcion.fecha_recepcion)}</span>
-              </p>}
-            </div>
-            {descripcionEstado && <p className="mt-3 text-sm text-neutral-600">{descripcionEstado}</p>}
-            {estadoRegistro === 'BORRADOR' && formActions.canEdit && <p className="mt-2 text-sm text-neutral-600">Puedes editarla antes de enviarla al vivero.</p>}
-            {estadoRegistro === 'RECHAZADO' && <div className="mt-3 rounded-2xl bg-danger-50 p-3 text-sm text-danger-700">
-              <p className="font-semibold">Motivo de la corrección</p>
-              <p className="mt-1 whitespace-pre-wrap break-words">{motivoRechazo || 'No disponible.'}</p>
-            </div>}
-            {estadoOperativo === 'CERRADO' && <p className="mt-2 text-sm text-neutral-600">El origen ya no tiene saldo. Sus lotes de vivero pueden continuar su proceso.</p>}
-          </Card>
-
-          <Card as="section">
-            <h2 className="text-lg font-extrabold text-brand-700">Ubicación</h2>
-            <div className="mt-3 space-y-2 text-sm font-semibold text-neutral-700">
-              <p>{ubicacionDisplay}</p>
-              {ubicacionDivision && <p className="text-neutral-600">{ubicacionDivision}</p>}
-              {ubicacionCoords && <p className="text-xs text-neutral-500">{ubicacionCoords}</p>}
-            </div>
-          </Card>
-
-          <Card as="section">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-extrabold text-brand-700">Evidencias ({evidencias.length})</h2>
-            </div>
-
-            {evidencias.length > 0 ? (
-              <div className="mt-3 grid grid-cols-3 gap-3">
-                {evidencias.map((evidencia) => {
-                  const imageUrl = evidencia.public_url ?? null
-
-                  return (
-                    <div key={evidencia.id} className="space-y-1">
-                      <div className="h-24 overflow-hidden rounded-2xl bg-neutral-100">
-                        {imageUrl ? (
-                          <img
-                            src={imageUrl}
-                            alt={evidencia.titulo || `Evidencia ${evidencia.id}`}
-                            className="h-full w-full object-cover"
-                            loading="lazy"
-                          />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center">
-                            <Icon name="photo" className="h-8 w-8 text-neutral-400" />
-                          </div>
-                        )}
-                      </div>
-                      <p className="text-center text-[11px] font-semibold text-neutral-500">{evidencia.titulo || `#${evidencia.id}`}</p>
-                    </div>
-                  )
-                })}
-              </div>
-            ) : (
-              <p className="mt-3 text-sm font-semibold text-neutral-500">No hay evidencias registradas.</p>
-            )}
-          </Card>
-
-          <Card as="section">
-            <h2 className="text-lg font-extrabold text-brand-700">Auditoría</h2>
-            <div className="mt-3 space-y-2 text-sm font-semibold text-neutral-700">
-              <p className="flex items-center justify-between gap-4">
-                <span className="text-neutral-500">Creado en</span>
-                <span className="text-right">{formatDateTime(recoleccion.created_at)}</span>
-              </p>
-              <p className="flex items-center justify-between gap-4">
-                <span className="text-neutral-500">Recibido físicamente el</span>
-                <span className="text-right">{recoleccion.recepcion ? formatDate(recoleccion.recepcion.fecha_recepcion) : 'No disponible'}</span>
-              </p>
-              {recoleccion.recepcion && <>
-                <p className="flex items-center justify-between gap-4"><span className="text-neutral-500">Registrado en</span><span className="text-right">{formatDateTime(recoleccion.recepcion.registrado_en)}</span></p>
-                <p className="flex items-center justify-between gap-4"><span className="text-neutral-500">Receptor</span><span className="text-right">Usuario {recoleccion.recepcion.recibido_por}</span></p>
-              </>}
-              <p className="flex items-center justify-between gap-4">
-                <span className="text-neutral-500">Responsable</span>
-                <span className="text-right">{recoleccion.usuario?.nombre || recoleccion.usuario?.username || 'No disponible'} {recoleccion.usuario?.apellido}</span>
-              </p>
-              <p className="flex items-center justify-between gap-4">
-                <span className="text-neutral-500">Usuario</span>
-                <span className="text-right">{recoleccion.usuario?.username || 'No disponible'}</span>
-              </p>
-            </div>
-
-            <div className="mt-4 rounded-2xl bg-brand-50 p-3 text-sm">
-              <p>Recepción física: {recoleccion.recepcion_conforme === true ? 'conforme acreditada' : 'sin recepción conforme acreditada'}.</p>
-              {estadoHabilitacion && <p>{MENSAJES_HABILITACION[estadoHabilitacion]}</p>}
-              {estadoRegistro === 'VALIDADO' && estadoHabilitacion === undefined && recoleccion.recepcion_conforme !== true && <p>Consumo y desecho requieren recepción conforme.</p>}
-              {m2.status === 'ready' && canAtVivero(m2.data, recoleccion.vivero_id, 'recibir_y_validar') && ['PENDIENTE_VALIDACION','VALIDADO'].includes(estadoRegistro) && <Button variant="secondary" onClick={() => navigate(`/app/collections/validate/${recoleccion.id}`)}>Consultar recepción</Button>}
-            </div>
-
+          <RecoleccionResumen recoleccion={recoleccion}>
             {(formActions.canEdit || formActions.canSubmit) && (
               <div className="mt-4 space-y-3 border-t border-neutral-100 pt-4">
-                <div className="grid grid-cols-2 gap-2">
-                  {formActions.canEdit && <Button
-                    type="button"
-                    variant="secondary"
-                    disabled={submittingToValidation || deletionLocked}
-                    onClick={() => navigate(`/app/collections/new?editId=${recoleccion.id}`)}
-                  >
-                    {estadoRegistro === 'RECHAZADO' ? 'Corregir recolección' : 'Revisar y enviar'}
-                  </Button>}
-                  {formActions.canSubmit && <Button
-                    type="button"
-                    variant="primary"
-                    onClick={() => void handleSubmitForValidation()}
-                    disabled={submittingToValidation || deletionLocked}
-                    loading={submittingToValidation}
-                  >
-                    {submittingToValidation ? 'Enviando...' : 'Enviar a recepción'}
-                  </Button>}
+                <div className="flex flex-wrap gap-2">
+                  {formActions.canEdit && (
+                    <Button variant="secondary" disabled={locked} onClick={() => navigate(`/app/collections/new?editId=${recoleccion.id}`)}>
+                      {estado === 'RECHAZADO' ? 'Corregir recolección' : 'Revisar y enviar'}
+                    </Button>
+                  )}
+                  {formActions.canSubmit && <Button disabled={locked} onClick={() => setSubmitConfirm(true)}>Enviar a recepción</Button>}
                 </div>
-                {estadoRegistro === 'RECHAZADO' && <p className="text-xs font-medium text-neutral-500">Corrige y guarda la ficha antes de volver a enviarla a recepción.</p>}
-
+                {estado === 'RECHAZADO' && <p className="text-xs text-neutral-500">Corrige y guarda la ficha antes de volver a enviarla a recepción.</p>}
               </div>
             )}
-
-            <RecoleccionDeleteAction
-              key={`${recoleccion.id}:${user?.id}:${user?.rol}`}
-              recoleccion={recoleccion}
-              disabled={submittingToValidation || discarding}
-              onLockedChange={setDeletionLocked}
-              onReload={() => setReloadKey((previous) => previous + 1)}
-            />
-
-            {puedeDesechar && (
-              <div className="mt-4 border-t border-neutral-100 pt-4">
-                <Button type="button" variant="danger" fullWidth onClick={handleOpenDiscardDialog}>
-                  Registrar pérdida o descarte
-                </Button>
-                <p className="mt-2 text-xs font-medium text-neutral-500">
-                  Se descontará del saldo disponible. No requiere foto ni motivo adicional.
-                </p>
+            {submitError && (
+              <div role="alert" className="mt-3 space-y-2 text-sm text-danger-700">
+                <p>{submitError}</p>
+                <p>Actualiza la ficha antes de realizar otra acción.</p>
+                <Button variant="secondary" onClick={reloadAfterSubmit}>Actualizar detalle</Button>
               </div>
             )}
-
-            {actionMessage && (
-              <p
-                className={`mt-3 text-xs font-semibold ${
-                  actionMessage.type === 'success' ? 'text-success-700' : 'text-danger-700'
-                }`}
-              >
-                {actionMessage.text}
-              </p>
+          </RecoleccionResumen>
+          <RecoleccionRecepcionResumen recoleccion={recoleccion}>
+            {mayReview && (
+              <Button className="mt-3" variant="secondary" onClick={() => navigate(`/app/collections/validate/${recoleccion.id}`)}>
+                {estado === 'PENDIENTE_VALIDACION' ? 'Revisar recepción' : 'Consultar recepción'}
+              </Button>
             )}
-          </Card>
+          </RecoleccionRecepcionResumen>
+          <RecoleccionOrigen recoleccion={recoleccion} />
+          <RecoleccionDatosRegistro recoleccion={recoleccion} />
+          <RecoleccionDeleteAction recoleccion={recoleccion} disabled={locked} onLockedChange={setDeletionLocked} onReload={reload} />
+          <RecoleccionDiscardAction recoleccion={recoleccion} onUpdated={update} onReload={reload} />
         </div>
       </div>
 
       <ConfirmDialog
-        open={showDiscardDialog}
-        title="Registrar pérdida o descarte"
-        description="Esta acción no se puede deshacer. El saldo se reducirá inmediatamente."
-        confirmLabel="Confirmar descarte"
-        variant="danger"
-        iconName="alert"
-        loading={discarding}
-        errorMessage={discardError}
-        onConfirm={() => void handleDiscard()}
-        onCancel={() => {
-          if (!discarding) {
-            setShowDiscardDialog(false)
-            setDiscardError(null)
-          }
-        }}
+        open={submitConfirm && formActions.canSubmit}
+        title="Enviar recolección a recepción"
+        description="El vivero revisará el material. La ficha quedará congelada mientras espera la recepción."
+        confirmLabel="Confirmar envío"
+        loading={submitting}
+        onConfirm={() => void submit()}
+        onCancel={() => { if (!pending.current) setSubmitConfirm(false) }}
       >
-        <div className="mt-4">
-          <Field
-            label={`Cantidad a desechar (${unidadDisplay})`}
-            required
-            htmlFor="discard-quantity"
-            hint={`Saldo disponible: ${cantidadActual} ${unidadDisplay}`}
-          >
-            <Input
-              id="discard-quantity"
-              type="number"
-              min="0"
-              max={cantidadActual}
-              step={recoleccion.unidad_canonica === 'UNIDAD' ? '1' : '0.000001'}
-              value={discardQuantity}
-              onChange={(event) => setDiscardQuantity(event.target.value)}
-              disabled={discarding}
-              autoFocus
-            />
-          </Field>
-        </div>
+        <p className="mt-3 text-sm font-semibold">
+          {recoleccion.codigo_trazabilidad} · {formatRecoleccionCantidad(recoleccion.cantidad_inicial_canonica, recoleccion.unidad_canonica)} · {recoleccion.vivero?.nombre || 'Destino no disponible'}
+        </p>
       </ConfirmDialog>
-
-      {showValidationPopup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5">
-          <div className="w-full max-w-sm rounded-3xl bg-white p-6 text-center shadow-2xl ring-1 ring-black/5">
-            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-success-100">
-              <Icon name="check" className="h-8 w-8 text-success-600" />
-            </div>
-            <h3 className="text-base font-extrabold text-neutral-800">Envío exitoso</h3>
-            <p className="mt-1 text-sm font-semibold text-neutral-600">
-              La ficha se envió al vivero y está pendiente de recepción.
-            </p>
-            <Button
-              type="button"
-              variant="primary"
-              fullWidth
-              onClick={() => setShowValidationPopup(false)}
-              className="mt-4"
-            >
-              Entendido
-            </Button>
-          </div>
-        </div>
+      {submitSuccess && (
+        <SuccessModal
+          title="Envío exitoso"
+          summaryText={recoleccion.codigo_trazabilidad}
+          description="La ficha se envió al vivero y está pendiente de recepción."
+          primaryLabel="Entendido"
+          loading={submitting}
+          errorMessage={submitError}
+          onPrimaryAction={() => {
+            setSubmitSuccess(false)
+            if (submitError) reloadAfterSubmit()
+          }}
+        />
       )}
     </div>
   )
 }
 
-export default RecoleccionDetailScreen
+export default function RecoleccionDetailScreen() {
+  const { id } = useParams()
+  const { user } = useAuth()
+  const token = localStorage.getItem('authToken')
+  return <RecoleccionDetail key={`${id}:${user?.id}:${user?.rol}:${token}`} id={id} token={token} />
+}

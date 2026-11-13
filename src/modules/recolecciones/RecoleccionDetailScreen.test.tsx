@@ -2,7 +2,7 @@ import { assigned, m1Fixture, m2Fixture, VIVERO_A, VIVERO_B } from '../accesos/t
 import type { AccesoM2 } from '../accesos/types'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { Link, MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { RecoleccionesService, RecoleccionRequestError, type Recoleccion } from '../../services/recolecciones.service'
 import RecoleccionDetailScreen from './RecoleccionDetailScreen'
@@ -54,7 +54,6 @@ beforeEach(() => {
   auth.user = { id: '7', rol: 'GENERAL' }
   auth.m2 = null
   vi.spyOn(RecoleccionesService, 'getById').mockResolvedValue({ success: true, data: draft })
-  vi.spyOn(RecoleccionesService, 'getEvidenciasByRecoleccion').mockResolvedValue({ success: true, data: [] })
   vi.spyOn(RecoleccionesService, 'deleteDraft').mockResolvedValue(confirmation)
   vi.spyOn(RecoleccionesService, 'submit')
 })
@@ -240,8 +239,7 @@ describe('habilitación de Vivero en el detalle de Recolección', () => {
       },
     })
     render(<DetailRoute />)
-    expect(await screen.findByText('Material habilitado por recepción física conforme.')).toBeTruthy()
-    expect(screen.getByText('Recepción física: conforme acreditada.')).toBeTruthy()
+    expect(await screen.findByText('Recibida en vivero')).toBeTruthy()
     expect(screen.queryByText('Consumo y desecho requieren recepción conforme.')).toBeNull()
     expect(screen.getByText('Usuario 9007199254740993')).toBeTruthy()
     expect(screen.queryByText(/aprobación documental/)).toBeNull()
@@ -259,7 +257,7 @@ describe('habilitación de Vivero en el detalle de Recolección', () => {
     auth.m2 = m2Fixture({ viveros: [assigned(VIVERO_B)] }).data
     vi.mocked(RecoleccionesService.getById).mockResolvedValue({ success: true, data: validada })
     render(<DetailRoute />)
-    expect(await screen.findByText('Material habilitado por recepción física conforme.')).toBeTruthy()
+    expect(await screen.findByText('Recibida en vivero')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Registrar pérdida o descarte' })).toBeNull()
   })
 
@@ -270,7 +268,7 @@ describe('habilitación de Vivero en el detalle de Recolección', () => {
       data: { ...validada, recepcion_conforme: false, recepcion: null, m2_estado_habilitacion: 'PENDIENTE_RECEPCION' },
     })
     render(<DetailRoute />)
-    expect(await screen.findByText('Pendiente de recepción física conforme.')).toBeTruthy()
+    expect(await screen.findByText('Consumo y desecho requieren recepción conforme.')).toBeTruthy()
     expect(screen.getByText('Recepción no acreditada')).toBeTruthy()
     expect(screen.queryByText('Recibida en vivero')).toBeNull()
     expect(screen.queryByRole('button', { name: 'Registrar pérdida o descarte' })).toBeNull()
@@ -300,8 +298,153 @@ describe('habilitación de Vivero en el detalle de Recolección', () => {
         data: { ...validada, recepcion_conforme: true, m2_estado_habilitacion: estado },
       })
       render(<DetailRoute />)
-      expect(await screen.findByText('Recepción física: conforme acreditada.')).toBeTruthy()
+      expect(await screen.findByText('Recibida en vivero')).toBeTruthy()
       expect(Boolean(screen.queryByRole('button', { name: 'Registrar pérdida o descarte' }))).toBe(visible)
     },
   )
+})
+
+describe('consulta del detalle canónico', () => {
+  it('usa una sola lectura, conserva snapshots y permite ampliar las evidencias incluidas', async () => {
+    vi.mocked(RecoleccionesService.getById).mockRestore()
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ success: true, data: {
+      ...draft,
+      planta: { nombre_comun_principal: 'Nombre cambiado en catálogo', nombre_cientifico: 'Nombre científico nuevo' },
+      nombre_recolector_snapshot: 'Recolector histórico',
+      usuario: { id: 7, nombre: 'Nombre actual del recolector' },
+      evidencias: [{ id: 1, titulo: 'Foto de origen', public_url: 'https://example.test/origen.jpg', mime_type: 'image/jpeg', tamano_bytes: 2048, creado_en: '2026-11-03T12:00:00Z' }],
+    } }), { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+    render(<DetailRoute />)
+    await screen.findByRole('heading', { name: 'Detalle de Recolección' })
+    expect(screen.getByText('Jacarandá')).toBeTruthy()
+    expect(screen.getByText('Jacaranda mimosifolia')).toBeTruthy()
+    expect(screen.queryByText('Nombre cambiado en catálogo')).toBeNull()
+    expect(screen.getByText('Recolector histórico')).toBeTruthy()
+    expect(screen.queryByText('Nombre actual del recolector')).toBeNull()
+    expect(screen.getByRole('link', { name: 'Ampliar Foto de origen' })).toHaveProperty('href', 'https://example.test/origen.jpg')
+    expect(screen.getByText('2 KB')).toBeTruthy()
+    expect(fetchMock).toHaveBeenCalledExactlyOnceWith(expect.stringContaining('/api/recolecciones/292'), expect.objectContaining({ method: 'GET' }))
+    fireEvent.error(screen.getByRole('img', { name: 'Foto de origen' }))
+    expect(screen.getByText('No se pudo cargar la foto.')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Detalle de Recolección' })).toBeTruthy()
+  })
+
+  it('un saldo o estado ausentes no se convierten en cero, cierre ni permiso de edición', async () => {
+    vi.mocked(RecoleccionesService.getById).mockResolvedValue({ success: true, data: { ...draft, saldo_actual: null, cantidad_inicial_canonica: null, estado_operativo: null, estado_registro: null } })
+    render(<DetailRoute />)
+    await screen.findByRole('heading', { name: 'Detalle de Recolección' })
+    expect(screen.getByText('Saldo en origen').nextElementSibling?.textContent).toBe('No disponible')
+    expect(screen.queryByText('Sin saldo en origen')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Revisar y enviar' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Enviar a recepción' })).toBeNull()
+  })
+
+  it.each([['7', false], ['99', true]])('ADMIN %s solo abre la recepción operativa ajena: %s', async (id, visible) => {
+    auth.user = { id, rol: 'ADMIN' }
+    auth.m2 = m2Fixture({ rol_global: 'ADMIN', capacidades_globales: { administrar: true, operar_cualquier_vivero: true, recibir_y_validar_cualquier_vivero: true, desechar_semillas_cualquier_vivero: true } }).data
+    vi.mocked(RecoleccionesService.getById).mockResolvedValue({ success: true, data: {
+      ...draft, estado_registro: 'VALIDADO', vivero_id: VIVERO_A, recepcion_conforme: true,
+      recepcion: { id: '1', fecha_recepcion: '2026-11-04', recibido_por: '9', registrado_en: '2026-11-04T18:00:00Z' },
+    } })
+    render(<DetailRoute />)
+    await screen.findByRole('heading', { name: 'Detalle de Recolección' })
+    expect(Boolean(screen.queryByRole('button', { name: 'Consultar recepción' }))).toBe(visible)
+    expect(screen.getByText('Usuario 9')).toBeTruthy()
+  })
+
+  it('descarta una ficha tardía al cambiar de cuenta y token', async () => {
+    let finish!: (value: { success: boolean; data: Recoleccion }) => void
+    vi.mocked(RecoleccionesService.getById)
+      .mockImplementationOnce(() => new Promise(resolve => { finish = resolve }))
+      .mockResolvedValueOnce({ success: true, data: { ...draft, nombre_comercial: 'Ficha de cuenta nueva' } })
+    const view = render(<DetailRoute />)
+    auth.user = { id: '99', rol: 'GENERAL' }
+    localStorage.setItem('authToken', 'otra-sesion')
+    view.rerender(<DetailRoute />)
+    await screen.findByText('Ficha de cuenta nueva')
+    await act(async () => finish({ success: true, data: draft }))
+    expect(screen.queryByText('Jacarandá')).toBeNull()
+    expect(screen.getByText('Ficha de cuenta nueva')).toBeTruthy()
+  })
+
+  it('descarta también las respuestas al cambiar de ficha sin cambiar la cuenta', async () => {
+    let finish!: (value: { success: boolean; data: Recoleccion }) => void
+    vi.mocked(RecoleccionesService.getById)
+      .mockImplementationOnce(() => new Promise(resolve => { finish = resolve }))
+      .mockResolvedValueOnce({ success: true, data: { ...draft, id: 293, nombre_comercial: 'Otra ficha' } })
+    render(<MemoryRouter initialEntries={['/app/collections/292']}>
+      <Link to="/app/collections/293">Abrir otra ficha</Link>
+      <Routes><Route path="/app/collections/:id" element={<RecoleccionDetailScreen />} /></Routes>
+    </MemoryRouter>)
+    fireEvent.click(screen.getByRole('link', { name: 'Abrir otra ficha' }))
+    await screen.findByText('Otra ficha')
+    await act(async () => finish({ success: true, data: draft }))
+    expect(screen.queryByText('Jacarandá')).toBeNull()
+  })
+})
+
+describe('confirmación y recuperación de acciones del detalle', () => {
+  it('confirmar el envío es explícito; cancelar no escribe y un doble clic envía una sola vez', async () => {
+    const user = userEvent.setup()
+    let finish!: (value: { success: boolean; data: Recoleccion }) => void
+    vi.mocked(RecoleccionesService.submit).mockImplementation(() => new Promise(resolve => { finish = resolve }))
+    render(<DetailRoute />)
+    await user.click(await screen.findByRole('button', { name: 'Enviar a recepción' }))
+    const dialog = screen.getByRole('dialog', { name: 'Enviar recolección a recepción' })
+    expect(RecoleccionesService.submit).not.toHaveBeenCalled()
+    await user.click(within(dialog).getByRole('button', { name: 'Cancelar' }))
+    expect(RecoleccionesService.submit).not.toHaveBeenCalled()
+    await user.click(screen.getByRole('button', { name: 'Enviar a recepción' }))
+    const confirm = screen.getByRole('button', { name: 'Confirmar envío' })
+    fireEvent.click(confirm)
+    fireEvent.click(confirm)
+    expect(RecoleccionesService.submit).toHaveBeenCalledExactlyOnceWith(292)
+    vi.mocked(RecoleccionesService.getById).mockResolvedValue({ success: true, data: { ...draft, estado_registro: 'PENDIENTE_VALIDACION' } })
+    await act(async () => finish({ success: true, data: draft }))
+    expect(await screen.findByRole('dialog', { name: 'Envío exitoso' })).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Entendido' }))
+    expect(screen.queryByRole('button', { name: 'Enviar a recepción' })).toBeNull()
+    expect(screen.getByText('Pendiente de recepción')).toBeTruthy()
+  })
+
+  it('no ofrece repetir un envío confirmado aunque falle la actualización de la ficha', async () => {
+    const user = userEvent.setup()
+    vi.mocked(RecoleccionesService.submit).mockResolvedValue({ success: true, data: { ...draft, estado_registro: 'PENDIENTE_VALIDACION' } })
+    render(<DetailRoute />)
+    await user.click(await screen.findByRole('button', { name: 'Enviar a recepción' }))
+    vi.mocked(RecoleccionesService.getById).mockRejectedValueOnce(new Error('Sin conexión al actualizar'))
+    await user.click(screen.getByRole('button', { name: 'Confirmar envío' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Envío exitoso' })
+    expect(within(dialog).getByRole('alert').textContent).toContain('Envío confirmado')
+    expect(screen.getByRole('button', { name: 'Enviar a recepción' })).toHaveProperty('disabled', true)
+    await user.click(screen.getByRole('button', { name: 'Entendido' }))
+    await screen.findByRole('heading', { name: 'Detalle de Recolección' })
+    expect(RecoleccionesService.submit).toHaveBeenCalledTimes(1)
+    expect(RecoleccionesService.getById).toHaveBeenCalledTimes(3)
+  })
+
+  it('un descarte incierto exige una lectura correcta antes de habilitar otra confirmación', async () => {
+    const user = userEvent.setup()
+    auth.m2 = m2Fixture({ viveros: [assigned(VIVERO_A)] }).data
+    const received = { ...draft, estado_registro: 'VALIDADO', vivero_id: VIVERO_A, recepcion_conforme: true }
+    vi.mocked(RecoleccionesService.getById).mockResolvedValue({ success: true, data: received })
+    const discard = vi.spyOn(RecoleccionesService, 'registrarDesecho').mockRejectedValue(new Error('Respuesta perdida'))
+    render(<DetailRoute />)
+    await user.click(await screen.findByRole('button', { name: 'Registrar pérdida o descarte' }))
+    await user.click(screen.getByRole('button', { name: 'Confirmar descarte' }))
+    expect(await screen.findByRole('alert')).toHaveProperty('textContent', expect.stringContaining('Respuesta perdida'))
+    expect(screen.getByRole('button', { name: 'Registrar pérdida o descarte' })).toHaveProperty('disabled', true)
+    vi.mocked(RecoleccionesService.getById).mockRejectedValueOnce(new Error('Lectura fallida'))
+    await user.click(screen.getByRole('button', { name: 'Actualizar detalle' }))
+    await screen.findByText('No se pudo cargar la recolección')
+    expect(screen.queryByRole('button', { name: 'Registrar pérdida o descarte' })).toBeNull()
+    vi.mocked(RecoleccionesService.getById).mockResolvedValue({ success: true, data: { ...received, saldo_actual: 75 } })
+    await user.click(screen.getByRole('button', { name: 'Reintentar' }))
+    const next = await screen.findByRole('button', { name: 'Registrar pérdida o descarte' })
+    expect(next).toHaveProperty('disabled', false)
+    await user.click(next)
+    expect(screen.getByRole('spinbutton', { name: /cantidad a desechar/i })).toHaveProperty('value', '75')
+    expect(discard).toHaveBeenCalledTimes(1)
+  })
 })

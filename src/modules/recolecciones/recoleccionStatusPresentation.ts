@@ -16,13 +16,13 @@ const ESTADO_REGISTRO_DESCRIPTIONS: Readonly<Record<string, string>> = {
 export function getEstadoRegistroLabel(estado: string, recepcionAcreditada = true): string {
   // Un registro legado VALIDADO no prueba por sí solo la recepción física.
   if (estado === 'VALIDADO' && !recepcionAcreditada) return 'Recepción no acreditada'
-  return ESTADO_REGISTRO_LABELS[estado] ?? estado
+  return ESTADO_REGISTRO_LABELS[estado] ?? (estado || 'No disponible')
 }
 
 export function getEstadoRegistroDescription(estado: string): string {
   return ESTADO_REGISTRO_DESCRIPTIONS[estado] ?? ''
 }
 
-export function getEstadoOperativoLabel(estado: string): string {
-  return estado === 'CERRADO' ? 'Sin saldo en origen' : estado
+export function getEstadoOperativoLabel(estado: string | null): string {
+  return estado === 'CERRADO' ? 'Sin saldo en origen' : estado ?? 'No disponible'
 }

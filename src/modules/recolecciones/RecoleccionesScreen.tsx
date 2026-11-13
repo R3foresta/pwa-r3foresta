@@ -1,83 +1,47 @@
-import { useOperationalAccess } from '../accesos/capabilitiesContext'
-import { canMaintain, hasViveroCapability } from '../accesos/accessPolicy'
-import { useEffect, useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Icon from '../../components/Icon'
 import { Button, Card, Chip, SearchBar } from '../../components/ui'
 import { useAuth } from '../../contexts/AuthContext'
-import {
-  RecoleccionesService,
-  type Recoleccion,
-  type TipoMaterialCanonico,
-} from '../../services/recolecciones.service'
+import type { Recoleccion } from '../../services/recolecciones.service'
+import { useOperationalAccess } from '../accesos/capabilitiesContext'
+import { canMaintain, hasViveroCapability } from '../accesos/accessPolicy'
+import { useRecolecciones, type MaterialFilter } from './hooks/useRecolecciones'
 import RecoleccionCard from './RecoleccionCard'
 import { getRecoleccionFormActions, resolveEstadoOperativo } from './recoleccionStatus'
-
-type MaterialFilter = 'all' | TipoMaterialCanonico
 
 function RecoleccionesScreen() {
   const navigate = useNavigate()
   const { m1, m2 } = useOperationalAccess()
   const { user } = useAuth()
-  const [items, setItems] = useState<Recoleccion[]>([])
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<MaterialFilter>('all')
   const [showClosed, setShowClosed] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
+  const [page, setPage] = useState(1)
+  const { items, pagination, loading, error, retry } = useRecolecciones(
+    query, filter, page, user?.id, localStorage.getItem('authToken'),
+  )
   const canValidate = m2.status === 'ready' && hasViveroCapability(m2.data, 'recibir_y_validar')
-
-  const loadRecolecciones = async (searchValue: string, filterValue: MaterialFilter) => {
-    try {
-      setLoading(true)
-      setError(null)
-
-      const response = await RecoleccionesService.list({
-        page: 1,
-        limit: 30,
-        q: searchValue.trim() || undefined,
-        tipo_material: filterValue === 'all' ? undefined : filterValue,
-      })
-
-      setItems(response.data)
-    } catch (loadError) {
-      setItems([])
-      setError(loadError instanceof Error ? loadError.message : 'No se pudo cargar recolecciones.')
-    } finally {
-      setLoading(false)
-    }
+  const canEdit = (item: Recoleccion) => getRecoleccionFormActions(item,
+    m1.status === 'ready' && canMaintain(m1.data, user?.id, item.usuario_id) ? user : null,
+  ).canEdit
+  const selectFilter = (value: MaterialFilter) => {
+    setFilter(value)
+    setPage(1)
   }
 
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      void loadRecolecciones(query, filter)
-    }, 350)
+  const openItems = items.filter(item => resolveEstadoOperativo(item) === 'ABIERTO')
+  const closedItems = items.filter(item => resolveEstadoOperativo(item) === 'CERRADO')
+  const unknownItems = items.filter(item => resolveEstadoOperativo(item) === null)
+  const hasResults = items.length > 0
 
-    return () => {
-      clearTimeout(timeout)
-    }
-  }, [query, filter])
-
-  const openItems = useMemo(
-    () => items.filter((item) => resolveEstadoOperativo(item) === 'ABIERTO'),
-    [items],
-  )
-  const closedItems = useMemo(
-    () => items.filter((item) => resolveEstadoOperativo(item) === 'CERRADO'),
-    [items],
-  )
-  const hasResults = openItems.length > 0 || closedItems.length > 0
-
-  const subtitle = useMemo(() => {
-    if (loading) {
-      return 'Cargando registros...'
-    }
-    if (error) {
-      return 'Error al cargar registros'
-    }
-    return `${openItems.length} abiertas${closedItems.length > 0 ? ` · ${closedItems.length} sin saldo en origen` : ''}`
-  }, [closedItems.length, error, loading, openItems.length])
+  const counts = [
+    `${openItems.length} abiertas`,
+    closedItems.length > 0 && `${closedItems.length} sin saldo en origen`,
+    unknownItems.length > 0 && `${unknownItems.length} con saldo no disponible`,
+  ].filter(Boolean).join(' · ')
+  const pageSummary = pagination && pagination.totalPages > 1 ? `${counts} en esta página` : counts
+  const subtitle = loading ? 'Cargando registros...' : error ? 'Error al cargar registros' : pageSummary
 
   return (
     <div className="relative min-h-screen bg-brand-50 text-brand-700">
@@ -97,15 +61,15 @@ function RecoleccionesScreen() {
           </div>
           {canValidate && (
             <div className="mt-3 flex w-full justify-end min-[400px]:my-auto min-[400px]:ml-2 min-[400px]:w-auto min-[400px]:shrink-0">
-            <Button
-              variant="secondary"
-              size="sm"
-              leftIcon="check"
-              onClick={() => navigate('/app/collections/validate')}
-              className="shrink-0 rounded-full"
-            >
-              Recepción
-            </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                leftIcon="check"
+                onClick={() => navigate('/app/collections/validate')}
+                className="shrink-0 rounded-full"
+              >
+                Recepción
+              </Button>
             </div>
           )}
         </header>
@@ -113,7 +77,7 @@ function RecoleccionesScreen() {
         <div className="-mt-10 space-y-4 px-5">
           <SearchBar
             value={query}
-            onChange={setQuery}
+            onChange={value => { setQuery(value); setPage(1) }}
             placeholder="Buscar por código, especie o ubicación"
             ariaLabel="Buscar recolecciones por código, especie o ubicación"
           />
@@ -123,13 +87,13 @@ function RecoleccionesScreen() {
             aria-label="Filtrar recolecciones por tipo de material"
             className="flex flex-wrap gap-3"
           >
-            <Chip selected={filter === 'all'} onClick={() => setFilter('all')}>
+            <Chip selected={filter === 'all'} onClick={() => selectFilter('all')}>
               Todos
             </Chip>
-            <Chip selected={filter === 'SEMILLA'} onClick={() => setFilter('SEMILLA')}>
+            <Chip selected={filter === 'SEMILLA'} onClick={() => selectFilter('SEMILLA')}>
               Semilla
             </Chip>
-            <Chip selected={filter === 'ESQUEJE'} onClick={() => setFilter('ESQUEJE')}>
+            <Chip selected={filter === 'ESQUEJE'} onClick={() => selectFilter('ESQUEJE')}>
               Esqueje
             </Chip>
           </div>
@@ -149,7 +113,7 @@ function RecoleccionesScreen() {
               <Button
                 variant="danger"
                 size="sm"
-                onClick={() => void loadRecolecciones(query, filter)}
+                onClick={retry}
                 className="mt-3 rounded-xl"
               >
                 Reintentar
@@ -165,18 +129,20 @@ function RecoleccionesScreen() {
                     <RecoleccionCard
                       key={item.id}
                       recoleccion={item}
-                      canEdit={getRecoleccionFormActions(item, m1.status === 'ready' && canMaintain(m1.data, user?.id, item.usuario_id) ? user : null).canEdit}
+                      canEdit={canEdit(item)}
                     />
                   ))}
                 </div>
-              ) : (
+              ) : unknownItems.length === 0 ? (
                 <Card padding="lg" className="text-center">
                   <p className="text-base font-bold text-neutral-700">No hay recolecciones abiertas</p>
                   <p className="mt-1 text-sm font-medium text-neutral-500">
                     Abre «Sin saldo en origen» para consultar las recolecciones que ya no tienen saldo.
                   </p>
                 </Card>
-              )}
+              ) : null}
+
+              {unknownItems.map(item => <RecoleccionCard key={item.id} recoleccion={item} canEdit={canEdit(item)} />)}
 
               {closedItems.length > 0 && (
                 <section className="space-y-3">
@@ -203,7 +169,7 @@ function RecoleccionesScreen() {
                           key={item.id}
                           recoleccion={item}
                           compact
-                          canEdit={getRecoleccionFormActions(item, m1.status === 'ready' && canMaintain(m1.data, user?.id, item.usuario_id) ? user : null).canEdit}
+                          canEdit={canEdit(item)}
                         />
                       ))}
                     </div>
@@ -220,9 +186,16 @@ function RecoleccionesScreen() {
               </div>
               <p className="text-base font-bold text-neutral-700">No hay recolecciones</p>
               <p className="mt-1 text-sm font-medium text-neutral-500">
-                {query.trim() ? 'No hay coincidencias con la búsqueda.' : 'Aún no existen registros.'}
+                {query.trim() || filter !== 'all' ? 'No hay coincidencias con los filtros.' : page > 1 ? 'No hay registros en esta página.' : 'Aún no existen registros.'}
               </p>
             </Card>
+          )}
+          {pagination && (pagination.totalPages > 1 || page > 1) && (
+            <nav aria-label="Páginas de recolecciones" className="flex items-center justify-between gap-2">
+              <Button variant="secondary" disabled={page === 1} onClick={() => setPage(value => value - 1)}>Anterior</Button>
+              <span className="text-sm">Página {page}</span>
+              <Button variant="secondary" disabled={!pagination.hasNextPage} onClick={() => setPage(value => value + 1)}>Siguiente</Button>
+            </nav>
           )}
         </div>
       </div>

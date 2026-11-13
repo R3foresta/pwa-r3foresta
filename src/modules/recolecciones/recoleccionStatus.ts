@@ -1,8 +1,6 @@
 import { sameId } from '../accesos/accessPolicy'
 type EstadoRegistroSource = {
   estado_registro?: string | null
-  estadoRegistro?: string | null
-  estadoRegistroRecoleccion?: string | null
   usuario_id?: number | string | null
   can_edit?: boolean
   can_submit_for_validation?: boolean
@@ -25,16 +23,8 @@ function normalizeEstadoRegistro(estadoRegistro: string | null | undefined) {
 }
 
 export function resolveEstadoRegistro(recoleccion: EstadoRegistroSource) {
-  const normalizedFromApi =
-    normalizeEstadoRegistro(recoleccion.estado_registro) ||
-    normalizeEstadoRegistro(recoleccion.estadoRegistro) ||
-    normalizeEstadoRegistro(recoleccion.estadoRegistroRecoleccion)
-
-  if (normalizedFromApi) {
-    return normalizedFromApi
-  }
-
-  return 'BORRADOR'
+  // Un estado ausente no acredita BORRADOR ni permite editar o enviar la ficha.
+  return normalizeEstadoRegistro(recoleccion.estado_registro) ?? ''
 }
 
 export function getRecoleccionFormActions(recoleccion: EstadoRegistroSource, user: UsuarioActual) {
@@ -62,17 +52,17 @@ function normalizeEstadoOperativo(estadoOperativo: string | null | undefined): E
   return null
 }
 
-export function resolveEstadoOperativo(recoleccion: EstadoOperativoSource): EstadoOperativo {
+export function resolveEstadoOperativo(recoleccion: EstadoOperativoSource): EstadoOperativo | null {
   const estadoOperativoDesdeApi = normalizeEstadoOperativo(recoleccion.estado_operativo)
   if (estadoOperativoDesdeApi) {
     return estadoOperativoDesdeApi
   }
 
-  if (recoleccion.saldo_actual !== undefined && recoleccion.saldo_actual !== null) {
-    return Number(recoleccion.saldo_actual) > 0 ? 'ABIERTO' : 'CERRADO'
+  if (recoleccion.saldo_actual != null && Number.isFinite(recoleccion.saldo_actual)) {
+    return recoleccion.saldo_actual > 0 ? 'ABIERTO' : 'CERRADO'
   }
 
-  return 'CERRADO'
+  return null
 }
 
 // El color de estado (registro/operativo) se centraliza en

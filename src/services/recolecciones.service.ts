@@ -41,17 +41,6 @@ export interface ViveroCatalogo {
 }
 
 
-export interface CreatePlantaDto {
-  especie: string
-  nombre_cientifico: string
-  variedad?: string
-  tipo_planta_id: number
-  nombre_comun_principal: string
-  nombres_comunes?: string
-  imagen_url: string
-  notas?: string
-}
-
 export interface EvidenciaTrazabilidad {
   id: number
   tipo_entidad_id: number
@@ -92,6 +81,7 @@ export interface Recoleccion {
   nombre_cientifico: string | null
   nombre_comercial: string | null
   nombre_comun_principal?: string | null
+  nombre_recolector_snapshot?: string | null
   tipo_material: string
   especie_nueva: boolean
   observaciones: string | null
@@ -399,7 +389,7 @@ export class RecoleccionesService {
     }
   }
 
-  static async list(filters?: RecoleccionFilters): Promise<ListRecoleccionesResult> {
+  static async list(filters?: RecoleccionFilters, signal?: AbortSignal): Promise<ListRecoleccionesResult> {
     const params = new URLSearchParams()
 
     if (filters) {
@@ -414,6 +404,7 @@ export class RecoleccionesService {
     const url = `${API_URL}/api/recolecciones${query ? `?${query}` : ''}`
 
     const response = await fetch(url, {
+      signal,
       method: 'GET',
       headers: this.getAuthHeaders(),
     })
@@ -446,8 +437,9 @@ export class RecoleccionesService {
     }
   }
 
-  static async getById(id: number): Promise<{ success: boolean; data: Recoleccion }> {
+  static async getById(id: number, signal?: AbortSignal): Promise<{ success: boolean; data: Recoleccion }> {
     const response = await fetch(`${API_URL}/api/recolecciones/${id}`, {
+      signal,
       method: 'GET',
       headers: this.getAuthHeaders(),
     })
@@ -508,34 +500,6 @@ export class RecoleccionesService {
     return {
       success: true,
       data: payload as Recoleccion,
-    }
-  }
-
-  static async getEvidenciasByRecoleccion(
-    recoleccionId: number,
-  ): Promise<{ success: boolean; data: EvidenciaTrazabilidad[] }> {
-    const response = await fetch(
-      `${API_URL}/api/evidencias-trazabilidad/recolecciones/${recoleccionId}`,
-      {
-        method: 'GET',
-        headers: this.getAuthHeaders(),
-      },
-    )
-
-    const payload = await this.parseJsonResponse<
-      ApiEnvelope<EvidenciaTrazabilidad[]> | EvidenciaTrazabilidad[]
-    >(response)
-
-    if (Array.isArray(payload)) {
-      return {
-        success: true,
-        data: payload,
-      }
-    }
-
-    return {
-      success: Boolean(payload.success ?? true),
-      data: Array.isArray(payload.data) ? payload.data : [],
     }
   }
 
