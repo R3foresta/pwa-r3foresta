@@ -4,6 +4,7 @@ import type { Recoleccion } from '../../services/recolecciones.service'
 import { formatUnidadCanonicaDisplay } from '../../utils/recoleccionUnidad'
 import { getUbicacionComunidadDisplay } from '../../utils/ubicacion'
 import { resolveEstadoOperativo, resolveEstadoRegistro } from './recoleccionStatus'
+import { getEstadoOperativoLabel, getEstadoRegistroDescription, getEstadoRegistroLabel } from './recoleccionStatusPresentation'
 
 type Props = {
   recoleccion: Recoleccion
@@ -25,6 +26,17 @@ function formatDate(value: string) {
 
 function RecoleccionCard({ recoleccion, compact = false }: Props) {
   const nombreComercial = recoleccion.nombre_comercial || 'Sin nombre comercial'
+  const recoleccionCompat = recoleccion as RecoleccionCompat
+  const estadoRegistro = resolveEstadoRegistro(recoleccionCompat)
+  const estadoOperativo = resolveEstadoOperativo(recoleccion)
+  const motivoRechazo = estadoRegistro === 'RECHAZADO' ? recoleccion.motivo_rechazo?.trim() : null
+  const recibida = estadoRegistro === 'VALIDADO' && recoleccion.recepcion_conforme === true
+  const descripcionEstado = estadoRegistro === 'VALIDADO' && !recibida
+    ? 'La recepción física no está acreditada en esta ficha.'
+    : getEstadoRegistroDescription(estadoRegistro)
+  const fechaRecepcion = recibida && recoleccion.recepcion?.fecha_recepcion
+    ? new Date(recoleccion.recepcion.fecha_recepcion).toLocaleDateString('es-BO', { timeZone: 'UTC' })
+    : null
 
   if (compact) {
     return (
@@ -47,13 +59,18 @@ function RecoleccionCard({ recoleccion, compact = false }: Props) {
             {recoleccion.tipo_material}
           </Badge>
         </div>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <Badge variant={statusVariant(estadoRegistro)} size="sm">{getEstadoRegistroLabel(estadoRegistro, recibida)}</Badge>
+          <Badge variant={statusVariant(estadoOperativo)} size="sm">{getEstadoOperativoLabel(estadoOperativo)}</Badge>
+        </div>
+        {recibida && <p className="mt-2 text-xs font-medium text-neutral-600">
+          {recoleccion.vivero?.nombre ? `Recibida en ${recoleccion.vivero.nombre}` : 'Vivero de recepción no disponible'}
+          {fechaRecepcion && ` · ${fechaRecepcion}`}
+        </p>}
       </Card>
     )
   }
 
-  const recoleccionCompat = recoleccion as RecoleccionCompat
-  const estadoRegistro = resolveEstadoRegistro(recoleccionCompat)
-  const estadoOperativo = resolveEstadoOperativo(recoleccion)
   const evidenciaPrincipal = recoleccion.evidencias?.find((item) => item.es_principal)
   const fallbackEvidencia = recoleccion.evidencias?.[0]
   const fotoPrincipal = recoleccion.fotos?.find((item) => item.es_principal)
@@ -104,9 +121,17 @@ function RecoleccionCard({ recoleccion, compact = false }: Props) {
         <Badge variant={recoleccion.tipo_material === 'SEMILLA' ? 'success' : recoleccion.tipo_material === 'ESQUEJE' ? 'warning' : 'neutral'}>
           {recoleccion.tipo_material}
         </Badge>
-        <Badge variant={statusVariant(estadoRegistro)}>{estadoRegistro}</Badge>
-        <Badge variant={statusVariant(estadoOperativo)}>{estadoOperativo}</Badge>
+        <Badge variant={statusVariant(estadoRegistro)}>{getEstadoRegistroLabel(estadoRegistro, recibida)}</Badge>
+        <Badge variant={statusVariant(estadoOperativo)}>{getEstadoOperativoLabel(estadoOperativo)}</Badge>
       </div>
+      {descripcionEstado && <p className="mt-2 text-xs font-medium text-neutral-600">{descripcionEstado}</p>}
+      {estadoRegistro === 'RECHAZADO' && <p className="mt-2 whitespace-pre-wrap break-words text-xs text-danger-700">
+        <span className="font-semibold">Motivo de la corrección: </span>{motivoRechazo || 'No disponible.'}
+      </p>}
+      {recibida && <p className="mt-2 text-xs font-medium text-neutral-600">
+        {recoleccion.vivero?.nombre ? `Recibida en ${recoleccion.vivero.nombre}` : 'Vivero de recepción no disponible'}
+        {fechaRecepcion && ` · ${fechaRecepcion}`}
+      </p>}
     </Card>
   )
 }

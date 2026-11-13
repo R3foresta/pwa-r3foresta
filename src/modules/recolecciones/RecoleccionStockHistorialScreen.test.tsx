@@ -65,7 +65,7 @@ describe('historial administrativo de semillas', () => {
     })
     render(<AppRoutes />)
     expect(await screen.findByText('Ana Pérez')).toBeTruthy()
-    expect(screen.getByText('CERRADO')).toBeTruthy()
+    expect(screen.getByText('Sin saldo en origen')).toBeTruthy()
     expect(screen.getByText('100,5 G')).toBeTruthy()
     expect(screen.getByText('0 G')).toBeTruthy()
     expect(screen.getByText('Total: 11')).toBeTruthy()

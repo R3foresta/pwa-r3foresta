@@ -7,6 +7,7 @@ import SuccessModal from '../../../components/SuccessModal'
 import { Button } from '../../../components/ui'
 import { useAuth } from '../../../contexts/AuthContext'
 import { RecoleccionesService, type Recoleccion } from '../../../services/recolecciones.service'
+import { getEstadoRegistroLabel } from '../recoleccionStatusPresentation'
 
 type Props = {
   recoleccion: Recoleccion
@@ -109,7 +110,7 @@ export default function RecoleccionDeleteAction({ recoleccion, disabled, onLocke
         onCancel={() => { if (!pending.current) setOpen(false) }}
       >
         <p className="mt-3 text-sm font-bold text-neutral-700">
-          Recolección: {recoleccion.codigo_trazabilidad} · BORRADOR
+          Recolección: {recoleccion.codigo_trazabilidad} · {getEstadoRegistroLabel('BORRADOR')}
         </p>
       </ConfirmDialog>
     </div>

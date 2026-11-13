@@ -81,6 +81,8 @@ Recepción usa `/app/collections/validate` y su detalle `/:id`, fuera del guard 
 
 El detalle v1 fija revisión y capacidades para decidir; las fotos de origen y recepción permanecen diferenciadas. IDs/revisiones exactos y UUID/intención se conservan ante respuesta incierta. Recuperar el recibo propio sigue disponible sin permisos operativos actuales, sin abrir cola, detalle ni nuevas decisiones. Cambiar cuenta, token o asignación descarta lecturas y formularios anteriores. El anclaje externo posterior no determina el éxito de la recepción. [Contrato backend 100](../Backend-r3foresta/docs/t4-recepcion-semillas.md), [verificación y límites](docs/QA_RECEPCION_UNICA.md). Los informes T4/096 anteriores son históricos; el corte remoto debe acreditarse por separado.
 
+Las etiquetas legibles de Recolección viven en `recoleccionStatusPresentation.ts`: Guardada sin enviar, Pendiente de recepción, Requiere corrección y Recibida en vivero. Los códigos enviados al backend y la resolución de permisos no cambian. Un VALIDADO sin recepción acreditada se presenta como «Recepción no acreditada»; vivero y fecha de recepción se muestran únicamente con respaldo de la consulta actual. CERRADO se presenta por separado como «Sin saldo en origen», conservando la consulta del registro y sin dar por terminados sus lotes derivados.
+
 ## Plan de Plantación
 
 Reutilizar `PlanMetaEspeciesForm`, `usePlanMetaEspeciesForm` y utilidades del módulo. Asistente y detalle conservan su propia carga, autorización, confirmación y persistencia.

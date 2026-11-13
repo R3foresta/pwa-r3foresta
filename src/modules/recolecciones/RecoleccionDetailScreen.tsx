@@ -14,6 +14,7 @@ import {
 import { formatUnidadCanonicaDisplay, mapToCantidadYUnidadCanonica } from '../../utils/recoleccionUnidad'
 import { getUbicacionCoords, getUbicacionDisplay, getUbicacionDivision } from '../../utils/ubicacion'
 import { getRecoleccionFormActions, resolveEstadoOperativo, resolveEstadoRegistro } from './recoleccionStatus'
+import { getEstadoOperativoLabel, getEstadoRegistroDescription, getEstadoRegistroLabel } from './recoleccionStatusPresentation'
 import { readStockHistorialReturn, stockHistorialPath } from './stockHistorialNavigation'
 import RecoleccionDeleteAction from './components/RecoleccionDeleteAction'
 
@@ -147,7 +148,7 @@ function RecoleccionDetailScreen() {
         text:
           submitError instanceof Error
             ? submitError.message
-            : 'No se pudo enviar la recolección a validación.',
+            : 'No se pudo enviar la recolección a recepción.',
       })
     } finally {
       setSubmittingToValidation(false)
@@ -252,6 +253,11 @@ function RecoleccionDetailScreen() {
   const ubicacionCoords = getUbicacionCoords(recoleccion.ubicacion)
   const unidadDisplay = formatUnidadCanonicaDisplay(recoleccion.unidad_canonica, cantidadActual)
   const formActions = getRecoleccionFormActions(recoleccion, m1.status === 'ready' && canMaintain(m1.data, user?.id, recoleccion.usuario_id) ? user : null)
+  const recibida = estadoRegistro === 'VALIDADO' && recoleccion.recepcion_conforme === true
+  const descripcionEstado = estadoRegistro === 'VALIDADO' && !recibida
+    ? 'La recepción física no está acreditada en esta ficha.'
+    : getEstadoRegistroDescription(estadoRegistro)
+  const motivoRechazo = recoleccion.motivo_rechazo?.trim()
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-brand-50 to-brand-50 text-brand-700">
@@ -297,22 +303,33 @@ function RecoleccionDetailScreen() {
                 </span>
               </p>
               <p className="flex items-center justify-between gap-4">
-                <span className="text-neutral-500">Estado registro</span>
-                <Badge variant={statusVariant(estadoRegistro)}>{estadoRegistro}</Badge>
+                <span className="text-neutral-500">Estado de la ficha</span>
+                <Badge variant={statusVariant(estadoRegistro)}>{getEstadoRegistroLabel(estadoRegistro, recibida)}</Badge>
               </p>
               <p className="flex items-center justify-between gap-4">
-                <span className="text-neutral-500">Estado operativo</span>
-                <Badge variant={statusVariant(estadoOperativo)}>{estadoOperativo}</Badge>
+                <span className="text-neutral-500">Estado del saldo</span>
+                <Badge variant={statusVariant(estadoOperativo)}>{getEstadoOperativoLabel(estadoOperativo)}</Badge>
               </p>
               <p className="flex items-center justify-between gap-4">
                 <span className="text-neutral-500">Método</span>
                 <span className="text-right">{recoleccion.metodo?.nombre || 'No disponible'}</span>
               </p>
               <p className="flex items-center justify-between gap-4">
-                <span className="text-neutral-500">Vivero</span>
+                <span className="text-neutral-500">{recibida ? 'Vivero de recepción' : estadoRegistro === 'VALIDADO' ? 'Vivero asignado' : 'Destino previsto'}</span>
                 <span className="text-right">{recoleccion.vivero?.nombre || 'No disponible'}</span>
               </p>
+              {recibida && recoleccion.recepcion && <p className="flex items-center justify-between gap-4">
+                <span className="text-neutral-500">Fecha de recepción</span>
+                <span className="text-right">{formatDate(recoleccion.recepcion.fecha_recepcion)}</span>
+              </p>}
             </div>
+            {descripcionEstado && <p className="mt-3 text-sm text-neutral-600">{descripcionEstado}</p>}
+            {estadoRegistro === 'BORRADOR' && formActions.canEdit && <p className="mt-2 text-sm text-neutral-600">Puedes editarla antes de enviarla al vivero.</p>}
+            {estadoRegistro === 'RECHAZADO' && <div className="mt-3 rounded-2xl bg-danger-50 p-3 text-sm text-danger-700">
+              <p className="font-semibold">Motivo de la corrección</p>
+              <p className="mt-1 whitespace-pre-wrap break-words">{motivoRechazo || 'No disponible.'}</p>
+            </div>}
+            {estadoOperativo === 'CERRADO' && <p className="mt-2 text-sm text-neutral-600">El origen ya no tiene saldo. Sus lotes de vivero pueden continuar su proceso.</p>}
           </Card>
 
           <Card as="section">
@@ -401,7 +418,7 @@ function RecoleccionDetailScreen() {
                     disabled={submittingToValidation || deletionLocked}
                     onClick={() => navigate(`/app/collections/new?editId=${recoleccion.id}`)}
                   >
-                    {estadoRegistro === 'RECHAZADO' ? 'Corregir' : 'Editar'}
+                    {estadoRegistro === 'RECHAZADO' ? 'Corregir recolección' : 'Revisar y enviar'}
                   </Button>}
                   {formActions.canSubmit && <Button
                     type="button"
@@ -410,10 +427,10 @@ function RecoleccionDetailScreen() {
                     disabled={submittingToValidation || deletionLocked}
                     loading={submittingToValidation}
                   >
-                    {submittingToValidation ? 'Enviando...' : 'Enviar a validación'}
+                    {submittingToValidation ? 'Enviando...' : 'Enviar a recepción'}
                   </Button>}
                 </div>
-                {estadoRegistro === 'RECHAZADO' && <p className="text-xs font-medium text-neutral-500">Corrige y guarda el registro antes de reenviarlo a validación.</p>}
+                {estadoRegistro === 'RECHAZADO' && <p className="text-xs font-medium text-neutral-500">Corrige y guarda la ficha antes de volver a enviarla a recepción.</p>}
 
               </div>
             )}
@@ -497,7 +514,7 @@ function RecoleccionDetailScreen() {
             </div>
             <h3 className="text-base font-extrabold text-neutral-800">Envío exitoso</h3>
             <p className="mt-1 text-sm font-semibold text-neutral-600">
-              La recolección se envió a validar correctamente.
+              La ficha se envió al vivero y está pendiente de recepción.
             </p>
             <Button
               type="button"

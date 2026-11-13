@@ -74,7 +74,7 @@ function RecoleccionesScreen() {
     if (error) {
       return 'Error al cargar registros'
     }
-    return `${openItems.length} abiertas${closedItems.length > 0 ? ` · ${closedItems.length} archivadas` : ''}`
+    return `${openItems.length} abiertas${closedItems.length > 0 ? ` · ${closedItems.length} sin saldo en origen` : ''}`
   }, [closedItems.length, error, loading, openItems.length])
 
   return (
@@ -171,7 +171,7 @@ function RecoleccionesScreen() {
                 <Card padding="lg" className="text-center">
                   <p className="text-base font-bold text-neutral-700">No hay recolecciones abiertas</p>
                   <p className="mt-1 text-sm font-medium text-neutral-500">
-                    Usa el botón de archivadas para consultar las recolecciones cerradas.
+                    Abre «Sin saldo en origen» para consultar las recolecciones que ya no tienen saldo.
                   </p>
                 </Card>
               )}
@@ -186,7 +186,7 @@ function RecoleccionesScreen() {
                     className="flex w-full items-center justify-between rounded-3xl bg-white px-4 py-4 text-left shadow-soft ring-1 ring-black/5 transition hover:bg-neutral-50"
                   >
                     <span className="text-sm font-extrabold text-brand-700">
-                      Archivadas ({closedItems.length})
+                      Sin saldo en origen ({closedItems.length})
                     </span>
                     <Icon
                       name="chevron-down"

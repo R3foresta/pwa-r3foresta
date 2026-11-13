@@ -106,6 +106,7 @@ export interface Recoleccion {
   token_id: string | null
   transaction_hash: string | null
   estado_registro: string | null
+  motivo_rechazo?: string | null
   unidad_canonica: UnidadCanonicaRecoleccion | null
   cantidad_inicial_canonica: number | null
   saldo_actual: number | null

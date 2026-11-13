@@ -2,6 +2,7 @@ import { useId, useState } from 'react'
 import Icon from '../../../components/Icon'
 import { Badge, Button, Card, statusVariant } from '../../../components/ui'
 import type { DetalleRecepcion, OrigenRecepcion } from '../../vivero/recepcion/recepcion.contract'
+import { getEstadoRegistroLabel } from '../recoleccionStatusPresentation'
 
 type Props = {
   item: OrigenRecepcion
@@ -31,6 +32,7 @@ export default function RecoleccionRecepcionCard({ item, detalle, error, loading
   const fotos = detalle?.evidencias ?? []
   const foto = fotos[0]
   const ubicacion = detalle?.ubicacion
+  const motivoRechazo = item.estado_registro === 'RECHAZADO' ? item.motivo_rechazo?.trim() : null
 
   return (
     <Card as="article" padding="none" className="overflow-hidden">
@@ -52,12 +54,15 @@ export default function RecoleccionRecepcionCard({ item, detalle, error, loading
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <Badge variant={item.tipo_material === 'SEMILLA' ? 'success' : 'warning'}>{item.tipo_material}</Badge>
-          <Badge variant={statusVariant(item.estado_registro)}>{item.estado_registro}</Badge>
+          <Badge variant={statusVariant(item.estado_registro)}>{getEstadoRegistroLabel(item.estado_registro, item.recepcion !== null)}</Badge>
           {detalle && <Badge variant="neutral">Evidencias: {fotos.length}</Badge>}
           <Icon name="chevron-down" className={`ml-auto h-4 w-4 text-neutral-400 transition-transform ${expanded ? 'rotate-180' : ''}`} />
         </div>
       </button>
 
+      {item.estado_registro === 'PENDIENTE_VALIDACION' && <p className="px-4 pb-3 text-xs font-semibold text-neutral-600">El vivero debe revisar la ficha y confirmar el material recibido.</p>}
+      {motivoRechazo && <p className="px-4 pb-3 text-sm font-semibold text-danger-700">Motivo de corrección: {motivoRechazo}</p>}
+      {item.recepcion && <p className="px-4 pb-3 text-xs font-semibold text-neutral-600">Recibida en {viveroNombre ?? `Vivero ${item.vivero_id}`} · {fecha(item.recepcion.fecha_recepcion)}</p>}
       {loading && <p role="status" className="px-4 pb-3 text-xs font-semibold text-neutral-500">Cargando datos y fotos autorizadas…</p>}
       {error && <div className="space-y-2 border-t border-danger-100 bg-danger-50 p-4"><p role="alert" className="text-sm text-danger-700">{error}</p><Button variant="secondary" size="sm" onClick={onRetry}>Reintentar detalle</Button></div>}
 
@@ -70,7 +75,7 @@ export default function RecoleccionRecepcionCard({ item, detalle, error, loading
             <Row label="Tipo de material" value={detalle.tipo_material} />
             <Row label="Cantidad declarada" value={`${detalle.cantidad_declarada} ${detalle.unidad_declarada}`} />
             <Row label="Saldo registrado" value={`${detalle.saldo_actual} ${detalle.unidad_declarada}`} />
-            <Row label="Vivero de almacenamiento" value={viveroNombre ?? `Vivero ${detalle.vivero_id}`} />
+            <Row label={detalle.recepcion ? 'Vivero receptor' : 'Destino previsto'} value={viveroNombre ?? `Vivero ${detalle.vivero_id}`} />
             {detalle.metodo_id && <Row label="Método" value={metodoNombre ?? `Método ${detalle.metodo_id}`} />}
             {detalle.observaciones && <Row label="Observaciones" value={detalle.observaciones} />}
           </dl>

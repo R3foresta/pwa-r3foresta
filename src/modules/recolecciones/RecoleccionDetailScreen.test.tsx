@@ -44,6 +44,7 @@ function DetailRoute() {
   return <MemoryRouter initialEntries={['/app/collections/292']}>
     <Routes>
       <Route path="/app/collections/:id" element={<RecoleccionDetailScreen />} />
+      <Route path="/app/collections/new" element={<p>Formulario para revisar y guardar la ficha</p>} />
       <Route path="/app/collections" element={<p>Listado de recolecciones actualizado</p>} />
     </Routes>
   </MemoryRouter>
@@ -84,7 +85,7 @@ describe('eliminar borrador desde el detalle de Recolección', () => {
     render(<DetailRoute />)
     await user.click(await screen.findByRole('button', { name: 'Eliminar borrador' }))
     const dialog = screen.getByRole('dialog', { name: 'Eliminar borrador de recolección' })
-    expect(within(dialog).getByText(/REC-292 · BORRADOR/)).toBeTruthy()
+    expect(within(dialog).getByText(/REC-292 · Guardada sin enviar/)).toBeTruthy()
     expect(within(dialog).getByText(/Se conservarán la ficha, las fotos y el historial/)).toBeTruthy()
     expect(RecoleccionesService.deleteDraft).not.toHaveBeenCalled()
     await user.click(within(dialog).getByRole('button', { name: 'Cancelar' }))
@@ -102,8 +103,8 @@ describe('eliminar borrador desde el detalle de Recolección', () => {
     fireEvent.click(confirm)
     fireEvent.click(confirm)
     expect(RecoleccionesService.deleteDraft).toHaveBeenCalledExactlyOnceWith(292)
-    expect(screen.getByRole('button', { name: 'Editar' })).toHaveProperty('disabled', true)
-    expect(screen.getByRole('button', { name: 'Enviar a validación' })).toHaveProperty('disabled', true)
+    expect(screen.getByRole('button', { name: 'Revisar y enviar' })).toHaveProperty('disabled', true)
+    expect(screen.getByRole('button', { name: 'Enviar a recepción' })).toHaveProperty('disabled', true)
     expect(screen.getByRole('button', { name: 'Cancelar' })).toHaveProperty('disabled', true)
     await user.keyboard('{Escape}')
     expect(screen.getByRole('dialog', { name: 'Eliminar borrador de recolección' })).toBeTruthy()
@@ -129,7 +130,7 @@ describe('eliminar borrador desde el detalle de Recolección', () => {
     expect(await screen.findByRole('alert')).toHaveProperty('textContent', expect.stringContaining(error.message))
     expect(screen.queryByRole('dialog', { name: 'Borrador eliminado' })).toBeNull()
     expect(screen.getByRole('button', { name: 'Eliminar borrador' })).toHaveProperty('disabled', true)
-    expect(screen.getByRole('button', { name: 'Enviar a validación' })).toHaveProperty('disabled', true)
+    expect(screen.getByRole('button', { name: 'Enviar a recepción' })).toHaveProperty('disabled', true)
     vi.mocked(RecoleccionesService.getById).mockResolvedValueOnce({ success: true, data: { ...draft, estado_registro: 'PENDIENTE_VALIDACION' } })
     await user.click(screen.getByRole('button', { name: 'Actualizar detalle' }))
     await waitFor(() => expect(RecoleccionesService.getById).toHaveBeenCalledTimes(2))
@@ -181,6 +182,31 @@ describe('eliminar borrador desde el detalle de Recolección', () => {
     await act(async () => { complete(confirmation) })
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(screen.queryByRole('button', { name: 'Eliminar borrador' })).toBeNull()
+  })
+})
+
+describe('contexto operativo de los estados de Recolección', () => {
+  it('revisar una ficha guardada abre su edición sin enviar ni eliminar', async () => {
+    const user = userEvent.setup()
+    render(<DetailRoute />)
+    await user.click(await screen.findByRole('button', { name: 'Revisar y enviar' }))
+    expect(screen.getByText('Formulario para revisar y guardar la ficha')).toBeTruthy()
+    expect(RecoleccionesService.submit).not.toHaveBeenCalled()
+    expect(RecoleccionesService.deleteDraft).not.toHaveBeenCalled()
+  })
+
+  it('explica el rechazo y permite corregir sin ofrecer reenvío antes de guardar', async () => {
+    const user = userEvent.setup()
+    vi.mocked(RecoleccionesService.getById).mockResolvedValue({
+      success: true,
+      data: { ...draft, estado_registro: 'RECHAZADO', motivo_rechazo: 'La cantidad no coincide con el material recibido.' },
+    })
+    render(<DetailRoute />)
+    expect(await screen.findByText('La cantidad no coincide con el material recibido.')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Enviar a recepción' })).toBeNull()
+    await user.click(screen.getByRole('button', { name: 'Corregir recolección' }))
+    expect(screen.getByText('Formulario para revisar y guardar la ficha')).toBeTruthy()
+    expect(RecoleccionesService.submit).not.toHaveBeenCalled()
   })
 })
 
@@ -245,6 +271,23 @@ describe('habilitación de Vivero en el detalle de Recolección', () => {
     })
     render(<DetailRoute />)
     expect(await screen.findByText('Pendiente de recepción física conforme.')).toBeTruthy()
+    expect(screen.getByText('Recepción no acreditada')).toBeTruthy()
+    expect(screen.queryByText('Recibida en vivero')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Registrar pérdida o descarte' })).toBeNull()
+  })
+
+  it('conserva la recepción al agotarse el origen sin ofrecer edición ni descarte', async () => {
+    auth.m2 = m2Fixture({ viveros: [assigned(VIVERO_A)] }).data
+    vi.mocked(RecoleccionesService.getById).mockResolvedValue({
+      success: true,
+      data: { ...validada, saldo_actual: 0, estado_operativo: 'CERRADO' },
+    })
+    render(<DetailRoute />)
+    expect(await screen.findByText('Recibida en vivero')).toBeTruthy()
+    expect(screen.getByText('Sin saldo en origen')).toBeTruthy()
+    expect(screen.getByText(/Sus lotes de vivero pueden continuar su proceso/)).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Revisar y enviar' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Enviar a recepción' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Registrar pérdida o descarte' })).toBeNull()
   })
 

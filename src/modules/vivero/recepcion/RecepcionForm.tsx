@@ -62,12 +62,12 @@ export default function RecepcionForm({ origen, actor, viveroNombre, busy, onCon
   }}>
     <Card className="space-y-4">
       <h2 className="text-lg font-extrabold text-brand-700">Confirmar material recibido</h2>
-      <p className="text-sm font-semibold text-neutral-600">Confirma la cantidad declarada por el recolector. Si el material no corresponde, vuelve a la ficha y recházala con el motivo.</p>
+      <p className="text-sm font-semibold text-neutral-600">Al confirmar la recepción física, la recolección también queda validada. Comprueba la cantidad declarada por el recolector. Si el material no corresponde, vuelve a la ficha y recházala con el motivo.</p>
       <div className="grid grid-cols-2 gap-3">
         <label className="block text-sm font-semibold text-neutral-600">Cantidad declarada<input readOnly value={origen.cantidad_declarada} className="mt-1 w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-neutral-700" /></label>
         <label className="block text-sm font-semibold text-neutral-600">Unidad<input readOnly value={origen.unidad_declarada} className="mt-1 w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-neutral-700" /></label>
       </div>
-      <p className="text-sm text-neutral-600">Vivero de almacenamiento: <strong>{viveroNombre ?? `Vivero ${origen.vivero_id}`}</strong></p>
+      <p className="text-sm text-neutral-600">Vivero de recepción: <strong>{viveroNombre ?? `Vivero ${origen.vivero_id}`}</strong></p>
       <p className="text-sm text-neutral-600">Receptor: <strong>{actor}</strong></p>
       <label className="block text-sm font-semibold text-neutral-600">Fecha física de recepción<input type="date" required min={origen.fecha_recoleccion} max={hoyRecepcion()} value={fecha} disabled={disabled} onChange={event => setFecha(event.target.value)} className="mt-1 min-h-12 w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-neutral-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100" /></label>
     </Card>

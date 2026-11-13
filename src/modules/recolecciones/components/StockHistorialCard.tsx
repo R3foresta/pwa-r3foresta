@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import StatusBadge from '../../../components/ui/StatusBadge'
 import { formatUnidadCanonicaDisplay } from '../../../utils/recoleccionUnidad'
 import type { StockHistorialRegistro } from '../stockHistorial.service'
+import { getEstadoOperativoLabel } from '../recoleccionStatusPresentation'
 
 export default function StockHistorialCard({ item, plantaId, page }: { item: StockHistorialRegistro; plantaId: number; page: number }) {
   const formatAmount = (value: number | string) => new Intl.NumberFormat('es-BO', { maximumFractionDigits: item.unidad_canonica === 'G' ? 1 : 0 }).format(Number(value))
@@ -20,7 +21,7 @@ export default function StockHistorialCard({ item, plantaId, page }: { item: Sto
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
         <p className="min-w-0 break-all font-extrabold">{item.codigo_trazabilidad}</p>
-        <StatusBadge status={item.estado_operativo} />
+        <StatusBadge status={item.estado_operativo} label={getEstadoOperativoLabel(item.estado_operativo)} />
       </div>
       <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
         <div className="col-span-2 min-w-0">
