@@ -1,22 +1,24 @@
 import { useOperationalAccess } from '../accesos/capabilitiesContext'
-import { hasViveroCapability } from '../accesos/accessPolicy'
+import { canMaintain, hasViveroCapability } from '../accesos/accessPolicy'
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import Icon from '../../components/Icon'
 import { Button, Card, Chip, SearchBar } from '../../components/ui'
+import { useAuth } from '../../contexts/AuthContext'
 import {
   RecoleccionesService,
   type Recoleccion,
   type TipoMaterialCanonico,
 } from '../../services/recolecciones.service'
 import RecoleccionCard from './RecoleccionCard'
-import { resolveEstadoOperativo } from './recoleccionStatus'
+import { getRecoleccionFormActions, resolveEstadoOperativo } from './recoleccionStatus'
 
 type MaterialFilter = 'all' | TipoMaterialCanonico
 
 function RecoleccionesScreen() {
   const navigate = useNavigate()
-  const { m2 } = useOperationalAccess()
+  const { m1, m2 } = useOperationalAccess()
+  const { user } = useAuth()
   const [items, setItems] = useState<Recoleccion[]>([])
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<MaterialFilter>('all')
@@ -80,7 +82,7 @@ function RecoleccionesScreen() {
   return (
     <div className="relative min-h-screen bg-brand-50 text-brand-700">
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-32">
-        <header className="mb-3 flex rounded-b-3xl bg-brand-600 px-5 pb-12 pt-10 text-white shadow-soft">
+        <header className="mb-3 flex flex-wrap rounded-b-3xl bg-brand-600 px-5 pb-12 pt-10 text-white shadow-soft min-[400px]:flex-nowrap">
           <button
             type="button"
             aria-label="Volver"
@@ -89,20 +91,22 @@ function RecoleccionesScreen() {
           >
             <Icon name="arrow-left" className="h-5 w-5" />
           </button>
-          <div className="flex-1">
-            <h1 className="text-3xl font-extrabold leading-tight">Recolecciones</h1>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-2xl font-extrabold leading-tight min-[440px]:text-3xl">Recolecciones</h1>
             <p className="text-sm font-medium text-white/90">{subtitle}</p>
           </div>
           {canValidate && (
+            <div className="mt-3 flex w-full justify-end min-[400px]:my-auto min-[400px]:ml-2 min-[400px]:w-auto min-[400px]:shrink-0">
             <Button
               variant="secondary"
               size="sm"
               leftIcon="check"
               onClick={() => navigate('/app/collections/validate')}
-              className="my-auto ml-2 shrink-0 rounded-full"
+              className="shrink-0 rounded-full"
             >
               Recepción
             </Button>
+            </div>
           )}
         </header>
 
@@ -158,13 +162,11 @@ function RecoleccionesScreen() {
               {openItems.length > 0 ? (
                 <div className="space-y-3">
                   {openItems.map((item) => (
-                    <Link
+                    <RecoleccionCard
                       key={item.id}
-                      to={`/app/collections/${item.id}`}
-                      className="block rounded-3xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2"
-                    >
-                      <RecoleccionCard recoleccion={item} />
-                    </Link>
+                      recoleccion={item}
+                      canEdit={getRecoleccionFormActions(item, m1.status === 'ready' && canMaintain(m1.data, user?.id, item.usuario_id) ? user : null).canEdit}
+                    />
                   ))}
                 </div>
               ) : (
@@ -197,13 +199,12 @@ function RecoleccionesScreen() {
                   {showClosed && (
                     <div id="recolecciones-cerradas" className="space-y-3">
                       {closedItems.map((item) => (
-                        <Link
+                        <RecoleccionCard
                           key={item.id}
-                          to={`/app/collections/${item.id}`}
-                          className="block rounded-3xl opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2"
-                        >
-                          <RecoleccionCard recoleccion={item} compact />
-                        </Link>
+                          recoleccion={item}
+                          compact
+                          canEdit={getRecoleccionFormActions(item, m1.status === 'ready' && canMaintain(m1.data, user?.id, item.usuario_id) ? user : null).canEdit}
+                        />
                       ))}
                     </div>
                   )}

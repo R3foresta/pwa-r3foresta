@@ -83,6 +83,8 @@ El detalle v1 fija revisión y capacidades para decidir; las fotos de origen y r
 
 Las etiquetas legibles de Recolección viven en `recoleccionStatusPresentation.ts`: Guardada sin enviar, Pendiente de recepción, Requiere corrección y Recibida en vivero. Los códigos enviados al backend y la resolución de permisos no cambian. Un VALIDADO sin recepción acreditada se presenta como «Recepción no acreditada»; vivero y fecha de recepción se muestran únicamente con respaldo de la consulta actual. CERRADO se presenta por separado como «Sin saldo en origen», conservando la consulta del registro y sin dar por terminados sus lotes derivados.
 
+Las cards de la lista priorizan el estado de recepción y presentan el material como dato secundario. Ocultan ABIERTO y conservan «Sin saldo en origen» cuando el saldo/estado es conocido. Antes de la recepción muestran cantidad declarada y destino previsto; después, saldo en origen, cantidad declarada original y los datos de recepción disponibles. Un dato ausente se presenta como «No disponible», nunca como cero. Identidad/foto y acción son enlaces hermanos: revisar/corregir abre el editor solo con las capacidades actuales y no ejecuta el envío.
+
 ## Plan de Plantación
 
 Reutilizar `PlanMetaEspeciesForm`, `usePlanMetaEspeciesForm` y utilidades del módulo. Asistente y detalle conservan su propia carga, autorización, confirmación y persistencia.

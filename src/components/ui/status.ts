@@ -12,7 +12,7 @@ import type { BadgeVariant } from './Badge'
 export const STATUS_VARIANT: Record<string, BadgeVariant> = {
   // Recolección — estado de registro
   BORRADOR: 'warning', // hoy amber
-  PENDIENTE_VALIDACION: 'warning',
+  PENDIENTE_VALIDACION: 'info',
   VALIDADO: 'success', // hoy emerald
   RECHAZADO: 'danger',
   // Recolección — estado operativo
