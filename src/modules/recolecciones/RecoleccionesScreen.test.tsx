@@ -27,7 +27,7 @@ beforeEach(() => { vi.spyOn(RecoleccionesService, 'list').mockResolvedValue({ su
 describe('lista propia de Recolección separada de Recepción', () => {
   it.each([true, false])('la acción de revisar respeta can_edit=%s de la ficha', async canEdit => {
     const item = {
-      id: 306, fecha: '2026-11-12', nombre_comercial: 'Tara', tipo_material: 'SEMILLA',
+      id: 306, codigo_trazabilidad: 'REC-306', fecha: '2026-11-12', nombre_comercial: 'Tara', tipo_material: 'SEMILLA',
       usuario_id: '8', estado_registro: 'BORRADOR', estado_operativo: 'ABIERTO',
       cantidad_inicial_canonica: 10, saldo_actual: 10, unidad_canonica: 'UNIDAD', can_edit: canEdit,
     } as Recoleccion
@@ -37,12 +37,12 @@ describe('lista propia de Recolección separada de Recepción', () => {
     const action = screen.queryByRole('link', { name: 'Revisar y enviar' })
     expect(Boolean(action)).toBe(canEdit)
     if (canEdit) expect(action?.getAttribute('href')).toBe('/app/collections/new?editId=306')
-    else expect(screen.getByRole('link', { name: 'Ver detalle' }).getAttribute('href')).toBe('/app/collections/306')
+    else expect(screen.getByRole('link', { name: 'Ver detalle de REC-306' }).getAttribute('href')).toBe('/app/collections/306')
   })
 
   it('al perder la capacidad de mantener se conserva el bloqueo de la lista', () => {
     const item = {
-      id: 306, fecha: '2026-11-12', nombre_comercial: 'Tara', tipo_material: 'SEMILLA',
+      id: 306, codigo_trazabilidad: 'REC-306', fecha: '2026-11-12', nombre_comercial: 'Tara', tipo_material: 'SEMILLA',
       usuario_id: '8', estado_registro: 'BORRADOR', estado_operativo: 'ABIERTO',
       cantidad_inicial_canonica: 10, saldo_actual: 10, unidad_canonica: 'UNIDAD', can_edit: true,
     } as Recoleccion
