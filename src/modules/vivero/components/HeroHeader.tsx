@@ -17,7 +17,7 @@ export default function HeroHeader({ detail, customImage }: HeroHeaderProps) {
   const isDescartePreEmbolsado = detail.motivoCierre === 'DESCARTE_PRE_EMBOLSADO';
   const disponibles = isDescartePreEmbolsado
     ? null
-    : detail.saldoVivoActual ?? detail.plantasVivasIniciales ?? 0;
+    : detail.saldoVivoActual;
 
   const isFinalizado = detail.estadoLote === 'FINALIZADO';
   const motivoCierreLabel = isDescartePreEmbolsado
@@ -30,7 +30,7 @@ export default function HeroHeader({ detail, customImage }: HeroHeaderProps) {
       eyebrow={`LOTE ${detail.codigo}`}
       title={detail.especie}
       subtitle={detail.nombreCientifico}
-      media={detail.plantaImagenUrl ? customImage || detail.plantaImagenUrl : null}
+      media={customImage || detail.plantaImagenUrl || null}
       badge={
         <div
           className={`rounded-full px-3 py-1.5 text-[9px] font-black uppercase tracking-widest shadow-sm backdrop-blur-md ${isFinalizado ? 'bg-white text-brand-950' : 'bg-success-400/20 text-success-50 ring-1 ring-success-200/50'}`}
@@ -61,7 +61,7 @@ export default function HeroHeader({ detail, customImage }: HeroHeaderProps) {
       }
       metric={{
         label: 'Saldo Vivo',
-        value: disponibles ?? 'N/A',
+        value: disponibles ?? 'No disponible',
         caption: isDescartePreEmbolsado ? 'No nació saldo vivo' : 'Plantas · Unidad',
       }}
     />

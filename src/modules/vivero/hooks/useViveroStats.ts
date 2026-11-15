@@ -1,63 +1,20 @@
-import { useMemo } from 'react';
-import type { ViveroLotDetailView, ViveroLotEventView } from '../types/view-models';
-import { useNow } from '../contexts/nowContext'; 
+import { useMemo } from 'react'
+import type { ViveroLotDetailView, ViveroLotEventView } from '../types/view-models'
 
-export function useViveroStats(detail: ViveroLotDetailView | null, events: ViveroLotEventView[]) {
-  const now = useNow(); 
-
+// Totales del historial consultado, nunca una reconstrucción del saldo ni supervivencia.
+export function useViveroStats(detail: ViveroLotDetailView | null, events: ViveroLotEventView[], eventsReady = true) {
   return useMemo(() => {
-    if (!detail) {
-      return {
-        plantasIniciales: 0,
-        hasEmbolsado: false,
-        despachadas: 0,
-        mermas: 0,
-        disponibles: 0,
-        vivasHoy: 0,
-        supervivencia: 0,
-        pctDisponibles: 0,
-        pctDespachadas: 0,
-        pctMermas: 0,
-        diasDesdeUltimaMerma: null
-      };
+    const total = (kind: string) => {
+      if (!eventsReady) return null
+      const matching = events.filter(event => event.kind === kind)
+      if (matching.some(event => event.cantidad == null)) return null
+      return matching.reduce((sum, event) => sum + (event.cantidad ?? 0), 0)
     }
-    const plantasIniciales = detail.plantasVivasIniciales ?? 0;
-    const hasEmbolsado = detail.plantasVivasIniciales !== null;
-
-    const despachadas = events
-      .filter(e => e.kind === 'DESPACHO')
-      .reduce((acc, curr) => acc + (curr.cantidad || 0), 0);
-    const mermas = events
-      .filter(e => e.kind === 'MERMA')
-      .reduce((acc, curr) => acc + (curr.cantidad || 0), 0);
-    const disponibles = detail.saldoVivoActual ?? plantasIniciales;
-
-    const vivasHoy = disponibles + despachadas;
-    const supervivencia = plantasIniciales > 0 ? Math.round((vivasHoy / plantasIniciales) * 100) : 0;
-
-    const pctDisponibles = plantasIniciales > 0 ? Math.round((disponibles / plantasIniciales) * 100) : 0;
-    const pctDespachadas = plantasIniciales > 0 ? Math.round((despachadas / plantasIniciales) * 100) : 0;
-    const pctMermas = plantasIniciales > 0 ? Math.round((mermas / plantasIniciales) * 100) : 0;
-
-    const mermasEventos = events.filter(e => e.kind === 'MERMA');
-    const ultimaMerma = mermasEventos.length > 0 ? mermasEventos[mermasEventos.length - 1] : null;
-
-    const diasDesdeUltimaMerma = (now != null && ultimaMerma)
-    ? Math.floor((now - new Date(ultimaMerma.fechaIso).getTime()) / 86_400_000)
-    : null;
-
     return {
-      plantasIniciales,
-      hasEmbolsado,
-      despachadas,
-      mermas,
-      disponibles,
-      vivasHoy,
-      supervivencia,
-      pctDisponibles,
-      pctDespachadas,
-      pctMermas,
-      diasDesdeUltimaMerma,
-    };
-  }, [detail, events, now]);
+      plantasIniciales: detail?.plantasVivasIniciales ?? null,
+      disponibles: detail?.saldoVivoActual ?? null,
+      despachadas: total('DESPACHO'), mermas: total('MERMA'),
+      devueltas: total('DEVOLUCION_PLANTACION'),
+    }
+  }, [detail, events, eventsReady])
 }

@@ -1,3 +1,4 @@
+import type { ViveroId } from '../../../types/contracts'
 import { useEffect, useRef, useState } from 'react'
 import ConfirmDialog from '../../../../../components/ConfirmDialog'
 import Icon from '../../../../../components/Icon'
@@ -27,15 +28,8 @@ import EventoConfirmacionResumen from '../EventoConfirmacionResumen'
 
 type Props = {
   lote: LoteViveroItem
-  /**
-   * Fecha del último EMBOLSADO del lote (de
-   * `lote.ultimo_evento_por_tipo.EMBOLSADO?.fecha_evento` en el detalle).
-   * Backend rechaza mermas con fecha anterior al embolsado (RN-VIV-10), así
-   * que la usamos como límite inferior del rango. Null solo si el lote aún
-   * no fue embolsado — en ese caso el tab MERMA no debería estar disponible;
-   * caemos a `lote.fecha_inicio` como red de seguridad.
-   */
-  fechaEmbolsado: string | null
+  /** Día de la base viva: EMBOLSADO (M1) o INCORPORACION (T5). */
+  fechaBaseViva: string | null
   onCompleted: () => void
 }
 
@@ -58,7 +52,7 @@ function getEtapaLabel(lote: LoteViveroItem): string {
   if (lote.subetapa_actual) {
     return `Adaptabilidad · ${SUBETAPA_LABEL[lote.subetapa_actual]}`
   }
-  return 'Embolsado'
+  return lote.origen?.tipo === 'INCORPORACION' ? 'Incorporación' : 'Base viva registrada'
 }
 
 const FORM_ID = 'vivero-merma-form'
@@ -70,25 +64,23 @@ type MermaDraft = {
   observaciones: string
 }
 
-const draftKey = (loteId: number) => `r3foresta:merma-draft:${loteId}`
+const draftKey = (loteId: string | number) => `r3foresta:merma-draft:${loteId}`
 
-function MermaForm({ lote, fechaEmbolsado, onCompleted }: Props) {
+function MermaForm({ lote, fechaBaseViva, onCompleted }: Props) {
   const { user } = useAuth()
   const authId = user?.auth_id?.trim() || ''
 
   const today = todayLocalISO()
   const tenDaysAgo = addDaysLocalISO(today, -10)
-  // fechaMin = max(today-10, fechaEmbolsado ?? lote.fecha_inicio).
+  // fechaMin = max(today-10, fechaBaseViva ?? lote.fecha_inicio).
   // Backend rechaza si la merma es anterior al embolsado y a su vez exige
   // que no pase de 10 días en el pasado.
-  const fechaPiso = fechaEmbolsado ?? lote.fecha_inicio
+  const fechaPiso = fechaBaseViva ?? lote.fecha_inicio
   const fechaMin = tenDaysAgo > fechaPiso ? tenDaysAgo : fechaPiso
   const fechaMax = today
 
-  // El total embolsado: referencia "100%" para la barra de supervivencia.
-  // Si por algún motivo viene null (no debería ya que MERMA exige embolsado
-  // previo), caemos a saldoVivo para que ratio = 1.
-  const plantasIniciales = lote.plantas_vivas_iniciales ?? lote.saldo_vivo_actual ?? 0
+  // Cantidad inicial histórica; su ausencia no se completa desde el saldo actual.
+  const plantasIniciales = lote.plantas_vivas_iniciales
 
   // saldoOverride: tras una merma exitosa parcial, evitamos un refetch al backend
   // usando `saldo_vivo_despues` que ya viene en la respuesta. Si no hay override,
@@ -235,7 +227,7 @@ function MermaForm({ lote, fechaEmbolsado, onCompleted }: Props) {
     // Paso 1: upload de evidencias. Si falla, NO reintentamos automáticamente
     // (puede ser problema de archivo, no de red). El usuario ve el error y
     // decide manualmente.
-    let evidenciaIds: number[]
+    let evidenciaIds: ViveroId[]
     try {
       const upload = await LotesViveroService.uploadEvidenciasEvento(
         lote.id,
@@ -379,7 +371,7 @@ function MermaForm({ lote, fechaEmbolsado, onCompleted }: Props) {
           </div>
         </div>
 
-        {/* Cantidad perdida + barra de supervivencia dinámica */}
+        {/* Cantidad perdida + barra de stock previsto */}
         <section className="rounded-3xl bg-white px-4 py-4 shadow-soft ring-1 ring-black/5">
           <CantidadStepper
             value={cantidad}
@@ -397,7 +389,7 @@ function MermaForm({ lote, fechaEmbolsado, onCompleted }: Props) {
 
           {/* Barra animada: refleja el saldo *después* de la merma. Sigue la
               regla "efecto/causa" — el stepper modifica, la barra responde. */}
-          {plantasIniciales > 0 && (
+          {plantasIniciales != null && plantasIniciales > 0 && (
             <div className="mt-4">
               <SurvivalBar
                 alive={cantidadValid ? saldoDespues : saldoVivo}
@@ -406,7 +398,7 @@ function MermaForm({ lote, fechaEmbolsado, onCompleted }: Props) {
               />
               <div className="mt-1 flex items-center justify-between text-[11px] font-bold text-brand-500">
                 <span>{cantidadValid ? saldoDespues : saldoVivo} vivas</span>
-                <span>de {plantasIniciales} embolsadas</span>
+                <span>de {plantasIniciales} iniciales registradas</span>
               </div>
             </div>
           )}
@@ -417,7 +409,7 @@ function MermaForm({ lote, fechaEmbolsado, onCompleted }: Props) {
             <div className="mt-3 flex items-start gap-2 rounded-2xl bg-danger-50 px-3 py-2.5 text-xs font-extrabold text-danger-700 ring-1 ring-danger-200">
               <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-danger-600" />
               <span>
-                Esta merma cerrará el lote definitivamente. No quedarán plantas vivas.
+                El backend cerrará el lote si confirma esta merma. No quedarán plantas vivas.
               </span>
             </div>
           )}
@@ -529,7 +521,7 @@ function MermaForm({ lote, fechaEmbolsado, onCompleted }: Props) {
         iconName="info"
         title={
           willCloseLote
-            ? '⚠ Esta merma cerrará el lote definitivamente.'
+            ? '⚠ El backend cerrará el lote si confirma esta merma.'
             : `¿Registrar merma de ${cantidadNum} ${cantidadNum === 1 ? 'planta' : 'plantas'} por ${causaLabel}?`
         }
         description={

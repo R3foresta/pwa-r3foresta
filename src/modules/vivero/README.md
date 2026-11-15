@@ -61,3 +61,13 @@ La recepción total conforme y la validación son una transacción. La mini pant
 INICIO y Material consultan `/api/v1/vivero/origenes?incluir_pendientes=true`. El servidor distingue saldo habilitado por recepción conforme del material pendiente. INICIO añade `incluir_requisitos_inicio=true` para mostrar el requisito faltante y conservar el saldo decimal exacto; ofrece el alta cuando el origen cumple los requisitos previos y envía cantidades en texto decimal. DESECHO exige habilitación física y capacidad de la custodia. Una respuesta vacía y un fallo de consulta tienen estados separados. M3 y plantas externas conservan su alcance separado.
 
 [Contrato vigente](../../../../Backend-r3foresta/docs/t4-recepcion-semillas.md), [verificación frontend y límites](../../../docs/QA_RECEPCION_UNICA.md). Requiere backend/migración 100 y corte coordinado; los informes T4/096/097 anteriores conservan su fecha y no acreditan este contrato.
+
+## T5 · consulta de incorporaciones (iteración 1)
+
+`origen.tipo` discrimina Recolección/incorporación. Tarjetas y ficha muestran modalidad/procedencia y snapshots sin inventar material en proceso o fases. IDs de lote/evento/evidencia/asignación se preservan como cadenas en UI, rutas y payloads; sólo se acepta compatibilidad numérica segura. INICIO conserva cantidad/unidad obligatorias en escritura.
+
+`useViveroDetail` separa lectura de ficha/historial y descarta respuestas de cuenta, token, permiso o lote anteriores. La renovación de firma vuelve a consultar el timeline; no usa rutas genéricas ni persiste URLs firmadas. La galería comparte `EvidencePhoto` para preview, metadatos, error y expiración. Adaptabilidad muestra eventos reales; los totales del historial consultado no reconstruyen saldos.
+
+La ficha M1 legada sólo admite IDs seguros y el DTO M2 no aporta autoría de Recolección para acreditar lectura operativa de un VALIDADOR: el enlace al origen se limita al ADMIN con M1 verificado y ID representable. No afecta los accesos de recepción desde Inicio.
+
+El backend de referencia es `69545ed`, con sus límites documentados; no depender de extensiones futuras del timeline en esta entrega. [QA y reservas para iteraciones 2/3](../../../docs/QA_T5_ITERACION_1.md).

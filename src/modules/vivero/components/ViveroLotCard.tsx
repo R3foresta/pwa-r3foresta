@@ -1,3 +1,4 @@
+import { formatViveroNumber, origenLabel } from '../utils/presentation'
 import type { ViveroLotCardData } from '../types/view-models'
 import SurvivalBar from './SurvivalBar'
 import { DISPATCH_FLOW_LABEL, getDispatchFlowStatus } from '../utils/dispatchFlow'
@@ -8,7 +9,9 @@ import { Badge, Button, statusVariant } from '../../../components/ui'
 // FINALIZADO→neutral), no en un mapa de color local. Ver FRONTEND_UI_STANDARD.md §5.
 const ETAPA_LABEL: Record<string, string> = {
   INICIO: 'Inicio',
-  EMBOLSADO: 'Embolsado',
+  INCORPORACION: 'Incorporación',
+  SIN_REGISTRO: 'Sin registro',
+  EMBOLSADO: 'Base viva registrada',
   ADAPTABILIDAD: 'Adaptabilidad',
   FINALIZADO: 'Finalizado',
 }
@@ -16,7 +19,9 @@ const ETAPA_LABEL: Record<string, string> = {
 function getEtapa(lot: ViveroLotCardData): string {
   if (lot.estadoLote === 'FINALIZADO') return 'FINALIZADO'
   if (lot.subetapaActual !== null) return 'ADAPTABILIDAD'
-  if (lot.plantasVivasIniciales !== null) return 'EMBOLSADO'
+  if (lot.origen?.tipo === 'INCORPORACION') return 'INCORPORACION'
+  if (lot.origen?.tipo === 'RECOLECCION' && lot.plantasVivasIniciales !== null) return 'EMBOLSADO'
+  if (!lot.origen) return 'SIN_REGISTRO'
   return 'INICIO'
 }
 
@@ -42,7 +47,7 @@ function ViveroLotCard({ lot, onClick, cta, compact }: Props) {
         <div className="min-w-0">
           <p className="truncate text-sm font-bold text-brand-700">{lot.especie}</p>
           <p className="text-xs font-semibold text-brand-500">
-            {lot.codigo} · {lot.diasDesdeInicio}d · {lot.vivero}
+            {origenLabel(lot.origen)} · {lot.codigo} · {lot.diasDesdeInicio}d · {lot.vivero}
           </p>
         </div>
         <Badge variant={statusVariant(etapa)} size="sm" className="shrink-0">
@@ -52,8 +57,8 @@ function ViveroLotCard({ lot, onClick, cta, compact }: Props) {
     )
   }
 
-  const entregado = lot.saldoAsignadoSubcampanias ?? 0
-  const enVivero = lot.cantidadActual ?? 0
+  const entregado = lot.saldoAsignadoSubcampanias
+  const enVivero = lot.cantidadActual
   const flowStatus = getDispatchFlowStatus(lot)
   const flowTone =
     flowStatus === 'ASIGNADO_A_DESTINO'
@@ -77,12 +82,12 @@ function ViveroLotCard({ lot, onClick, cta, compact }: Props) {
               <h2 className="truncate text-xl font-extrabold leading-tight text-brand-700">
                 {lot.especie}
               </h2>
-              {entregado > 0 && (
+              {entregado != null && entregado > 0 && (
                 <span className="shrink-0 rounded bg-success-50 px-1.5 py-0.5 text-[9px] font-bold text-success-700 ring-1 ring-success-200">
                   ENTREGADO
                 </span>
               )}
-              {enVivero === 0 && entregado > 0 && (
+              {enVivero === 0 && entregado != null && entregado > 0 && (
                 <span className="shrink-0 rounded bg-danger-50 px-1.5 py-0.5 text-[9px] font-bold text-danger-700 ring-1 ring-danger-200">
                   SIN STOCK EN VIVERO
                 </span>
@@ -92,6 +97,7 @@ function ViveroLotCard({ lot, onClick, cta, compact }: Props) {
               </span>
             </div>
             <p className="text-sm font-semibold text-brand-500">{lot.codigo}</p>
+            <p className="text-xs font-semibold text-neutral-500">{origenLabel(lot.origen)}</p>
           </div>
           <Badge variant={statusVariant(etapa)} className="shrink-0">
             {ETAPA_LABEL[etapa]}
@@ -100,19 +106,19 @@ function ViveroLotCard({ lot, onClick, cta, compact }: Props) {
         </div>
 
         <div className="mt-3 space-y-2">
-          {lot.plantasVivasIniciales !== null ? (
+          {lot.origen?.tipo !== 'RECOLECCION' || lot.plantasVivasIniciales !== null ? (
             <>
               <div className="flex items-end justify-between gap-3">
                 <div>
                   <p className="text-xs font-semibold text-brand-500">
                     <span className="font-extrabold text-brand-700">
-                      {lot.cantidadActual ?? 0}
+                      {formatViveroNumber(lot.cantidadActual)}
                     </span>
                     {' / '}
-                    {lot.plantasVivasIniciales} plantas vivas
+                    {formatViveroNumber(lot.plantasVivasIniciales)} UNIDAD · saldo / inicial
                   </p>
                   <p className="text-[11px] font-semibold text-brand-400">
-                    {lot.vivero} · {lot.diasDesdeInicio}d
+                    {lot.vivero} · {lot.diasDesdeInicio} días desde registro
                   </p>
                 </div>
               </div>
@@ -127,16 +133,16 @@ function ViveroLotCard({ lot, onClick, cta, compact }: Props) {
               <div>
                 <p className="text-xs font-semibold text-brand-500">
                   <span className="font-extrabold text-brand-700">
-                    {lot.cantidadInicial} {lot.unidadMedida}
+                    {formatViveroNumber(lot.cantidadInicial)} {lot.unidadMedida}
                   </span>{' '}
                   en proceso
                 </p>
                 <p className="text-[11px] font-semibold text-brand-400">
-                  {lot.vivero} · {lot.diasDesdeInicio}d
+                  {lot.vivero} · {lot.diasDesdeInicio} días desde registro
                 </p>
               </div>
               <span className="rounded-full bg-warning-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-warning-700 ring-1 ring-warning-200">
-                Pendiente embolsado
+                {lot.origen?.tipo === 'RECOLECCION' ? 'Pendiente embolsado' : 'Base viva no disponible'}
               </span>
             </div>
           )}
@@ -148,12 +154,12 @@ function ViveroLotCard({ lot, onClick, cta, compact }: Props) {
             <div>
               <p className="text-[9px] font-bold uppercase tracking-wider text-brand-600">En vivero</p>
               <p className={`text-xs font-extrabold mt-1 ${enVivero === 0 ? 'text-danger-500' : 'text-success-700'}`}>
-                {enVivero}
+                {formatViveroNumber(enVivero)}
               </p>
             </div>
             <div>
               <p className="text-[9px] font-bold uppercase tracking-wider text-brand-600">Entregado</p>
-              <p className="text-xs font-extrabold text-warning-600 mt-1">{entregado}</p>
+              <p className="text-xs font-extrabold text-warning-600 mt-1">{formatViveroNumber(entregado)}</p>
             </div>
           </div>
         )}

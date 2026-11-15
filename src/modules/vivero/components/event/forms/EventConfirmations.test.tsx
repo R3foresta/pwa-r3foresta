@@ -40,7 +40,7 @@ beforeEach(() => {
 
 describe('confirmación de eventos de vivero', () => {
   it('Adaptabilidad permite cancelar sin mutación ni evidencia, y confirma una sola vez', async () => {
-    render(<AdaptabilidadForm lote={lote} fechaEmbolsado="2020-01-02" onCompleted={vi.fn()} />)
+    render(<AdaptabilidadForm lote={lote} fechaBaseViva="2020-01-02" onCompleted={vi.fn()} />)
     fireEvent.click(screen.getByRole('button', { name: /Media sombra/ }))
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar adaptabilidad' }))
     expect(screen.getByText('No cambia el saldo vivo')).toBeTruthy()

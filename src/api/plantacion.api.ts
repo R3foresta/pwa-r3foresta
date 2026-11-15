@@ -1,3 +1,4 @@
+import { exactId } from '../modules/accesos/accessPolicy'
 import type {
   CancelarSubcampaniaInput,
   CerrarSubcampaniaInput,
@@ -92,9 +93,9 @@ export async function getCampaniaApi(campaniaId: number): Promise<Response> {
   })
 }
 
-export async function listSubcampaniasByCampaniaApi(campaniaId: number): Promise<Response> {
+export async function listSubcampaniasByCampaniaApi(campaniaId: number | string): Promise<Response> {
   return fetch(
-    `${API_BASE_URL}/campanias/${campaniaId}/subcampanias?estados=BORRADOR,ACTIVA,COMPLETADA,FINALIZADA_PARCIAL`,
+    `${API_BASE_URL}/campanias/${exactId(campaniaId)}/subcampanias?estados=BORRADOR,ACTIVA,COMPLETADA,FINALIZADA_PARCIAL`,
     {
       method: 'GET',
       headers: getAuthHeaders({ includeContentType: false }),

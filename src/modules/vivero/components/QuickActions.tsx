@@ -15,11 +15,11 @@ export default function QuickActions({ detail, onJumpEvidencia }: QuickActionsPr
   const { m2 } = useOperationalAccess()
   const canOperate = m2.status === 'ready' && canAtVivero(m2.data, detail.viveroId, 'operar')
   const closed = detail.estadoLote === 'FINALIZADO'
-  const yaEmbolsado = detail.plantasVivasIniciales !== null;
+  const tieneBaseViva = detail.origen?.tipo === 'INCORPORACION' || detail.plantasVivasIniciales !== null;
   const puedeDescartarPreEmbolsado = detail.puedeDescartarPreEmbolsado
 
   const actions = [
-    ...(!yaEmbolsado ? [{
+    ...(!tieneBaseViva && detail.origen?.tipo === 'RECOLECCION' ? [{
       key: 'embolsado',
       label: 'Embolsado',
       icon: 'box' as IconName,
@@ -38,14 +38,14 @@ export default function QuickActions({ detail, onJumpEvidencia }: QuickActionsPr
       label: 'Merma',
       icon: 'loss' as IconName,
       onClick: () => navigate(`/app/vivero/${detail.id}/event/merma`),
-      disabled: detail.plantasVivasIniciales === null
+      disabled: !tieneBaseViva
     },
     {
       key: 'adapt',
       label: 'Subetapa',
       icon: 'sun' as IconName,
       onClick: () => navigate(`/app/vivero/${detail.id}/event/adaptabilidad`),
-      disabled: detail.plantasVivasIniciales === null
+      disabled: !tieneBaseViva
     },
     {
       key: 'asignacion',
@@ -54,14 +54,14 @@ export default function QuickActions({ detail, onJumpEvidencia }: QuickActionsPr
       onClick: () => navigate(`/app/vivero/${detail.id}/event/asignacion`),
       // Entrega física a una subcampaña: requiere embolsado y saldo vivo, igual
       // que Despacho. La elegibilidad final la valida el backend.
-      disabled: (detail.saldoVivoActual ?? detail.plantasVivasIniciales ?? 0) === 0
+      disabled: (detail.saldoVivoActual ?? 0) === 0
     },
     {
       key: 'despacho',
       label: 'Despacho',
       icon: 'truck' as IconName,
       onClick: () => navigate(`/app/vivero/${detail.id}/event/despacho`),
-      disabled: (detail.saldoVivoActual ?? detail.plantasVivasIniciales ?? 0) === 0
+      disabled: (detail.saldoVivoActual ?? 0) === 0
     },
     {
       key: 'foto',
@@ -94,11 +94,11 @@ export default function QuickActions({ detail, onJumpEvidencia }: QuickActionsPr
           <button
             key={a.key}
             type="button"
-            disabled={a.disabled || !canOperate}
+            disabled={a.disabled || (a.key !== 'foto' && !canOperate)}
             onClick={a.onClick}
             className={`flex flex-col items-center justify-center gap-1.5 rounded-2xl bg-white px-2 py-3 shadow-soft ring-1 ring-black/5 transition-all active:scale-[0.97] ${
-              a.disabled 
-                ? 'opacity-40 cursor-not-allowed bg-neutral-50 ring-transparent' 
+              a.disabled
+                ? 'opacity-40 cursor-not-allowed bg-neutral-50 ring-transparent'
                 : 'hover:ring-brand-300'
             }`}
           >

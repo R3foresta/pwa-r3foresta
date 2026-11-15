@@ -1,81 +1,49 @@
+import { useNavigate } from 'react-router-dom'
+import { Button } from '../../../components/ui'
 import { useOperationalAccess } from '../../accesos/capabilitiesContext'
-import { canAtVivero } from '../../accesos/accessPolicy'
-import { useNavigate } from 'react-router-dom';
-import Icon from '../../../components/Icon';
-import { Button } from '../../../components/ui';
-import type { ViveroLotDetailView } from '../types/view-models';
-import { formatUnidadCanonicaDisplay } from '../../../utils/recoleccionUnidad'
+import type { ViveroLotDetailView } from '../types/view-models'
+import { formatViveroDate, formatViveroNumber, origenLabel } from '../utils/presentation'
 
-interface OrigenCardProps {
-  detail: ViveroLotDetailView;
-}
-
-export default function OrigenCard({ detail }: OrigenCardProps) {
-  const navigate = useNavigate();
-  const { m1, m2 } = useOperationalAccess()
-  const canOpenOrigin = m1.status === 'ready' && m1.data?.origen === 'ADMIN' || m2.status === 'ready' && canAtVivero(m2.data, detail.viveroId, 'recibir_y_validar')
-  const formatTipoMaterial = (tipo: string) => tipo ? tipo.charAt(0).toUpperCase() + tipo.slice(1).toLowerCase().replace(/_/g, ' ') : 'No especificado';
-  const formatFecha = (fechaStr: string | null) => fechaStr ? new Date(fechaStr).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/D';
-
+export default function OrigenCard({ detail }: { detail: ViveroLotDetailView }) {
+  const navigate = useNavigate()
+  const { m1 } = useOperationalAccess()
+  const origen = detail.origen
+  // La ficha M1 legada aún sólo admite IDs numéricos seguros. El DTO no entrega
+  // autoría para decidir si un VALIDADOR puede abrir la recepción ajena.
+  const canOpenOrigin = origen?.tipo === 'RECOLECCION' && detail.recoleccionId &&
+    BigInt(detail.recoleccionId) <= BigInt(Number.MAX_SAFE_INTEGER) &&
+    m1.status === 'ready' && m1.data?.origen === 'ADMIN'
+  const rows = [
+    ['Nombre registrado', detail.nombreComercial], ['Nombre científico registrado', detail.nombreCientifico],
+    ['Variedad registrada', detail.variedad ?? 'No registrada'], ['Responsable inicial registrado', detail.responsableNombre],
+    ['Vivero', detail.viveroNombre],
+    ...(origen?.tipo === 'INCORPORACION' ? [
+      ['Fecha de recepción o conteo', formatViveroDate(origen.fecha_evento)],
+      ['Cantidad incorporada', `${formatViveroNumber(origen.cantidad)} UNIDAD`],
+      ['Tercero declarado', origen.tercero_origen ?? 'No registrado'],
+      ['Referencia documental', origen.referencia_documental ?? 'No registrada'],
+      ['Observaciones de ingreso', origen.observaciones ?? 'No registradas'],
+    ] : origen?.tipo === 'RECOLECCION' ? [
+      ['Recolección', detail.recoleccionCodigo ?? `ID ${detail.recoleccionId}`],
+      ['Fecha de recolección', formatViveroDate(detail.recoleccionFecha)],
+      ['Comunidad registrada', detail.nombreComunidadOrigen ?? 'No registrada'],
+      ['Tipo de material', detail.recoleccionTipoMaterial ?? 'No registrado'],
+      ['Material consumido en INICIO', `${formatViveroNumber(detail.cantidadInicialEnProceso)} ${detail.unidadMedidaInicial ?? ''}`],
+    ] : []),
+  ]
   return (
-    <section className="rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5 hover:shadow-md transition-all">
-      <header className="flex items-center justify-between">
-        <p className="text-[10.5px] font-extrabold uppercase tracking-[0.18em] text-brand-500">
-          Origen del lote
-        </p>
-        {canOpenOrigin && <Button
-          variant="secondary"
-          size="sm"
-          rightIcon="chevron-right"
-          onClick={() => navigate(m1.data?.origen === 'ADMIN' ? `/app/collections/${detail.recoleccionId}` : `/app/collections/validate/${detail.recoleccionId}`)}
-        >
-          Ver ficha
-        </Button>}
+    <section className="rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
+      <header className="flex items-center justify-between gap-2">
+        <h3 className="text-sm font-extrabold text-brand-800">Origen del lote</h3>
+        {canOpenOrigin && <Button variant="secondary" size="sm" rightIcon="chevron-right" onClick={() => navigate(`/app/collections/${detail.recoleccionId}`)}>Ver ficha</Button>}
       </header>
-
-      <div className="mt-2 flex items-start gap-3">
-        <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-success-50 text-success-700 ring-1 ring-success-100">
-          <Icon name="leaf" className="h-6 w-6" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-lg font-extrabold text-brand-800 leading-tight">
-            {detail.recoleccionCodigo}
-          </p>
-          <p className="text-sm font-bold text-brand-700 truncate">
-            {detail.nombreComunidadOrigen || 'Comunidad no registrada'}
-          </p>
-          <p className="mt-0.5 flex items-center gap-2 text-[11px] font-semibold text-neutral-500">
-            <span className="inline-flex items-center gap-1">
-              <Icon name="date" className="h-3.5 w-3.5 text-neutral-400" />
-              {formatFecha(detail.recoleccionFecha)}
-            </span>
-            <span className="h-1 w-1 rounded-full bg-neutral-300" />
-            <span className="inline-flex items-center gap-1">
-              <Icon name="user" className="h-3.5 w-3.5 text-neutral-400" />
-              {detail.responsableNombre}
-            </span>
-          </p>
-        </div>
-      </div>
-
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        <div className="rounded-2xl bg-success-50 px-3 py-2.5 ring-1 ring-success-100">
-          <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-success-700">
-            Tipo material
-          </p>
-          <p className="mt-0.5 text-sm font-extrabold text-success-800">
-            {formatTipoMaterial(detail.recoleccionTipoMaterial)}
-          </p>
-        </div>
-        <div className="rounded-2xl bg-white px-3 py-2.5 ring-1 ring-neutral-200">
-          <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-neutral-500">
-            Cantidad consumida
-          </p>
-          <p className="mt-0.5 text-sm font-extrabold text-brand-800">
-            {detail.cantidadInicialEnProceso} {formatUnidadCanonicaDisplay(detail.unidadMedidaInicial)}
-          </p>
-        </div>
-      </div>
+      <p className="mt-2 font-bold text-brand-700">{origenLabel(origen)}</p>
+      {origen?.tipo === 'INCORPORACION' && <p className="mt-2 text-xs text-neutral-600">
+        {origen.historia_previa_no_registrada ? 'Historia previa no registrada. ' : ''}La procedencia declarada no acredita el origen biológico ni la supervivencia anterior.
+      </p>}
+      <dl className="mt-3 space-y-2">
+        {rows.map(([label, value]) => <div key={label} className="text-xs"><dt className="font-semibold text-neutral-500">{label}</dt><dd className="break-words text-brand-900">{value}</dd></div>)}
+      </dl>
     </section>
-  );
+  )
 }

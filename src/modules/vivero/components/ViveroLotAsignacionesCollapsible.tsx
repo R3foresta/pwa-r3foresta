@@ -6,14 +6,14 @@ import {
 } from '../../../services/lotes-vivero.service'
 
 type Props = {
-  loteId: number
-  cantidadAsignacionesActivas?: number
+  loteId: string
+  cantidadAsignacionesActivas?: number | null
   className?: string
 }
 
 export default function ViveroLotAsignacionesCollapsible({
   loteId,
-  cantidadAsignacionesActivas = 0,
+  cantidadAsignacionesActivas,
   className,
 }: Props) {
   const [showAsignaciones, setShowAsignaciones] = useState(false)
@@ -25,7 +25,7 @@ export default function ViveroLotAsignacionesCollapsible({
     const nextOpen = !showAsignaciones
     setShowAsignaciones(nextOpen)
 
-    if (nextOpen && cantidadAsignacionesActivas > 0 && asignaciones.length === 0 && loteId) {
+    if (nextOpen && cantidadAsignacionesActivas !== 0 && asignaciones.length === 0 && loteId) {
       setLoadingAsig(true)
       setLoadError(null)
       LotesViveroService.listAsignaciones(loteId)
@@ -51,7 +51,7 @@ export default function ViveroLotAsignacionesCollapsible({
       >
         <div className="flex items-center gap-1.5">
           <Icon name="package" className="h-4 w-4 text-neutral-400" />
-          <span className="text-sm font-extrabold text-brand-800">Asignaciones activas ({cantidadAsignacionesActivas})</span>
+          <span className="text-sm font-extrabold text-brand-800">Asignaciones activas ({cantidadAsignacionesActivas ?? 'No disponible'})</span>
         </div>
         <Icon
           name="chevron-down"

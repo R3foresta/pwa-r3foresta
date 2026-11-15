@@ -1,5 +1,6 @@
+import { formatViveroDate, formatViveroNumber } from '../utils/presentation'
 import { useM2Logistics } from '../hooks/useM2Logistics'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Icon from '../../../components/Icon'
 import { Button } from '../../../components/ui'
 import { useAuth } from '../../../contexts/AuthContext'
@@ -44,13 +45,7 @@ const MOTIVOS_DEVOLUCION = [
 
 const DEVOLUCION_FORM_ID = 'vivero-devolucion-form'
 
-function formatDate(dateStr?: string | null) {
-  if (!dateStr) return 'Sin fecha'
-  const date = new Date(dateStr)
-  if (Number.isNaN(date.getTime())) return dateStr
-  const months = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC']
-  return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`
-}
+const formatDate = formatViveroDate
 
 function numberOrZero(value?: number | null) {
   return Number.isFinite(value) ? Number(value) : 0
@@ -61,16 +56,16 @@ function sortAsignacionesNewestFirst(items: AsignacionViveroResumen[]) {
     const dateA = a.fecha_asignacion ? new Date(a.fecha_asignacion).getTime() : 0
     const dateB = b.fecha_asignacion ? new Date(b.fecha_asignacion).getTime() : 0
     if (dateA !== dateB) return dateB - dateA
-    return Number(b.id) - Number(a.id)
+    return BigInt(a.id) === BigInt(b.id) ? 0 : BigInt(a.id) > BigInt(b.id) ? -1 : 1
   })
 }
 
-function AssignmentMetric({ label, value, danger = false }: { label: string; value: number; danger?: boolean }) {
+function AssignmentMetric({ label, value, danger = false }: { label: string; value: number | null | undefined; danger?: boolean }) {
   return (
     <div className="rounded-2xl bg-neutral-50 px-2.5 py-2 text-center ring-1 ring-neutral-100">
       <p className="text-[8px] font-black uppercase tracking-wider text-neutral-400">{label}</p>
       <p className={`mt-0.5 text-sm font-extrabold ${danger ? 'text-danger-600' : 'text-brand-700'}`}>
-        {value}
+        {formatViveroNumber(value)}
       </p>
     </div>
   )
@@ -246,7 +241,7 @@ function DevolucionDialog({
             <p className="text-[9px] font-black uppercase tracking-wider text-neutral-400">
               Disponible para devolver
             </p>
-            <p className="mt-0.5 text-xl font-extrabold text-brand-800">{maxDevolver}</p>
+            <p className="mt-0.5 text-xl font-extrabold text-brand-800">{formatViveroNumber(asignacion.saldo_asignado_disponible)}</p>
           </div>
 
           <CantidadStepper
@@ -361,16 +356,10 @@ function ViveroLotAsignacionesTab({ lote, onLoteChanged }: Props) {
   const [devolucionTarget, setDevolucionTarget] = useState<AsignacionViveroResumen | null>(null)
   const [devolucionSuccess, setDevolucionSuccess] = useState<DevolucionSuccess | null>(null)
 
-  const saldoVivo = lote.saldoVivoActual ?? 0
+  const saldoVivo = lote.saldoVivoActual
   const flowStatus = getDispatchFlowStatus(lote)
 
-  // Entregado a subcampanias (informativo). Preferimos el agregado del backend;
-  // si no viene, sumamos lo asignado de las asignaciones activas como respaldo.
-  const entregadoLocal = useMemo(
-    () => asignaciones.reduce((total, asig) => total + numberOrZero(asig.cantidad_asignada), 0),
-    [asignaciones],
-  )
-  const entregadoSubcampanias = lote.saldoAsignadoSubcampanias ?? entregadoLocal
+  const entregadoSubcampanias = lote.saldoAsignadoSubcampanias
 
   const loadAsignaciones = () => {
     setLoading(true)
@@ -421,13 +410,13 @@ function ViveroLotAsignacionesTab({ lote, onLoteChanged }: Props) {
         <div className="mt-4 grid grid-cols-2 gap-2">
           <div className="rounded-2xl bg-success-50 px-3 py-3 ring-1 ring-success-100">
             <p className="text-[9px] font-black uppercase tracking-wider text-success-700">En vivero</p>
-            <p className="mt-1 text-xl font-extrabold text-success-800">{saldoVivo}</p>
+            <p className="mt-1 text-xl font-extrabold text-success-800">{formatViveroNumber(saldoVivo)}</p>
           </div>
           <div className="rounded-2xl bg-neutral-50 px-3 py-3 ring-1 ring-neutral-100">
             <p className="text-[9px] font-black uppercase tracking-wider text-neutral-500">
               Entregado a subcampanias
             </p>
-            <p className="mt-1 text-xl font-extrabold text-brand-800">{entregadoSubcampanias}</p>
+            <p className="mt-1 text-xl font-extrabold text-brand-800">{formatViveroNumber(entregadoSubcampanias)}</p>
           </div>
         </div>
       </section>
@@ -450,8 +439,9 @@ function ViveroLotAsignacionesTab({ lote, onLoteChanged }: Props) {
       ) : (
         <div className="space-y-3">
           {asignaciones.map((asig) => {
-            const saldoDisponible = numberOrZero(asig.saldo_asignado_disponible)
+            const saldoDisponible = asig.saldo_asignado_disponible
             const isExhausted = saldoDisponible === 0
+            const saldoDesconocido = saldoDisponible == null
             const hasMerma = numberOrZero(asig.cantidad_mermada) > 0
             const isReposicion = asig.proposito === 'REPOSICION'
 
@@ -489,7 +479,7 @@ function ViveroLotAsignacionesTab({ lote, onLoteChanged }: Props) {
                   </div>
                   <div className="text-right">
                     <p className="text-[9px] font-black uppercase tracking-wider text-neutral-400">Disponible</p>
-                    <p className="text-2xl font-extrabold text-success-700">{saldoDisponible}</p>
+                    <p className="text-2xl font-extrabold text-success-700">{formatViveroNumber(saldoDisponible)}</p>
                   </div>
                 </div>
 
@@ -499,10 +489,10 @@ function ViveroLotAsignacionesTab({ lote, onLoteChanged }: Props) {
                 </p>
 
                 <div className="mt-4 grid grid-cols-4 gap-2">
-                  <AssignmentMetric label="Entregado" value={numberOrZero(asig.cantidad_asignada)} />
-                  <AssignmentMetric label="Consumido" value={numberOrZero(asig.cantidad_consumida)} />
-                  <AssignmentMetric label="Devuelto" value={numberOrZero(asig.cantidad_devuelta)} />
-                  <AssignmentMetric label="Mermado" value={numberOrZero(asig.cantidad_mermada)} danger={hasMerma} />
+                  <AssignmentMetric label="Entregado" value={asig.cantidad_asignada} />
+                  <AssignmentMetric label="Consumido" value={asig.cantidad_consumida} />
+                  <AssignmentMetric label="Devuelto" value={asig.cantidad_devuelta} />
+                  <AssignmentMetric label="Mermado" value={asig.cantidad_mermada} danger={hasMerma} />
                 </div>
 
                 {/* Devolucion fisica: sube el saldo vivo del lote y puede reabrir
@@ -510,11 +500,11 @@ function ViveroLotAsignacionesTab({ lote, onLoteChanged }: Props) {
                     saldo_asignado_disponible > 0 (ya no depende de lo consumido). */}
                 <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-neutral-50 px-3 py-2.5 ring-1 ring-neutral-100">
                   <p className="text-[11px] font-bold leading-tight text-neutral-500">
-                    {isExhausted
+                    {saldoDesconocido ? 'Saldo de la asignación no disponible.' : isExhausted
                       ? 'Sin saldo disponible para devolver.'
                       : `Podes devolver hasta ${saldoDisponible} plantas al vivero.`}
                   </p>
-                  <DevolverButton lote={lote} asignacion={asig} exhausted={isExhausted} onClick={() => setDevolucionTarget(asig)} />
+                  <DevolverButton lote={lote} asignacion={asig} exhausted={isExhausted || saldoDesconocido} onClick={() => setDevolucionTarget(asig)} />
                 </div>
               </article>
             )

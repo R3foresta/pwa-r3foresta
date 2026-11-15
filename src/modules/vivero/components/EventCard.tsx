@@ -1,19 +1,24 @@
+import EvidencePhoto from './EvidencePhoto'
+import { formatViveroNumber, incorporacionLabel } from '../utils/presentation'
 import Icon from '../../../components/Icon'
 import type { IconName } from '../../../components/Icon'
 import { formatUnidadCanonicaDisplay } from '../../../utils/recoleccionUnidad'
-import type { ViveroLotEventView, ViveroEventPhoto } from '../types/view-models'
+import type { ViveroLotEventView } from '../types/view-models'
 
 interface EventCardProps {
   event: ViveroLotEventView
   isLast: boolean
+  onRenewPhotos: () => void
   onOpenGallery?: (event: ViveroLotEventView) => void
 }
 
-export default function EventCard({ event, isLast, onOpenGallery }: EventCardProps) {
+export default function EventCard({ event, isLast, onOpenGallery, onRenewPhotos }: EventCardProps) {
   // Theming de mini-viz del timeline (gotcha §6.2): ícono + tinte por tipo de evento.
   // Codifica el tipo de evento (dato de la visualización), no una píldora de estado de
   // dominio; se mantiene inline con tokens migrados y no deriva de status.ts.
   const configMap: Record<string, { icon: IconName; bg: string; text: string; ring: string }> = {
+    INCORPORACION: { icon: 'leaf', bg: 'bg-success-50', text: 'text-success-700', ring: 'ring-success-200' },
+    DEVOLUCION_PLANTACION: { icon: 'package', bg: 'bg-info-50', text: 'text-info-700', ring: 'ring-info-200' },
     INICIO: { icon: 'leaf', bg: 'bg-success-50', text: 'text-success-700', ring: 'ring-success-200' },
     EMBOLSADO: { icon: 'box', bg: 'bg-brand-50', text: 'text-brand-950', ring: 'ring-brand-950/10' },
     DESCARTE_PRE_EMBOLSADO: { icon: 'trash', bg: 'bg-danger-50/80', text: 'text-danger-700', ring: 'ring-danger-200' },
@@ -23,17 +28,10 @@ export default function EventCard({ event, isLast, onOpenGallery }: EventCardPro
     CIERRE_AUTOMATICO: { icon: 'flag', bg: 'bg-neutral-50', text: 'text-neutral-700', ring: 'ring-neutral-200' },
   }
 
-  const theme = configMap[event.kind] || configMap.INICIO
+  const theme = configMap[event.kind] || { icon: 'info' as IconName, bg: 'bg-neutral-50', text: 'text-neutral-700', ring: 'ring-neutral-200' }
   const causaLabel = event.causa?.toLowerCase().replaceAll('_', ' ') || 'No especificada'
   const unidadLabel = formatUnidadCanonicaDisplay(event.unidadMedidaEvento, event.cantidad ?? undefined)
 
-  const imagenes = event.fotos && event.fotos.length > 0
-  ? event.fotos.map((f: ViveroEventPhoto) => ({ 
-      id: f.id, 
-      url: f.url, 
-      titulo: f.titulo 
-    }))
-  : []
 
   return (
     <div className="flex gap-x-3">
@@ -48,14 +46,14 @@ export default function EventCard({ event, isLast, onOpenGallery }: EventCardPro
       {/* Columna Derecha: Tarjeta Principal */}
       <div className="min-w-0 flex-1 pb-6">
         <div className="bg-white rounded-3xl ring-1 ring-neutral-100 p-4 shadow-sm">
-          
+
           {/* Header Común */}
           <div className="flex items-center gap-2 mb-2">
             <span className={`inline-flex items-center rounded-full px-3 py-1 text-[9px] font-black tracking-widest uppercase ring-1 ring-inset ${theme.text} ${theme.ring} bg-white`}>
               {event.kind?.replaceAll('_', ' ')}
             </span>
             <p className="text-[10px] font-extrabold text-neutral-400 uppercase tracking-widest">
-              {event.fecha} 
+              {event.fecha}
               {event.hora && (
                 <>
                   <span className="h-1 w-1 rounded-full bg-neutral-300 inline-block" />
@@ -64,7 +62,7 @@ export default function EventCard({ event, isLast, onOpenGallery }: EventCardPro
               )}
             </p>
           </div>
-          
+
           <h3 className="text-xl font-extrabold text-brand-950 leading-tight">
             {event.label}
           </h3>
@@ -73,6 +71,22 @@ export default function EventCard({ event, isLast, onOpenGallery }: EventCardPro
             {event.responsableNombre}
           </p>
 
+          {!event.responsableEsSnapshot && <p className="mt-1 text-[10px] text-neutral-500">Nombre de cuenta consultado; el contrato no entrega un snapshot histórico para este evento.</p>}
+          {!event.conocido && <p className="mt-3 text-xs text-neutral-600">Tipo recibido sin presentación específica. Se conserva el evento en el historial.</p>}
+          {event.kind === 'INCORPORACION' && <div className="mt-4 rounded-2xl bg-success-50 p-3 text-brand-900">
+            <p className="text-xs font-bold">Ingreso de plantas vivas</p>
+            <p className="mt-1 text-2xl font-black">{formatViveroNumber(event.cantidad)} UNIDAD</p>
+            <p className="mt-1 text-xs">{incorporacionLabel(event.procedencia?.modalidad ?? null, event.procedencia?.procedencia ?? null)}</p>
+            {event.procedencia?.modalidad === 'SALDO_INICIAL' && <p className="mt-2 text-xs">Historia previa no registrada.</p>}
+            {event.procedencia?.tercero && <p className="mt-2 text-xs">Tercero declarado: {event.procedencia.tercero}</p>}
+            {event.procedencia?.referencia && <p className="mt-1 text-xs">Referencia: {event.procedencia.referencia}</p>}
+          </div>}
+          {event.kind === 'DEVOLUCION_PLANTACION' && <div className="mt-4 rounded-2xl bg-info-50 p-3 text-info-900">
+            <p className="text-xs font-bold">Devolución al lote original</p>
+            <p className="mt-1 text-2xl font-black">{formatViveroNumber(event.cantidad)} UNIDAD</p>
+            <p className="mt-1 text-xs">Repone el lote original; no es una nueva adquisición.</p>
+          </div>}
+          {event.kind === 'CIERRE_AUTOMATICO' && <p className="mt-3 text-sm text-neutral-600">Motivo: {event.causa?.replaceAll('_', ' ') ?? 'No registrado'}</p>}
           {/* 1. Diseño Específico para INICIO */}
           {event.kind === 'INICIO' && (
             <div className="mt-4 space-y-3">
@@ -86,7 +100,7 @@ export default function EventCard({ event, isLast, onOpenGallery }: EventCardPro
                 <div>
                   <p className="text-[9px] font-black uppercase tracking-widest text-brand-950 mb-1">Sustrato</p>
                   <p className="text-sm font-bold text-brand-950 leading-tight">
-                    {event.sustrato || 'Sustrato A · estándar'}
+                    {event.sustrato || 'No registrado'}
                   </p>
                 </div>
               </div>
@@ -101,7 +115,7 @@ export default function EventCard({ event, isLast, onOpenGallery }: EventCardPro
           {event.kind === 'EMBOLSADO' && (
             <div className="mt-4 rounded-2xl bg-brand-50 p-3 ring-1 ring-inset ring-brand-100">
               <p className="text-[9px] font-black uppercase tracking-widest text-brand-700">Nacen las plantas vivas</p>
-              <p className="mt-1 text-3xl font-black tracking-tight text-brand-950">{event.cantidad || 0}</p>
+              <p className="mt-1 text-3xl font-black tracking-tight text-brand-950">{formatViveroNumber(event.cantidad)}</p>
               <p className="mt-1 text-[9px] font-bold uppercase tracking-widest text-brand-950/70">Unidad · saldo inicial del lote</p>
             </div>
           )}
@@ -111,7 +125,7 @@ export default function EventCard({ event, isLast, onOpenGallery }: EventCardPro
               <div className="flex gap-2">
                 <div className={`flex-1 rounded-2xl p-3 ${theme.bg} ring-1 ring-inset ${theme.ring}`}>
                   <p className={`text-[9px] font-black uppercase tracking-widest ${theme.text}`}>Material descartado</p>
-                  <p className={`mt-0.5 text-3xl font-black tracking-tight ${theme.text}`}>{event.cantidad || 0}</p>
+                  <p className={`mt-0.5 text-3xl font-black tracking-tight ${theme.text}`}>{formatViveroNumber(event.cantidad)}</p>
                   <p className={`mt-0.5 text-[9px] font-bold uppercase tracking-widest ${theme.text}/80`}>{unidadLabel}</p>
                 </div>
                 <div className="flex-1 rounded-2xl bg-white p-3 ring-1 ring-inset ring-neutral-200">
@@ -138,7 +152,7 @@ export default function EventCard({ event, isLast, onOpenGallery }: EventCardPro
                 </div>
                 <div>
                   <p className={`text-[9px] font-black uppercase tracking-widest ${theme.text}`}>Nueva Subetapa</p>
-                  <p className={`text-base font-black ${theme.text}`}>{event.subetapa?.replace('_', ' ') || 'SOL DIRECTO'}</p>
+                  <p className={`text-base font-black ${theme.text}`}>{event.subetapa?.replaceAll('_', ' ') || 'No registrada'}</p>
                 </div>
               </div>
               <span className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[10px] font-extrabold text-neutral-500 ring-1 ring-neutral-200 shadow-sm">
@@ -153,7 +167,7 @@ export default function EventCard({ event, isLast, onOpenGallery }: EventCardPro
               <div className="flex gap-2">
                 <div className={`flex-1 rounded-2xl p-3 ${theme.bg} ring-1 ring-inset ${theme.ring}`}>
                   <p className={`text-[9px] font-black uppercase tracking-widest ${theme.text}`}>Pérdida</p>
-                  <p className={`mt-0.5 text-3xl font-black tracking-tight ${theme.text}`}>-{event.cantidad || 0}</p>
+                  <p className={`mt-0.5 text-3xl font-black tracking-tight ${theme.text}`}>-{formatViveroNumber(event.cantidad)}</p>
                   <p className={`mt-0.5 text-[9px] font-bold uppercase tracking-widest ${theme.text}/80`}>Unidad</p>
                 </div>
                 <div className="flex-1 rounded-2xl p-3 bg-white ring-1 ring-inset ring-neutral-200">
@@ -171,12 +185,12 @@ export default function EventCard({ event, isLast, onOpenGallery }: EventCardPro
               <div className="flex gap-2">
                 <div className={`flex-1 rounded-2xl p-3 ${theme.bg} ring-1 ring-inset ${theme.ring}`}>
                   <p className={`text-[9px] font-black uppercase tracking-widest ${theme.text}`}>Despachadas</p>
-                  <p className={`mt-0.5 text-3xl font-black tracking-tight ${theme.text}`}>{event.cantidad || 0}</p>
+                  <p className={`mt-0.5 text-3xl font-black tracking-tight ${theme.text}`}>{formatViveroNumber(event.cantidad)}</p>
                   <p className={`mt-0.5 text-[9px] font-bold uppercase tracking-widest ${theme.text}/80`}>Unidad</p>
                 </div>
                 <div className="flex-1 rounded-2xl p-3 bg-white ring-1 ring-inset ring-neutral-200">
                   <p className="text-[9px] font-black uppercase tracking-widest text-neutral-500">Destino</p>
-                  <p className="mt-0.5 text-sm font-black text-brand-950 leading-tight">{event.destino || 'Plantación propia'}</p>
+                  <p className="mt-0.5 text-sm font-black text-brand-950 leading-tight">{event.destino?.replaceAll('_', ' ') || 'No registrado'}</p>
                 </div>
               </div>
               <div className="flex items-center justify-between rounded-xl bg-white px-3 py-2 ring-1 ring-neutral-200">
@@ -193,47 +207,29 @@ export default function EventCard({ event, isLast, onOpenGallery }: EventCardPro
           )}
 
           {/* Componente "Saldo Antes -> Saldo Después" (Reutilizable para Merma y Despacho) */}
-          {event.saldoAntes != null && event.saldoDespues != null && (
+          {(event.saldoAntes != null || event.saldoDespues != null) && (
             <div className="mt-3 flex items-center justify-between rounded-2xl bg-white px-4 py-3 ring-1 ring-neutral-200">
               <div className="text-center flex-1">
                 <p className="text-[9px] font-black uppercase tracking-widest text-neutral-400 mb-0.5">Saldo Antes</p>
-                <p className="text-xl font-black text-neutral-500">{event.saldoAntes}</p>
+                <p className="text-xl font-black text-neutral-500">{formatViveroNumber(event.saldoAntes)}</p>
               </div>
               <div className="px-2">
-                <Icon 
-                  name="arrow-down" 
-                  className={`h-4 w-4 ${event.kind === 'MERMA' ? 'text-danger-500' : 'text-info-500'}`} 
+                <Icon
+                  name="arrow-down"
+                  className={`h-4 w-4 ${event.kind === 'MERMA' ? 'text-danger-500' : 'text-info-500'}`}
                 />
               </div>
               <div className="text-center flex-1">
                 <p className="text-[9px] font-black uppercase tracking-widest text-brand-950 mb-0.5">Saldo Después</p>
-                <p className="text-xl font-black text-brand-950">{event.saldoDespues}</p>
+                <p className="text-xl font-black text-brand-950">{formatViveroNumber(event.saldoDespues)}</p>
               </div>
             </div>
           )}
 
-          {/* Galería de Evidencia Fotográfica */}
-          {imagenes.length > 0 && (
-            <button 
-              onClick={() => onOpenGallery && onOpenGallery(event)}
-              className="mt-3 w-full flex items-center gap-3 rounded-2xl bg-white p-2 ring-1 ring-neutral-200 hover:bg-neutral-50 transition text-left"
-            >
-              <div className="relative h-[60px] w-[88px] flex-shrink-0 overflow-hidden rounded-xl bg-neutral-100">
-                <img src={imagenes[0].url} alt={imagenes[0].titulo} className="h-full w-full object-cover" />
-                {imagenes.length > 1 && (
-                  <span className="absolute bottom-1 right-1 rounded-md bg-white/90 px-1.5 py-0.5 text-[10px] font-black text-brand-950 shadow-sm backdrop-blur-sm">
-                    +{imagenes.length - 1}
-                  </span>
-                )}
-              </div>
-              <div className="min-w-0 flex-1 py-1">
-                <p className={`text-[9px] font-black uppercase tracking-widest ${theme.text}`}>Evidencia</p>
-                <p className="truncate text-sm font-bold text-brand-950">{imagenes[0].titulo || 'Registro fotográfico'}</p>
-                <p className="mt-0.5 text-[11px] font-medium text-neutral-500">{imagenes.length} fotos · Toca para ver</p>
-              </div>
-              <Icon name="chevron-right" className="mr-2 h-4 w-4 flex-shrink-0 text-neutral-400" />
-            </button>
-          )}
+          {(event.fotos ?? []).length > 0 && <div className="mt-3 space-y-2">
+            <p className="text-xs font-bold text-brand-800">Evidencias · {event.fotos!.length}</p>
+            <EvidencePhoto key={`${event.fotos![0].url}-${event.fotos![0].expiraEn}`} photo={event.fotos![0]} onOpen={() => onOpenGallery?.(event)} onRenew={onRenewPhotos} />
+          </div>}
 
           {/* Observación Inferior */}
           {event.observacion && (

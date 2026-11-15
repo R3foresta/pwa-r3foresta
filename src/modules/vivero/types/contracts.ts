@@ -1,4 +1,26 @@
+// JSON legado sólo admite números seguros; los modelos de UI normalizan a string.
+export type ViveroId = string | number
+
+export type ModalidadIncorporacion = 'RECEPCION' | 'SALDO_INICIAL'
+export type ProcedenciaIncorporacion = 'COMPRA' | 'DONACION' | 'PRODUCCION_PROPIA' | 'DESCONOCIDA'
+export type OrigenLoteVivero =
+  | { tipo: 'RECOLECCION'; recoleccion_id: ViveroId }
+  | {
+      tipo: 'INCORPORACION'
+      evento_id: ViveroId
+      modalidad: ModalidadIncorporacion
+      procedencia: ProcedenciaIncorporacion
+      fecha_evento: string
+      cantidad: number
+      tercero_origen: string | null
+      referencia_documental: string | null
+      observaciones: string | null
+      historia_previa_no_registrada: boolean
+    }
+
 export type TipoEventoVivero =
+  | 'INCORPORACION'
+  | 'DEVOLUCION_PLANTACION'
   | 'INICIO'
   | 'EMBOLSADO'
   | 'DESCARTE_PRE_EMBOLSADO'
@@ -39,13 +61,13 @@ export interface ApiPagination {
 }
 
 export interface LoteViveroViveroRef {
-  id: number | string
+  id: ViveroId
   codigo: string
   nombre: string
 }
 
 export interface LoteViveroRecoleccionRef {
-  id: number
+  id: ViveroId
   codigo_trazabilidad: string
   fecha: string
   tipo_material: TipoMaterialVivero
@@ -56,7 +78,7 @@ export interface LoteViveroRecoleccionRef {
 }
 
 export interface LoteViveroPlantaRef {
-  id: number
+  id: ViveroId
   especie: string | null
   nombre_cientifico: string | null
   nombre_comun_principal: string | null
@@ -65,7 +87,7 @@ export interface LoteViveroPlantaRef {
 }
 
 export interface LoteViveroResponsableRef {
-  id: number
+  id: ViveroId
   nombre: string | null
   apellido: string | null
   username: string | null
@@ -73,31 +95,32 @@ export interface LoteViveroResponsableRef {
 }
 
 export interface LoteViveroItem {
-  id: number
+  id: ViveroId
   codigo_trazabilidad: string
   estado_lote: EstadoLoteVivero
   motivo_cierre: MotivoCierreVivero | null
-  recoleccion_id: number
-  planta_id: number
-  vivero_id: number | string
-  responsable_id: number
-  nombre_cientifico_snapshot: string
-  nombre_comercial_snapshot: string
-  tipo_material_snapshot: TipoMaterialVivero
+  origen?: OrigenLoteVivero | null
+  recoleccion_id: ViveroId | null
+  planta_id: ViveroId
+  vivero_id: ViveroId
+  responsable_id: ViveroId
+  nombre_cientifico_snapshot: string | null
+  nombre_comercial_snapshot: string | null
+  tipo_material_snapshot: TipoMaterialVivero | null
   variedad_snapshot: string | null
   nombre_comunidad_origen_snapshot: string | null
   nombre_responsable_snapshot: string | null
   fecha_inicio: string
-  cantidad_inicial_en_proceso: number
-  unidad_medida_inicial: UnidadMedidaVivero
+  cantidad_inicial_en_proceso: number | null
+  unidad_medida_inicial: UnidadMedidaVivero | null
   plantas_vivas_iniciales: number | null
   saldo_vivo_actual: number | null
   /**
    * Total ya entregado físicamente a subcampañas (informativo). Antes se
    * llamaba `saldo_asignado_total` en el modelo de "reserva lógica".
    */
-  saldo_asignado_subcampanias?: number
-  cantidad_asignaciones_activas?: number
+  saldo_asignado_subcampanias?: number | null
+  cantidad_asignaciones_activas?: number | null
   /**
    * @deprecated Alias backend de `saldo_vivo_actual`. Backend lo mantiene por
    * compat con código viejo; cuando todo el front migre, podrá eliminarse.
@@ -116,14 +139,14 @@ export interface ListLotesViveroQuery {
   page?: number
   limit?: number
   estado_lote?: EstadoLoteVivero
-  vivero_id?: number | string
-  recoleccion_id?: number
-  lote_vivero_id?: number
+  vivero_id?: ViveroId
+  recoleccion_id?: ViveroId
+  lote_vivero_id?: ViveroId
   motivo_cierre?: MotivoCierreVivero
   fecha_inicio?: string
   fecha_fin?: string
   q?: string
-  subcampania_id?: number
+  subcampania_id?: ViveroId
 }
 
 export interface ListLotesViveroResponse {
@@ -153,9 +176,9 @@ export interface UploadEvidenciasPendientesInput {
 //   tamano_bytes, titulo, creado_por_usuario_id, public_url.
 // Si en el futuro se confirma que backend los garantiza forever, endurecer.
 export interface EvidenciaPendienteVivero {
-  id: number
-  tipo_entidad_id: number
-  entidad_id: number
+  id: ViveroId
+  tipo_entidad_id: ViveroId
+  entidad_id: ViveroId
   codigo_trazabilidad: string | null
   bucket: string
   ruta_archivo: string
@@ -171,14 +194,14 @@ export interface EvidenciaPendienteVivero {
   orden: number
   tomado_en: string | null
   creado_en: string
-  creado_por_usuario_id: number | null
+  creado_por_usuario_id: ViveroId | null
   public_url: string | null
 }
 
 export interface UploadEvidenciasPendientesResponse {
   success: true
   data: EvidenciaPendienteVivero[]
-  evidencia_ids: number[]
+  evidencia_ids: ViveroId[]
 }
 
 export type EvidenciaEventoVivero =
@@ -198,9 +221,9 @@ export interface UploadEvidenciasEventoInput {
 }
 
 export interface EvidenciaEventoViveroItem {
-  id: number
+  id: ViveroId
   codigo_trazabilidad: string
-  entidad_id: number
+  entidad_id: ViveroId
   ruta_archivo: string
   // Nota backend: en evidencias de eventos, `tipo_archivo` también trae el MIME
   // (p. ej. "image/jpeg"). Mismo idiom que EvidenciaPendienteVivero.
@@ -210,26 +233,26 @@ export interface EvidenciaEventoViveroItem {
 export interface UploadEvidenciasEventoResponse {
   success: true
   data: {
-    evidencia_ids: number[]
+    evidencia_ids: ViveroId[]
     evidencias: EvidenciaEventoViveroItem[]
   }
 }
 
 export interface CreateLoteViveroInput {
-  recoleccion_id: number | string
-  vivero_id: number | string
+  recoleccion_id: ViveroId
+  vivero_id: ViveroId
   fecha_inicio: string
   fecha_evento: string
   cantidad_inicial_en_proceso: string | number
   unidad_medida_inicial: UnidadMedidaVivero
-  evidencia_ids: number[]
+  evidencia_ids: ViveroId[]
   observaciones?: string
 }
 
 export interface CreateLoteViveroResult {
-  lote_vivero_id: number | string
-  evento_inicio_id: number | string
-  recoleccion_movimiento_id: number | string
+  lote_vivero_id: ViveroId
+  evento_inicio_id: ViveroId
+  recoleccion_movimiento_id: ViveroId
   codigo_trazabilidad: string
   saldo_recoleccion_antes: number
   saldo_recoleccion_despues: number
@@ -244,7 +267,7 @@ export interface CreateLoteViveroResponse {
 // ─── Embolsado ───────────────────────────────────────────────────────────────
 
 export interface EmbolsadoEventoExistente {
-  id: number
+  id: ViveroId
   tipo_evento: 'EMBOLSADO'
   fecha_evento: string
   cantidad_afectada: number
@@ -254,13 +277,13 @@ export interface EmbolsadoEventoExistente {
 }
 
 export interface EmbolsadoContextData {
-  lote_id: number
+  lote_id: ViveroId
   codigo_trazabilidad: string
-  nombre_cientifico_snapshot: string
-  nombre_comercial_snapshot: string
-  tipo_material_snapshot: TipoMaterialVivero
-  cantidad_inicial_en_proceso: number
-  unidad_medida_inicial: UnidadMedidaVivero
+  nombre_cientifico_snapshot: string | null
+  nombre_comercial_snapshot: string | null
+  tipo_material_snapshot: TipoMaterialVivero | null
+  cantidad_inicial_en_proceso: number | null
+  unidad_medida_inicial: UnidadMedidaVivero | null
   fecha_inicio: string
   estado_lote: EstadoLoteVivero
   plantas_vivas_iniciales: number | null
@@ -278,19 +301,19 @@ export interface EmbolsadoContextResponse {
 export interface RegistrarEmbolsadoRequest {
   fecha_evento: string
   plantas_vivas_iniciales: number
-  evidencia_ids: number[]
+  evidencia_ids: ViveroId[]
   observaciones?: string
 }
 
 export interface RegistrarEmbolsadoResult {
   message: string
-  evento_embolsado_id: number
-  lote_vivero_id: number
+  evento_embolsado_id: ViveroId
+  lote_vivero_id: ViveroId
   codigo_trazabilidad: string
   plantas_vivas_iniciales: number
   saldo_vivo_antes: number | null
   saldo_vivo_despues: number
-  evidencia_ids_vinculadas: number[]
+  evidencia_ids_vinculadas: ViveroId[]
 }
 
 export interface RegistrarEmbolsadoResponse {
@@ -299,7 +322,7 @@ export interface RegistrarEmbolsadoResponse {
 }
 
 export interface ObtenerEmbolsadoEvento {
-  id: number
+  id: ViveroId
   tipo_evento: 'EMBOLSADO'
   fecha_evento: string
   cantidad_afectada: number
@@ -307,19 +330,19 @@ export interface ObtenerEmbolsadoEvento {
   saldo_vivo_antes: number | null
   saldo_vivo_despues: number
   observaciones: string | null
-  responsable_id: number
+  responsable_id: ViveroId
   created_at: string
 }
 
 export interface ObtenerEmbolsadoLoteRef {
-  id: number
+  id: ViveroId
   codigo_trazabilidad: string
   plantas_vivas_iniciales: number | null
   saldo_vivo_actual: number | null
 }
 
 export interface ObtenerEmbolsadoEvidencia {
-  id: number
+  id: ViveroId
   ruta_archivo: string
   mime_type: string
   tipo_archivo: string
@@ -371,11 +394,11 @@ export interface RegistrarAdaptabilidadRequest {
   fecha_evento: string
   subetapa_destino: SubetapaAdaptabilidad
   observaciones?: string
-  evidencia_ids?: number[]
+  evidencia_ids?: ViveroId[]
 }
 
 export interface RegistrarMermaRequest {
-  evidencia_ids: number[]
+  evidencia_ids: ViveroId[]
   fecha_evento: string
   cantidad_afectada: number
   causa_merma: CausaMermaVivero
@@ -387,7 +410,7 @@ export interface RegistrarDescartePreEmbolsadoRequest {
   cantidad_material_afectado: number
   unidad_medida_evento: UnidadMedidaVivero
   causa_descarte_pre_embolsado: CausaDescartePreEmbolsado
-  evidencia_ids: number[]
+  evidencia_ids: ViveroId[]
   observaciones?: string
 }
 
@@ -397,33 +420,33 @@ export type PropositoAsignacionVivero = 'PLANTACION_INICIAL' | 'REPOSICION'
 // nuevo rechaza el shape viejo (falta `evidencia_ids` → 422), por eso `proposito`,
 // `fecha_asignacion` y `evidencia_ids` son obligatorios.
 export interface CrearAsignacionViveroRequest {
-  subcampania_id: number
+  subcampania_id: ViveroId
   cantidad_asignada: number
   proposito: PropositoAsignacionVivero
   /** Fecha de la entrega física (ISO `yyyy-mm-dd`). */
   fecha_asignacion: string
   /** IDs de evidencia previamente subida vía evidencias-pendientes (mínimo 1). */
-  evidencia_ids: number[]
+  evidencia_ids: ViveroId[]
 }
 
-// CONFIRMADO(backend 2026-07-07): en la respuesta de asignación, Nest normaliza
-// `lote_finalizado` siempre a boolean y además incluye `motivo_cierre`
-// (vivero-asignaciones.service.ts:202). En devolución, `lote_reabierto` también
-// viene siempre como boolean (vivero-asignaciones.service.ts:412). Igual se
-// parsea defensivo por si cambia. `saldo_vivo_actual` se lee cuando esté.
+// Nombres reales de las respuestas M2 (vivero-asignaciones.service.ts).
 export interface CrearAsignacionViveroResponseData {
-  id: number
-  subcampania_id: number
+  asignacion_id: ViveroId
+  evento_lote_vivero_id: ViveroId
+  evento_plantacion_id: ViveroId
+  lote_vivero_id: ViveroId
+  subcampania_id: ViveroId
+  campania_id: ViveroId | null
+  codigo_trazabilidad_lote: string | null
+  subcampania_nombre: string
   cantidad_asignada: number
   proposito: PropositoAsignacionVivero
-  fecha_asignacion: string
-  saldo_asignado_disponible?: number | null
-  /** Saldo vivo del lote DESPUÉS de la entrega (baja en el momento). */
-  saldo_vivo_actual?: number | null
-  /** true si la entrega total dejó el lote en 0 y backend lo FINALIZÓ. */
+  estado: string
+  saldo_vivo_antes: number
+  saldo_vivo_despues: number
+  evidencia_ids_vinculadas: ViveroId[]
   lote_finalizado: boolean
-  /** Motivo de cierre cuando `lote_finalizado` es true (útil para VIV-04). */
-  motivo_cierre?: MotivoCierreVivero | null
+  motivo_cierre: MotivoCierreVivero | null
 }
 
 export interface CrearAsignacionViveroResponse {
@@ -439,12 +462,16 @@ export interface DevolucionAsignacionRequest {
 }
 
 export interface DevolverAsignacionViveroResponseData {
-  id: number
+  asignacion_id: ViveroId
+  lote_vivero_id: ViveroId
+  evento_lote_vivero_id: ViveroId
+  evento_plantacion_id: ViveroId
+  estado: string | null
   cantidad_devuelta: number
-  saldo_asignado_disponible?: number | null
-  /** Saldo vivo del lote DESPUÉS de la devolución (sube en el momento). */
-  saldo_vivo_actual?: number | null
-  /** true si la devolución reabrió un lote que estaba FINALIZADO. */
+  cantidad_devuelta_total: number
+  saldo_asignado_disponible: number
+  saldo_vivo_antes: number
+  saldo_vivo_despues: number
   lote_reabierto: boolean
 }
 
@@ -461,8 +488,8 @@ export interface RegistrarDespachoRequest {
   cantidad_afectada: number
   destino_tipo: DestinoTipoDespachoManual
   destino_referencia: string
-  evidencia_ids: number[]
-  comunidad_destino_id?: number
+  evidencia_ids: ViveroId[]
+  comunidad_destino_id?: ViveroId
   observaciones?: string
 }
 
@@ -470,12 +497,12 @@ export interface RegistrarAdaptabilidadResponse {
   success: true
   message: string
   data: {
-    evento_adaptabilidad_id: number
-    lote_vivero_id: number
+    evento_adaptabilidad_id: ViveroId
+    lote_vivero_id: ViveroId
     codigo_trazabilidad: string
     subetapa_destino: SubetapaAdaptabilidad
     saldo_vivo_actual: number
-    evidencia_ids_vinculadas: number[]
+    evidencia_ids_vinculadas: ViveroId[]
   }
 }
 
@@ -483,14 +510,14 @@ export interface RegistrarMermaResponse {
   success: true
   data: {
     message: string
-    evento_merma_id: number
-    lote_vivero_id: number
+    evento_merma_id: ViveroId
+    lote_vivero_id: ViveroId
     codigo_trazabilidad: string
     cantidad_perdida: number
     causa_merma: CausaMermaVivero
     saldo_vivo_antes: number
     saldo_vivo_despues: number
-    evidencia_ids_vinculadas: number[]
+    evidencia_ids_vinculadas: ViveroId[]
     lote_finalizado: boolean
     motivo_cierre: MotivoCierreVivero | null
   }
@@ -500,35 +527,42 @@ export interface RegistrarDescartePreEmbolsadoResponse {
   success: true
   data: {
     message: string
-    evento_descarte_pre_embolsado_id: number
-    evento_cierre_id: number
-    lote_vivero_id: number
+    evento_descarte_pre_embolsado_id: ViveroId
+    evento_cierre_id: ViveroId
+    lote_vivero_id: ViveroId
     codigo_trazabilidad: string
     cantidad_material_afectado: number
     unidad_medida_evento: UnidadMedidaVivero
     causa_descarte_pre_embolsado: CausaDescartePreEmbolsado
-    evidencia_ids_vinculadas: number[]
+    evidencia_ids_vinculadas: ViveroId[]
     lote_finalizado: true
     motivo_cierre: 'DESCARTE_PRE_EMBOLSADO'
   }
 }
 
 export interface TimelineEventDto {
-  id: number;
+  id: ViveroId;
   tipo_evento: string;
   label?: string;
   fecha_evento?: string;
-  observaciones?: string;
-  responsable_nombre?: string;
+  observaciones?: string | null;
+  responsable_nombre?: string | null;
   payload?: Record<string, unknown>;
   evidencias?: EvidenciaDto[];
 }
 
 export interface EvidenciaDto {
-  id: number;
-  public_url: string;
-  titulo: string;
-  tomado_en?: string;
+  id: ViveroId
+  bucket?: string
+  public_url?: string | null
+  signed_url?: string | null
+  url_expira_en_segundos?: number
+  titulo?: string | null
+  tomado_en?: string | null
+  creado_en?: string | null
+  mime_type?: string | null
+  tipo_archivo?: string | null
+  tamano_bytes?: number | null
 }
 
 // ─── Detalle de lote (GET /api/lotes-vivero/:id) ─────────────────────────────
@@ -543,10 +577,10 @@ export interface EvidenciaDto {
 // completo o evidencias hay endpoints dedicados (ver bloque siguiente).
 
 export interface EventoSnapshot {
-  id: number
+  id: ViveroId
   fecha_evento: string
   created_at: string
-  responsable_id: number
+  responsable_id: ViveroId
   cantidad_afectada: number | null
   unidad_medida_evento: UnidadMedidaVivero | null
   saldo_vivo_antes: number | null
@@ -578,7 +612,8 @@ export interface LoteViveroDetalleResponse {
 // al evento, no `null` everywhere como hace `ultimo_evento_por_tipo`).
 //
 // Acepta filtros opcionales por query string: `tipo_evento`, `responsable_id`,
-// `fecha_inicio`, `fecha_fin`. No paginado — backend devuelve todo el historial.
+// `fecha_inicio`, `fecha_fin`. Sin protocolo de paginación/completitud; la lista
+// recibida no permite certificar que la historia esté completa.
 //
 // El detalle del lote consume el timeline unificado para representar todos los
 // eventos. La variante tipada de ADAPTABILIDAD se mantiene para el historial
@@ -586,14 +621,14 @@ export interface LoteViveroDetalleResponse {
 
 export interface LoteTimelineQuery {
   tipo_evento?: TipoEventoVivero
-  responsable_id?: number
+  responsable_id?: ViveroId
   fecha_inicio?: string
   fecha_fin?: string
 }
 
 export interface LoteTimelinePayloadAdaptabilidad {
   tipo: 'ADAPTABILIDAD'
-  subetapa_destino: SubetapaAdaptabilidad
+  subetapa_destino: SubetapaAdaptabilidad | null
   saldo_vivo_antes: number | null
   saldo_vivo_despues: number | null
 }
@@ -617,12 +652,12 @@ export interface LoteTimelinePayloadAdaptabilidad {
  * red de seguridad si el usuario responsable fue eliminado.
  */
 export interface LoteTimelineEventoAdaptabilidad {
-  id: number
-  lote_vivero_id: number
+  id: ViveroId
+  lote_vivero_id: ViveroId
   tipo_evento: 'ADAPTABILIDAD'
   fecha_evento: string
   created_at: string
-  responsable_id: number
+  responsable_id: ViveroId
   responsable_nombre: string | null
   observaciones: string | null
   payload: LoteTimelinePayloadAdaptabilidad
@@ -632,7 +667,7 @@ export interface LoteTimelineEventoAdaptabilidad {
 export interface LoteTimelineAdaptabilidadResponse {
   success: true
   data: {
-    lote_id: number
+    lote_id: ViveroId
     codigo_trazabilidad: string
     estado_lote: EstadoLoteVivero
     total_eventos: number

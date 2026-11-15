@@ -1,5 +1,6 @@
+import { useAuth } from '../../../contexts/AuthContext'
 import { useOperationalAccess } from '../../accesos/capabilitiesContext'
-import { canAtVivero } from '../../accesos/accessPolicy'
+import { canAtVivero, isExactId } from '../../accesos/accessPolicy'
 import { useEffect, useMemo, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import Icon from '../../../components/Icon'
@@ -23,20 +24,24 @@ const SUBETAPA_LABEL: Record<string, string> = {
 function getLotEspecie(lot: LoteViveroDetalle): string {
   return (
     lot.nombre_comercial_snapshot ||
-    lot.planta?.nombre_comun_principal ||
-    lot.planta?.especie ||
     lot.nombre_cientifico_snapshot ||
     'Sin especie'
   )
 }
 
 function ViveroEventScreen() {
+  const { id } = useParams()
+  const { user } = useAuth()
+  const { m2 } = useOperationalAccess()
+  return <ViveroEvent key={JSON.stringify([id, user?.id, localStorage.getItem('authToken'), m2.status, m2.data])} />
+}
+function ViveroEvent() {
   const { id, tipo } = useParams<{ id: string; tipo: string }>()
   const navigate = useNavigate()
   const { m2 } = useOperationalAccess()
 
-  const loteId = Number(id)
-  const isValidId = Number.isSafeInteger(loteId) && loteId > 0
+  const loteId = id ?? ''
+  const isValidId = isExactId(loteId)
   const [lote, setLote] = useState<LoteViveroDetalle | null>(null)
   const [loading, setLoading] = useState(isValidId)
   const [error, setError] = useState<string | null>(isValidId ? null : 'Lote inválido')
@@ -62,11 +67,11 @@ function ViveroEventScreen() {
 
   const tabs: StageTab[] = useMemo(() => {
     if (!lote) return []
-    const hasEmbolsado =
-      lote.plantas_vivas_iniciales !== null ||
-      lote.ultimo_evento_por_tipo.EMBOLSADO !== null
-    const hasDescarte = lote.ultimo_evento_por_tipo.DESCARTE_PRE_EMBOLSADO !== null
-    const hasInicio = lote.ultimo_evento_por_tipo.INICIO !== null
+    const hasEmbolsado = lote.ultimo_evento_por_tipo.EMBOLSADO != null
+    const hasIncorporacion = lote.origen?.tipo === 'INCORPORACION'
+    const hasBaseViva = hasEmbolsado || hasIncorporacion
+    const hasDescarte = lote.ultimo_evento_por_tipo.DESCARTE_PRE_EMBOLSADO != null
+    const hasInicio = lote.ultimo_evento_por_tipo.INICIO != null
     const isActive = lote.estado_lote === 'ACTIVO'
     // Modelo físico: el disponible del lote ES el saldo vivo actual (ya no hay
     // `saldo_vivo_disponible_asignacion`); despacho manual sale del saldo vivo.
@@ -75,21 +80,21 @@ function ViveroEventScreen() {
     const canDescartarPreEmbolsado =
       isActive &&
       hasInicio &&
-      !hasEmbolsado &&
-      !hasDescarte
+      !hasBaseViva &&
+      !hasDescarte && lote.cantidad_inicial_en_proceso != null && lote.unidad_medida_inicial != null
 
     return [
       {
         key: 'embolsado',
         label: 'Embolsado',
-        hidden: hasEmbolsado || hasDescarte,
-        available: !hasEmbolsado && !hasDescarte && isActive,
+        hidden: hasBaseViva || hasDescarte,
+        available: !hasBaseViva && !hasDescarte && isActive && hasInicio && lote.unidad_medida_inicial != null && lote.cantidad_inicial_en_proceso != null,
         reason: !isActive ? 'Lote finalizado' : undefined,
       },
       {
         key: 'descarte-pre-embolsado',
         label: 'Descarte',
-        hidden: hasEmbolsado || hasDescarte,
+        hidden: hasBaseViva || hasDescarte,
         available: canDescartarPreEmbolsado,
         reason: !isActive
           ? 'Lote finalizado'
@@ -104,9 +109,9 @@ function ViveroEventScreen() {
       {
         key: 'adaptabilidad',
         label: 'Adaptabilidad',
-        available: hasEmbolsado && isActive,
-        reason: !hasEmbolsado
-          ? 'Requiere embolsado primero'
+        available: hasBaseViva && isActive,
+        reason: !hasBaseViva
+          ? 'Requiere una base viva registrada'
           : !isActive
             ? 'Lote finalizado'
             : undefined,
@@ -114,9 +119,9 @@ function ViveroEventScreen() {
       {
         key: 'merma',
         label: 'Merma',
-        available: hasEmbolsado && isActive && hasSaldo,
-        reason: !hasEmbolsado
-          ? 'Requiere embolsado primero'
+        available: hasBaseViva && isActive && hasSaldo,
+        reason: !hasBaseViva
+          ? 'Requiere una base viva registrada'
           : !isActive
             ? 'Lote finalizado'
             : !hasSaldo
@@ -126,9 +131,9 @@ function ViveroEventScreen() {
       {
         key: 'despacho',
         label: 'Despacho',
-        available: hasEmbolsado && isActive && hasSaldo,
-        reason: !hasEmbolsado
-          ? 'Requiere embolsado primero'
+        available: hasBaseViva && isActive && hasSaldo,
+        reason: !hasBaseViva
+          ? 'Requiere una base viva registrada'
           : !isActive
             ? 'Lote finalizado'
             : !hasSaldo
@@ -138,9 +143,9 @@ function ViveroEventScreen() {
       {
         key: 'asignacion',
         label: 'Asignación',
-        available: hasEmbolsado && isActive && hasSaldo,
-        reason: !hasEmbolsado
-          ? 'Requiere embolsado primero'
+        available: hasBaseViva && isActive && hasSaldo,
+        reason: !hasBaseViva
+          ? 'Requiere una base viva registrada'
           : !isActive
             ? 'Lote finalizado'
             : !hasSaldo
@@ -210,10 +215,8 @@ function ViveroEventScreen() {
   const codigo = lote.codigo_trazabilidad || `VIV-${lote.id}`
   const viveroNombre = lote.vivero?.nombre || `Vivero #${lote.vivero_id}`
   const subetapaLabel = lote.subetapa_actual ? SUBETAPA_LABEL[lote.subetapa_actual] : null
-  // Piso de fecha para MERMA y ADAPTABILIDAD (regla backend RN-VIV-10:
-  // fecha_evento >= fecha_embolsado). Null si todavía no se embolsó —
-  // en ese caso los tabs respectivos no quedan disponibles.
-  const fechaEmbolsado = lote.ultimo_evento_por_tipo?.EMBOLSADO?.fecha_evento ?? null
+  // El piso operativo procede de la base viva realmente registrada.
+  const fechaBaseViva = lote.origen?.tipo === 'INCORPORACION' ? lote.origen.fecha_evento : lote.ultimo_evento_por_tipo?.EMBOLSADO?.fecha_evento ?? null
   return (
     <div className="relative min-h-screen bg-brand-50 text-brand-700">
       {/* Header sticky */}
@@ -257,14 +260,14 @@ function ViveroEventScreen() {
         {currentKey === 'adaptabilidad' && (
           <AdaptabilidadForm
             lote={lote}
-            fechaEmbolsado={fechaEmbolsado}
+            fechaBaseViva={fechaBaseViva}
             onCompleted={handleCompleted}
           />
         )}
         {currentKey === 'merma' && (
           <MermaForm
             lote={lote}
-            fechaEmbolsado={fechaEmbolsado}
+            fechaBaseViva={fechaBaseViva}
             onCompleted={handleCompleted}
           />
         )}

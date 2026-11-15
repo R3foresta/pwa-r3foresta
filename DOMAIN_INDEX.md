@@ -1,6 +1,6 @@
 # Índice de dominio para frontend
 
-Corte documental: 12 de noviembre de 2026 para recepción única; las demás áreas conservan su corte anterior. Es un mapa de consulta, no otro contrato. Las reglas/ADR/esquema aceptados viven en `r3foresta-docs`; la implementación local y los informes de QA acreditan sólo su alcance explícito. Ante una contradicción o contrato faltante, contrastar la fuente y pedir aclaración antes de cambiar negocio.
+Corte documental: 15 de noviembre de 2026 para lectura T5; 12 de noviembre de 2026 para recepción única; las demás áreas conservan su corte anterior. Es un mapa de consulta, no otro contrato. Las reglas/ADR/esquema aceptados viven en `r3foresta-docs`; la implementación local y los informes de QA acreditan sólo su alcance explícito. Ante una contradicción o contrato faltante, contrastar la fuente y pedir aclaración antes de cambiar negocio.
 
 ## Fuentes oficiales
 
@@ -10,6 +10,7 @@ Corte documental: 12 de noviembre de 2026 para recepción única; las demás ár
 | Recolección: estados, snapshots, unidades y saldo origen | [01-recoleccion-module](../r3foresta-docs/01-recoleccion-module/README.md) |
 | Recepción y validación únicas (contrato local 100) | [Contrato backend](../Backend-r3foresta/docs/t4-recepcion-semillas.md), [verificación frontend](docs/QA_RECEPCION_UNICA.md) |
 | Vivero: etapas, eventos y saldo vivo | [02-vivero-module](../r3foresta-docs/02-vivero-module/README.md) |
+| T5: segunda base viva y procedencia | [Contrato backend](../Backend-r3foresta/docs/t5-incorporacion-plantas.md), [última auditoría](../Backend-r3foresta/docs/t5-historial-revision-2026-11-14.md), [corte reportado](../Backend-r3foresta/docs/t5-correcciones-pruebas-2026-11-14.md) |
 | Plantación: stock, plan y cierre | [03-plantacion-module](../r3foresta-docs/03-plantacion-module/README.md) |
 | Participación Aliada: specs y ejecución | [Specs](../r3foresta-docs/specs/plantacion/participacion-aliada/README.md), [tablero](../r3foresta-docs/specs/plantacion/participacion-aliada/implementacion/README.md) |
 | Identidad, capacidades, comandos y recuperación | [Contrato aceptado](../r3foresta-docs/specs/plantacion/participacion-aliada/contrato-identidad-permisos-backend-propuesta.md) |
@@ -23,7 +24,7 @@ Sin checkout hermano, usar [r3foresta-docs remoto](https://github.com/R3foresta/
 
 - Persistir `UNIDAD` entera o `G` con máximo un decimal. `kg` es entrada de UI; convertir exactamente, sin redondeo silencioso. Nunca persistir kg ni usar `GR`.
 - `ESQUEJE` siempre usa `UNIDAD`. Desde EMBOLSADO, saldo vivo en `UNIDAD`; ninguna conversión automática de masa en plantas.
-- Snapshots congelados, de sólo lectura. En Vivero proceden de Recolección validada; no recalcularlos desde PLANTA viva. Usar nombres contractuales, incluido `nombre_comercial_snapshot`.
+- Snapshots congelados, de sólo lectura. En Vivero proceden de Recolección validada o del ingreso T5; no completarlos desde PLANTA viva. Usar nombres contractuales, incluido `nombre_comercial_snapshot`.
 - Saldos, cierres y elegibilidad final pertenecen al backend; frontend muestra restricciones y ayuda a validar.
 
 ### Recolección
@@ -45,9 +46,10 @@ Sólo VALIDADO + ABIERTO con recepción conforme y saldo puede alimentar Vivero.
 | --- | --- |
 | INICIO | Un único lote origen; selecciona vivero operativo, no hereda automáticamente `RECOLECCION.vivero_id`. Crea material en proceso y descuenta Recolección de forma atómica; no crea plantas vivas. Saldos vivos se muestran no disponibles/null. |
 | EMBOLSADO | Único por lote; plantas observadas > 0. Nace saldo vivo en UNIDAD; cantidad afectada igual a plantas iniciales. Saldo anterior conceptual 0 (backend null). |
+| INCORPORACION | Lote nuevo homogéneo con saldo vivo inicial en UNIDAD; sin Recolección, material en proceso ni EMBOLSADO artificial. RECEPCION: COMPRA/DONACION. SALDO_INICIAL: además PRODUCCION_PROPIA/DESCONOCIDA; no acredita historia anterior. |
 | ADAPTABILIDAD | Seguimiento del lote completo; repetible, sin saldo ni secuencia rígida SOMBRA/MEDIA_SOMBRA/SOL_DIRECTO. No es requisito de merma/despacho. |
-| MERMA | Requiere EMBOLSADO, causa y cantidad entera > 0 hasta saldo disponible. |
-| DESPACHO | Requiere EMBOLSADO, destino estructurado y cantidad entera > 0 hasta saldo disponible. Admite parciales. |
+| MERMA | Requiere EMBOLSADO o INCORPORACION, causa y cantidad entera > 0 hasta saldo disponible. |
+| DESPACHO | Requiere EMBOLSADO o INCORPORACION, destino estructurado y cantidad entera > 0 hasta saldo disponible. Admite parciales. |
 | Cierre | Backend cierra al agotar saldo; no simularlo persistido ni ofrecer cierre manual de Vivero. |
 
 Eventos append-only: no editar/borrar ni ocultar historial salvo filtros visuales. Despacho manual y asignación física a Plantación son operaciones distintas; consumir una asignación no crea otro despacho automático. Para Descarte pre-embolsado y asignaciones/devoluciones, consultar sus DTO reales y fuente Vivero/Plantación; no ampliar enums desde este resumen.

@@ -1,3 +1,4 @@
+import type { ViveroId } from '../types/contracts'
 import { WebAuthnService } from '../../../services/webauthn.service'
 import { useOperationalAccess } from '../../accesos/capabilitiesContext'
 import { canAtVivero, exactId, sameId } from '../../accesos/accessPolicy'
@@ -100,7 +101,7 @@ function ViveroNewScreen() {
 
   const [observaciones, setObservaciones] = useState('')
   const [photos, setPhotos] = useState<Photo[]>([])
-  const [uploadedEvidenceIds, setUploadedEvidenceIds] = useState<number[] | null>(null)
+  const [uploadedEvidenceIds, setUploadedEvidenceIds] = useState<ViveroId[] | null>(null)
 
   const [showErrors, setShowErrors] = useState(false)
   const [submitPhase, setSubmitPhase] = useState<UploadPhase>('idle')

@@ -11,11 +11,13 @@ export default function AuditoriaSection({ detail }: AuditoriaSectionProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const rows = [
-    ['LOTE_VIVERO_ID', detail.codigo],
-    ['RECOLECCION_ID', detail.recoleccionCodigo],
-    ['VIVERO_ID', detail.viveroCodigo || 'No disponible'], 
-    ['CREATED_AT', detail.createdAt ? new Date(detail.createdAt).toISOString() : 'No disponible'],
-    ['RESPONSABLE_ID', detail.responsableUsername || 'Sistema'],
+    ['LOTE_VIVERO_ID', detail.id],
+    ['CODIGO_LOTE', detail.codigo],
+    ['ORIGEN', detail.origen?.tipo ?? 'No disponible'],
+    ['RECOLECCION_ID', detail.recoleccionId ?? 'No aplica'],
+    ['VIVERO_ID', detail.viveroId || 'No disponible'],
+    ['CREATED_AT', detail.createdAt || 'No disponible'],
+    ['RESPONSABLE_INICIAL_SNAPSHOT', detail.responsableNombre],
   ].filter(([, v]) => Boolean(v));
 
   const handleExportJson = () => {
@@ -24,19 +26,19 @@ export default function AuditoriaSection({ detail }: AuditoriaSectionProps) {
         exportedAt: new Date().toISOString(),
         system: "R3foresta App"
       },
-      auditoriaList: Object.fromEntries(rows)
+      metadatos: Object.fromEntries(rows)
     };
 
     const jsonString = JSON.stringify(dataToExport, null, 2);
     const blob = new Blob([jsonString], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    
+
     const link = document.createElement('a');
     link.href = url;
-    link.download = `auditoria_${detail.codigo || 'lote'}.json`;
+    link.download = `metadatos_${detail.codigo || 'lote'}.json`;
     document.body.appendChild(link);
     link.click();
-    
+
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
@@ -51,7 +53,7 @@ export default function AuditoriaSection({ detail }: AuditoriaSectionProps) {
           </div>
           <div className="text-left">
             <p className="text-[9px] font-black uppercase tracking-widest text-neutral-500">Detalle técnico</p>
-            <p className="text-[13px] font-extrabold text-brand-950 leading-tight">Auditoría · IDs y anclajes</p>
+            <p className="text-[13px] font-extrabold text-brand-950 leading-tight">Metadatos del lote</p>
           </div>
         </div>
         <Icon name="chevron-down" className={`h-5 w-5 text-neutral-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
@@ -59,8 +61,8 @@ export default function AuditoriaSection({ detail }: AuditoriaSectionProps) {
 
       {isOpen && (
         <div className="border-t border-neutral-50 px-5 pb-5 pt-4 transition-all duration-300">
-          <p className="mb-4 text-[11px] font-medium text-neutral-500">Datos de trazabilidad para auditoría. Solo lectura.</p>
-          
+          <p className="mb-4 text-[11px] font-medium text-neutral-500">Sólo metadatos de la ficha. Esta descarga no incluye eventos, evidencias ni vínculos y no es una exportación auditable completa.</p>
+
           <dl className="divide-y divide-neutral-100/80">
             {rows.map(([k, v]) => (
               <div key={k} className="flex items-center justify-between py-2.5">
@@ -69,7 +71,7 @@ export default function AuditoriaSection({ detail }: AuditoriaSectionProps) {
               </div>
             ))}
           </dl>
-          
+
           <Button
             variant="secondary"
             fullWidth
@@ -77,7 +79,7 @@ export default function AuditoriaSection({ detail }: AuditoriaSectionProps) {
             onClick={handleExportJson}
             className="mt-5"
           >
-            Exportar JSON de auditoría
+            Exportar metadatos JSON
           </Button>
         </div>
       )}

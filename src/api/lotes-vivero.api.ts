@@ -13,17 +13,25 @@ import type {
   UploadEvidenciasEventoInput,
   CrearAsignacionViveroRequest,
   DevolucionAsignacionRequest,
+  ViveroId,
 } from '../modules/vivero/types/contracts'
 
 const RAW_API_URL = import.meta.env.VITE_API_URL as string | undefined
 const API_BASE_URL = `${(RAW_API_URL || '').replace(/\/$/, '')}/api`
+
+export type ViveroReadOptions = { token?: string | null; signal?: AbortSignal }
+function readOptions(options?: ViveroReadOptions): RequestInit {
+  const token = options?.token === undefined ? localStorage.getItem('authToken') : options.token
+  if (!token) throw new Error('Inicia sesión para consultar Vivero.')
+  return { method: 'GET', headers: { Authorization: `Bearer ${token}` }, cache: 'no-store', signal: options?.signal }
+}
 
 function buildQuery<T extends object>(filters?: T): string {
   const params = new URLSearchParams()
   if (filters) {
     Object.entries(filters).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
-        params.append(key, String(value))
+        params.append(key, key.endsWith('_id') ? exactId(value) : String(value))
       }
     })
   }
@@ -93,34 +101,24 @@ function buildEvidenceFormData(input: UploadEvidenciasEventoInput): FormData {
   return formData
 }
 
-export async function listLotesViveroApi(filters?: ListLotesViveroQuery): Promise<Response> {
-  return fetch(`${API_BASE_URL}/lotes-vivero${buildQuery(filters)}`, {
-    method: 'GET',
-    headers: getAuthHeaders({ includeContentType: false }),
-  })
+export async function listLotesViveroApi(filters?: ListLotesViveroQuery, options?: ViveroReadOptions): Promise<Response> {
+  return fetch(`${API_BASE_URL}/lotes-vivero${buildQuery(filters)}`, readOptions(options))
 }
 
-// Endpoint dedicado de detalle: trae el lote + `ultimo_evento_por_tipo`.
-// Backend no exige auth todavía en GETs del módulo, pero enviamos los headers
-// para no romper cuando lo cierren detrás de x-auth-id.
-export async function getLoteViveroDetalleApi(loteId: number): Promise<Response> {
-  return fetch(`${API_BASE_URL}/lotes-vivero/${loteId}`, {
-    method: 'GET',
-    headers: getAuthHeaders({ includeContentType: false }),
-  })
+// Detalle privado con últimos eventos; Bearer y no-store.
+export async function getLoteViveroDetalleApi(loteId: ViveroId, options?: ViveroReadOptions): Promise<Response> {
+  return fetch(`${API_BASE_URL}/lotes-vivero/${exactId(loteId)}`, readOptions(options))
 }
 
 // Timeline cronológico (RF-VIV-07). Backend lo recomienda sobre los endpoints
 // por tipo (`/:id/adaptabilidad`, `/:id/merma`) porque trae `responsable_nombre`
 // embebido y `payload` discriminado. Filtros nativos via query string.
 export async function getLoteTimelineApi(
-  loteId: number,
+  loteId: ViveroId,
   query?: LoteTimelineQuery,
+  options?: ViveroReadOptions,
 ): Promise<Response> {
-  return fetch(`${API_BASE_URL}/lotes-vivero/${loteId}/timeline${buildQuery(query)}`, {
-    method: 'GET',
-    headers: getAuthHeaders({ includeContentType: false }),
-  })
+  return fetch(`${API_BASE_URL}/lotes-vivero/${exactId(loteId)}/timeline${buildQuery(query)}`, readOptions(options))
 }
 
 export async function uploadEvidenciasPendientesViveroApi(
@@ -141,25 +139,22 @@ export async function createLoteViveroApi(
   return fetch(`${API_BASE_URL}/lotes-vivero`, {
     method: 'POST',
     headers: getAuthHeaders({ authId, includeContentType: true }),
-    body: JSON.stringify(input),
+    body: JSON.stringify({ ...input, recoleccion_id: exactId(input.recoleccion_id), vivero_id: exactId(input.vivero_id), evidencia_ids: input.evidencia_ids.map(exactId) }),
   })
 }
 
-export async function getEmbolsadoContextApi(loteId: number): Promise<Response> {
-  return fetch(`${API_BASE_URL}/lotes-vivero/${loteId}/embolsado/context`, {
-    method: 'GET',
-    headers: getAuthHeaders({ includeContentType: false }),
-  })
+export async function getEmbolsadoContextApi(loteId: ViveroId, options?: ViveroReadOptions): Promise<Response> {
+  return fetch(`${API_BASE_URL}/lotes-vivero/${exactId(loteId)}/embolsado/context`, readOptions(options))
 }
 
 export async function uploadEvidenciasEventoViveroApi(
-  loteId: number,
+  loteId: ViveroId,
   tipoEvento: EvidenciaEventoVivero,
   input: UploadEvidenciasEventoInput,
   authId?: string,
 ): Promise<Response> {
   const path = EVENT_EVIDENCE_PATH[tipoEvento]
-  return fetch(`${API_BASE_URL}/lotes-vivero/${loteId}/${path}/evidencias-pendientes`, {
+  return fetch(`${API_BASE_URL}/lotes-vivero/${exactId(loteId)}/${path}/evidencias-pendientes`, {
     method: 'POST',
     headers: getAuthHeaders({ authId, includeContentType: false }),
     body: buildEvidenceFormData(input),
@@ -167,77 +162,71 @@ export async function uploadEvidenciasEventoViveroApi(
 }
 
 export async function registrarEmbolsadoApi(
-  loteId: number,
+  loteId: ViveroId,
   input: RegistrarEmbolsadoRequest,
   authId?: string,
 ): Promise<Response> {
-  return fetch(`${API_BASE_URL}/lotes-vivero/${loteId}/embolsado`, {
+  return fetch(`${API_BASE_URL}/lotes-vivero/${exactId(loteId)}/embolsado`, {
     method: 'POST',
     headers: getAuthHeaders({ authId, includeContentType: true }),
-    body: JSON.stringify(input),
+    body: JSON.stringify({ ...input, evidencia_ids: input.evidencia_ids?.map(exactId) }),
   })
 }
 
-export async function getEmbolsadoApi(loteId: number): Promise<Response> {
-  return fetch(`${API_BASE_URL}/lotes-vivero/${loteId}/embolsado`, {
-    method: 'GET',
-    headers: getAuthHeaders({ includeContentType: false }),
-  })
+export async function getEmbolsadoApi(loteId: ViveroId, options?: ViveroReadOptions): Promise<Response> {
+  return fetch(`${API_BASE_URL}/lotes-vivero/${exactId(loteId)}/embolsado`, readOptions(options))
 }
 
 export async function registrarAdaptabilidadApi(
-  loteId: number,
+  loteId: ViveroId,
   input: RegistrarAdaptabilidadRequest,
   authId?: string,
 ): Promise<Response> {
-  return fetch(`${API_BASE_URL}/lotes-vivero/${loteId}/adaptabilidad`, {
+  return fetch(`${API_BASE_URL}/lotes-vivero/${exactId(loteId)}/adaptabilidad`, {
     method: 'POST',
     headers: getAuthHeaders({ authId, includeContentType: true }),
-    body: JSON.stringify(input),
+    body: JSON.stringify({ ...input, evidencia_ids: input.evidencia_ids?.map(exactId) }),
   })
 }
 
 export async function registrarMermaApi(
-  loteId: number,
+  loteId: ViveroId,
   input: RegistrarMermaRequest,
   authId?: string,
 ): Promise<Response> {
-  return fetch(`${API_BASE_URL}/lotes-vivero/${loteId}/merma`, {
+  return fetch(`${API_BASE_URL}/lotes-vivero/${exactId(loteId)}/merma`, {
     method: 'POST',
     headers: getAuthHeaders({ authId, includeContentType: true }),
-    body: JSON.stringify(input),
+    body: JSON.stringify({ ...input, evidencia_ids: input.evidencia_ids?.map(exactId) }),
   })
 }
 
 export async function registrarDescartePreEmbolsadoApi(
-  loteId: number,
+  loteId: ViveroId,
   input: RegistrarDescartePreEmbolsadoRequest,
   authId?: string,
 ): Promise<Response> {
-  return fetch(`${API_BASE_URL}/lotes-vivero/${loteId}/descarte-pre-embolsado`, {
+  return fetch(`${API_BASE_URL}/lotes-vivero/${exactId(loteId)}/descarte-pre-embolsado`, {
     method: 'POST',
     headers: getAuthHeaders({ authId, includeContentType: true }),
-    body: JSON.stringify(input),
+    body: JSON.stringify({ ...input, evidencia_ids: input.evidencia_ids?.map(exactId) }),
   })
 }
 
 export async function registrarDespachoApi(
-  loteId: number,
+  loteId: ViveroId,
   input: RegistrarDespachoRequest,
   authId?: string,
 ): Promise<Response> {
-  return fetch(`${API_BASE_URL}/lotes-vivero/${loteId}/despacho`, {
+  return fetch(`${API_BASE_URL}/lotes-vivero/${exactId(loteId)}/despacho`, {
     method: 'POST',
     headers: getAuthHeaders({ authId, includeContentType: true }),
-    body: JSON.stringify(input),
+    body: JSON.stringify({ ...input, comunidad_destino_id: input.comunidad_destino_id == null ? undefined : exactId(input.comunidad_destino_id), evidencia_ids: input.evidencia_ids?.map(exactId) }),
   })
 }
 
-export async function getTimelineApi(loteId: number): Promise<Response> {
-  return fetch(`${API_BASE_URL}/lotes-vivero/${loteId}/timeline`, {
-    method: 'GET',
-    headers: getAuthHeaders({ includeContentType: false }),
-  })
+export async function getTimelineApi(loteId: ViveroId, options?: ViveroReadOptions): Promise<Response> {
+  return fetch(`${API_BASE_URL}/lotes-vivero/${exactId(loteId)}/timeline`, readOptions(options))
 }
 
 export async function listStockEspeciesApi(): Promise<Response> {
@@ -254,22 +243,19 @@ export async function listSubcampaniasApi(): Promise<Response> {
   })
 }
 
-export async function listAsignacionesApi(loteId: number): Promise<Response> {
-  return fetch(`${API_BASE_URL}/lotes-vivero/${loteId}/asignaciones`, {
-    method: 'GET',
-    headers: getAuthHeaders({ includeContentType: false }),
-  })
+export async function listAsignacionesApi(loteId: ViveroId, options?: ViveroReadOptions): Promise<Response> {
+  return fetch(`${API_BASE_URL}/lotes-vivero/${exactId(loteId)}/asignaciones`, readOptions(options))
 }
 
 export async function crearAsignacionApi(
-  loteId: number,
+  loteId: ViveroId,
   input: CrearAsignacionViveroRequest,
   authId?: string,
 ): Promise<Response> {
-  return fetch(`${API_BASE_URL}/lotes-vivero/${loteId}/asignaciones`, {
+  return fetch(`${API_BASE_URL}/lotes-vivero/${exactId(loteId)}/asignaciones`, {
     method: 'POST',
     headers: getAuthHeaders({ authId, includeContentType: true }),
-    body: JSON.stringify(input),
+    body: JSON.stringify({ ...input, subcampania_id: exactId(input.subcampania_id), evidencia_ids: input.evidencia_ids.map(exactId) }),
   })
 }
 
@@ -277,13 +263,13 @@ export async function crearAsignacionApi(
 // reserva", ya eliminado del backend). El lote recupera saldo vivo y puede
 // reabrirse si estaba FINALIZADO.
 export async function devolverAsignacionApi(
-  loteId: number,
-  asignacionId: number,
+  loteId: ViveroId,
+  asignacionId: ViveroId,
   input: DevolucionAsignacionRequest,
   authId?: string,
 ): Promise<Response> {
   return fetch(
-    `${API_BASE_URL}/lotes-vivero/${loteId}/asignaciones/${asignacionId}/devolucion`,
+    `${API_BASE_URL}/lotes-vivero/${exactId(loteId)}/asignaciones/${exactId(asignacionId)}/devolucion`,
     {
       method: 'POST',
       headers: getAuthHeaders({ authId, includeContentType: true }),

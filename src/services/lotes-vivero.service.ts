@@ -1,3 +1,5 @@
+import { exactId, isExactId } from '../modules/accesos/accessPolicy'
+import type { ViveroReadOptions } from '../api/lotes-vivero.api'
 import {
   createLoteViveroApi,
   getEmbolsadoApi,
@@ -20,9 +22,10 @@ import {
   listStockEspeciesApi,
 } from '../api/lotes-vivero.api'
 
-import { mapLoteToCardData, mapLoteToDetailView } from '../modules/vivero/mappers/lote.mapper'
+import { mapLoteToCardData, mapLoteToDetailView, normalizeLoteIds } from '../modules/vivero/mappers/lote.mapper'
 import type {
   ApiPagination,
+  ViveroId,
   CreateLoteViveroInput,
   CreateLoteViveroResponse,
   CrearAsignacionViveroRequest,
@@ -79,7 +82,7 @@ export type ListViveroLotsForUiInput = {
   searchQuery?: string
   page?: number
   limit?: number
-  subcampaniaId?: number
+  subcampaniaId?: ViveroId
 }
 
 export type ListViveroLotsForUiResult = {
@@ -110,7 +113,7 @@ export type EspecieStockVivero = {
 
 export type AsignacionViveroResumen = {
   subcampania_id?: number | string
-  id: number
+  id: string
   proposito?: string | null
   fecha_asignacion?: string | null
   subcampania_nombre?: string | null
@@ -201,18 +204,19 @@ export class LotesViveroService {
     if (Array.isArray(payload)) {
       return {
         success: true,
-        data: payload as LoteViveroItem[],
+        data: (payload as LoteViveroItem[]).map(normalizeLoteIds),
         pagination: defaultPagination(payload.length),
       }
     }
 
     const envelope = payload as ApiEnvelope<LoteViveroItem[]>
-    const items = Array.isArray(envelope.data) ? envelope.data : []
+    if (!Array.isArray(envelope?.data)) throw new Error('Respuesta de lotes incompleta.')
+    const items = envelope.data
     const fallback = defaultPagination(items.length)
 
     return {
       success: true,
-      data: items,
+      data: items.map(normalizeLoteIds),
       pagination: {
         page: Number(envelope.pagination?.page ?? fallback.page),
         limit: Number(envelope.pagination?.limit ?? fallback.limit),
@@ -224,8 +228,8 @@ export class LotesViveroService {
     }
   }
 
-  static async list(filters?: ListLotesViveroQuery): Promise<ListLotesViveroResponse> {
-    const response = await listLotesViveroApi(filters)
+  static async list(filters?: ListLotesViveroQuery, options?: ViveroReadOptions): Promise<ListLotesViveroResponse> {
+    const response = await listLotesViveroApi(filters, options)
     const payload = await this.parseJsonResponse<unknown>(
       response,
       'Error al cargar lotes de vivero.',
@@ -233,7 +237,7 @@ export class LotesViveroService {
     return this.normalizeListResponse(payload)
   }
 
-  static async listForUi(input: ListViveroLotsForUiInput): Promise<ListViveroLotsForUiResult> {
+  static async listForUi(input: ListViveroLotsForUiInput, options?: ViveroReadOptions): Promise<ListViveroLotsForUiResult> {
     const backendFilters: ListLotesViveroQuery = {
       page: input.page,
       limit: input.limit,
@@ -245,7 +249,7 @@ export class LotesViveroService {
       ...buildBackendQueryForStageFilter(input.stageFilter),
     }
 
-    const response = await this.list(backendFilters)
+    const response = await this.list(backendFilters, options)
     const stageScoped = response.data.filter((lot) => matchesStageFilter(lot, input.stageFilter))
     const cards = stageScoped.map(mapLoteToCardData)
 
@@ -255,12 +259,12 @@ export class LotesViveroService {
     }
   }
 
-  static async getById(loteId: number): Promise<LoteViveroDetalle> {
-    if (!Number.isFinite(loteId) || loteId <= 0) {
+  static async getById(loteId: ViveroId, options?: ViveroReadOptions): Promise<LoteViveroDetalle> {
+    if (!isExactId(loteId)) {
       throw new Error('ID de lote de vivero inválido.')
     }
 
-    const response = await getLoteViveroDetalleApi(loteId)
+    const response = await getLoteViveroDetalleApi(loteId, options)
     const payload = await this.parseJsonResponse<LoteViveroDetalleResponse>(
       response,
       'Error al cargar el detalle del lote de vivero.',
@@ -268,28 +272,19 @@ export class LotesViveroService {
     if (!payload.data) {
       throw new Error('Lote de vivero no encontrado.')
     }
-    return payload.data
+    return normalizeLoteIds(payload.data)
   }
 
-  static async getDetail(loteId: number): Promise<ViveroLotDetailView> {
-    const lot = await this.getById(loteId)
+  static async getDetail(loteId: ViveroId, options?: ViveroReadOptions): Promise<ViveroLotDetailView> {
+    const lot = await this.getById(loteId, options)
     return mapLoteToDetailView(lot)
   }
 
-  static async getEvents(lotId: number): Promise<ViveroLotEventView[]> {
-    try {
-      const response = await getTimelineApi(lotId)
-
-      if (!response.ok) {
-        throw new Error(`Error del servidor: ${response.status} al recuperar el historial`)
-      }
-      const json = await response.json()
-      const rawEvents = (json.data?.eventos || json.eventos || []) as TimelineEventDto[];
-      const validEvents = rawEvents.filter(e => e.tipo_evento);
-      return validEvents.map(mapTimelineEventToView).filter(Boolean) as ViveroLotEventView[];
-    } catch (error) {
-      throw new Error(error instanceof Error ? error.message : 'Error al cargar el historial del lote.')
-    }
+  static async getEvents(lotId: ViveroId, options?: ViveroReadOptions): Promise<ViveroLotEventView[]> {
+    const response = await getTimelineApi(lotId, options)
+    const json = await this.parseJsonResponse<{ data?: { eventos?: TimelineEventDto[] } }>(response, 'Error al cargar el historial del lote.')
+    if (!Array.isArray(json.data?.eventos)) throw new Error('Respuesta de historial incompleta. Vuelve a consultar.')
+    return json.data.eventos.map(mapTimelineEventToView)
   }
 
   static async uploadEvidenciasPendientes(
@@ -307,7 +302,7 @@ export class LotesViveroService {
     return {
       success: true,
       data: Array.isArray(payload.data) ? payload.data : [],
-      evidencia_ids: Array.isArray(payload.evidencia_ids) ? payload.evidencia_ids : [],
+      evidencia_ids: Array.isArray(payload.evidencia_ids) ? payload.evidencia_ids.map(exactId) : [],
     }
   }
 
@@ -322,7 +317,7 @@ export class LotesViveroService {
     )
   }
 
-  static async getEmbolsadoContext(loteId: number): Promise<EmbolsadoContextData> {
+  static async getEmbolsadoContext(loteId: ViveroId): Promise<EmbolsadoContextData> {
     const response = await getEmbolsadoContextApi(loteId)
     const payload = await this.parseJsonResponse<EmbolsadoContextResponse>(
       response,
@@ -332,7 +327,7 @@ export class LotesViveroService {
   }
 
   static async uploadEvidenciasEvento(
-    loteId: number,
+    loteId: ViveroId,
     tipoEvento: EvidenciaEventoVivero,
     input: UploadEvidenciasEventoInput,
     authId?: string,
@@ -352,14 +347,14 @@ export class LotesViveroService {
     return {
       success: true,
       data: {
-        evidencia_ids: evidenciaIds,
+        evidencia_ids: evidenciaIds.map(exactId),
         evidencias: Array.isArray(payload.data?.evidencias) ? payload.data.evidencias : [],
       },
     }
   }
 
   static async registrarEmbolsado(
-    loteId: number,
+    loteId: ViveroId,
     input: RegistrarEmbolsadoRequest,
     authId?: string,
   ): Promise<RegistrarEmbolsadoResponse> {
@@ -370,7 +365,7 @@ export class LotesViveroService {
     )
   }
 
-  static async getEmbolsado(loteId: number): Promise<ObtenerEmbolsadoResponse> {
+  static async getEmbolsado(loteId: ViveroId): Promise<ObtenerEmbolsadoResponse> {
     const response = await getEmbolsadoApi(loteId)
     return this.parseJsonResponse<ObtenerEmbolsadoResponse>(
       response,
@@ -379,7 +374,7 @@ export class LotesViveroService {
   }
 
   static async registrarAdaptabilidad(
-    loteId: number,
+    loteId: ViveroId,
     input: RegistrarAdaptabilidadRequest,
     authId?: string,
   ): Promise<RegistrarAdaptabilidadResponse> {
@@ -397,9 +392,9 @@ export class LotesViveroService {
   // resto del envelope (lote_id, codigo_trazabilidad, etc.) ya lo conoce el
   // caller desde el detalle.
   static async listAdaptabilidadTimeline(
-    loteId: number,
+    loteId: ViveroId,
   ): Promise<LoteTimelineAdaptabilidadResponse['data']> {
-    if (!Number.isFinite(loteId) || loteId <= 0) {
+    if (!isExactId(loteId)) {
       throw new Error('ID de lote de vivero inválido.')
     }
     const response = await getLoteTimelineApi(loteId, { tipo_evento: 'ADAPTABILIDAD' })
@@ -411,7 +406,7 @@ export class LotesViveroService {
   }
 
   static async registrarMerma(
-    loteId: number,
+    loteId: ViveroId,
     input: RegistrarMermaRequest,
     authId?: string,
   ): Promise<RegistrarMermaResponse> {
@@ -423,7 +418,7 @@ export class LotesViveroService {
   }
 
   static async registrarDescartePreEmbolsado(
-    loteId: number,
+    loteId: ViveroId,
     input: RegistrarDescartePreEmbolsadoRequest,
     authId?: string,
   ): Promise<RegistrarDescartePreEmbolsadoResponse> {
@@ -435,7 +430,7 @@ export class LotesViveroService {
   }
 
   static async registrarDespacho(
-    loteId: number,
+    loteId: ViveroId,
     input: RegistrarDespachoRequest,
     authId?: string,
   ): Promise<unknown> {
@@ -489,13 +484,14 @@ export class LotesViveroService {
     return Array.isArray(payload.data) ? payload.data : []
   }
 
-  static async listAsignaciones(loteId: number): Promise<AsignacionViveroResumen[]> {
-    const response = await listAsignacionesApi(loteId)
+  static async listAsignaciones(loteId: ViveroId, options?: ViveroReadOptions): Promise<AsignacionViveroResumen[]> {
+    const response = await listAsignacionesApi(loteId, options)
     const payload = await this.parseJsonResponse<ApiEnvelope<AsignacionViveroResumen[]>>(
       response,
       'Error al cargar asignaciones.',
     )
-    return Array.isArray(payload.data) ? payload.data : []
+    if (!Array.isArray(payload.data)) throw new Error('Respuesta de asignaciones incompleta.')
+    return payload.data.map(item => ({ ...item, id: exactId(item.id), subcampania_id: item.subcampania_id == null ? undefined : exactId(item.subcampania_id) }))
   }
 
   // Mensaje reutilizable: el backend responde 403/422 cuando quien opera no es
@@ -520,14 +516,14 @@ export class LotesViveroService {
   // no depender del 422 del backend, y devolvemos la response nueva (incluye
   // `lote_finalizado` cuando la entrega total cierra el lote).
   static async crearAsignacion(
-    loteId: number,
+    loteId: ViveroId,
     input: CrearAsignacionViveroRequest,
     authId?: string,
   ): Promise<CrearAsignacionViveroResponseData> {
-    if (!Number.isFinite(loteId) || loteId <= 0) {
+    if (!isExactId(loteId)) {
       throw new Error('ID de lote de vivero invalido.')
     }
-    if (!Number.isFinite(input.subcampania_id) || input.subcampania_id <= 0) {
+    if (!isExactId(input.subcampania_id)) {
       throw new Error('Selecciona una subcampana destino.')
     }
     if (!Number.isFinite(input.cantidad_asignada) || input.cantidad_asignada <= 0) {
@@ -557,15 +553,15 @@ export class LotesViveroService {
   // por DELETE). El saldo del lote sube y puede reabrir un lote FINALIZADO.
   // Admite devolucion parcial (cantidad_devuelta <= saldo_asignado_disponible).
   static async devolverAsignacion(
-    loteId: number,
-    asignacionId: number,
+    loteId: ViveroId,
+    asignacionId: ViveroId,
     input: DevolucionAsignacionRequest,
     authId?: string,
   ): Promise<DevolverAsignacionViveroResponseData> {
-    if (!Number.isFinite(loteId) || loteId <= 0) {
+    if (!isExactId(loteId)) {
       throw new Error('ID de lote de vivero invalido.')
     }
-    if (!Number.isFinite(asignacionId) || asignacionId <= 0) {
+    if (!isExactId(asignacionId)) {
       throw new Error('ID de asignacion invalido.')
     }
     if (!Number.isFinite(input.cantidad_devuelta) || input.cantidad_devuelta <= 0) {

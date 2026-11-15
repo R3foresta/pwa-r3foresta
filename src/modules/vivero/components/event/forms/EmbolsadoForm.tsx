@@ -163,7 +163,7 @@ function EmbolsadoForm({ lote, onCompleted }: Props) {
                 <span className="text-sm font-bold text-brand-500">
                   {formatUnidadCanonicaDisplay(
                     lote.unidad_medida_inicial,
-                    lote.cantidad_inicial_en_proceso,
+                    lote.cantidad_inicial_en_proceso ?? undefined,
                   )}
                 </span>{' '}
                 <span className="text-xs font-semibold text-brand-400">· {tipoMaterial}</span>

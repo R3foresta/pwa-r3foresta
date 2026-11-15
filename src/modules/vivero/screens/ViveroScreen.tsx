@@ -14,7 +14,7 @@ import { LotesViveroService, type SubcampaniaResumen } from '../../../services/l
 
 function getNextAction(lot: ViveroLotCardData): { label: string; path: string } | null {
   if (lot.estadoLote === 'FINALIZADO') return null
-  if (lot.plantasVivasIniciales === null && lot.subetapaActual === null) {
+  if (lot.origen?.tipo === 'RECOLECCION' && lot.plantasVivasIniciales === null && lot.subetapaActual === null) {
     return { label: 'Registrar Embolsado', path: `/app/vivero/${lot.id}/event/embolsado` }
   }
   if (lot.subetapaActual === null) {
@@ -45,7 +45,7 @@ function ViveroScreen() {
     searchQuery: query,
     page: DEFAULT_VIVERO_LIST_PAGE,
     limit: DEFAULT_VIVERO_LIST_LIMIT,
-    subcampaniaId: selectedSubcampaniaId === 'TODAS' ? undefined : Number(selectedSubcampaniaId),
+    subcampaniaId: selectedSubcampaniaId === 'TODAS' ? undefined : selectedSubcampaniaId,
   })
 
   const filteredLots = lots.filter((lot) => {

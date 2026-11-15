@@ -1,69 +1,57 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useEffect, useState } from 'react'
+import { useAuth } from '../../../contexts/AuthContext'
 import { LotesViveroService } from '../../../services/lotes-vivero.service'
+import { useOperationalAccess } from '../../accesos/capabilitiesContext'
 import type { ViveroLotDetailView, ViveroLotEventView } from '../types/view-models'
 
-export function useViveroDetail(lotId: number, isInvalidId: boolean) {
-  const [detail, setDetail] = useState<ViveroLotDetailView | null>(null)
-  const [events, setEvents] = useState<ViveroLotEventView[]>([])
-  const [loading, setLoading] = useState(!isInvalidId)
-  const [error, setError] = useState<string | null>(isInvalidId ? 'ID de lote inválido.' : null)
-
-  const mountedRef = useRef(true)
-  // Protección contra respuestas obsoletas: si el lote cambia o hay refetch
-  // concurrente, descartamos las respuestas cuyo requestId ya no es el vigente.
-  const requestIdRef = useRef(0)
-
-  useEffect(() => {
-    mountedRef.current = true
-    return () => {
-      mountedRef.current = false
-    }
-  }, [])
-
-  const load = useCallback(
-    async (opts?: { silent?: boolean }) => {
-      if (isInvalidId) return
-      const requestId = ++requestIdRef.current
-      // `silent`: refresco en segundo plano (p. ej. tras una entrega) sin
-      // mostrar el loader de pantalla completa, para no parpadear la vista.
-      if (!opts?.silent) setLoading(true)
-      setError(null)
-
-      const [detailResult, eventsResult] = await Promise.allSettled([
-        LotesViveroService.getDetail(lotId),
-        LotesViveroService.getEvents(lotId),
-      ])
-
-      if (!mountedRef.current || requestId !== requestIdRef.current) return
-
-      if (detailResult.status === 'rejected') {
-        const errorMsg =
-          detailResult.reason instanceof Error
-            ? detailResult.reason.message
-            : 'No se pudo cargar la información del lote. Verifica tu conexión.'
-        setError(errorMsg)
-        if (!opts?.silent) setLoading(false)
-        return
-      }
-
-      setDetail(detailResult.value)
-      setEvents(eventsResult.status === 'fulfilled' ? eventsResult.value : [])
-      if (!opts?.silent) setLoading(false)
-    },
-    [lotId, isInvalidId],
-  )
+type Read<T> = { key: string } & ({ data: T; error?: never } | { data?: never; error: string })
+export function useViveroDetail(lotId: string, isInvalidId: boolean) {
+  const { user } = useAuth()
+  const { m2 } = useOperationalAccess()
+  const token = localStorage.getItem('authToken')
+  const [detailRead, setDetailRead] = useState<Read<ViveroLotDetailView> | null>(null)
+  const [eventsRead, setEventsRead] = useState<Read<ViveroLotEventView[]> | null>(null)
+  const [attempt, setAttempt] = useState(0)
+  const [eventsAttempt, setEventsAttempt] = useState(0)
+  const scopeKey = JSON.stringify([lotId, user?.id, token, m2.status, m2.data])
+  const detailKey = JSON.stringify([scopeKey, attempt])
+  const eventsKey = JSON.stringify([detailKey, eventsAttempt])
 
   useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      void load()
-    }, 0)
+    if (isInvalidId || !token) return
+    const controller = new AbortController()
+    const current = () => !controller.signal.aborted && localStorage.getItem('authToken') === token
+    LotesViveroService.getDetail(lotId, { token, signal: controller.signal }).then(
+      data => { if (current()) setDetailRead({ key: detailKey, data }) },
+      error => { if (current()) setDetailRead({ key: detailKey, error: error instanceof Error ? error.message : 'No se pudo cargar el lote.' }) },
+    )
+    return () => controller.abort()
+  }, [lotId, isInvalidId, token, detailKey])
 
-    return () => window.clearTimeout(timeoutId)
-  }, [load])
+  useEffect(() => {
+    if (isInvalidId || !token) return
+    const controller = new AbortController()
+    const current = () => !controller.signal.aborted && localStorage.getItem('authToken') === token
+    LotesViveroService.getEvents(lotId, { token, signal: controller.signal }).then(
+      data => { if (current()) setEventsRead({ key: eventsKey, data }) },
+      error => { if (current()) setEventsRead({ key: eventsKey, error: error instanceof Error ? error.message : 'No se pudo cargar el historial.' }) },
+    )
+    return () => controller.abort()
+  }, [lotId, isInvalidId, token, eventsKey])
 
-  const refetch = useCallback(() => {
-    void load({ silent: true })
-  }, [load])
-
-  return { detail, events, loading, error, refetch }
+  const detail = detailRead?.key === detailKey ? detailRead : null
+  const history = eventsRead?.key === eventsKey ? eventsRead : null
+  const invalidError = isInvalidId ? 'ID de lote inválido.' : !token ? 'Inicia sesión para consultar Vivero.' : null
+  return {
+    scopeKey,
+    detail: detail?.data ?? null,
+    events: history?.data ?? [],
+    loading: !invalidError && detail === null,
+    error: invalidError ?? detail?.error ?? null,
+    eventsLoading: !invalidError && history === null,
+    eventsError: history?.error ?? null,
+    eventsReady: Boolean(history?.data),
+    refetch: () => setAttempt(value => value + 1),
+    refetchEvents: () => setEventsAttempt(value => value + 1),
+  }
 }

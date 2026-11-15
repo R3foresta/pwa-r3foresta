@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import HeroHeader from '../components/HeroHeader'
 import SaludCard from '../components/SaludCard'
@@ -14,7 +14,10 @@ import AuditoriaSection from '../components/AuditoriaSection'
 import GalleryModal from '../components/GalleryModal'
 import CierreLoteCard from '../components/CierreLoteCard'
 import Icon from '../../../components/Icon'
-import { NowContext } from '../contexts/nowContext'
+import { useAuth } from '../../../contexts/AuthContext'
+import { useOperationalAccess } from '../../accesos/capabilitiesContext'
+import { isExactId } from '../../accesos/accessPolicy'
+import { Button } from '../../../components/ui'
 import { useViveroDetail } from '../hooks/useViveroDetail'
 import type { PhotoItem, ViveroLotEventView } from '../types/view-models'
 import { useViveroStats } from '../hooks/useViveroStats'
@@ -27,15 +30,21 @@ type DetailTab = (typeof DETAIL_TABS)[number]
 
 export default function ViveroDetailScreen() {
   const { id } = useParams()
+  const { user } = useAuth()
+  const { m2 } = useOperationalAccess()
+  const scope = JSON.stringify([id, user?.id, localStorage.getItem('authToken'), m2.status, m2.data])
+  return <ViveroDetail key={scope} />
+}
+
+function ViveroDetail() {
+  const { id } = useParams()
   const [searchParams] = useSearchParams()
-  const lotId = Number(id)
-  const isInvalidId = !Number.isSafeInteger(lotId) || lotId <= 0
+  const lotId = id ?? ''
+  const isInvalidId = !isExactId(lotId)
 
-  // 1. Lógica delegada al Custom Hook (Fix QA4)
-  const { detail, events, loading, error, refetch } = useViveroDetail(lotId, isInvalidId)
+  const { detail, events, loading, error, refetch, eventsLoading, eventsError, eventsReady, refetchEvents } = useViveroDetail(lotId, isInvalidId)
 
-  // ✨ NUEVO: Calculamos las estadísticas UNA SOLA VEZ aquí
-  const stats = useViveroStats(detail, events)
+  const stats = useViveroStats(detail, events, eventsReady)
 
   // Lectura defensiva de `?tab=`: solo aceptamos una pestaña conocida (p. ej.
   // AsignacionForm vuelve con `?tab=asignaciones`); cualquier otro valor cae a
@@ -45,33 +54,15 @@ export default function ViveroDetailScreen() {
     return DETAIL_TABS.includes(requested as DetailTab) ? (requested as DetailTab) : 'resumen'
   })
   const [filter, setFilter] = useState('TODOS')
-  const [selectedPhotos, setSelectedPhotos] = useState<PhotoItem[] | null>(null)
-  const [now, setNow] = useState<number>(() => Date.now())
-
-  useEffect(() => {
-    const interval = setInterval(() => setNow(Date.now()), 60_000)
-    return () => clearInterval(interval)
-  }, [])
+  const [selectedPhotoIds, setSelectedPhotoIds] = useState<string[] | null>(null)
+  const allPhotos: PhotoItem[] = events.flatMap(event => (event.fotos ?? []).map(photo => ({ ...photo, autor: event.responsableNombre, etapa: event.kind })))
+  const selectedPhotos = allPhotos.filter(photo => selectedPhotoIds?.includes(photo.id))
 
   const baseFilteredEvents = useMemo(() => {
     const filterUpper = filter.toUpperCase()
     if (filterUpper === 'TODOS') return events
     return events.filter(e => e.kind.toUpperCase() === filterUpper)
   }, [events, filter])
-
-  const filteredEvents = useMemo(() => {
-    if (!detail) return baseFilteredEvents;
-    return baseFilteredEvents.map(event => {
-      if (event.kind === 'INICIO') {
-        const unidadFormat = detail.unidadMedidaInicial === 'G' ? 'gr' : detail.unidadMedidaInicial.toLowerCase();
-        return {
-          ...event,
-          materialIngresado: `${detail.cantidadInicialEnProceso} ${unidadFormat}`
-        };
-      }
-      return event;
-    });
-  }, [baseFilteredEvents, detail]);
 
   const counts = useMemo(() => {
     return events.reduce((acc, event) => {
@@ -82,20 +73,14 @@ export default function ViveroDetailScreen() {
   }, [events])
 
   const handleOpenGalleryFromEvent = (event: ViveroLotEventView) => {
-    const photos: PhotoItem[] = (event.fotos ?? []).map(f => ({
-      url: f.url,
-      titulo: f.titulo || 'Evidencia',
-      fecha: f.fecha || event.fecha,
-      autor: event.responsableNombre,
-      etapa: event.kind
-    }));
-    if (photos.length > 0) setSelectedPhotos(photos);
+    setSelectedPhotoIds((event.fotos ?? []).map(photo => photo.id))
   }
+  const historyStatus = eventsLoading ? <p role="status" className="rounded-2xl bg-white p-4 text-sm text-neutral-600">Cargando historial y evidencias…</p>
+    : eventsError ? <div role="alert" className="rounded-2xl bg-danger-50 p-4 text-sm text-danger-700">
+      <p>No se pudo consultar el historial: {eventsError}</p>
+      <Button variant="secondary" size="sm" onClick={refetchEvents}>Reintentar historial</Button>
+    </div> : null
 
-  const ultimaFotoLote = useMemo(() => {
-    const eventoConFoto = [...events].reverse().find(e => e.fotos && e.fotos.length > 0);
-    return eventoConFoto?.fotos?.[0]?.url || detail?.plantaImagenUrl;
-  }, [events, detail?.plantaImagenUrl]);
 
   if (error) {
     return (
@@ -103,6 +88,7 @@ export default function ViveroDetailScreen() {
         <div className="rounded-3xl bg-white p-6 text-center shadow-2xl max-w-sm">
           <p className="text-danger-500 font-bold mb-2">Error</p>
           <p className="text-sm text-neutral-600">{error}</p>
+          <Button variant="secondary" onClick={refetch}>Reintentar ficha</Button>
         </div>
       </div>
     )
@@ -124,10 +110,9 @@ export default function ViveroDetailScreen() {
   }
 
   return (
-    <NowContext.Provider value={now}>
       <div className="flex justify-center min-h-screen bg-brand-100">
         <div className="w-full max-w-md bg-brand-50 min-h-screen shadow-2xl relative overflow-y-auto">
-          <HeroHeader detail={detail} customImage={ultimaFotoLote} />
+          <HeroHeader detail={detail} />
 
           <div className="sticky top-0 z-20 px-5 pt-4 pb-2 bg-brand-50/95 backdrop-blur-sm">
             {/* Control segmentado de pestañas (a medida, no calza en <Button>): tokens migrados. */}
@@ -148,21 +133,23 @@ export default function ViveroDetailScreen() {
           <div className="px-5 pb-28 space-y-6">
             {activeTab === 'resumen' && (
               <div className="space-y-6 transition-opacity duration-300">
+                <OrigenCard detail={detail} />
+                {historyStatus}
                 {detail.estadoLote === 'FINALIZADO' ? (
                   <CierreLoteCard detail={detail} events={events} stats={stats} />
                 ) : (
-                  <SaludCard detail={detail} events={events} stats={stats} />
+                  <SaludCard detail={detail} />
                 )}
                 <DispatchFlowCard detail={detail} />
                 <QuickActions detail={detail} onJumpEvidencia={() => setActiveTab('evidencia')} />
                 <IndicadoresRapidos detail={detail} events={events} stats={stats} />
-                <SubetapasBar detail={detail} events={events} />
+                {eventsReady && <SubetapasBar detail={detail} events={events} />}
                 <ViveroLotAsignacionesCollapsible
                   loteId={detail.id}
                   cantidadAsignacionesActivas={detail.cantidadAsignacionesActivas}
                   className="rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5"
                 />
-                <UltimosEventos events={events} onJumpHistorial={() => setActiveTab('historial')} />
+                {eventsReady && <UltimosEventos events={events} onJumpHistorial={() => setActiveTab('historial')} />}
               </div>
             )}
 
@@ -170,17 +157,22 @@ export default function ViveroDetailScreen() {
               <div className="space-y-4 transition-opacity duration-300">
                 <OrigenCard detail={detail} />
                 <FiltersRow active={filter} onChange={setFilter} counts={counts} />
-                <Timeline events={filteredEvents} onOpenGallery={handleOpenGalleryFromEvent} />
+                {historyStatus}
+                {eventsReady && <Timeline events={baseFilteredEvents} onOpenGallery={handleOpenGalleryFromEvent} onRenewPhotos={refetchEvents} />}
+                <p className="text-xs text-neutral-500">El contrato actual no informa paginación ni completitud. Una lista de fotos vacía tampoco acredita ausencia de evidencia.</p>
                 <AuditoriaSection detail={detail} />
               </div>
             )}
 
             {activeTab === 'evidencia' && (
               <div className="transition-opacity duration-300">
-                <EvidenciaTab
+                {historyStatus}
+                {eventsReady && <EvidenciaTab
                   events={events}
-                  onSelectPhoto={(photo) => setSelectedPhotos(photo ? [photo] : null)}
-                />
+                  onSelectPhoto={(photo) => setSelectedPhotoIds([photo.id])}
+                  onRenew={refetchEvents}
+                />}
+                <p className="mt-3 text-xs text-neutral-500">Las fotos se muestran según la lectura autorizada del historial; el servidor puede omitirlas ante un fallo de consulta.</p>
               </div>
             )}
             {activeTab === 'asignaciones' && (
@@ -191,8 +183,7 @@ export default function ViveroDetailScreen() {
           </div>
         </div>
 
-        <GalleryModal photos={selectedPhotos} onClose={() => setSelectedPhotos(null)} />
+        {selectedPhotos.length > 0 && <GalleryModal photos={selectedPhotos} onClose={() => setSelectedPhotoIds(null)} onRenew={refetchEvents} />}
       </div>
-    </NowContext.Provider>
   )
 }

@@ -1,195 +1,133 @@
 import { exactId } from '../../accesos/accessPolicy'
-import type { EvidenciaDto, LoteViveroDetalle, LoteViveroItem } from '../types/contracts'
-import type { ViveroLotCardData, ViveroLotDetailView } from '../types/view-models'
-import type { TimelineEventDto, TipoEventoVivero } from '../types/contracts'
-import type { ViveroLotEventView } from '../types/view-models'
+import type { LoteViveroDetalle, LoteViveroItem, TimelineEventDto, TipoEventoVivero } from '../types/contracts'
+import type { OrigenLoteView, ViveroLotCardData, ViveroLotDetailView, ViveroLotEventView } from '../types/view-models'
+import { daysSinceViveroDate, formatViveroDate, formatViveroPhotoDate } from '../utils/presentation'
 
-const VALID_KINDS = new Set<TipoEventoVivero>([
-  'INICIO',
-  'EMBOLSADO',
-  'DESCARTE_PRE_EMBOLSADO',
-  'ADAPTABILIDAD',
-  'MERMA',
-  'DESPACHO',
-  'CIERRE_AUTOMATICO',
-]);
+export const VALID_KINDS = new Set<TipoEventoVivero>([
+  'INICIO', 'INCORPORACION', 'EMBOLSADO', 'DESCARTE_PRE_EMBOLSADO',
+  'ADAPTABILIDAD', 'MERMA', 'DESPACHO', 'DEVOLUCION_PLANTACION', 'CIERRE_AUTOMATICO',
+])
 
-// TODO(p1 — datos no expuestos restantes):
-//   • recoleccion.saldo_actual     → si la recolección origen sigue con saldo.
-//   • recoleccion.estado_operativo → ABIERTO/CERRADO.
-//   Útiles para mostrar contexto del origen en ViveroDetailScreen.
-//
-// TODO(estructural — fuera de P1):
-//   La sección "Datos de origen" hoy mezcla campos de origen
-//   (recolección, comunidad) con metadatos del lote (vivero, responsable,
-//   fechas). Cuando se rediseñe el detail, separar en 2 secciones distintas:
-//   "Origen" (recolección + comunidad + tipo material) vs
-//   "Lote" (vivero + responsable + fechas).
-
-function daysBetween(start: string, end = new Date()): number {
-  if (!start) return 0
-  const datePart = start.includes('T') ? start.split('T')[0] : start
-  const parts = datePart.split('-').map(Number)
-  if (parts.length !== 3) return 0
-
-  const startDate = new Date(parts[0], parts[1] - 1, parts[2])
-  const endDate = new Date(end.getFullYear(), end.getMonth(), end.getDate())
-
-  const diffTime = endDate.getTime() - startDate.getTime()
-  return Math.max(0, Math.round(diffTime / (1000 * 60 * 60 * 24)))
-}
-
-function getCurrentBalance(lot: LoteViveroItem): number | null {
-  if (typeof lot.saldo_vivo_actual === 'number') return lot.saldo_vivo_actual
-  if (typeof lot.stock_vivo_actual === 'number') return lot.stock_vivo_actual
-  return null
+// Normalización de IDs en la frontera de lectura. Rechaza números JSON ya
+// redondeados antes de que lleguen a navegación, formularios o evidencias.
+export function normalizeLoteIds<T extends LoteViveroItem>(lot: T): T {
+  const normalized = {
+    ...lot, id: exactId(lot.id), vivero_id: exactId(lot.vivero_id),
+    planta_id: exactId(lot.planta_id), responsable_id: exactId(lot.responsable_id),
+    recoleccion_id: lot.recoleccion_id == null ? null : exactId(lot.recoleccion_id),
+    origen: getOrigen(lot),
+    recoleccion: lot.recoleccion ? { ...lot.recoleccion, id: exactId(lot.recoleccion.id) } : null,
+    vivero: lot.vivero ? { ...lot.vivero, id: exactId(lot.vivero.id) } : null,
+    planta: lot.planta ? { ...lot.planta, id: exactId(lot.planta.id) } : null,
+    responsable: lot.responsable ? { ...lot.responsable, id: exactId(lot.responsable.id) } : null,
+  }
+  if ('ultimo_evento_por_tipo' in lot) {
+    const detail = lot as LoteViveroItem & Pick<LoteViveroDetalle, 'ultimo_evento_por_tipo'>
+    return { ...normalized, ultimo_evento_por_tipo: Object.fromEntries(Object.entries(detail.ultimo_evento_por_tipo).map(([kind, event]) => [kind, event ? { ...event, id: exactId(event.id), responsable_id: exactId(event.responsable_id) } : null])) }
+  }
+  return normalized
 }
 
 function getLotSpecies(lot: LoteViveroItem): string {
-  // `nombre_comercial_snapshot` y `nombre_cientifico_snapshot` están garantizados
-  // (el backend los hereda al crear el lote). El nombre comercial se usa como
-  // etiqueta principal porque es el nombre operativo visible para el usuario.
-  // Fallback final 'Sin especie' como red de seguridad: si los tres vienen
-  // como string vacío (caso improbable según contrato pero posible si llega
-  // data legacy o un endpoint distinto), evita devolver "" y romper labels UI.
-  return (
-    lot.nombre_comercial_snapshot ||
-    lot.planta?.nombre_comun_principal ||
-    lot.planta?.especie ||
-    lot.nombre_cientifico_snapshot ||
-    'Sin especie'
-  )
+  return lot.nombre_comercial_snapshot || lot.nombre_cientifico_snapshot || 'Especie no registrada'
 }
-
-function getUltimoEventoPorTipo(
-  lot: LoteViveroItem,
-): LoteViveroDetalle['ultimo_evento_por_tipo'] | undefined {
-  return 'ultimo_evento_por_tipo' in lot
-    ? (lot as LoteViveroDetalle).ultimo_evento_por_tipo
-    : undefined
+function getOrigen(lot: LoteViveroItem): OrigenLoteView | null {
+  const origen = lot.origen
+  if (origen?.tipo === 'RECOLECCION') return { ...origen, recoleccion_id: exactId(origen.recoleccion_id) }
+  if (origen?.tipo === 'INCORPORACION') return { ...origen, evento_id: exactId(origen.evento_id) }
+  return null
 }
-
 function canDescartarPreEmbolsado(lot: LoteViveroItem): boolean {
-  const ultimoEvento = getUltimoEventoPorTipo(lot)
-  return (
-    lot.estado_lote === 'ACTIVO' &&
-    ultimoEvento?.INICIO !== null &&
-    ultimoEvento?.INICIO !== undefined &&
-    ultimoEvento?.EMBOLSADO === null &&
-    ultimoEvento?.DESCARTE_PRE_EMBOLSADO === null
-  )
+  const ultimo = (lot as Partial<LoteViveroDetalle>).ultimo_evento_por_tipo
+  return lot.origen?.tipo !== 'INCORPORACION' && lot.estado_lote === 'ACTIVO' &&
+    ultimo?.INICIO != null && ultimo.EMBOLSADO === null && ultimo.DESCARTE_PRE_EMBOLSADO === null
 }
 
 export function mapLoteToCardData(lot: LoteViveroItem): ViveroLotCardData {
   return {
-    id: lot.id,
-    codigo: lot.codigo_trazabilidad || `VIV-${lot.id}`,
-    especie: getLotSpecies(lot),
-    estadoLote: lot.estado_lote,
+    id: exactId(lot.id), origen: getOrigen(lot),
+    codigo: lot.codigo_trazabilidad || `VIV-${exactId(lot.id)}`,
+    especie: getLotSpecies(lot), estadoLote: lot.estado_lote,
     subetapaActual: lot.subetapa_actual ?? null,
-    plantasVivasIniciales: lot.plantas_vivas_iniciales,
-    fechaInicio: lot.fecha_inicio,
-    diasDesdeInicio: daysBetween(lot.fecha_inicio),
-    cantidadInicial: lot.cantidad_inicial_en_proceso,
-    cantidadActual: getCurrentBalance(lot),
-    unidadMedida: lot.unidad_medida_inicial,
-    vivero: lot.vivero?.nombre || `Vivero #${lot.vivero_id}`,
+    plantasVivasIniciales: lot.plantas_vivas_iniciales ?? null,
+    fechaInicio: lot.fecha_inicio, diasDesdeInicio: daysSinceViveroDate(lot.fecha_inicio),
+    cantidadInicial: lot.cantidad_inicial_en_proceso ?? null,
+    cantidadActual: lot.saldo_vivo_actual ?? null,
+    unidadMedida: lot.unidad_medida_inicial ?? null,
+    vivero: lot.vivero?.nombre || 'Vivero no disponible',
     saldoAsignadoSubcampanias: lot.saldo_asignado_subcampanias,
     cantidadAsignacionesActivas: lot.cantidad_asignaciones_activas,
     puedeDescartarPreEmbolsado: canDescartarPreEmbolsado(lot),
   }
 }
-
 export function mapLoteToDetailView(lot: LoteViveroItem): ViveroLotDetailView {
-  const especie = getLotSpecies(lot)
-  const responsableNombre =
-    lot.responsable?.nombre ||
-    lot.nombre_responsable_snapshot ||
-    lot.responsable?.username ||
-    'Sin responsable'
-
+  const origen = getOrigen(lot)
   return {
-    id: lot.id,
-    viveroId: exactId(lot.vivero_id),
-    codigo: lot.codigo_trazabilidad || `VIV-${lot.id}`,
-    estadoLote: lot.estado_lote,
-    subetapaActual: lot.subetapa_actual ?? null,
+    id: exactId(lot.id), viveroId: exactId(lot.vivero_id), origen,
+    codigo: lot.codigo_trazabilidad || `VIV-${exactId(lot.id)}`,
+    estadoLote: lot.estado_lote, subetapaActual: lot.subetapa_actual ?? null,
     motivoCierre: lot.motivo_cierre,
-    fechaInicio: lot.fecha_inicio,
-    diasDesdeInicio: daysBetween(lot.fecha_inicio),
-    cantidadInicialEnProceso: lot.cantidad_inicial_en_proceso,
-    unidadMedidaInicial: lot.unidad_medida_inicial,
-    plantasVivasIniciales: lot.plantas_vivas_iniciales,
-    saldoVivoActual: lot.saldo_vivo_actual,
-    stockVivoActual: lot.stock_vivo_actual,
-    especie,
-    nombreCientifico:
-      lot.nombre_cientifico_snapshot || lot.planta?.nombre_cientifico || 'Sin nombre científico',
-    nombreComercial: lot.nombre_comercial_snapshot || lot.planta?.nombre_comun_principal || especie,
-    variedad: lot.planta?.variedad || lot.variedad_snapshot || null,
+    fechaInicio: lot.fecha_inicio, diasDesdeInicio: daysSinceViveroDate(lot.fecha_inicio),
+    cantidadInicialEnProceso: lot.cantidad_inicial_en_proceso ?? null,
+    unidadMedidaInicial: lot.unidad_medida_inicial ?? null,
+    plantasVivasIniciales: lot.plantas_vivas_iniciales ?? null,
+    saldoVivoActual: lot.saldo_vivo_actual ?? null,
+    stockVivoActual: lot.stock_vivo_actual ?? null,
+    especie: getLotSpecies(lot),
+    nombreCientifico: lot.nombre_cientifico_snapshot || 'Nombre científico no registrado',
+    nombreComercial: lot.nombre_comercial_snapshot || 'Nombre comercial no registrado',
+    variedad: lot.variedad_snapshot ?? null,
     plantaImagenUrl: lot.planta?.imagen_url || null,
-    viveroNombre: lot.vivero?.nombre || `Vivero #${lot.vivero_id}`,
-    viveroCodigo: lot.vivero?.codigo || 'N/D',
-    responsableNombre,
-    responsableUsername: lot.responsable?.username || null,
-    recoleccionId: lot.recoleccion_id,
-    recoleccionCodigo: lot.recoleccion?.codigo_trazabilidad || `REC-${lot.recoleccion_id}`,
-    recoleccionFecha: lot.recoleccion?.fecha ?? null,
-    recoleccionTipoMaterial: lot.recoleccion?.tipo_material || lot.tipo_material_snapshot,
+    viveroNombre: lot.vivero?.nombre || 'Vivero no disponible',
+    viveroCodigo: lot.vivero?.codigo || 'No disponible',
+    responsableNombre: lot.nombre_responsable_snapshot || 'Responsable inicial no registrado',
+    responsableUsername: lot.responsable?.username ?? null,
+    recoleccionId: origen?.tipo === 'RECOLECCION' ? exactId(origen.recoleccion_id) : null,
+    recoleccionCodigo: origen?.tipo === 'RECOLECCION' ? lot.recoleccion?.codigo_trazabilidad ?? null : null,
+    recoleccionFecha: origen?.tipo === 'RECOLECCION' ? lot.recoleccion?.fecha ?? null : null,
+    recoleccionTipoMaterial: lot.tipo_material_snapshot ?? null,
     nombreComunidadOrigen: lot.nombre_comunidad_origen_snapshot,
-    createdAt: lot.created_at,
-    updatedAt: lot.updated_at,
+    createdAt: lot.created_at, updatedAt: lot.updated_at,
     saldoAsignadoSubcampanias: lot.saldo_asignado_subcampanias,
     cantidadAsignacionesActivas: lot.cantidad_asignaciones_activas,
     puedeDescartarPreEmbolsado: canDescartarPreEmbolsado(lot),
   }
 }
 
-export function mapTimelineEventToView(e: TimelineEventDto): ViveroLotEventView | null {
-  if (!VALID_KINDS.has(e.tipo_evento as TipoEventoVivero)) return null;
+const textOrNull = (value: unknown) => typeof value === 'string' && value ? value : null
+const numberOrNull = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? value : null
 
-  const p = e.payload as Record<string, unknown> | undefined;
-
-  const cantidadRaw = typeof p?.cantidad_afectada === 'number'
-    ? p.cantidad_afectada
-    : (typeof p?.plantas_vivas_iniciales === 'number'
-        ? p.plantas_vivas_iniciales
-        : (typeof p?.cantidad_material_afectado === 'number' ? p.cantidad_material_afectado : null));
-
+export function mapTimelineEventToView(e: TimelineEventDto): ViveroLotEventView {
+  const p = e.payload
+  const conocido = VALID_KINDS.has(e.tipo_evento as TipoEventoVivero)
+  const procedencia = p?.procedencia && typeof p.procedencia === 'object' ? p.procedencia as Record<string, unknown> : null
+  const unidad = p?.unidad_medida_evento ?? p?.unidad_medida
+  const cantidad = numberOrNull(p?.cantidad_afectada ?? p?.plantas_vivas_iniciales ?? p?.cantidad_material_afectado ?? p?.cantidad_inicial ?? p?.cantidad)
+  const unit = unidad === 'UNIDAD' || unidad === 'G' ? unidad :
+    ['INCORPORACION', 'EMBOLSADO', 'MERMA', 'DESPACHO', 'DEVOLUCION_PLANTACION'].includes(e.tipo_evento) ? 'UNIDAD' : null
   return {
-    id: e.id,
-    kind: (e.tipo_evento as TipoEventoVivero) || 'INICIO',
-    label: e.label || `${e.tipo_evento?.replace(/_/g, ' ') || 'Evento'} registrado`,
-    fecha: e.fecha_evento ? new Date(e.fecha_evento).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) : 'Sin fecha',
-    fechaIso: e.fecha_evento || new Date().toISOString(),
-    // Se oculta temporalmente la hora. El backend está enviando
-    // timestamps sin tiempo real (00:00:00 UTC), lo que en GMT-4 resulta en "20:00" falso.
-    hora: null,
-    responsableNombre: e.responsable_nombre || 'Operador de campo',
-    cantidad: cantidadRaw,
-    unidadMedidaEvento: p?.unidad_medida_evento === 'UNIDAD' || p?.unidad_medida_evento === 'G'
-      ? p.unidad_medida_evento
-      : null,
-    saldoAntes: typeof p?.saldo_vivo_antes === 'number' ? p.saldo_vivo_antes : null,
-    saldoDespues: typeof p?.saldo_vivo_despues === 'number' ? p.saldo_vivo_despues : null,
-    observacion: e.observaciones || null,
-    causa:
-      (p?.causa_merma as string | undefined) ||
-      (p?.causa_descarte_pre_embolsado as string | undefined) ||
-      (p?.motivo_cierre_calculado as string | undefined) ||
-      null,
-    subetapa: (p?.subetapa_destino as string | undefined) || null,
-    destino: (p?.destino_tipo as string | undefined) || null,
-    referencia: (p?.destino_referencia as string | undefined) || null,
-    comunidad: (p?.comunidad_destino as string | undefined) || null,
-    materialIngresado: (p?.material_ingresado as string | undefined) || null,
-    sustrato: (p?.sustrato as string | undefined) || null,
-
-    fotos: (e.evidencias || []).map((f: EvidenciaDto) => ({
-      id: f.id,
-      url: f.public_url || '',
-      titulo: f.titulo || 'Evidencia técnica',
-      fecha: f.tomado_en ? new Date(f.tomado_en).toLocaleDateString('es-ES') : (e.fecha_evento || 'Sin fecha')
-    }))
-  };
+    id: exactId(e.id), kind: e.tipo_evento || 'TIPO_NO_DISPONIBLE', conocido,
+    label: e.label || (conocido ? `${e.tipo_evento.replaceAll('_', ' ')} registrado` : `Evento no reconocido: ${e.tipo_evento || 'tipo no disponible'}`),
+    fecha: formatViveroDate(e.fecha_evento), fechaIso: e.fecha_evento || '', hora: null,
+    responsableNombre: e.responsable_nombre || 'Responsable no disponible',
+    responsableEsSnapshot: e.tipo_evento === 'INCORPORACION',
+    cantidad, unidadMedidaEvento: unit,
+    saldoAntes: numberOrNull(p?.saldo_vivo_antes), saldoDespues: numberOrNull(p?.saldo_vivo_despues),
+    observacion: e.observaciones ?? null,
+    causa: textOrNull(p?.causa_merma ?? p?.causa_descarte_pre_embolsado ?? p?.motivo_cierre ?? p?.motivo_cierre_calculado),
+    subetapa: textOrNull(p?.subetapa_destino), destino: textOrNull(p?.destino_tipo),
+    referencia: textOrNull(p?.destino_referencia), comunidad: textOrNull(p?.comunidad_destino),
+    materialIngresado: e.tipo_evento === 'INICIO' && cantidad !== null && unit ? `${cantidad} ${unit}` : null,
+    sustrato: textOrNull(p?.sustrato),
+    procedencia: procedencia ? { modalidad: textOrNull(procedencia.modalidad), procedencia: textOrNull(procedencia.procedencia), tercero: textOrNull(procedencia.tercero_origen), referencia: textOrNull(procedencia.referencia_documental) } : null,
+    fotos: (e.evidencias ?? []).map(f => ({
+      id: exactId(f.id),
+      // El bucket privado nunca puede caer a public_url ni construirse desde ruta_archivo.
+      url: f.signed_url || (f.bucket === 'vivero_incorporaciones' ? null : f.public_url) || null,
+      expiraEn: f.signed_url && typeof f.url_expira_en_segundos === 'number' ? Date.now() + f.url_expira_en_segundos * 1000 : null,
+      titulo: f.titulo || `Evidencia #${exactId(f.id)}`,
+      fecha: formatViveroPhotoDate(f.tomado_en ?? f.creado_en),
+      mimeType: f.mime_type ?? f.tipo_archivo ?? null, tamanoBytes: f.tamano_bytes ?? null,
+    })),
+  }
 }

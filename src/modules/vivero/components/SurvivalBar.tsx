@@ -5,24 +5,19 @@ type Props = {
   className?: string
 }
 
-function getTone(pct: number) {
-  if (pct >= 80) return { bar: 'bg-success-500', text: 'text-success-600' }
-  if (pct >= 50) return { bar: 'bg-warning-400', text: 'text-warning-600' }
-  return { bar: 'bg-danger-500', text: 'text-danger-600' }
-}
 
 function SurvivalBar({ alive, initial, showLabel = false, className }: Props) {
   const hasData =
     alive !== null && initial !== null && initial > 0 && Number.isFinite(alive) && Number.isFinite(initial)
   const ratio = hasData ? Math.max(0, Math.min(1, alive / initial)) : 0
   const pct = Math.round(ratio * 100)
-  const tone = hasData ? getTone(pct) : { bar: 'bg-neutral-300', text: 'text-neutral-500' }
+  const tone = hasData ? { bar: 'bg-brand-500', text: 'text-brand-600' } : { bar: 'bg-neutral-300', text: 'text-neutral-500' }
 
   return (
     <div className={`w-full ${className ?? ''}`}>
       {showLabel && (
         <div className="mb-1 flex items-end justify-between text-[11px] font-bold">
-          <span className="uppercase tracking-wider text-brand-500">Supervivencia</span>
+          <span className="uppercase tracking-wider text-brand-500">Saldo / inicial registrado</span>
           <span className={tone.text}>{hasData ? `${pct}%` : '—'}</span>
         </div>
       )}

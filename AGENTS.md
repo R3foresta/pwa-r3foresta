@@ -105,11 +105,11 @@ Estas reglas no son negociables desde frontend.
 - `G` permite 1 decimal en captura ordinaria. INICIO y la comprobación de recepción admiten hasta 6 decimales en la unidad canónica conforme a su contrato.
 - `UNIDAD` no permite decimales.
 - `ESQUEJE` siempre usa `UNIDAD`, entero estricto.
-- Desde `EMBOLSADO`, el saldo vivo siempre se maneja en `UNIDAD`.
+- Desde su base viva (`EMBOLSADO` o `INCORPORACION`), el saldo vivo siempre se maneja en `UNIDAD`.
 
 ### 5.3 Inicio de Vivero
 
-- Un lote de vivero nace desde un único lote origen.
+- En el camino M1, un lote de vivero nace desde una única Recolección. T5 admite además un lote nuevo homogéneo por INCORPORACION, sin consumo M1 ni INICIO/EMBOLSADO ficticios.
 - No se mezclan varias recolecciones en un lote de vivero.
 - El lote de vivero hereda snapshots desde `RECOLECCION` validada, no desde una lectura viva de `PLANTA`.
 - `vivero_id` se selecciona en Vivero; no se hereda automáticamente desde `RECOLECCION.vivero_id`.
@@ -119,7 +119,7 @@ Estas reglas no son negociables desde frontend.
 
 ### 5.4 Embolsado
 
-- `EMBOLSADO` es el nacimiento del saldo vivo.
+- `EMBOLSADO` es el nacimiento del saldo vivo del camino Recolección; T5 nace con `INCORPORACION`. Una sola base viva por lote.
 - Solo puede registrarse una vez por lote.
 - `plantas_vivas_iniciales > 0`.
 - `cantidad_afectada = plantas_vivas_iniciales`.
@@ -142,7 +142,7 @@ Estas reglas no son negociables desde frontend.
 ### 5.6 Merma
 
 - `MERMA` registra pérdida real del saldo vivo.
-- Requiere `EMBOLSADO` previo.
+- Requiere base viva previa: `EMBOLSADO` o `INCORPORACION` (T5).
 - Puede registrarse después de `EMBOLSADO`, exista o no evento de `ADAPTABILIDAD`.
 - Usa `UNIDAD`.
 - `cantidad_afectada > 0`.
@@ -154,7 +154,7 @@ Estas reglas no son negociables desde frontend.
 ### 5.7 Despacho
 
 - `DESPACHO` registra salida parcial o total hacia plantación u otro destino.
-- Requiere `EMBOLSADO` previo.
+- Requiere base viva previa: `EMBOLSADO` o `INCORPORACION` (T5).
 - `ADAPTABILIDAD` no es requisito para despachar.
 - Usa `UNIDAD`.
 - `cantidad_afectada > 0`.
@@ -176,7 +176,7 @@ Estas reglas no son negociables desde frontend.
 
 - La evidencia se asocia por `tipo_entidad_id` + `entidad_id`.
 - Para eventos de Vivero, `entidad_id` apunta a `EVENTO_LOTE_VIVERO.id`.
-- `INICIO`, `EMBOLSADO`, `MERMA` y `DESPACHO` requieren mínimo una foto válida.
+- `INICIO`, `EMBOLSADO`, `INCORPORACION`, `MERMA` y `DESPACHO` requieren mínimo una foto válida. Las fotos T5 son privadas; usar firma temporal de la lectura M2 autorizada.
 - `ADAPTABILIDAD` puede tener evidencia, pero no es obligatoria.
 - No se aceptan evidencias tardías para eventos obligatorios en el MVP.
 - `bucket` y `ruta_archivo` no deben tratarse como URL pública.
@@ -221,7 +221,7 @@ Validación backend = verdad del sistema.
 
 ## 7. Convenciones de implementación
 
-El frontend usa React + TypeScript + Vite + Tailwind CSS. 
+El frontend usa React + TypeScript + Vite + Tailwind CSS.
 Adáptate a la estructura real del repo, pero respeta estas reglas generales.
 
 ### 7.1 TypeScript

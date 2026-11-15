@@ -89,6 +89,16 @@ Las cards de la lista priorizan el estado de recepción y presentan el material 
 
 El detalle compone Resumen, Recepción, Origen y Datos del registro en `RecoleccionDetailSections`; conserva los nombres históricos del DTO y prioriza `nombre_recolector_snapshot` cuando existe. `RecoleccionEvidencias` comparte miniaturas ampliables, metadatos y fallos de imagen con la bandeja. `recoleccionPresentation` formatea días operativos en UTC e instantes de registro en `America/La_Paz`. La consulta operativa de recepción usa `canReview`, que excluye al autor incluso ADMIN; su resumen histórico se lee directamente de la ficha. Envío y descarte requieren `ConfirmDialog`, bloquean doble clic y exigen actualizar el detalle tras incertidumbre; el éxito confirmado no se convierte en fallo de escritura si falla la lectura posterior. El descarte conserva sus permisos por custodia. El historial completo, destinos y fotos de recepción para el autor requieren el contrato documentado en AUD-037.
 
+## Lecturas de Vivero T5 (iteración 1)
+
+El origen se lee de `origen.tipo`, nunca del código. `INCORPORACION` abre un lote nuevo con plantas vivas; los campos de Recolección/material en proceso permanecen nulos. El mapper conserva snapshots, IDs como cadenas y saldos ausentes como no disponibles. Las cantidades iniciales son históricas; sólo `saldo_vivo_actual` representa el saldo físico actual. No usar despachos + stock para calcular supervivencia ni certificar aptitud.
+
+Detalle e historial se consultan por separado con Bearer y `no-store`. Los hooks aíslan cuenta, token, permisos y lote; la ficha permanece legible si falla el historial. La renovación de fotos relee el timeline autorizado. `signed_url` y su expiración viven sólo en memoria; no construir URL pública del bucket privado ni consultar evidencia T5 por la API genérica. `EvidencePhoto` comparte preview, metadatos disponibles, error y expiración; cada foto puede fallar sin invalidar las otras.
+
+El historial admite los nueve eventos y conserva tipos desconocidos con una presentación genérica. Adaptabilidad representa todos los seguimientos recibidos, con saltos y repeticiones; no deriva SOMBRA ni duraciones desde INICIO/EMBOLSADO/despachos. Los días DATE se formatean en UTC sin atribuir horas. La descarga existente se llama «metadatos»: no exporta un historial auditable completo.
+
+Alcance, pruebas y dependencias de completitud, vínculos y nombres históricos: [QA T5 iteración 1](docs/QA_T5_ITERACION_1.md). El formulario de incorporación y la procedencia M3 quedan para entregas posteriores.
+
 ## Plan de Plantación
 
 Reutilizar `PlanMetaEspeciesForm`, `usePlanMetaEspeciesForm` y utilidades del módulo. Asistente y detalle conservan su propia carga, autorización, confirmación y persistencia.

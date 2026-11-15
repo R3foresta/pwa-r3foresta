@@ -1,3 +1,4 @@
+import { formatViveroNumber } from '../utils/presentation'
 import Icon from '../../../components/Icon';
 import { formatUnidadCanonicaDisplay } from '../../../utils/recoleccionUnidad';
 import type { ViveroLotDetailView, ViveroLotEventView } from '../types/view-models';
@@ -5,13 +6,13 @@ import type { ViveroLotDetailView, ViveroLotEventView } from '../types/view-mode
 interface CierreLoteCardProps {
   detail: ViveroLotDetailView;
   events: ViveroLotEventView[];
-  stats: { despachadas: number; mermas: number };
+  stats: { despachadas: number | null; mermas: number | null };
 }
 
 export default function CierreLoteCard({ detail, events, stats }: CierreLoteCardProps) {
 
-  const ultimoEvento = events[events.length - 1];
-  const fechaCierre = ultimoEvento ? ultimoEvento.fecha : detail.updatedAt;
+  const cierre = [...events].reverse().find(event => event.kind === 'CIERRE_AUTOMATICO');
+  const fechaCierre = cierre?.fecha ?? 'No disponible';
   const isDescartePreEmbolsado = detail.motivoCierre === 'DESCARTE_PRE_EMBOLSADO';
 
   const formatMotivoCierre = (motivo: string | null | undefined) => {
@@ -68,7 +69,7 @@ export default function CierreLoteCard({ detail, events, stats }: CierreLoteCard
 
       <div className="mt-3 grid grid-cols-3 gap-2">
          <div className="rounded-2xl bg-white p-3 ring-1 ring-neutral-200 flex flex-col justify-end items-center h-full text-center">
-            <p className="text-[9px] font-black uppercase tracking-widest text-neutral-500 mb-1 leading-tight">Días<br/>Activo</p>
+            <p className="text-[9px] font-black uppercase tracking-widest text-neutral-500 mb-1 leading-tight">Días<br/>desde registro</p>
             <p className="text-[22px] font-black text-brand-950 leading-none mt-1">{detail.diasDesdeInicio || 0}</p>
          </div>
          <div className={`rounded-2xl p-3 ring-1 flex flex-col justify-end items-center h-full text-center ${
@@ -82,13 +83,13 @@ export default function CierreLoteCard({ detail, events, stats }: CierreLoteCard
             <p className={`text-[22px] font-black leading-none mt-1 ${
               isDescartePreEmbolsado ? 'text-warning-800' : 'text-info-700'
             }`}>
-              {isDescartePreEmbolsado ? detail.cantidadInicialEnProceso : stats.despachadas}
+              {formatViveroNumber(isDescartePreEmbolsado ? detail.cantidadInicialEnProceso : stats.despachadas)}
             </p>
             {isDescartePreEmbolsado && (
               <p className="mt-1 text-[9px] font-bold uppercase tracking-widest text-warning-700">
                 {formatUnidadCanonicaDisplay(
                   detail.unidadMedidaInicial,
-                  detail.cantidadInicialEnProceso,
+                  detail.cantidadInicialEnProceso ?? undefined,
                 )}
               </p>
             )}
@@ -98,7 +99,7 @@ export default function CierreLoteCard({ detail, events, stats }: CierreLoteCard
               {isDescartePreEmbolsado ? 'Saldo vivo' : 'Pérdidas'}
             </p>
             <p className="text-[22px] font-black text-danger-700 leading-none mt-1">
-              {isDescartePreEmbolsado ? 'N/A' : stats.mermas}
+              {isDescartePreEmbolsado ? 'No disponible' : formatViveroNumber(stats.mermas)}
             </p>
          </div>
       </div>

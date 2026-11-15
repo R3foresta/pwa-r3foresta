@@ -1,3 +1,4 @@
+import { isExactId, sameId } from '../../../../accesos/accessPolicy'
 import { useM2Logistics } from '../../../hooks/useM2Logistics'
 import { useEffect, useRef, useState } from 'react'
 import Icon from '../../../../../components/Icon'
@@ -137,8 +138,8 @@ function AsignacionForm({ lote, onCompleted }: Props) {
     Number.isInteger(cantidadNum) &&
     cantidadNum > 0 &&
     cantidadNum <= maxAsignable
-  const campaniaValid = Number(campaniaId) > 0
-  const subcampaniaValid = Number(subcampaniaId) > 0
+  const campaniaValid = isExactId(campaniaId)
+  const subcampaniaValid = isExactId(subcampaniaId)
   const fotosValid = photos.length >= 1 && photos.length <= 5
   const fechaValid = !!fecha && fecha >= fechaMin && fecha <= fechaMax
   const canCreate =
@@ -208,7 +209,7 @@ function AsignacionForm({ lote, onCompleted }: Props) {
     }
     let active = true
     setSubcampaniasLoading(true)
-    PlantacionService.listSubcampaniasByCampania(Number(campaniaId))
+    PlantacionService.listSubcampaniasByCampania(campaniaId)
       .then((data) => {
         if (!active) return
         const activas = data.filter((sub) => sub.estado === 'ACTIVA')
@@ -256,7 +257,7 @@ function AsignacionForm({ lote, onCompleted }: Props) {
     setSubmitError(null)
     setAssignmentSuccess(null)
     try {
-      const selectedSubcampania = subcampanias.find((sub) => sub.id === Number(subcampaniaId))
+      const selectedSubcampania = subcampanias.find((sub) => sameId(sub.id, subcampaniaId))
       const selectedProposito = PROPOSITOS.find((item) => item.key === proposito)
 
       // Paso 1 — subir la evidencia de la entrega y obtener los evidencia_ids.
@@ -279,7 +280,7 @@ function AsignacionForm({ lote, onCompleted }: Props) {
       const result = await LotesViveroService.crearAsignacion(
         lote.id,
         {
-          subcampania_id: Number(subcampaniaId),
+          subcampania_id: subcampaniaId,
           cantidad_asignada: cantidadNum,
           proposito,
           fecha_asignacion: fecha,
@@ -550,7 +551,7 @@ function AsignacionForm({ lote, onCompleted }: Props) {
           responsable={[user?.nombre, user?.apellido].filter(Boolean).join(' ') || authId}
           evidencias={photos.length}
           efecto={`Saldo esperado: ${saldoDespues} UNIDAD${finalizaLote ? '; cierre por saldo cero' : ''}`}
-          detalle={`Destino: ${subcampanias.find((sub) => sub.id === Number(subcampaniaId))?.nombre ?? 'Subcampaña seleccionada'}`}
+          detalle={`Destino: ${subcampanias.find((sub) => sameId(sub.id, subcampaniaId))?.nombre ?? 'Subcampaña seleccionada'}`}
         />
       </ConfirmDialog>
 

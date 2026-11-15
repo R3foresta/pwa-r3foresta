@@ -4,11 +4,16 @@ import type {
   SubetapaAdaptabilidad,
   TipoMaterialVivero,
   UnidadMedidaVivero,
-  TipoEventoVivero,
+  OrigenLoteVivero,
 } from './contracts'
 
+export type OrigenLoteView =
+  | { tipo: 'RECOLECCION'; recoleccion_id: string }
+  | (Omit<Extract<OrigenLoteVivero, { tipo: 'INCORPORACION' }>, 'evento_id'> & { evento_id: string })
+
 export interface ViveroLotCardData {
-  id: number
+  id: string
+  origen: OrigenLoteView | null
   codigo: string
   especie: string
   estadoLote: EstadoLoteVivero
@@ -16,27 +21,28 @@ export interface ViveroLotCardData {
   plantasVivasIniciales: number | null
   fechaInicio: string
   diasDesdeInicio: number
-  cantidadInicial: number
+  cantidadInicial: number | null
   cantidadActual: number | null
-  unidadMedida: UnidadMedidaVivero
+  unidadMedida: UnidadMedidaVivero | null
   vivero: string
   /** Total entregado físicamente a subcampañas (informativo). */
-  saldoAsignadoSubcampanias?: number
-  cantidadAsignacionesActivas?: number
+  saldoAsignadoSubcampanias?: number | null
+  cantidadAsignacionesActivas?: number | null
   puedeDescartarPreEmbolsado: boolean
 }
 
 export interface ViveroLotDetailView {
   viveroId?: string
-  id: number
+  id: string
+  origen: OrigenLoteView | null
   codigo: string
   estadoLote: EstadoLoteVivero
   subetapaActual: SubetapaAdaptabilidad | null
   motivoCierre: MotivoCierreVivero | null
   fechaInicio: string
   diasDesdeInicio: number
-  cantidadInicialEnProceso: number
-  unidadMedidaInicial: UnidadMedidaVivero
+  cantidadInicialEnProceso: number | null
+  unidadMedidaInicial: UnidadMedidaVivero | null
   plantasVivasIniciales: number | null
   saldoVivoActual: number | null
   stockVivoActual: number | null
@@ -49,33 +55,39 @@ export interface ViveroLotDetailView {
   viveroCodigo: string
   responsableNombre: string
   responsableUsername: string | null
-  recoleccionId: number
-  recoleccionCodigo: string
+  recoleccionId: string | null
+  recoleccionCodigo: string | null
   recoleccionFecha: string | null
-  recoleccionTipoMaterial: TipoMaterialVivero
+  recoleccionTipoMaterial: TipoMaterialVivero | null
   nombreComunidadOrigen: string | null
   createdAt: string
   updatedAt: string
   /** Total entregado físicamente a subcampañas (informativo). */
-  saldoAsignadoSubcampanias?: number
-  cantidadAsignacionesActivas?: number
+  saldoAsignadoSubcampanias?: number | null
+  cantidadAsignacionesActivas?: number | null
   puedeDescartarPreEmbolsado: boolean
 }
 
 export interface ViveroEventPhoto {
-  id: number
-  url: string
+  id: string
+  url: string | null
   titulo: string
   fecha: string
+  expiraEn: number | null
+  mimeType: string | null
+  tamanoBytes: number | null
 }
 
 export interface ViveroLotEventView {
-  id: number
-  kind: TipoEventoVivero
+  id: string
+  kind: string
+  conocido: boolean
   label: string
   fecha: string
   fechaIso: string
   hora: string | null
+  responsableEsSnapshot: boolean
+  procedencia?: { modalidad: string | null; procedencia: string | null; tercero: string | null; referencia: string | null } | null
   responsableNombre: string
   cantidad?: number | null
   unidadMedidaEvento?: UnidadMedidaVivero | null
@@ -92,10 +104,7 @@ export interface ViveroLotEventView {
   sustrato?: string | null
 }
 
-export interface PhotoItem {
-  url: string;
-  titulo: string;
-  fecha: string;
-  autor: string;
-  etapa?: string;
+export interface PhotoItem extends ViveroEventPhoto {
+  autor: string
+  etapa?: string
 }

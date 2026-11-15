@@ -8,7 +8,7 @@ import type {
 type TimelineData = LoteTimelineAdaptabilidadResponse['data']
 
 type Props = {
-  loteId: number
+  loteId: string | number
 }
 
 const SUBETAPA_LABEL: Record<SubetapaAdaptabilidad, string> = {
@@ -108,9 +108,9 @@ function AdaptabilidadTimeline({ loteId }: Props) {
             <div className="rounded-2xl bg-brand-50/40 px-3 py-2.5 ring-1 ring-brand-100">
               <div className="flex items-center justify-between gap-2">
                 <span
-                  className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ring-1 ${SUBETAPA_BADGE_TONE[subetapa]}`}
+                  className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ring-1 ${subetapa ? SUBETAPA_BADGE_TONE[subetapa] : ''}`}
                 >
-                  {SUBETAPA_LABEL[subetapa]}
+                  {subetapa ? SUBETAPA_LABEL[subetapa] : 'No registrada'}
                 </span>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-brand-500">
                   {formatFecha(evento.fecha_evento)}

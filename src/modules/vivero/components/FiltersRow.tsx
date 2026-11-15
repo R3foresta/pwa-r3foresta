@@ -10,6 +10,8 @@ export default function FiltersRow({ active, onChange, counts }: FiltersRowProps
   const filters = [
     'TODOS',
     'INICIO',
+    'INCORPORACION',
+    'DEVOLUCION_PLANTACION',
     'EMBOLSADO',
     'DESCARTE_PRE_EMBOLSADO',
     'MERMA',
@@ -17,6 +19,7 @@ export default function FiltersRow({ active, onChange, counts }: FiltersRowProps
     'DESPACHO',
     'CIERRE_AUTOMATICO',
   ];
+  filters.push(...Object.keys(counts).filter(kind => !filters.includes(kind)))
 
   return (
     <section>

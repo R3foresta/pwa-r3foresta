@@ -1,4 +1,4 @@
-import { exactId } from '../modules/accesos/accessPolicy'
+import { exactId, isExactId } from '../modules/accesos/accessPolicy'
 import {
   activarSubcampaniaApi,
   cancelarSubcampaniaApi,
@@ -276,8 +276,8 @@ export class PlantacionService {
     return payload.data
   }
 
-  static async listSubcampaniasByCampania(campaniaId: number): Promise<Subcampania[]> {
-    if (!Number.isFinite(campaniaId) || campaniaId <= 0) {
+  static async listSubcampaniasByCampania(campaniaId: number | string): Promise<Subcampania[]> {
+    if (!isExactId(campaniaId)) {
       throw new Error('ID de campaña inválido.')
     }
     const response = await listSubcampaniasByCampaniaApi(campaniaId)

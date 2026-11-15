@@ -1,10 +1,11 @@
+import { formatViveroNumber } from '../utils/presentation'
 import Icon from '../../../components/Icon'
 import type { ViveroLotDetailView, ViveroLotEventView } from '../types/view-models'
 
 interface Props {
   detail: ViveroLotDetailView;
   events: ViveroLotEventView[];
-  stats: { mermas: number; despachadas: number; disponibles: number };
+  stats: { mermas: number | null; despachadas: number | null; disponibles: number | null };
 }
 
 export default function IndicadoresRapidos({ detail, stats }: Props) {
@@ -12,11 +13,11 @@ export default function IndicadoresRapidos({ detail, stats }: Props) {
   const { mermas, despachadas, disponibles } = stats;
 
   const smallCards = [
-    { label: 'Material inicial', value: detail.cantidadInicialEnProceso, unit: detail.unidadMedidaInicial, hint: 'En INICIO' },
-    { label: 'Plantas vivas iniciales', value: detail.plantasVivasIniciales ?? 0, unit: 'UNIDAD', hint: 'En EMBOLSADO' },
-    { label: 'Mermas acumuladas', value: mermas, unit: 'UNIDAD', tone: 'red' },
-    { label: 'Despachadas', value: despachadas, unit: 'UNIDAD', tone: 'blue' },
-    { label: 'Entregado a subcampañas', value: detail.saldoAsignadoSubcampanias ?? 0, unit: 'UNIDAD' },
+    ...(detail.origen?.tipo === 'RECOLECCION' ? [{ label: 'Material inicial', value: detail.cantidadInicialEnProceso, unit: detail.unidadMedidaInicial, hint: 'En INICIO', tone: undefined }] : []),
+    { label: 'Plantas vivas iniciales', value: detail.plantasVivasIniciales, unit: 'UNIDAD', hint: detail.origen?.tipo === 'INCORPORACION' ? 'En INCORPORACION' : 'En EMBOLSADO' },
+    { label: 'Mermas en historial', value: mermas, unit: 'UNIDAD', tone: 'red' },
+    { label: 'Despachos en historial', value: despachadas, unit: 'UNIDAD', tone: 'blue' },
+    { label: 'Entregado a subcampañas', value: detail.saldoAsignadoSubcampanias, unit: 'UNIDAD' },
   ]
 
   return (
@@ -29,7 +30,7 @@ export default function IndicadoresRapidos({ detail, stats }: Props) {
         <div className="flex items-end justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-white/80">Disponibles ahora</p>
-            <p className="mt-1 text-5xl font-extrabold leading-none tracking-tight">{disponibles}</p>
+            <p className="mt-1 text-5xl font-extrabold leading-none tracking-tight">{formatViveroNumber(disponibles)}</p>
             <p className="mt-1 text-[11px] font-bold text-white/80">UNIDAD · saldo vivo actual</p>
           </div>
           <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/25">
@@ -38,13 +39,14 @@ export default function IndicadoresRapidos({ detail, stats }: Props) {
         </div>
       </div>
 
+      <p className="mt-2 text-xs text-neutral-500">Los totales describen el historial consultado; no reconstruyen el saldo actual.</p>
       <div className="mt-2 grid grid-cols-2 gap-2">
         {smallCards.map(s => {
           const toneText = s.tone === 'red' ? 'text-danger-700' : s.tone === 'blue' ? 'text-info-700' : 'text-brand-800'
           return (
             <div key={s.label} className="rounded-2xl bg-white px-3 py-2.5 shadow-soft ring-1 ring-black/5">
               <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-brand-500">{s.label}</p>
-              <p className={`mt-0.5 text-xl font-extrabold leading-none ${toneText}`}>{s.value.toLocaleString('es-BO')}</p>
+              <p className={`mt-0.5 text-xl font-extrabold leading-none ${toneText}`}>{formatViveroNumber(s.value)}</p>
               <p className="mt-1 text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
                 {s.unit}{s.hint ? ` · ${s.hint}` : ''}
               </p>

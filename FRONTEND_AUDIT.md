@@ -1,6 +1,6 @@
 # Auditoría y pendientes del frontend
 
-Corte: 13 de noviembre de 2026 para consulta y detalle de Recolección. Lista única de deuda frontend. No sustituye el [tablero global](../r3foresta-docs/specs/plantacion/participacion-aliada/implementacion/README.md) ni acredita estado del backend desplegado.
+Corte: 15 de noviembre de 2026 para lecturas T5 de Vivero; Recolección conserva su corte del 13. Lista única de deuda frontend. No sustituye el [tablero global](../r3foresta-docs/specs/plantacion/participacion-aliada/implementacion/README.md) ni acredita estado del backend desplegado.
 
 El [histórico de auditoría](docs/archivo/FRONTEND_AUDIT_2026-10-15.md) conserva diagnósticos, cierres y resultados anteriores. Se retiraron de esta entrada los checklists repetidos y diagnósticos de módulos que ya no describían su implementación. Un hallazgo abierto se mantiene pendiente hasta verificar su cierre; este ajuste documental no lo resuelve por sí solo.
 
@@ -10,6 +10,7 @@ Entrega INT06 publicada en PWA `62f55dc`: 32 suites/445 tests, lint y build/Type
 
 | Prioridad | ID | Estado | Qué falta |
 | --- | --- | --- | --- |
+| Alta | AUD-038 | Lecturas T5 corregidas local · continuidad backend pendiente | Completitud/fallos de fotos, vínculos M2→M3, timestamp y nombres históricos; alta ADMIN y procedencia M3 reservadas a las siguientes entregas. |
 | Media | AUD-037 | Consulta corregida local · contrato histórico pendiente | Lectura autorizada para el autor de fotos de recepción, historial completo, movimientos y destinos de su origen. |
 | Alta | AUD-035 | Corte y aceptación pendientes | Recepción única 100: acreditar backend/migración, reinicio coordinado, recorrido autenticado y aceptación móvil en el destino. [Alcance y verificación](docs/QA_RECEPCION_UNICA.md). |
 | Media | AUD-036 | PENDIENTE · captura legada | Revisar corrección de fichas cuya fecha original supera 45 días: el formulario aún aplica la ventana de captura a toda edición. |
@@ -40,6 +41,14 @@ Entrega INT06 publicada en PWA `62f55dc`: 32 suites/445 tests, lint y build/Type
 El orden de ejecución entre repositorios se decide en el tablero oficial; esta tabla prioriza riesgos de frontend, no introduce nuevas dependencias de producto.
 
 ## Pendientes y criterio de cierre
+
+### AUD-038 — Historial T5 y continuidad de procedencia
+
+15 de noviembre: iteración 1 corrige ficha incorporada con material nulo, lectura de origen, snapshots, IDs exactos, eventos INCORPORACION/DEVOLUCION_PLANTACION, fechas DATE, fotos privadas y fallo de timeline separado del vacío. Se retiran supervivencia/aptitud inferidas y subetapas inventadas; la descarga sólo exporta metadatos. El navegador local ADMIN abrió las fichas existentes 122/124 y decodificó la foto privada 779, sin escrituras reales. El comando INICIO conserva unidad obligatoria; la ampliación de nulos es de lectura. Verificación: 101 archivos / 1.398 pruebas, lint, build (TypeScript/PWA) y diff-check aprobados; aviso conocido de MapLibre conservado. [Alcance y verificaciones](docs/QA_T5_ITERACION_1.md).
+
+Dependencias constatadas en backend `69545ed`: timeline sin paginado/completitud, fotos que pueden volver como [] tras error y firma fallida que puede rechazar todo el historial; omite `origen_despacho`, `asignacion_id`, `subcampania_id`, `campania_id` y `vivero_incorporacion.registrado_en`. Sólo INCORPORACION aporta nombre histórico; título/peso/fecha de foto no se proyectan. No reconstruir vínculos por especie/saldo ni inventar horas desde DATE. El DTO tampoco aporta autoría M1 para acreditar un enlace de recepción ajena del VALIDADOR; la ficha M1 legada limita IDs a números seguros. No afecta la recepción disponible desde Inicio.
+
+Cierre: contratos autorizados con vínculos exactos, timestamp real cuando exista, estado explícito de evidencia/fallos parciales y protocolo verificable de completitud; después, pruebas de historial largo, recorrido M2→M3 y dispositivo. Iteración 2 requiere alta ADMIN realmente restringida en backend y recuperación propia tras retiro de permiso. Iteración 3 requiere lectura administrativa privada: `procedencia-propia` no legitima ADMIN ajeno e Impacto público conserva su audiencia. El corte 101–108 y bucket privado fueron informados como aplicados por backend en su informe del 14; no se reaplican ni se tratan como ausentes en esta entrega.
 
 ### AUD-037 — Consulta y detalle de Recolección
 

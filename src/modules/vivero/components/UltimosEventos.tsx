@@ -7,6 +7,8 @@ export default function UltimosEventos({ events, onJumpHistorial }: { events: Vi
   const getIconForKind = (kind: string) => {
     const icons = {
       INICIO: 'leaf',
+      INCORPORACION: 'leaf',
+      DEVOLUCION_PLANTACION: 'package',
       EMBOLSADO: 'box',
       DESCARTE_PRE_EMBOLSADO: 'trash',
       ADAPTABILIDAD: 'sun',
@@ -14,7 +16,7 @@ export default function UltimosEventos({ events, onJumpHistorial }: { events: Vi
       DESPACHO: 'truck',
       CIERRE_AUTOMATICO: 'flag',
     } as const
-    return icons[kind as keyof typeof icons] ?? 'leaf'
+    return icons[kind as keyof typeof icons] ?? 'info'
   }
 
   return (
@@ -37,7 +39,7 @@ export default function UltimosEventos({ events, onJumpHistorial }: { events: Vi
             <li key={e.id} className="flex items-center gap-2.5">
               <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-neutral-50 text-neutral-500 ring-1 ring-neutral-200">
                 <Icon name={getIconForKind(e.kind)} className="h-4 w-4" />
-                
+
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">

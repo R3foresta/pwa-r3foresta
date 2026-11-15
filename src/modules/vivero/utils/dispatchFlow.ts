@@ -18,14 +18,14 @@ type FlowSource = Pick<
 
 export const DISPATCH_FLOW_LABEL: Record<DispatchFlowStatus, string> = {
   LOTE_EN_VIVERO: 'Lote en vivero',
-  LISTO_PARA_DESPACHO: 'Disponible para entregar',
+  LISTO_PARA_DESPACHO: 'Con saldo vivo',
   ASIGNADO_A_DESTINO: 'Entregado a subcampanias',
 }
 
 export const DISPATCH_FLOW_DESCRIPTION: Record<DispatchFlowStatus, string> = {
   LOTE_EN_VIVERO: 'El lote sigue en proceso operativo dentro del vivero.',
   LISTO_PARA_DESPACHO:
-    'Hay plantas vivas en el vivero listas para entregar a una subcampania.',
+    'Hay saldo vivo registrado en el vivero; no acredita aptitud para entregar.',
   ASIGNADO_A_DESTINO:
     'Ya se entregaron plantas de este lote a una o mas subcampanias.',
 }

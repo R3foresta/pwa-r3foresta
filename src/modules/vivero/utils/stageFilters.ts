@@ -33,11 +33,11 @@ export function matchesStageFilter(lot: LoteViveroItem, filter: StageFilter): bo
   if (!isActivo) return false
 
   if (filter === 'INICIO') {
-    return lot.plantas_vivas_iniciales === null && lot.subetapa_actual === null
+    return lot.origen?.tipo === 'RECOLECCION' && lot.plantas_vivas_iniciales === null && lot.subetapa_actual === null
   }
 
   if (filter === 'EMBOLSADO') {
-    return lot.plantas_vivas_iniciales !== null && lot.subetapa_actual === null
+    return lot.origen?.tipo === 'RECOLECCION' && lot.plantas_vivas_iniciales !== null && lot.subetapa_actual === null
   }
 
   if (filter === 'ADAPTABILIDAD') {

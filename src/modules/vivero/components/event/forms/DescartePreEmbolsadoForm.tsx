@@ -1,3 +1,4 @@
+import type { ViveroId } from '../../../types/contracts'
 import { useEffect, useRef, useState } from 'react'
 import ConfirmDialog from '../../../../../components/ConfirmDialog'
 import Icon from '../../../../../components/Icon'
@@ -118,7 +119,7 @@ function DescartePreEmbolsadoForm({ lote, onCompleted }: Props) {
   const causaValid = causa !== ''
   const fechaValid = fecha >= fechaMin && fecha <= fechaMax
   const fotosValid = photos.length >= 1 && photos.length <= 5
-  const cantidadValid = Number.isFinite(cantidadMaterial) && cantidadMaterial > 0
+  const cantidadValid = Number.isFinite(cantidadMaterial) && cantidadMaterial !== null && cantidadMaterial > 0
 
   const canSubmit =
     actionAvailable &&
@@ -146,7 +147,7 @@ function DescartePreEmbolsadoForm({ lote, onCompleted }: Props) {
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (submitting) return
-    if (!canSubmit) {
+    if (!canSubmit || cantidadMaterial === null || unidad === null) {
       setShowErrors(true)
       return
     }
@@ -155,13 +156,13 @@ function DescartePreEmbolsadoForm({ lote, onCompleted }: Props) {
   }
 
   const runSubmit = async () => {
-    if (submissionStarted.current || step !== 'confirming' || !canSubmit || !causa) return
+    if (submissionStarted.current || step !== 'confirming' || !canSubmit || !causa || cantidadMaterial === null || unidad === null) return
     submissionStarted.current = true
 
     setStep('submitting')
     setSubmitError(null)
 
-    let evidenciaIds: number[]
+    let evidenciaIds: ViveroId[]
     try {
       const upload = await LotesViveroService.uploadEvidenciasEvento(
         lote.id,
@@ -247,7 +248,7 @@ function DescartePreEmbolsadoForm({ lote, onCompleted }: Props) {
               <p className="text-base font-extrabold text-brand-700">
                 {cantidadMaterial}{' '}
                 <span className="text-sm font-bold text-brand-500">
-                  {formatUnidadCanonicaDisplay(unidad, cantidadMaterial)}
+                  {formatUnidadCanonicaDisplay(unidad, cantidadMaterial ?? undefined)}
                 </span>
               </p>
               <p className="mt-1 text-[11px] font-semibold text-brand-500">
@@ -349,7 +350,7 @@ function DescartePreEmbolsadoForm({ lote, onCompleted }: Props) {
         title="Confirmar descarte pre-embolsado"
         description={`Se descartarán ${cantidadMaterial} ${formatUnidadCanonicaDisplay(
           unidad,
-          cantidadMaterial,
+          cantidadMaterial ?? undefined,
         )} por ${causaLabel}. El lote quedará finalizado.`}
         confirmLabel="Sí, descartar y cerrar"
         cancelLabel="Cancelar"

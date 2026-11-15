@@ -1,11 +1,12 @@
+import { isExactId } from '../../accesos/accessPolicy'
 import { Navigate, useParams } from 'react-router-dom'
 
 /** Conserva los enlaces antiguos hacia el único formulario de Embolsado. */
 function ViveroEmbolsadoScreen() {
   const { id } = useParams<{ id: string }>()
-  const loteId = Number(id)
+  const loteId = id ?? ''
 
-  if (!Number.isSafeInteger(loteId) || loteId <= 0) {
+  if (!isExactId(loteId)) {
     return <Navigate to="/app/vivero" replace />
   }
 
