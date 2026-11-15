@@ -10,7 +10,7 @@ Corte documental: 15 de noviembre de 2026 para lectura T5; 12 de noviembre de 20
 | Recolección: estados, snapshots, unidades y saldo origen | [01-recoleccion-module](../r3foresta-docs/01-recoleccion-module/README.md) |
 | Recepción y validación únicas (contrato local 100) | [Contrato backend](../Backend-r3foresta/docs/t4-recepcion-semillas.md), [verificación frontend](docs/QA_RECEPCION_UNICA.md) |
 | Vivero: etapas, eventos y saldo vivo | [02-vivero-module](../r3foresta-docs/02-vivero-module/README.md) |
-| T5: segunda base viva y procedencia | [Contrato backend](../Backend-r3foresta/docs/t5-incorporacion-plantas.md), [última auditoría](../Backend-r3foresta/docs/t5-historial-revision-2026-11-14.md), [corte reportado](../Backend-r3foresta/docs/t5-correcciones-pruebas-2026-11-14.md) |
+| T5: segunda base viva y procedencia | [Contrato backend](../Backend-r3foresta/docs/t5-incorporacion-plantas.md), [última auditoría](../Backend-r3foresta/docs/t5-historial-revision-2026-11-14.md), [corte reportado](../Backend-r3foresta/docs/t5-correcciones-pruebas-2026-11-14.md), [integración backend local109/110](../Backend-r3foresta/docs/t5-integracion-backend-2026-11-15.md) |
 | Plantación: stock, plan y cierre | [03-plantacion-module](../r3foresta-docs/03-plantacion-module/README.md) |
 | Participación Aliada: specs y ejecución | [Specs](../r3foresta-docs/specs/plantacion/participacion-aliada/README.md), [tablero](../r3foresta-docs/specs/plantacion/participacion-aliada/implementacion/README.md) |
 | Identidad, capacidades, comandos y recuperación | [Contrato aceptado](../r3foresta-docs/specs/plantacion/participacion-aliada/contrato-identidad-permisos-backend-propuesta.md) |

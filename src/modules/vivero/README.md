@@ -71,3 +71,11 @@ INICIO y Material consultan `/api/v1/vivero/origenes?incluir_pendientes=true`. E
 La ficha M1 legada sólo admite IDs seguros y el DTO M2 no aporta autoría de Recolección para acreditar lectura operativa de un VALIDADOR: el enlace al origen se limita al ADMIN con M1 verificado y ID representable. No afecta los accesos de recepción desde Inicio.
 
 El backend de referencia es `69545ed`, con sus límites documentados; no depender de extensiones futuras del timeline en esta entrega. [QA y reservas para iteraciones 2/3](../../../docs/QA_T5_ITERACION_1.md).
+
+## T5 · alta ADMIN y recuperación (iteración 2)
+
+El menú ADMIN del índice reúne los tres accesos acordados y conserva el CTA M1. `incorporacion/IncorporacionScreen` tiene ruta propia fuera de M2, con controles ADMIN sólo para nuevos efectos. `IncorporacionEntry` aparece en Inicio interno/participante para recuperar el intento de la cuenta, incluso después de perder rol. No se modifican las rutas/permisos de recepción de VALIDADOR.
+
+`incorporacion.contract` valida payloads/recibos/IDs, `incorporacion.api` usa el endpoint transaccional T5 con Bearer/no-store, `incorporacion.store` conserva archivos e intención versionados en IndexedDB y `useIncorporacionCommand` controla exclusión, consulta y reenvío explícito. Guardar UUID+base+bytes precede al multipart; guardar intención/IDs definitivos precede al alta. Fotos y alta inciertos se recuperan por separado. No persistir firmas, Bearer ni URLs blob, no liberar otro UUID después de una posible alta. Fases del store sólo locales; el único terminal backend persistido es CONFIRMADO.
+
+[QA de iteración 2](../../../docs/QA_T5_ITERACION_2.md). Backend local de integración `3cb82e4`, con109/110 aún sin aplicación remota acreditada. La interfaz ADMIN no sustituye la autorización SQL. Procedencia M3 y la nueva lectura paginada del timeline se reservan para iteración 3.

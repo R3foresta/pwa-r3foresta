@@ -1,3 +1,4 @@
+import IncorporacionEntry from '../vivero/incorporacion/IncorporacionEntry'
 import { useOperationalAccess } from '../accesos/capabilitiesContext'
 import { hasViveroCapability } from '../accesos/accessPolicy'
 import { useCallback, useEffect, useState } from 'react'
@@ -228,6 +229,7 @@ function InternalHomeScreen() {
         </div>
       )}
 
+      <IncorporacionEntry />
       {canReceive && <section className="mt-5">
         <button type="button" onClick={() => navigate('/app/collections/validate')} className="flex min-h-16 w-full items-center gap-3 rounded-2xl bg-white p-4 text-left shadow-soft ring-1 ring-brand-100">
           <Icon name="check-circle" className="h-7 w-7 shrink-0 text-brand-600" />

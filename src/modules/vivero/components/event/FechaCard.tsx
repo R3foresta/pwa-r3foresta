@@ -46,6 +46,7 @@ function FechaCard({
         <Icon name="date" className="h-5 w-5 shrink-0 text-brand-500" />
         <input
           type="date"
+          aria-label={label}
           value={value}
           min={min}
           max={max}

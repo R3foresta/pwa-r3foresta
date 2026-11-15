@@ -35,6 +35,7 @@ function ObservacionesCard({
         </span>
       </div>
       <textarea
+        aria-label="Observaciones"
         value={value}
         onChange={handleChange}
         placeholder={placeholder}

@@ -1,6 +1,6 @@
 # Auditoría y pendientes del frontend
 
-Corte: 15 de noviembre de 2026 para lecturas T5 de Vivero; Recolección conserva su corte del 13. Lista única de deuda frontend. No sustituye el [tablero global](../r3foresta-docs/specs/plantacion/participacion-aliada/implementacion/README.md) ni acredita estado del backend desplegado.
+Corte: 15 de noviembre de 2026 para lecturas y alta T5 de Vivero; Recolección conserva su corte del 13. Lista única de deuda frontend. No sustituye el [tablero global](../r3foresta-docs/specs/plantacion/participacion-aliada/implementacion/README.md) ni acredita estado del backend desplegado.
 
 El [histórico de auditoría](docs/archivo/FRONTEND_AUDIT_2026-10-15.md) conserva diagnósticos, cierres y resultados anteriores. Se retiraron de esta entrada los checklists repetidos y diagnósticos de módulos que ya no describían su implementación. Un hallazgo abierto se mantiene pendiente hasta verificar su cierre; este ajuste documental no lo resuelve por sí solo.
 
@@ -10,7 +10,7 @@ Entrega INT06 publicada en PWA `62f55dc`: 32 suites/445 tests, lint y build/Type
 
 | Prioridad | ID | Estado | Qué falta |
 | --- | --- | --- | --- |
-| Alta | AUD-038 | Lecturas T5 corregidas local · continuidad backend pendiente | Completitud/fallos de fotos, vínculos M2→M3, timestamp y nombres históricos; alta ADMIN y procedencia M3 reservadas a las siguientes entregas. |
+| Alta | AUD-038 | Lecturas/alta T5 implementadas local · revisión y corte pendientes | Iteración 2: validar corte ADMIN109 y recorrido real. Iteración 3: procedencia M3, vínculos y timeline paginado del contrato local3cb82e4. |
 | Media | AUD-037 | Consulta corregida local · contrato histórico pendiente | Lectura autorizada para el autor de fotos de recepción, historial completo, movimientos y destinos de su origen. |
 | Alta | AUD-035 | Corte y aceptación pendientes | Recepción única 100: acreditar backend/migración, reinicio coordinado, recorrido autenticado y aceptación móvil en el destino. [Alcance y verificación](docs/QA_RECEPCION_UNICA.md). |
 | Media | AUD-036 | PENDIENTE · captura legada | Revisar corrección de fichas cuya fecha original supera 45 días: el formulario aún aplica la ventana de captura a toda edición. |
@@ -51,6 +51,10 @@ Revisión coordinadora de la misma entrega: se corrigieron el desmontaje de la c
 Dependencias constatadas en backend `69545ed`: timeline sin paginado/completitud, fotos que pueden volver como [] tras error y firma fallida que puede rechazar todo el historial; omite `origen_despacho`, `asignacion_id`, `subcampania_id`, `campania_id` y `vivero_incorporacion.registrado_en`. Sólo INCORPORACION aporta nombre histórico; título/peso/fecha de foto no se proyectan. No reconstruir vínculos por especie/saldo ni inventar horas desde DATE. El DTO tampoco aporta autoría M1 para acreditar un enlace de recepción ajena del VALIDADOR; la ficha M1 legada limita IDs a números seguros. No afecta la recepción disponible desde Inicio.
 
 Cierre: contratos autorizados con vínculos exactos, timestamp real cuando exista, estado explícito de evidencia/fallos parciales y protocolo verificable de completitud; después, pruebas de historial largo, recorrido M2→M3 y dispositivo. Iteración 2 requiere alta ADMIN realmente restringida en backend y recuperación propia tras retiro de permiso. Iteración 3 requiere lectura administrativa privada: `procedencia-propia` no legitima ADMIN ajeno e Impacto público conserva su audiencia. El corte 101–108 y bucket privado fueron informados como aplicados por backend en su informe del 14; no se reaplican ni se tratan como ausentes en esta entrega.
+
+15 de noviembre, iteración 2: menú ADMIN, formulario familiar y recuperación propia fuera de M2/rol interno implementados. UUID/intención/bytes se conservan antes de fotos e IDs definitivos antes del POST; fases locales, sólo CONFIRMADO terminal, reenvío expreso idéntico tras consulta, sin borrar fotos remotas ni liberar una posible alta. Errores de almacenamiento y cambios de sesión/permisos no disparan un POST tardío. El éxito se conserva ante fallo local posterior. Verificación: 63 pruebas nuevas y 106 archivos/1.467 pruebas completas aprobadas; lint, build (TypeScript/PWA) y diff-check aprobados. Aviso conocido de MapLibre conservado. [QA y checks exactos](docs/QA_T5_ITERACION_2.md).
+
+El cierre backend `3cb82e4` concreta ADMIN global para nuevos efectos y mantiene el recibo propio sin ADMIN/M2.109/110 siguen sin aplicar remotamente; no se da por restringida la API destino sólo por ocultar controles. La subida no es idempotente y no existe cancelación/DELETE de pendientes: recuperación previa y repetición explícita, sin prometer ausencia de huérfanas. Pendiente aceptación visual/móvil y recorrido autenticado de almacenamiento/roles/carga/resultado perdido en destino: el navegador local informó acceso no disponible en este chat. No se enviaron altas reales. La ampliación M3 y nueva paginación/estados de timeline todavía no se consumen en esta iteración; pertenecen al siguiente commit revisable. Estos contratos locales no cierran por sí solos los límites remotos anteriores.
 
 ### AUD-037 — Consulta y detalle de Recolección
 

@@ -4,14 +4,15 @@ import type { PlantaCatalogo } from '../../../types/plantas.types'
 import { withImageVersion } from '../../../utils/imageUrl'
 import { getPlantaNombre } from '../../../utils/plantaNombre'
 
-type Props = {
-  plantas: PlantaCatalogo[]
+export type PlantaSeleccionable = Omit<PlantaCatalogo, 'id'> & { id: string | number }
+type Props<T extends PlantaSeleccionable> = {
+  plantas: T[]
   loading: boolean
-  onSelect: (planta: PlantaCatalogo) => void
+  onSelect: (planta: T) => void
   onCreateNew?: () => void
 }
 
-function PlantSelector({ plantas, loading, onSelect, onCreateNew }: Props) {
+function PlantSelector<T extends PlantaSeleccionable>({ plantas, loading, onSelect, onCreateNew }: Props<T>) {
   const [searchTerm, setSearchTerm] = useState('')
 
   const filtered = useMemo(() => {

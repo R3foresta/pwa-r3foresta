@@ -118,6 +118,7 @@ const NuevaOrganizacionScreen = lazy(
 const EditarOrganizacionScreen = lazy(
   () => import('./modules/organizaciones/EditarOrganizacionScreen'),
 )
+const IncorporacionScreen = lazy(() => import('./modules/vivero/incorporacion/IncorporacionScreen'))
 const PlantasScreen = lazy(() => import('./modules/plantas/PlantasScreen'))
 const NuevaPlantaScreen = lazy(() => import('./modules/plantas/NuevaPlantaScreen'))
 const EditarPlantaScreen = lazy(() => import('./modules/plantas/EditarPlantaScreen'))
@@ -208,6 +209,7 @@ function App() {
             <Route path="collections/validate/:id" element={<RecoleccionesValidacionScreen />} />
             <Route path="recepciones-semillas" element={<RecepcionScreen />} />
             <Route path="recepciones-semillas/:id" element={<RecepcionScreen />} />
+            <Route path="vivero/incorporaciones" element={<IncorporacionScreen />} />
             <Route path="vivero" element={<OperationalAccessGate domain="M2" />}>
               <Route index element={<ViveroScreen />} />
               <Route path="material" element={<ViveroMaterialScreen />} />

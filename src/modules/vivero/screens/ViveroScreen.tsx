@@ -1,3 +1,5 @@
+import ViveroAdminMenu from '../components/ViveroAdminMenu'
+import { useAuth } from '../../../contexts/AuthContext'
 import { useOperationalAccess } from '../../accesos/capabilitiesContext'
 import { hasViveroCapability } from '../../accesos/accessPolicy'
 import { Link } from 'react-router-dom'
@@ -25,6 +27,8 @@ function getNextAction(lot: ViveroLotCardData): { label: string; path: string } 
 
 function ViveroScreen() {
   const navigate = useNavigate()
+  const { user } = useAuth()
+  const admin = user?.rol === 'ADMIN'
   const { m2 } = useOperationalAccess()
   const canReceive = m2.status === 'ready' && hasViveroCapability(m2.data, 'recibir_y_validar')
   const [query, setQuery] = useState('')
@@ -64,8 +68,8 @@ function ViveroScreen() {
 
   return (
     <div className="relative min-h-screen bg-brand-50 text-brand-700">
-      {canReceive && <div className="mx-auto max-w-md px-5 pt-4"><Link to="/app/collections/validate" className="inline-flex min-h-12 items-center rounded-2xl bg-brand-600 px-4 py-3 font-semibold text-white">Recibir y validar material</Link></div>}
-      <div className="mx-auto max-w-md px-5 pt-4"><Link to="/app/vivero/material" className="inline-flex min-h-11 items-center rounded-2xl bg-white px-4 py-2 text-sm font-semibold text-brand-700 shadow-soft">Material de origen y desecho</Link></div>
+      {!admin && canReceive && <div className="mx-auto max-w-md px-5 pt-4"><Link to="/app/collections/validate" className="inline-flex min-h-12 items-center rounded-2xl bg-brand-600 px-4 py-3 font-semibold text-white">Recibir y validar material</Link></div>}
+      {!admin && <div className="mx-auto max-w-md px-5 pt-4"><Link to="/app/vivero/material" className="inline-flex min-h-11 items-center rounded-2xl bg-white px-4 py-2 text-sm font-semibold text-brand-700 shadow-soft">Material de origen y desecho</Link></div>}
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-28">
         <div className="flex items-start gap-3 px-5 pt-10">
           {/* Botón sólo-ícono (volver): excepción documentada, se mantiene nativo. */}
@@ -85,6 +89,7 @@ function ViveroScreen() {
               Lotes de vivero
             </h1>
           </div>
+          {admin && <ViveroAdminMenu />}
         </div>
 
         <div className="mt-5 space-y-4 px-5">

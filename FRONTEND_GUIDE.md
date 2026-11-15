@@ -97,7 +97,15 @@ Detalle e historial se consultan por separado con Bearer y `no-store`. Los hooks
 
 El historial admite los nueve eventos y conserva tipos desconocidos con una presentación genérica. Adaptabilidad representa todos los seguimientos recibidos, con saltos y repeticiones; no deriva SOMBRA ni duraciones desde INICIO/EMBOLSADO/despachos. Los días DATE se formatean en UTC sin atribuir horas. La descarga existente se llama «metadatos»: no exporta un historial auditable completo.
 
-Alcance, pruebas y dependencias de completitud, vínculos y nombres históricos: [QA T5 iteración 1](docs/QA_T5_ITERACION_1.md). El formulario de incorporación y la procedencia M3 quedan para entregas posteriores.
+Alcance, pruebas y dependencias de completitud, vínculos y nombres históricos: [QA T5 iteración 1](docs/QA_T5_ITERACION_1.md). El alta y su recuperación se describen a continuación; procedencia M3 permanece pendiente de la iteración 3.
+
+## Alta de plantas T5 (iteración 2)
+
+`src/modules/vivero/incorporacion/` separa formulario, resumen, contrato/API, store IndexedDB y controlador. `/app/vivero/incorporaciones` queda fuera del gate M2 para recuperar lo propio tras perder ADMIN/rol interno; sólo la nueva preparación/alta/fotos exige ADMIN actual. Inicio interno y participante enlazan el intento conservado de la cuenta. El menú ADMIN de Vivero agrupa recepción/material/incorporación, conservando el CTA M1 y la entrada de recepción del VALIDADOR.
+
+La preparación conserva UUID, intención y File originales antes de subir. Web Locks por actor y revisión CAS coordinan pestañas. El alta requiere otra confirmación explícita y conserva antes del POST la intención exacta con IDs definitivos. Tras incertidumbre se consulta primero; fotos pendientes y resultado del alta tienen recuperaciones separadas, sin subidas ni reenvíos automáticos. Las fases del store son locales, sin inventar PREPARADO/RECHAZADO backend. Las firmas permanecen sólo en memoria. Éxito confirmado no cambia a fallo por una lectura/persistencia posterior; su recibo conserva saldo inicial histórico.
+
+Descartar antes del alta sólo elimina la preparación local, con aviso sobre las fotos remotas; después de un posible POST no se cambian clave/cuerpo/evidencias. Sólo un confirmado reconocido libera el slot. El GET propio puede consultarse sin Web Locks; los efectos nuevos se bloquean si el navegador no permite coordinarlos. [QA, límites y corte 109 pendiente](docs/QA_T5_ITERACION_2.md).
 
 ## Plan de Plantación
 

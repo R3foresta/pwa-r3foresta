@@ -6,6 +6,7 @@ Entrada de trabajo: [README](../README.md). Pendientes vigentes: [auditoría](..
 
 | Área | Informe | Alcance |
 | --- | --- | --- |
+| Vivero · T5 | [Iteración1](QA_T5_ITERACION_1.md), [Iteración2](QA_T5_ITERACION_2.md) | Origen/ficha/historial y alta ADMIN con intento durable propio. M3/continuidad y corte109/110 pendientes; sin nuevas altas reales. |
 | Recepción única · 100 | [Primera iteración y verificación](QA_RECEPCION_UNICA.md), [contrato backend](../../Backend-r3foresta/docs/t4-recepcion-semillas.md) | Recepción y validación conjuntas o rechazo para corregir; cards reutilizadas, fotos y recuperación propia. Corte remoto y aceptación pendientes (AUD-035). |
 | Recepción de semillas · T4 histórico | [Revisión y correcciones](QA_T4_REVISION_2026-11-06.md), [entrega inicial](QA_T4_RECEPCION.md), [cierre coordinador](../../Backend-r3foresta/docs/evidencia/t4-revision-coordinadora-2026-11-06.json) | Evidencia del contrato 096 anterior, con incidencias. No acredita el recorrido 100 que lo sustituye. |
 | Corrección T3 · 6 de noviembre | [Hallazgos corregidos y QA](QA_T3_CORRECCION_2026-11-06.md), [navegador](qa/t3-accesos-correccion-2026-11-06/resultados.json), [nuevo corte](evidencia/t3-correccion-validacion-2026-11-06.json) | Entrada/Volver del revisor M2 sin M1; una consulta posterior correcta tras DESECHO incierto. Conserva el manifest del 5 y el árbol ajeno; [revisión coordinadora cerrada](../../Backend-r3foresta/docs/evidencia/t3-revision-coordinadora-2026-11-06.json), corte externo pendiente. |

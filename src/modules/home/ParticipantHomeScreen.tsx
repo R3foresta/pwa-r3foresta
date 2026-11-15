@@ -1,3 +1,4 @@
+import IncorporacionEntry from '../vivero/incorporacion/IncorporacionEntry'
 import { useContext } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
@@ -15,7 +16,7 @@ export default function ParticipantHomeScreen() {
   const sharedCapabilities = useContext(CapabilitiesContext)
   const token = localStorage.getItem('authToken')
   const accountReady = hydrated && isAuthenticated && user && token
-  const workspace = accountReady ? <><UsuariosEntry /><PlantadorWorkspace key={`${user.auth_id}:${user.id}:${token}`} actorId={user.id} /></> : null
+  const workspace = accountReady ? <><IncorporacionEntry /><UsuariosEntry /><PlantadorWorkspace key={`${user.auth_id}:${user.id}:${token}`} actorId={user.id} /></> : null
   return <main className="mx-auto max-w-6xl space-y-4 px-4 pb-36 pt-1 sm:px-6 sm:pt-3">
     {pathname === '/app/home' && <header className="flex items-center justify-between"><Link to="/impacto" className="font-bold">R3foresta</Link><Link to="/app/profile" aria-label="Ver mi perfil" className="rounded-full bg-white p-3 shadow-soft"><Icon name="user" className="h-5 w-5" /></Link></header>}
     <h1 className="sr-only">Participar</h1>

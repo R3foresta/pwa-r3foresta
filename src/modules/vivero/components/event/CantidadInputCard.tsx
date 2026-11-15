@@ -30,6 +30,7 @@ function CantidadInputCard({
           </p>
           <input
             type="text"
+            aria-label={label}
             inputMode={inputMode}
             value={value}
             onChange={(event) => onChange(event.target.value)}
