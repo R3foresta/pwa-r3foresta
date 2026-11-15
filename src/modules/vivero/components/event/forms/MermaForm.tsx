@@ -409,7 +409,7 @@ function MermaForm({ lote, fechaBaseViva, onCompleted }: Props) {
             <div className="mt-3 flex items-start gap-2 rounded-2xl bg-danger-50 px-3 py-2.5 text-xs font-extrabold text-danger-700 ring-1 ring-danger-200">
               <Icon name="info" className="mt-0.5 h-4 w-4 shrink-0 text-danger-600" />
               <span>
-                El backend cerrará el lote si confirma esta merma. No quedarán plantas vivas.
+                El lote se cerrará si se confirma esta merma. No quedarán plantas vivas.
               </span>
             </div>
           )}
@@ -521,7 +521,7 @@ function MermaForm({ lote, fechaBaseViva, onCompleted }: Props) {
         iconName="info"
         title={
           willCloseLote
-            ? '⚠ El backend cerrará el lote si confirma esta merma.'
+            ? '⚠ El lote se cerrará si se confirma esta merma.'
             : `¿Registrar merma de ${cantidadNum} ${cantidadNum === 1 ? 'planta' : 'plantas'} por ${causaLabel}?`
         }
         description={

@@ -1,6 +1,6 @@
 # T5 · iteración 1 · lecturas de Vivero
 
-Entrega local del 15 de noviembre de 2026, sobre frontend `0007ee0` y contratos backend leídos en `69545ed`. Sin commit, push, despliegue, cambios backend/Supabase/env, instalación de dependencias ni movimientos nuevos. Sólo esta iteración; el alta y M3 se revisarán por separado.
+Entrega local del 15 de noviembre de 2026, sobre frontend `0007ee0` y contratos backend leídos en `69545ed`. La entrega original quedó conservada en el commit local `382ec9b`. Sin push, despliegue, cambios propios en backend/Supabase/env, instalación de dependencias ni movimientos nuevos. Sólo esta iteración; el alta y M3 se revisarán por separado.
 
 ## Comportamiento implementado
 
@@ -46,7 +46,7 @@ Referencia: `vivero-timeline.service.ts` y auditoría backend `t5-historial-revi
 - Iteración 2: menú ADMIN, formulario familiar, fotos previas, confirmación, persistencia/recuperación del intento propio y manejo de incertidumbre. El contrato backend leído todavía permite GENERAL/VALIDADOR con M2; ADMIN exclusivo requiere cierre backend verificado. La recuperación propia queda fuera del gate operativo al perder permiso, con cuenta original.
 - Iteración 3: procedencia M3 propia y administrativa por contrato autorizado, vínculos de entrega/devolución y QA integrado. `procedencia-propia` exige relación propia incluso ADMIN; no usarlo para registros ajenos ni ampliar Impacto público. La vista administrativa actual basada en Impacto necesita lectura administrativa privada.
 
-## Resultado final de checks
+## Checks de la entrega original
 
 - `npm run test -- src/modules/vivero src/api/lotes-vivero.api.test.ts --maxWorkers=2`: **14 archivos / 121 pruebas aprobados**, pasada final de Vivero.
 - `npm run test -- --maxWorkers=2`: **101 archivos / 1.398 pruebas aprobados**, pasada final completa (78,47 s).
@@ -55,6 +55,27 @@ Referencia: `vivero-timeline.service.ts` y auditoría backend `t5-historial-revi
 - `git diff --check`: **aprobado**.
 
 La primera compilación detectó consumidores no preparados para null e IDs de texto; se corrigieron antes de los checks finales. Una prueba nueva usó inicialmente una consulta singular sobre un texto repetido; se ajustó la aserción. No se presentan esas ejecuciones iniciales como aprobadas.
+
+## Correcciones tras revisión coordinadora
+
+Se confirman y corrigen los dos desmontajes señalados en la revisión de la iteración 1:
+
+- La identidad/autorización del ámbito se separa de los intentos de reconsulta. Una ficha ya leída se conserva durante el GET posterior a una devolución confirmada y ante su fallo, con aviso de saldos pendientes de actualizar y operaciones bloqueadas hasta una lectura correcta. El éxito y su diálogo no se pierden. Cambiar lote, cuenta, token o permisos sigue descartando inmediatamente ficha y galería.
+- La recarga de asignaciones posterior al éxito usa el mismo camino con loading/error/catch y reintento de sólo lectura. Un GET fallido no transforma el POST confirmado en error ni lo repite.
+- La galería conserva la selección por ID y sólo los metadatos de las fotos al renovar. La firma anterior se retira mientras se consulta o si falla; el modal permanece abierto con carga/error y reintento. Una respuesta con las fotos reordenadas conserva la segunda foto seleccionada, por su ID.
+- Los avisos al operador hablan de registros/fotos que pudieron consultarse y permiten volver a consultar. Los límites del contrato permanecen en este informe y AUD-038; no se afirma ausencia global por un array vacío ni completitud del historial.
+
+Se añadieron seis regresiones de integración con componentes y transporte reales, HTTP sintético: devolución confirmada con GET pendientes/fallidos, recuperación de lecturas sin otro POST y bloqueo con saldos anteriores; renovación de segunda foto, fallo y recuperación por ID sin firma anterior; descarte de galería por lote/cuenta/token/permiso. No se ejecutaron devoluciones reales ni se repitió la comprobación de navegador de la entrega original.
+
+Checks ejecutados para esta revisión, Node `v24.19.0`:
+
+- `npm run test -- src/modules/vivero src/api/lotes-vivero.api.test.ts --maxWorkers=2`: **14 archivos / 127 pruebas aprobados**.
+- `npm run test -- --maxWorkers=2`: **101 archivos / 1.404 pruebas aprobados** (106,13 s), incluida la comprobación de bloqueo con saldos pendientes.
+- `npm run lint`: **aprobado**.
+- `npm run build`: **aprobado**, incluye TypeScript/PWA; conserva el aviso conocido de tamaño MapLibre.
+- `git diff --check`: **aprobado**.
+
+La primera ejecución de las dos suites afectadas detectó una aserción singular sobre el saldo repetido en cabecera y asignaciones; se corrigió antes de las pasadas aprobadas. La revisión coordinadora informó por separado 2 archivos / 24 pruebas aprobadas y sin nuevos hallazgos bloqueantes. El commit correctivo se identifica en Git y en la entrega, separado del punto de retorno `382ec9b`. Sin push; iteraciones 2/3 pendientes.
 
 ## Archivos modificados
 

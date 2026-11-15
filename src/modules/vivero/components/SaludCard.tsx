@@ -10,7 +10,7 @@ export default function SaludCard({ detail }: { detail: ViveroLotDetailView }) {
       <p className="mt-3 text-3xl font-black text-brand-950">{formatViveroNumber(detail.saldoVivoActual)}</p>
       <p className="mt-1 text-xs font-semibold text-neutral-500">Saldo vivo actual · UNIDAD</p>
       <p className="mt-3 text-xs text-neutral-600">
-        {enProceso ? 'El saldo vivo nace al registrar EMBOLSADO.' : 'El saldo físico procede del servidor. No acredita supervivencia ni aptitud para entregar.'}
+        {enProceso ? 'El saldo vivo nace al registrar EMBOLSADO.' : 'Saldo actual del vivero. No acredita supervivencia ni aptitud para entregar.'}
       </p>
       <p className="mt-2 text-xs text-neutral-500">{detail.diasDesdeInicio} días desde el registro del lote · Subetapa: {detail.subetapaActual?.replaceAll('_', ' ') ?? 'Sin registro'}</p>
     </section>

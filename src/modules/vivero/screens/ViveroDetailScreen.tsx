@@ -42,7 +42,7 @@ function ViveroDetail() {
   const lotId = id ?? ''
   const isInvalidId = !isExactId(lotId)
 
-  const { detail, events, loading, error, refetch, eventsLoading, eventsError, eventsReady, refetchEvents } = useViveroDetail(lotId, isInvalidId)
+  const { detail, events, loading, error, refetch, eventsLoading, eventsError, eventsReady, refetchEvents, detailRefreshing, detailRefreshError } = useViveroDetail(lotId, isInvalidId)
 
   const stats = useViveroStats(detail, events, eventsReady)
 
@@ -54,9 +54,15 @@ function ViveroDetail() {
     return DETAIL_TABS.includes(requested as DetailTab) ? (requested as DetailTab) : 'resumen'
   })
   const [filter, setFilter] = useState('TODOS')
-  const [selectedPhotoIds, setSelectedPhotoIds] = useState<string[] | null>(null)
+  // Se conserva selección y metadatos dentro del ámbito, nunca una firma vieja.
+  const [gallery, setGallery] = useState<{ photos: PhotoItem[]; selectedId: string } | null>(null)
   const allPhotos: PhotoItem[] = events.flatMap(event => (event.fotos ?? []).map(photo => ({ ...photo, autor: event.responsableNombre, etapa: event.kind })))
-  const selectedPhotos = allPhotos.filter(photo => selectedPhotoIds?.includes(photo.id))
+  const selectedPhotos = gallery?.photos.map(metadata => allPhotos.find(photo => photo.id === metadata.id) ?? metadata) ?? []
+  const openGallery = (photos: PhotoItem[]) => {
+    if (!photos.length) return
+    setGallery({ selectedId: photos[0].id, photos: photos.map(photo => ({ ...photo, url: null, expiraEn: null })) })
+  }
+  const readingsCurrent = !detailRefreshing && !detailRefreshError
 
   const baseFilteredEvents = useMemo(() => {
     const filterUpper = filter.toUpperCase()
@@ -73,7 +79,7 @@ function ViveroDetail() {
   }, [events])
 
   const handleOpenGalleryFromEvent = (event: ViveroLotEventView) => {
-    setSelectedPhotoIds((event.fotos ?? []).map(photo => photo.id))
+    openGallery((event.fotos ?? []).map(photo => ({ ...photo, autor: event.responsableNombre, etapa: event.kind })))
   }
   const historyStatus = eventsLoading ? <p role="status" className="rounded-2xl bg-white p-4 text-sm text-neutral-600">Cargando historial y evidencias…</p>
     : eventsError ? <div role="alert" className="rounded-2xl bg-danger-50 p-4 text-sm text-danger-700">
@@ -113,6 +119,11 @@ function ViveroDetail() {
       <div className="flex justify-center min-h-screen bg-brand-100">
         <div className="w-full max-w-md bg-brand-50 min-h-screen shadow-2xl relative overflow-y-auto">
           <HeroHeader detail={detail} />
+          {detailRefreshing && <p role="status" className="mx-5 mt-4 rounded-2xl bg-white p-4 text-sm text-neutral-600">Actualizando los saldos de la ficha…</p>}
+          {detailRefreshError && <div role="alert" className="mx-5 mt-4 rounded-2xl bg-warning-50 p-4 text-sm text-neutral-700">
+            <p>No se pudieron actualizar los saldos. Se muestra la última ficha consultada; actualízala antes de otra operación.</p>
+            <Button variant="secondary" size="sm" onClick={refetch}>Reintentar ficha</Button>
+          </div>}
 
           <div className="sticky top-0 z-20 px-5 pt-4 pb-2 bg-brand-50/95 backdrop-blur-sm">
             {/* Control segmentado de pestañas (a medida, no calza en <Button>): tokens migrados. */}
@@ -141,7 +152,7 @@ function ViveroDetail() {
                   <SaludCard detail={detail} />
                 )}
                 <DispatchFlowCard detail={detail} />
-                <QuickActions detail={detail} onJumpEvidencia={() => setActiveTab('evidencia')} />
+                <QuickActions detail={detail} operationsDisabled={!readingsCurrent} onJumpEvidencia={() => setActiveTab('evidencia')} />
                 <IndicadoresRapidos detail={detail} events={events} stats={stats} />
                 {eventsReady && <SubetapasBar detail={detail} events={events} />}
                 <ViveroLotAsignacionesCollapsible
@@ -159,7 +170,8 @@ function ViveroDetail() {
                 <FiltersRow active={filter} onChange={setFilter} counts={counts} />
                 {historyStatus}
                 {eventsReady && <Timeline events={baseFilteredEvents} onOpenGallery={handleOpenGalleryFromEvent} onRenewPhotos={refetchEvents} />}
-                <p className="text-xs text-neutral-500">El contrato actual no informa paginación ni completitud. Una lista de fotos vacía tampoco acredita ausencia de evidencia.</p>
+                <p className="text-xs text-neutral-500">Se muestran los registros que pudieron consultarse. Si falta un registro o una foto, vuelve a consultar.</p>
+                <Button variant="secondary" size="sm" onClick={refetchEvents} disabled={eventsLoading}>Actualizar historial y fotos</Button>
                 <AuditoriaSection detail={detail} />
               </div>
             )}
@@ -169,21 +181,24 @@ function ViveroDetail() {
                 {historyStatus}
                 {eventsReady && <EvidenciaTab
                   events={events}
-                  onSelectPhoto={(photo) => setSelectedPhotoIds([photo.id])}
+                  onSelectPhoto={(photo) => openGallery([photo])}
                   onRenew={refetchEvents}
                 />}
-                <p className="mt-3 text-xs text-neutral-500">Las fotos se muestran según la lectura autorizada del historial; el servidor puede omitirlas ante un fallo de consulta.</p>
+                <p className="mt-3 text-xs text-neutral-500">Se muestran las fotos que pudieron consultarse. Si falta alguna, vuelve a consultar.</p>
+                <Button variant="secondary" size="sm" onClick={refetchEvents} disabled={eventsLoading}>Actualizar fotos</Button>
               </div>
             )}
             {activeTab === 'asignaciones' && (
               <div className="transition-opacity duration-300">
-                <ViveroLotAsignacionesTab lote={detail} onLoteChanged={refetch} />
+                <ViveroLotAsignacionesTab lote={detail} readingsCurrent={readingsCurrent} onLoteChanged={refetch} />
               </div>
             )}
           </div>
         </div>
 
-        {selectedPhotos.length > 0 && <GalleryModal photos={selectedPhotos} onClose={() => setSelectedPhotoIds(null)} onRenew={refetchEvents} />}
+        {gallery && <GalleryModal photos={selectedPhotos} selectedPhotoId={gallery.selectedId}
+          onSelectPhotoId={selectedId => setGallery(previous => previous ? { ...previous, selectedId } : null)}
+          onClose={() => setGallery(null)} onRenew={refetchEvents} renewing={eventsLoading} error={eventsError} />}
       </div>
   )
 }

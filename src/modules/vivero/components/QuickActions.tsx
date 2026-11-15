@@ -7,10 +7,11 @@ import type { ViveroLotDetailView } from '../types/view-models'
 
 interface QuickActionsProps {
   detail: ViveroLotDetailView
+  operationsDisabled?: boolean
   onJumpEvidencia: () => void
 }
 
-export default function QuickActions({ detail, onJumpEvidencia }: QuickActionsProps) {
+export default function QuickActions({ detail, onJumpEvidencia, operationsDisabled = false }: QuickActionsProps) {
   const navigate = useNavigate()
   const { m2 } = useOperationalAccess()
   const canOperate = m2.status === 'ready' && canAtVivero(m2.data, detail.viveroId, 'operar')
@@ -94,7 +95,7 @@ export default function QuickActions({ detail, onJumpEvidencia }: QuickActionsPr
           <button
             key={a.key}
             type="button"
-            disabled={a.disabled || (a.key !== 'foto' && !canOperate)}
+            disabled={a.disabled || (a.key !== 'foto' && (!canOperate || operationsDisabled))}
             onClick={a.onClick}
             className={`flex flex-col items-center justify-center gap-1.5 rounded-2xl bg-white px-2 py-3 shadow-soft ring-1 ring-black/5 transition-all active:scale-[0.97] ${
               a.disabled

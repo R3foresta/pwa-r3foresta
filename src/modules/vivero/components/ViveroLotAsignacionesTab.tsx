@@ -21,6 +21,7 @@ import {
 
 type Props = {
   lote: ViveroLotDetailView
+  readingsCurrent?: boolean
   /**
    * Se llama tras una devolucion exitosa para que el padre refresque el detalle
    * del lote (el saldo vivo sube y un lote FINALIZADO puede reabrirse).
@@ -346,7 +347,7 @@ function DevolverButton({ lote, asignacion, exhausted, onClick }: { lote: Vivero
   return <Button variant="secondary" size="sm" disabled={exhausted || !logistics.allowed} onClick={onClick}>{logistics.loading ? 'Verificando…' : 'Devolver al vivero'}</Button>
 }
 
-function ViveroLotAsignacionesTab({ lote, onLoteChanged }: Props) {
+function ViveroLotAsignacionesTab({ lote, onLoteChanged, readingsCurrent = true }: Props) {
   const { user } = useAuth()
   const authId = user?.auth_id?.trim() || ''
 
@@ -384,9 +385,8 @@ function ViveroLotAsignacionesTab({ lote, onLoteChanged }: Props) {
   ) => {
     setDevolucionTarget(null)
     setDevolucionSuccess({ destino, cantidad, loteReabierto: result.lote_reabierto })
-    void LotesViveroService.listAsignaciones(lote.id).then((data) =>
-      setAsignaciones(sortAsignacionesNewestFirst(data)),
-    )
+    // La escritura ya fue confirmada. Fallar al releer sólo exige otra lectura.
+    loadAsignaciones()
     onLoteChanged?.()
   }
 
@@ -427,9 +427,10 @@ function ViveroLotAsignacionesTab({ lote, onLoteChanged }: Props) {
         </div>
       ) : loadError ? (
         <div className="space-y-3 rounded-3xl bg-white px-4 py-6 text-center shadow-soft ring-1 ring-black/5">
-          <p className="whitespace-pre-line text-sm font-semibold text-danger-600">{loadError}</p>
+          <p className="whitespace-pre-line text-sm font-semibold text-danger-600">No se pudieron actualizar las asignaciones: {loadError}</p>
+          {devolucionSuccess && <p className="text-sm text-neutral-600">La devolución ya está registrada. Reintentar sólo vuelve a consultar los saldos.</p>}
           <Button variant="secondary" size="sm" onClick={loadAsignaciones}>
-            Reintentar
+            Reintentar asignaciones
           </Button>
         </div>
       ) : asignaciones.length === 0 ? (
@@ -504,7 +505,7 @@ function ViveroLotAsignacionesTab({ lote, onLoteChanged }: Props) {
                       ? 'Sin saldo disponible para devolver.'
                       : `Podes devolver hasta ${saldoDisponible} plantas al vivero.`}
                   </p>
-                  <DevolverButton lote={lote} asignacion={asig} exhausted={isExhausted || saldoDesconocido} onClick={() => setDevolucionTarget(asig)} />
+                  <DevolverButton lote={lote} asignacion={asig} exhausted={isExhausted || saldoDesconocido || !readingsCurrent} onClick={() => setDevolucionTarget(asig)} />
                 </div>
               </article>
             )

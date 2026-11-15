@@ -20,7 +20,7 @@ export default function EvidencePhoto({ photo, onOpen, onRenew, renewing = false
   const unavailable = !photo.url || failed || expired
   const preview = unavailable ? (
     <p className="flex min-h-24 items-center justify-center p-4 text-xs text-neutral-600" role="status">
-      {expired ? 'El acceso temporal a esta foto venció.' : 'No se pudo mostrar esta foto.'}
+      {renewing ? 'Consultando fotos…' : expired ? 'El acceso temporal a esta foto venció.' : 'No se pudo mostrar esta foto.'}
     </p>
   ) : (
     <>

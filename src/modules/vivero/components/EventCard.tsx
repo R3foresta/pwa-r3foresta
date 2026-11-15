@@ -71,7 +71,7 @@ export default function EventCard({ event, isLast, onOpenGallery, onRenewPhotos 
             {event.responsableNombre}
           </p>
 
-          {!event.responsableEsSnapshot && <p className="mt-1 text-[10px] text-neutral-500">Nombre de cuenta consultado; el contrato no entrega un snapshot histórico para este evento.</p>}
+          {!event.responsableEsSnapshot && <p className="mt-1 text-[10px] text-neutral-500">Responsable según la cuenta consultada; su nombre puede haber cambiado.</p>}
           {!event.conocido && <p className="mt-3 text-xs text-neutral-600">Tipo recibido sin presentación específica. Se conserva el evento en el historial.</p>}
           {event.kind === 'INCORPORACION' && <div className="mt-4 rounded-2xl bg-success-50 p-3 text-brand-900">
             <p className="text-xs font-bold">Ingreso de plantas vivas</p>

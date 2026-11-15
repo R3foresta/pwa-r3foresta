@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
+import { MemoryRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { assigned, m1Fixture, m2Fixture } from '../../accesos/test-fixtures'
 import ViveroDetailScreen from './ViveroDetailScreen'
@@ -12,10 +12,11 @@ import { mapLoteToCardData, mapLoteToDetailView, mapTimelineEventToView } from '
 import { BIG_A, BIG_B, eventoFixture, loteFixture, m1LoteFixture } from '../t5.test-fixtures'
 import type { LoteViveroDetalle, TimelineEventDto } from '../types/contracts'
 
-vi.mock('../../../contexts/AuthContext', () => ({ useAuth: () => ({ user: { id: '7', auth_id: 'synthetic-auth', nombre: 'Ana', rol: 'ADMIN' } }) }))
+const session = vi.hoisted(() => ({ actor: '7', revision: '1' }))
+vi.mock('../../../contexts/AuthContext', () => ({ useAuth: () => ({ user: { id: session.actor, auth_id: 'synthetic-auth', nombre: 'Ana', rol: 'ADMIN' } }) }))
 vi.mock('../../accesos/capabilitiesContext', () => ({ useOperationalAccess: () => ({
   m1: { status: 'ready', data: m1Fixture({ origen: 'ADMIN' }).data },
-  m2: { status: 'ready', data: m2Fixture({ viveros: [assigned('1')] }).data },
+  m2: { status: 'ready', data: m2Fixture({ revision_acceso: session.revision, rol_global: 'ADMIN', capacidades_globales: { administrar: true, operar_cualquier_vivero: true, desechar_semillas_cualquier_vivero: true, recibir_y_validar_cualquier_vivero: true }, viveros: [assigned('1')] }).data },
 }) }))
 const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), { status })
 function mockReads(lot = loteFixture(), events = [eventoFixture()]) {
@@ -25,7 +26,7 @@ function mockReads(lot = loteFixture(), events = [eventoFixture()]) {
     return json({ data: lot })
   })
 }
-function Location() { return <output>{useLocation().pathname}</output> }
+function Location() { const navigate = useNavigate(); return <><output>{useLocation().pathname}</output><button onClick={() => navigate(`/app/vivero/${BIG_B}`)}>Cambiar lote de prueba</button></> }
 function mount(lot: LoteViveroDetalle = loteFixture(), events: TimelineEventDto[] = [eventoFixture()]) {
   vi.stubGlobal('fetch', mockReads(lot, events))
   return render(<MemoryRouter initialEntries={[`/app/vivero/${lot.id}`]}><Location /><Routes>
@@ -33,7 +34,7 @@ function mount(lot: LoteViveroDetalle = loteFixture(), events: TimelineEventDto[
     <Route path="/app/vivero/:id/event/:tipo" element={<ViveroEventScreen />} />
   </Routes></MemoryRouter>)
 }
-beforeEach(() => { localStorage.setItem('authToken', 'synthetic-token') })
+beforeEach(() => { session.actor = '7'; session.revision = '1'; localStorage.setItem('authToken', 'synthetic-token') })
 
 describe('ficha T5 con componentes y transporte reales, HTTP simulado', () => {
   it('abre incorporación con material null, origen histórico, inicial fijo y saldo actual independiente', async () => {
@@ -170,5 +171,117 @@ describe('seguimientos, tarjetas y evidencias', () => {
     expect(screen.getByText(/Evento no reconocido: FUTURO/)).toBeTruthy()
     expect(screen.queryByText('Plantación propia')).toBeNull()
     expect(within(screen.getByText('Destino').parentElement!).getByText('No registrado')).toBeTruthy()
+  })
+})
+
+
+function deferred<T>() {
+  let resolve!: (value: T) => void
+  const promise = new Promise<T>(accept => { resolve = accept })
+  return { promise, resolve }
+}
+function detailRoute() {
+  return <MemoryRouter initialEntries={[`/app/vivero/${BIG_A}`]}><Location /><Routes><Route path="/app/vivero/:id" element={<ViveroDetailScreen />} /></Routes></MemoryRouter>
+}
+function twoPhotos(version = 'vieja', reverse = false) {
+  const evidencias = ['10', '11'].map(id => ({ id, bucket: 'vivero_incorporaciones', signed_url: `https://storage.example.test/${id}/${version}`, url_expira_en_segundos: 300 }))
+  return eventoFixture('INCORPORACION', { evidencias: reverse ? evidencias.reverse() : evidencias })
+}
+
+describe('revisión coordinadora: éxito confirmado y renovación de lectura', () => {
+  it('conserva la devolución confirmada con GET pendientes y fallidos, y reintenta sólo las lecturas', async () => {
+    const detailAfter = deferred<Response>()
+    const assignmentsAfter = deferred<Response>()
+    let confirmed = false
+    let detailReads = 0
+    let assignmentReads = 0
+    const assignment = { id: BIG_B, subcampania_id: '4', subcampania_nombre: 'Subcampaña sintética', cantidad_asignada: 5, saldo_asignado_disponible: 5, fecha_asignacion: '2020-01-01' }
+    const fetcher = vi.fn(async (url: string, options?: RequestInit) => {
+      if (options?.method === 'POST') {
+        confirmed = true
+        return json({ success: true, data: { asignacion_id: BIG_B, lote_vivero_id: BIG_A, cantidad_devuelta: 1, cantidad_devuelta_total: 1, saldo_asignado_disponible: 4, saldo_vivo_antes: 180, saldo_vivo_despues: 181, lote_reabierto: false, evento_lote_vivero_id: '20', evento_plantacion_id: '21', estado: 'ACTIVA' } })
+      }
+      if (url.endsWith('/timeline')) return json({ data: { eventos: [] } })
+      if (url.endsWith('/asignaciones')) {
+        assignmentReads += 1
+        return assignmentReads === 2 ? assignmentsAfter.promise : json({ data: [{ ...assignment, saldo_asignado_disponible: confirmed ? 4 : 5 }] })
+      }
+      detailReads += 1
+      return detailReads === 2 ? detailAfter.promise : json({ data: loteFixture({ saldo_vivo_actual: confirmed ? 181 : 180 }) })
+    })
+    vi.stubGlobal('fetch', fetcher)
+    render(detailRoute())
+    await screen.findByText('Origen del lote')
+    fireEvent.click(screen.getByRole('button', { name: 'asignaciones' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Devolver al vivero' }))
+    const dialog = screen.getByRole('dialog', { name: 'Subcampaña sintética' })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Sumar 1' }))
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Excedente no plantado' }))
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Devolver al vivero' }))
+    await screen.findByRole('dialog', { name: 'Devolucion registrada' })
+    expect(screen.getByText('Actualizando los saldos de la ficha…')).toBeTruthy()
+    expect(screen.getByText('Cargando desglose de asignaciones...')).toBeTruthy()
+    await act(async () => { detailAfter.resolve(json({ message: 'Lectura pendiente de recuperar' }, 503)); assignmentsAfter.resolve(json({ message: 'Lectura de asignaciones fallida' }, 503)) })
+    expect(screen.getByRole('dialog', { name: 'Devolucion registrada' })).toBeTruthy()
+    expect(screen.getByText(/La devolución ya está registrada/)).toBeTruthy()
+    expect(screen.getByText(/No se pudieron actualizar los saldos/)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Entendido' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Reintentar asignaciones' }))
+    expect((await screen.findByRole('button', { name: 'Devolver al vivero' })).hasAttribute('disabled')).toBe(true)
+    fireEvent.click(screen.getByRole('button', { name: 'Reintentar ficha' }))
+    await screen.findAllByText('181')
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Devolver al vivero' }).hasAttribute('disabled')).toBe(false))
+    expect(fetcher.mock.calls.filter(([, options]) => options?.method === 'POST')).toHaveLength(1)
+    expect(fetcher.mock.calls.find(([, options]) => options?.method === 'POST')?.[0]).toContain(`/${BIG_A}/asignaciones/${BIG_B}/devolucion`)
+  })
+  it('conserva la segunda foto por ID al renovar, fallar y recuperar sin reutilizar la firma vieja', async () => {
+    const renewal = deferred<Response>()
+    let reads = 0
+    const fetcher = vi.fn(async (url: string) => {
+      if (url.endsWith('/timeline')) {
+        reads += 1
+        if (reads === 2) return renewal.promise
+        return json({ data: { eventos: [twoPhotos(reads === 1 ? 'vieja' : 'nueva', reads > 1)] } })
+      }
+      return json({ data: loteFixture() })
+    })
+    vi.stubGlobal('fetch', fetcher)
+    render(detailRoute())
+    await screen.findByText('Origen del lote')
+    fireEvent.click(screen.getByRole('button', { name: 'historial' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Ampliar Evidencia #10' }))
+    let gallery = screen.getByRole('dialog', { name: 'Evidencia del lote' })
+    fireEvent.click(within(gallery).getByRole('button', { name: 'Siguiente' }))
+    fireEvent.error(within(gallery).getByRole('img', { name: 'Evidencia #11' }))
+    fireEvent.click(within(gallery).getByRole('button', { name: 'Renovar acceso a fotos' }))
+    gallery = screen.getByRole('dialog', { name: 'Evidencia del lote' })
+    expect(within(gallery).getByText(/2 \/ 2/)).toBeTruthy()
+    expect(within(gallery).queryByRole('img')).toBeNull()
+    expect(within(gallery).getByText('Consultando fotos…')).toBeTruthy()
+    await act(async () => renewal.resolve(json({ message: 'Fallo de lectura sintético' }, 503)))
+    gallery = screen.getByRole('dialog', { name: 'Evidencia del lote' })
+    expect(within(gallery).getByText(/la foto seleccionada se conserva/)).toBeTruthy()
+    expect(within(gallery).getByText('Evidencia #11')).toBeTruthy()
+    expect(within(gallery).queryByRole('img')).toBeNull()
+    fireEvent.click(within(gallery).getByRole('button', { name: 'Renovar acceso a fotos' }))
+    await waitFor(() => expect(within(screen.getByRole('dialog', { name: 'Evidencia del lote' })).getByRole('img', { name: 'Evidencia #11' }).getAttribute('src')).toBe('https://storage.example.test/11/nueva'))
+    expect(within(screen.getByRole('dialog', { name: 'Evidencia del lote' })).getByText(/2 \/ 2/)).toBeTruthy()
+    expect(reads).toBe(3)
+  })
+  it.each(['lote', 'cuenta', 'token', 'permiso'] as const)('cierra y descarta la galería al cambiar %s', async change => {
+    vi.stubGlobal('fetch', mockReads(loteFixture(), [twoPhotos()]))
+    const view = render(detailRoute())
+    await screen.findByText('Origen del lote')
+    fireEvent.click(screen.getByRole('button', { name: 'historial' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Ampliar Evidencia #10' }))
+    expect(screen.getByRole('dialog', { name: 'Evidencia del lote' })).toBeTruthy()
+    if (change === 'cuenta') session.actor = '8'
+    if (change === 'token') localStorage.setItem('authToken', 'synthetic-new')
+    if (change === 'permiso') session.revision = '2'
+    if (change === 'lote') fireEvent.click(screen.getByRole('button', { name: 'Cambiar lote de prueba' }))
+    else view.rerender(detailRoute())
+    expect(screen.queryByRole('dialog', { name: 'Evidencia del lote' })).toBeNull()
+    expect(screen.queryByRole('img', { name: 'Evidencia #10' })).toBeNull()
+    await screen.findByText('Origen del lote')
   })
 })
