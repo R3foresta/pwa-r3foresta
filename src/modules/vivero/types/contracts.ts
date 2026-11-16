@@ -551,6 +551,18 @@ export interface TimelineEventDto {
   evidencias?: EvidenciaDto[];
 }
 
+export interface LoteTimelinePage<TEvent = TimelineEventDto> {
+  success: true
+  data: {
+    lote_id: ViveroId
+    codigo_trazabilidad: string
+    estado_lote: EstadoLoteVivero
+    total_eventos: number
+    eventos: TEvent[]
+    paginacion?: LoteTimelinePaginacion
+  }
+}
+
 export interface EvidenciaDto {
   id: ViveroId
   bucket?: string
@@ -611,9 +623,8 @@ export interface LoteViveroDetalleResponse {
 // embebido y `payload` discriminado por tipo (solo trae los campos que aplican
 // al evento, no `null` everywhere como hace `ultimo_evento_por_tipo`).
 //
-// Acepta filtros opcionales por query string: `tipo_evento`, `responsable_id`,
-// `fecha_inicio`, `fecha_fin`. Sin protocolo de paginación/completitud; la lista
-// recibida no permite certificar que la historia esté completa.
+// Acepta filtros opcionales y paginación por cursor opaco. El servicio reúne
+// todas las páginas antes de exponer eventos a las pantallas.
 //
 // El detalle del lote consume el timeline unificado para representar todos los
 // eventos. La variante tipada de ADAPTABILIDAD se mantiene para el historial
@@ -624,6 +635,19 @@ export interface LoteTimelineQuery {
   responsable_id?: ViveroId
   fecha_inicio?: string
   fecha_fin?: string
+  limite?: number
+  cursor?: string
+}
+
+export interface LoteTimelinePaginacion {
+  limite: number
+  devueltos: number
+  total_en_lectura: number
+  hay_mas: boolean
+  cursor_siguiente: string | null
+  lectura_completa: boolean
+  corte_evento_id: ViveroId | null
+  orden: ['fecha_evento', 'created_at', 'id']
 }
 
 export interface LoteTimelinePayloadAdaptabilidad {

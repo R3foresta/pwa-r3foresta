@@ -1,6 +1,6 @@
 # Auditoría y pendientes del frontend
 
-Corte: 15 de noviembre de 2026 para lecturas y alta T5 de Vivero; Recolección conserva su corte del 13. Lista única de deuda frontend. No sustituye el [tablero global](../r3foresta-docs/specs/plantacion/participacion-aliada/implementacion/README.md) ni acredita estado del backend desplegado.
+Corte: 16 de noviembre de 2026 para revisión e integración local T5 de Vivero; Recolección conserva su corte del 13. Lista única de deuda frontend. No sustituye el [tablero global](../r3foresta-docs/specs/plantacion/participacion-aliada/implementacion/README.md) ni acredita estado del backend desplegado.
 
 El [histórico de auditoría](docs/archivo/FRONTEND_AUDIT_2026-10-15.md) conserva diagnósticos, cierres y resultados anteriores. Se retiraron de esta entrada los checklists repetidos y diagnósticos de módulos que ya no describían su implementación. Un hallazgo abierto se mantiene pendiente hasta verificar su cierre; este ajuste documental no lo resuelve por sí solo.
 
@@ -10,7 +10,7 @@ Entrega INT06 publicada en PWA `62f55dc`: 32 suites/445 tests, lint y build/Type
 
 | Prioridad | ID | Estado | Qué falta |
 | --- | --- | --- | --- |
-| Alta | AUD-038 | Lecturas/alta T5 implementadas local · revisión y corte pendientes | Iteración 2: validar corte ADMIN109 y recorrido real. Iteración 3: procedencia M3, vínculos y timeline paginado del contrato local3cb82e4. |
+| Alta | AUD-038 | Iteraciones 1/2 verificadas e integradas local · iteración 3 y corte pendientes | Acreditar ADMIN109/110 y recorrido real. Integrar procedencia M3, vínculos y estados de evidencias; compatibilidad paginada corregida en la revisión del 16. |
 | Media | AUD-037 | Consulta corregida local · contrato histórico pendiente | Lectura autorizada para el autor de fotos de recepción, historial completo, movimientos y destinos de su origen. |
 | Alta | AUD-035 | Corte y aceptación pendientes | Recepción única 100: acreditar backend/migración, reinicio coordinado, recorrido autenticado y aceptación móvil en el destino. [Alcance y verificación](docs/QA_RECEPCION_UNICA.md). |
 | Media | AUD-036 | PENDIENTE · captura legada | Revisar corrección de fichas cuya fecha original supera 45 días: el formulario aún aplica la ventana de captura a toda edición. |
@@ -57,6 +57,8 @@ Cierre: contratos autorizados con vínculos exactos, timestamp real cuando exist
 El cierre backend `3cb82e4` concreta ADMIN global para nuevos efectos y mantiene el recibo propio sin ADMIN/M2.109/110 siguen sin aplicar remotamente; no se da por restringida la API destino sólo por ocultar controles. La subida no es idempotente y no existe cancelación/DELETE de pendientes: recuperación previa y repetición explícita, sin prometer ausencia de huérfanas. Pendiente aceptación visual/móvil y recorrido autenticado de almacenamiento/roles/carga/resultado perdido en destino: el navegador local informó acceso no disponible en este chat. No se enviaron altas reales. La ampliación M3 y nueva paginación/estados de timeline todavía no se consumen en esta iteración; pertenecen al siguiente commit revisable. Estos contratos locales no cierran por sí solos los límites remotos anteriores.
 
 Ajuste de UI del 15 de noviembre solicitado por Pablo: la ficha completa de origen se retira de Resumen y se reúne en Historial, dentro de «Origen del lote», cerrado inicialmente. Resumen prioriza las acciones rápidas. El desplegable conserva campos, snapshots, advertencias y enlace autorizado a Recolección; los eventos permanecen visibles al cerrarlo. Verificación: `npm run test -- src/modules/vivero/screens/ViveroDetailScreen.test.tsx --maxWorkers=2` (18 pruebas), `npm run lint`, `npm run build` (TypeScript/PWA) y `git diff --check` aprobados. Aviso conocido de MapLibre conservado. Se intentó revisar navegador, pero el acceso local sigue no disponible para este chat; aceptación visual pendiente. Sin operaciones reales ni cambios de contrato.
+
+16 de noviembre: [revisión e integración local](docs/QA_T5_REVISION_2026-11-16.md) de las iteraciones 1/2 y del backend `3cb82e4` en `main`. Se cierra el riesgo de truncar el historial nuevo a la primera página: historial general y adaptabilidad reúnen páginas con cursor, sin publicar parciales ante fallo/cambio del corte o de sesión. Verificación: 106 archivos/1.473 pruebas, 34 pruebas focales finales, lint, build/TypeScript/PWA y diff-check aprobados. La respuesta legada sin paginación conserva sus límites; comunicar su completitud no acreditada en UI sigue pendiente. AUD-038 permanece abierto para procedencia M3, vínculos, estados de fotos, aplicación/cotejo de 109/110 y aceptación del recorrido. No se acredita push, despliegue ni nuevas operaciones reales.
 
 ### AUD-037 — Consulta y detalle de Recolección
 

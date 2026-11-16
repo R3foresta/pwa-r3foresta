@@ -14,7 +14,6 @@ import {
   registrarMermaApi,
   uploadEvidenciasEventoViveroApi,
   uploadEvidenciasPendientesViveroApi,
-  getTimelineApi,
   listSubcampaniasApi,
   listAsignacionesApi,
   crearAsignacionApi,
@@ -38,6 +37,9 @@ import type {
   ListLotesViveroQuery,
   ListLotesViveroResponse,
   LoteTimelineAdaptabilidadResponse,
+  LoteTimelineEventoAdaptabilidad,
+  LoteTimelinePage,
+  LoteTimelineQuery,
   LoteViveroDetalle,
   LoteViveroDetalleResponse,
   LoteViveroItem,
@@ -76,6 +78,106 @@ type ApiEnvelope<T> = {
 }
 
 const MAX_EVENT_EVIDENCE_PHOTOS = 5
+
+type TimelinePageRead<TEvent> = {
+  pages: TEvent[][]
+  data: LoteTimelinePage<TEvent>['data']
+}
+
+function timelineContractError(): Error {
+  return new Error('El historial cambió o llegó incompleto. Vuelve a consultar para cargarlo de nuevo.')
+}
+
+function exactTimelineId(value: unknown): string {
+  try { return exactId(value) } catch { throw timelineContractError() }
+}
+
+async function readTimeline<TEvent extends Pick<TimelineEventDto, 'id' | 'tipo_evento' | 'evidencias'> = TimelineEventDto>(
+  loteId: ViveroId, filters: LoteTimelineQuery, options?: ViveroReadOptions,
+): Promise<TimelinePageRead<TEvent>> {
+  const implicitToken = options?.token === undefined
+  const token = implicitToken ? localStorage.getItem('authToken') : options?.token
+  const readOptions = { ...options, token }
+  const assertCurrent = () => {
+    if (options?.signal?.aborted || (implicitToken && localStorage.getItem('authToken') !== token)) {
+      const aborted = new Error('La consulta del historial fue cancelada.')
+      aborted.name = 'AbortError'
+      throw aborted
+    }
+  }
+  const pages: TEvent[][] = []
+  const seenCursors = new Set<string>()
+  const seenEventIds = new Set<string>()
+  let cursor: string | undefined
+  let expectedTotal: number | undefined
+  let expectedCut: string | null | undefined
+  let stableCode: string | undefined
+  let stableState: string | undefined
+  let firstData: LoteTimelinePage<TEvent>['data'] | undefined
+
+  for (;;) {
+    assertCurrent()
+    const response = await getLoteTimelineApi(loteId, { ...filters, ...(cursor ? { cursor } : {}) }, readOptions)
+    const raw = await response.text()
+    assertCurrent()
+    let parsed: unknown = null
+    try { parsed = raw ? JSON.parse(raw) : null } catch { /* fallo de contrato abajo */ }
+    if (!response.ok) {
+      const source = parsed && typeof parsed === 'object' ? parsed as Record<string, unknown> : {}
+      const error = source.error && typeof source.error === 'object' ? source.error as Record<string, unknown> : {}
+      if (response.status === 409 && (error.codigo === 'HISTORIAL_CAMBIO_DURANTE_LECTURA' || source.codigo === 'HISTORIAL_CAMBIO_DURANTE_LECTURA')) {
+        throw new Error('El historial cambió durante la consulta. Vuelve a intentar; se iniciará una lectura nueva.')
+      }
+      const message = source.message
+      throw new Error(typeof message === 'string' && message.trim() ? message.trim() : raw || 'Error al cargar el historial del lote.')
+    }
+    const envelope = parsed && typeof parsed === 'object' ? parsed as Partial<LoteTimelinePage<TEvent>> : null
+    const data = envelope?.data
+    if (!data || !Array.isArray(data.eventos)) throw timelineContractError()
+    for (const event of data.eventos) {
+      if (!event || typeof event !== 'object' || typeof event.tipo_evento !== 'string' || !Array.isArray(event.evidencias ?? [])) throw timelineContractError()
+      const id = exactTimelineId(event.id)
+      if (seenEventIds.has(id)) throw timelineContractError()
+      seenEventIds.add(id)
+    }
+    const pagination = data.paginacion
+    if (pagination === undefined) {
+      if (pages.length !== 0) throw timelineContractError()
+      return { pages: [data.eventos], data }
+    }
+    if (!pagination || typeof pagination !== 'object') throw timelineContractError()
+    if (!Number.isSafeInteger(data.total_eventos) || data.total_eventos !== data.eventos.length || typeof data.codigo_trazabilidad !== 'string' || !['ACTIVO', 'FINALIZADO'].includes(String(data.estado_lote))) {
+      throw timelineContractError()
+    }
+    const currentLotId = exactTimelineId(data.lote_id)
+    if (currentLotId !== exactTimelineId(loteId)) throw timelineContractError()
+    if (stableCode !== undefined && (stableCode !== data.codigo_trazabilidad || stableState !== data.estado_lote)) throw timelineContractError()
+    stableCode = data.codigo_trazabilidad
+    stableState = data.estado_lote
+    firstData ??= data
+    pages.push(data.eventos)
+    if (!Number.isSafeInteger(pagination.limite) || pagination.limite < 1 || pagination.limite > 200 ||
+        !Number.isSafeInteger(pagination.devueltos) || pagination.devueltos !== data.eventos.length || pagination.devueltos > pagination.limite ||
+        !Number.isSafeInteger(pagination.total_en_lectura) || pagination.total_en_lectura < 0 ||
+        typeof pagination.hay_mas !== 'boolean' || typeof pagination.lectura_completa !== 'boolean' ||
+        !Array.isArray(pagination.orden) || pagination.orden.join('|') !== 'fecha_evento|created_at|id') {
+      throw timelineContractError()
+    }
+    const cut = pagination.corte_evento_id == null ? null : exactTimelineId(pagination.corte_evento_id)
+    if (expectedTotal !== undefined && (expectedTotal !== pagination.total_en_lectura || expectedCut !== cut)) throw timelineContractError()
+    expectedTotal = pagination.total_en_lectura
+    expectedCut = cut
+    if (seenEventIds.size > expectedTotal || (pagination.hay_mas && (data.eventos.length === 0 || seenEventIds.size >= expectedTotal))) throw timelineContractError()
+    if (pagination.hay_mas) {
+      if (pagination.lectura_completa || typeof pagination.cursor_siguiente !== 'string' || !pagination.cursor_siguiente.trim() || seenCursors.has(pagination.cursor_siguiente)) throw timelineContractError()
+      seenCursors.add(pagination.cursor_siguiente)
+      cursor = pagination.cursor_siguiente
+      continue
+    }
+    if (!pagination.lectura_completa || pagination.cursor_siguiente !== null || seenEventIds.size !== pagination.total_en_lectura) throw timelineContractError()
+    return { pages, data: firstData }
+  }
+}
 
 export type ListViveroLotsForUiInput = {
   stageFilter: StageFilter
@@ -281,10 +383,9 @@ export class LotesViveroService {
   }
 
   static async getEvents(lotId: ViveroId, options?: ViveroReadOptions): Promise<ViveroLotEventView[]> {
-    const response = await getTimelineApi(lotId, options)
-    const json = await this.parseJsonResponse<{ data?: { eventos?: TimelineEventDto[] } }>(response, 'Error al cargar el historial del lote.')
-    if (!Array.isArray(json.data?.eventos)) throw new Error('Respuesta de historial incompleta. Vuelve a consultar.')
-    return json.data.eventos.map(mapTimelineEventToView)
+    if (!isExactId(lotId)) throw new Error('ID de lote de vivero inválido.')
+    const read = await readTimeline(lotId, {}, options)
+    return read.pages.flat().map(mapTimelineEventToView)
   }
 
   static async uploadEvidenciasPendientes(
@@ -388,21 +489,23 @@ export class LotesViveroService {
   // Historial cronológico de adaptabilidad para el detalle del lote. Consume
   // `/timeline?tipo_evento=ADAPTABILIDAD` (recomendado por backend sobre el
   // dump `/adaptabilidad`) porque trae `responsable_nombre` y `payload`
-  // discriminado en una sola request. Devuelve `data.eventos` directo —
-  // resto del envelope (lote_id, codigo_trazabilidad, etc.) ya lo conoce el
-  // caller desde el detalle.
+  // discriminado en cada página. Reúne el historial antes de devolverlo.
   static async listAdaptabilidadTimeline(
     loteId: ViveroId,
+    options?: ViveroReadOptions,
   ): Promise<LoteTimelineAdaptabilidadResponse['data']> {
     if (!isExactId(loteId)) {
       throw new Error('ID de lote de vivero inválido.')
     }
-    const response = await getLoteTimelineApi(loteId, { tipo_evento: 'ADAPTABILIDAD' })
-    const payload = await this.parseJsonResponse<LoteTimelineAdaptabilidadResponse>(
-      response,
-      'Error al cargar el historial de adaptabilidad.',
-    )
-    return payload.data
+    const read = await readTimeline<LoteTimelineEventoAdaptabilidad>(loteId, { tipo_evento: 'ADAPTABILIDAD' }, options)
+    const events = read.pages.flat()
+    return {
+      lote_id: read.data.lote_id,
+      codigo_trazabilidad: read.data.codigo_trazabilidad,
+      estado_lote: read.data.estado_lote,
+      total_eventos: events.length,
+      eventos: events,
+    }
   }
 
   static async registrarMerma(

@@ -101,6 +101,8 @@ La ficha prioriza las acciones rápidas en Resumen. Los datos completos del orig
 
 Alcance, pruebas y dependencias de completitud, vínculos y nombres históricos: [QA T5 iteración 1](docs/QA_T5_ITERACION_1.md). El alta y su recuperación se describen a continuación; procedencia M3 permanece pendiente de la iteración 3.
 
+Desde la revisión del 16 de noviembre, el servicio reúne las páginas del timeline general y de adaptabilidad antes de exponerlas. Conserva filtros, token y cancelación, valida corte/conteos/cursores y descarta parciales ante fallo; reintentar inicia una lectura nueva. La respuesta legada sin paginación no acredita completitud. [Verificación y pendientes](docs/QA_T5_REVISION_2026-11-16.md).
+
 ## Alta de plantas T5 (iteración 2)
 
 `src/modules/vivero/incorporacion/` separa formulario, resumen, contrato/API, store IndexedDB y controlador. `/app/vivero/incorporaciones` queda fuera del gate M2 para recuperar lo propio tras perder ADMIN/rol interno; sólo la nueva preparación/alta/fotos exige ADMIN actual. Inicio interno y participante enlazan el intento conservado de la cuenta. El menú ADMIN de Vivero agrupa recepción/material/incorporación, conservando el CTA M1 y la entrada de recepción del VALIDADOR.

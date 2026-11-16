@@ -225,8 +225,12 @@ export async function registrarDespachoApi(
   })
 }
 
-export async function getTimelineApi(loteId: ViveroId, options?: ViveroReadOptions): Promise<Response> {
-  return fetch(`${API_BASE_URL}/lotes-vivero/${exactId(loteId)}/timeline`, readOptions(options))
+export async function getTimelineApi(
+  loteId: ViveroId,
+  options?: ViveroReadOptions,
+  query?: LoteTimelineQuery,
+): Promise<Response> {
+  return getLoteTimelineApi(loteId, query, options)
 }
 
 export async function listStockEspeciesApi(): Promise<Response> {
