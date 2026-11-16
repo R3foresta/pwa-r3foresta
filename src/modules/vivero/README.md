@@ -70,6 +70,8 @@ INICIO y Material consultan `/api/v1/vivero/origenes?incluir_pendientes=true`. E
 
 La ficha M1 legada sólo admite IDs seguros y el DTO M2 no aporta autoría de Recolección para acreditar lectura operativa de un VALIDADOR: el enlace al origen se limita al ADMIN con M1 verificado y ID representable. No afecta los accesos de recepción desde Inicio.
 
+Resumen comienza con las acciones rápidas y conserva el estado actual del lote. La ficha completa de origen vive sólo en Historial, en el desplegable «Origen del lote», cerrado al entrar; abrirlo muestra todos los campos históricos y advertencias sin desplazar permanentemente los eventos. No se añaden pestañas, rutas ni lecturas para esta distribución.
+
 El backend de referencia es `69545ed`, con sus límites documentados; no depender de extensiones futuras del timeline en esta entrega. [QA y reservas para iteraciones 2/3](../../../docs/QA_T5_ITERACION_1.md).
 
 ## T5 · alta ADMIN y recuperación (iteración 2)

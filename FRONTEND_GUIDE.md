@@ -97,6 +97,8 @@ Detalle e historial se consultan por separado con Bearer y `no-store`. Los hooks
 
 El historial admite los nueve eventos y conserva tipos desconocidos con una presentación genérica. Adaptabilidad representa todos los seguimientos recibidos, con saltos y repeticiones; no deriva SOMBRA ni duraciones desde INICIO/EMBOLSADO/despachos. Los días DATE se formatean en UTC sin atribuir horas. La descarga existente se llama «metadatos»: no exporta un historial auditable completo.
 
+La ficha prioriza las acciones rápidas en Resumen. Los datos completos del origen se consultan exclusivamente en Historial, dentro de «Origen del lote», cerrado inicialmente para dejar visibles los eventos. La sección conserva snapshots, cantidades iniciales, advertencias de procedencia y enlace autorizado a Recolección; el saldo actual sigue siendo independiente. El desplegable compartido comunica apertura y panel asociado mediante atributos ARIA.
+
 Alcance, pruebas y dependencias de completitud, vínculos y nombres históricos: [QA T5 iteración 1](docs/QA_T5_ITERACION_1.md). El alta y su recuperación se describen a continuación; procedencia M3 permanece pendiente de la iteración 3.
 
 ## Alta de plantas T5 (iteración 2)

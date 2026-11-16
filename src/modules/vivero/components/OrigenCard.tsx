@@ -3,6 +3,7 @@ import { Button } from '../../../components/ui'
 import { useOperationalAccess } from '../../accesos/capabilitiesContext'
 import type { ViveroLotDetailView } from '../types/view-models'
 import { formatViveroDate, formatViveroNumber, origenLabel } from '../utils/presentation'
+import CollapsibleSection from './CollapsibleSection'
 
 export default function OrigenCard({ detail }: { detail: ViveroLotDetailView }) {
   const navigate = useNavigate()
@@ -32,18 +33,17 @@ export default function OrigenCard({ detail }: { detail: ViveroLotDetailView }) 
     ] : []),
   ]
   return (
-    <section className="rounded-3xl bg-white p-4 shadow-soft ring-1 ring-black/5">
-      <header className="flex items-center justify-between gap-2">
-        <h3 className="text-sm font-extrabold text-brand-800">Origen del lote</h3>
+    <CollapsibleSection title="Origen del lote">
+      <div className="flex items-center justify-between gap-2">
+        <p className="font-bold text-brand-700">{origenLabel(origen)}</p>
         {canOpenOrigin && <Button variant="secondary" size="sm" rightIcon="chevron-right" onClick={() => navigate(`/app/collections/${detail.recoleccionId}`)}>Ver ficha</Button>}
-      </header>
-      <p className="mt-2 font-bold text-brand-700">{origenLabel(origen)}</p>
+      </div>
       {origen?.tipo === 'INCORPORACION' && <p className="mt-2 text-xs text-neutral-600">
         {origen.historia_previa_no_registrada ? 'Historia previa no registrada. ' : ''}La procedencia declarada no acredita el origen biológico ni la supervivencia anterior.
       </p>}
       <dl className="mt-3 space-y-2">
         {rows.map(([label, value]) => <div key={label} className="text-xs"><dt className="font-semibold text-neutral-500">{label}</dt><dd className="break-words text-brand-900">{value}</dd></div>)}
       </dl>
-    </section>
+    </CollapsibleSection>
   )
 }

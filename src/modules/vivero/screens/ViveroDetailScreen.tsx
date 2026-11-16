@@ -144,15 +144,14 @@ function ViveroDetail() {
           <div className="px-5 pb-28 space-y-6">
             {activeTab === 'resumen' && (
               <div className="space-y-6 transition-opacity duration-300">
-                <OrigenCard detail={detail} />
                 {historyStatus}
+                <QuickActions detail={detail} operationsDisabled={!readingsCurrent} onJumpEvidencia={() => setActiveTab('evidencia')} />
                 {detail.estadoLote === 'FINALIZADO' ? (
                   <CierreLoteCard detail={detail} events={events} stats={stats} />
                 ) : (
                   <SaludCard detail={detail} />
                 )}
                 <DispatchFlowCard detail={detail} />
-                <QuickActions detail={detail} operationsDisabled={!readingsCurrent} onJumpEvidencia={() => setActiveTab('evidencia')} />
                 <IndicadoresRapidos detail={detail} events={events} stats={stats} />
                 {eventsReady && <SubetapasBar detail={detail} events={events} />}
                 <ViveroLotAsignacionesCollapsible
