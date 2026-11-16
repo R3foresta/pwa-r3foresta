@@ -42,7 +42,7 @@ function ViveroDetail() {
   const lotId = id ?? ''
   const isInvalidId = !isExactId(lotId)
 
-  const { detail, events, loading, error, refetch, eventsLoading, eventsError, eventsReady, refetchEvents, detailRefreshing, detailRefreshError } = useViveroDetail(lotId, isInvalidId)
+  const { detail, events, loading, error, refetch, eventsLoading, eventsError, eventsReady, historyComplete, refetchEvents, detailRefreshing, detailRefreshError } = useViveroDetail(lotId, isInvalidId)
 
   const stats = useViveroStats(detail, events, eventsReady)
 
@@ -169,7 +169,7 @@ function ViveroDetail() {
                 <FiltersRow active={filter} onChange={setFilter} counts={counts} />
                 {historyStatus}
                 {eventsReady && <Timeline events={baseFilteredEvents} onOpenGallery={handleOpenGalleryFromEvent} onRenewPhotos={refetchEvents} />}
-                <p className="text-xs text-neutral-500">Se muestran los registros que pudieron consultarse. Si falta un registro o una foto, vuelve a consultar.</p>
+                {eventsReady && <p className="text-xs text-neutral-500">{historyComplete ? 'Todos los eventos del corte consultado están cargados.' : 'El servidor no confirmó si el historial está completo.'}</p>}
                 <Button variant="secondary" size="sm" onClick={refetchEvents} disabled={eventsLoading}>Actualizar historial y fotos</Button>
                 <AuditoriaSection detail={detail} />
               </div>
@@ -178,7 +178,7 @@ function ViveroDetail() {
             {activeTab === 'evidencia' && (
               <div className="transition-opacity duration-300">
                 {historyStatus}
-                {eventsReady && <EvidenciaTab
+                {eventsReady && <EvidenciaTab historyComplete={historyComplete}
                   events={events}
                   onSelectPhoto={(photo) => openGallery([photo])}
                   onRenew={refetchEvents}

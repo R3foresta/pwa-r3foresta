@@ -1,3 +1,6 @@
+import { Link } from 'react-router-dom'
+import { useAuth } from '../../../contexts/AuthContext'
+import { Button } from '../../../components/ui'
 import EvidencePhoto from './EvidencePhoto'
 import { formatViveroNumber, incorporacionLabel } from '../utils/presentation'
 import Icon from '../../../components/Icon'
@@ -12,7 +15,18 @@ interface EventCardProps {
   onOpenGallery?: (event: ViveroLotEventView) => void
 }
 
+const origenesDespacho: Record<string, string> = {
+  MANUAL: 'Manual', ASIGNACION_SUBCAMPANIA: 'Asignación a subcampaña', AUTOMATICO_PLANTACION: 'Automático de plantación',
+}
+
 export default function EventCard({ event, isLast, onOpenGallery, onRenewPhotos }: EventCardProps) {
+  const { user } = useAuth()
+  const links = event.vinculos
+  const plantingLink = (id: string, section: 'campanias' | 'subcampanias') => {
+    if (user?.rol !== 'ADMIN' || BigInt(id) > BigInt(Number.MAX_SAFE_INTEGER)) return id
+    const tab = section === 'subcampanias' ? '?pestana=registros' : ''
+    return <Link className="font-semibold text-brand-700 underline" to={`/app/planting/${section}/${id}${tab}`}>{id}</Link>
+  }
   // Theming de mini-viz del timeline (gotcha §6.2): ícono + tinte por tipo de evento.
   // Codifica el tipo de evento (dato de la visualización), no una píldora de estado de
   // dominio; se mantiene inline con tokens migrados y no deriva de status.ts.
@@ -71,7 +85,9 @@ export default function EventCard({ event, isLast, onOpenGallery, onRenewPhotos 
             {event.responsableNombre}
           </p>
 
-          {!event.responsableEsSnapshot && <p className="mt-1 text-[10px] text-neutral-500">Responsable según la cuenta consultada; su nombre puede haber cambiado.</p>}
+          {event.registroLocal && <p className="mt-1 text-xs text-neutral-500">Registrado el {event.registroLocal} (hora de Bolivia)</p>}
+          {event.fuenteResponsable === 'SNAPSHOT_INCORPORACION' && <p className="mt-1 text-xs text-neutral-500">Nombre guardado al incorporar el lote.</p>}
+          {event.fuenteResponsable === 'CUENTA_ACTUAL' && <p className="mt-1 text-[10px] text-neutral-500">Responsable según la cuenta consultada; su nombre puede haber cambiado.</p>}
           {!event.conocido && <p className="mt-3 text-xs text-neutral-600">Tipo recibido sin presentación específica. Se conserva el evento en el historial.</p>}
           {event.kind === 'INCORPORACION' && <div className="mt-4 rounded-2xl bg-success-50 p-3 text-brand-900">
             <p className="text-xs font-bold">Ingreso de plantas vivas</p>
@@ -84,7 +100,7 @@ export default function EventCard({ event, isLast, onOpenGallery, onRenewPhotos 
           {event.kind === 'DEVOLUCION_PLANTACION' && <div className="mt-4 rounded-2xl bg-info-50 p-3 text-info-900">
             <p className="text-xs font-bold">Devolución al lote original</p>
             <p className="mt-1 text-2xl font-black">{formatViveroNumber(event.cantidad)} UNIDAD</p>
-            <p className="mt-1 text-xs">Repone el lote original; no es una nueva adquisición.</p>
+            <p className="mt-1 text-xs">Naturaleza de la devolución no registrada.</p>
           </div>}
           {event.kind === 'CIERRE_AUTOMATICO' && <p className="mt-3 text-sm text-neutral-600">Motivo: {event.causa?.replaceAll('_', ' ') ?? 'No registrado'}</p>}
           {/* 1. Diseño Específico para INICIO */}
@@ -226,9 +242,19 @@ export default function EventCard({ event, isLast, onOpenGallery, onRenewPhotos 
             </div>
           )}
 
+          {links && (links.origenDespacho || links.asignacion || links.campania || links.subcampania || links.registro) && <div className="mt-3 space-y-1 rounded-2xl bg-neutral-50 p-3 text-xs text-neutral-700">
+            {links.origenDespacho && <p>Origen del despacho · {origenesDespacho[links.origenDespacho] ?? links.origenDespacho}</p>}
+            {links.asignacion && <p>Asignación · {links.asignacion}</p>}
+            {links.campania && <p>Campaña · {plantingLink(links.campania, 'campanias')}</p>}
+            {links.subcampania && <p>Subcampaña · {plantingLink(links.subcampania, 'subcampanias')}</p>}
+            {links.registro && <p>Registro de plantación · {links.registro}</p>}
+          </div>}
+          {event.estadoEvidencias === 'ERROR_CONSULTA' && <p role="status" className="mt-3 text-xs text-warning-800">No se pudieron consultar todas las evidencias de este evento.</p>}
+          {event.estadoEvidencias === 'CONSULTADAS' && !event.fotos?.length && <p className="mt-3 text-xs text-neutral-500">Sin fotos vinculadas en esta consulta.</p>}
           {(event.fotos ?? []).length > 0 && <div className="mt-3 space-y-2">
             <p className="text-xs font-bold text-brand-800">Evidencias · {event.fotos!.length}</p>
             <EvidencePhoto key={`${event.fotos![0].url}-${event.fotos![0].expiraEn}`} photo={event.fotos![0]} onOpen={() => onOpenGallery?.(event)} onRenew={onRenewPhotos} />
+            {event.fotos!.length > 1 && <Button variant="secondary" size="sm" onClick={() => onOpenGallery?.(event)}>Ver todas las fotos del evento</Button>}
           </div>}
 
           {/* Observación Inferior */}

@@ -1,5 +1,8 @@
 import type {
   EstadoLoteVivero,
+  EstadoEvidencias,
+  EstadoUrlFoto,
+  FuenteResponsable,
   MotivoCierreVivero,
   SubetapaAdaptabilidad,
   TipoMaterialVivero,
@@ -69,13 +72,14 @@ export interface ViveroLotDetailView {
 }
 
 export interface ViveroEventPhoto {
+  estadoUrl?: EstadoUrlFoto
   id: string
   url: string | null
   titulo: string
   fecha: string
   expiraEn: number | null
   mimeType: string | null
-  tamanoBytes: number | null
+  tamanoBytes: number | string | null
 }
 
 export interface ViveroLotEventView {
@@ -86,7 +90,16 @@ export interface ViveroLotEventView {
   fecha: string
   fechaIso: string
   hora: string | null
-  responsableEsSnapshot: boolean
+  fuenteResponsable?: FuenteResponsable
+  registroLocal?: string | null
+  estadoEvidencias?: EstadoEvidencias
+  vinculos?: {
+    origenDespacho: string | null
+    asignacion: string | null
+    campania: string | null
+    subcampania: string | null
+    registro: string | null
+  }
   procedencia?: { modalidad: string | null; procedencia: string | null; tercero: string | null; referencia: string | null } | null
   responsableNombre: string
   cantidad?: number | null

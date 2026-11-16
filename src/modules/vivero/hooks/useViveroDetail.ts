@@ -5,7 +5,7 @@ import { useOperationalAccess } from '../../accesos/capabilitiesContext'
 import type { ViveroLotDetailView, ViveroLotEventView } from '../types/view-models'
 
 type DetailRead = { scope: string; key: string; data: ViveroLotDetailView | null; error: string | null }
-type EventsRead = { key: string } & ({ data: ViveroLotEventView[]; error?: never } | { data?: never; error: string })
+type EventsRead = { key: string } & ({ data: ViveroLotEventView[]; complete: boolean; error?: never } | { data?: never; error: string })
 export function useViveroDetail(lotId: string, isInvalidId: boolean) {
   const { user } = useAuth()
   const { m2 } = useOperationalAccess()
@@ -41,8 +41,8 @@ export function useViveroDetail(lotId: string, isInvalidId: boolean) {
     if (isInvalidId || !token) return
     const controller = new AbortController()
     const current = () => !controller.signal.aborted && localStorage.getItem('authToken') === token
-    LotesViveroService.getEvents(lotId, { token, signal: controller.signal }).then(
-      data => { if (current()) setEventsRead({ key: eventsKey, data }) },
+    LotesViveroService.getEventHistory(lotId, { token, signal: controller.signal }).then(
+      ({ events, complete }) => { if (current()) setEventsRead({ key: eventsKey, data: events, complete }) },
       error => { if (current()) setEventsRead({ key: eventsKey, error: error instanceof Error ? error.message : 'No se pudo cargar el historial.' }) },
     )
     return () => controller.abort()
@@ -62,6 +62,7 @@ export function useViveroDetail(lotId: string, isInvalidId: boolean) {
     detailRefreshError: detail ? currentDetail?.error ?? null : null,
     eventsLoading: !invalidError && history === null,
     eventsError: history?.error ?? null,
+    historyComplete: history && 'complete' in history ? history.complete : false,
     eventsReady: Boolean(history?.data),
     refetch: () => setAttempt(value => value + 1),
     refetchEvents: () => setEventsAttempt(value => value + 1),

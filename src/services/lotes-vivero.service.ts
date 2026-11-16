@@ -383,9 +383,13 @@ export class LotesViveroService {
   }
 
   static async getEvents(lotId: ViveroId, options?: ViveroReadOptions): Promise<ViveroLotEventView[]> {
+    return (await this.getEventHistory(lotId, options)).events
+  }
+
+  static async getEventHistory(lotId: ViveroId, options?: ViveroReadOptions) {
     if (!isExactId(lotId)) throw new Error('ID de lote de vivero inválido.')
     const read = await readTimeline(lotId, {}, options)
-    return read.pages.flat().map(mapTimelineEventToView)
+    return { events: read.pages.flat().map(mapTimelineEventToView), complete: Boolean(read.data.paginacion) }
   }
 
   static async uploadEvidenciasPendientes(

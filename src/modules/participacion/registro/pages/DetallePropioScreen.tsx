@@ -6,6 +6,7 @@ import { RegistroParticipacionService } from '../../api/registro.api'
 import OwnRecordPhoto from '../../../impacto/components/OwnRecordPhoto'
 import type { DetallePropioRegistro } from '../../registroTypes'
 import { isPublicImpactPath } from '../../../../utils/appAccess'
+import ProcedenciaRegistro from '../../../plantacion/procedencia/ProcedenciaRegistro'
 
 export default function DetallePropioScreen() {
   const { user } = useAuth()
@@ -14,7 +15,7 @@ export default function DetallePropioScreen() {
   const from = (state as { misRegistrosReturnTo?: unknown; impactoReturnTo?: unknown } | null)?.misRegistrosReturnTo
     ?? (state as { impactoReturnTo?: unknown } | null)?.impactoReturnTo
   const returnTo = typeof from === 'string' && (from === '/app/participacion/mis-registros' || isPublicImpactPath(from)) ? from : '/app/participacion/mis-registros'
-  return <DetallePropio key={`${user?.id}:${localStorage.getItem('authToken')}:${registroId}`} actorId={user?.id ?? null} registroId={registroId ?? null} returnTo={returnTo} />
+  return <DetallePropio key={`${user?.id}:${user?.rol}:${localStorage.getItem('authToken')}:${registroId}`} actorId={user?.id ?? null} registroId={registroId ?? null} returnTo={returnTo} />
 }
 
 function DetallePropio({ actorId, registroId, returnTo }: { actorId: string | null; registroId: string | null; returnTo: string }) {
@@ -40,6 +41,7 @@ function DetallePropio({ actorId, registroId, returnTo }: { actorId: string | nu
     {data && <>
       <Card className="space-y-2"><h1 className="break-all text-lg font-extrabold text-brand-800">{data.codigo_trazabilidad}</h1><p className="text-sm text-neutral-700">Registro {data.registro_plantacion_id} · Subcampaña {data.subcampania_id}</p><p className="text-sm text-neutral-700">Fecha: {data.fecha_plantacion} · {data.cantidad_total_plantada} plantas del grupo</p><p className="text-xs text-neutral-500">Revisión del registro: {data.revision_registro}. Historial auditable; la consulta propia no exige conservar acceso operativo.</p></Card>
       <Card as="section" className="space-y-2"><h2 className="font-bold text-brand-800">Especies registradas</h2>{data.especies.map((species) => <p key={species.planta_id} className="text-sm text-neutral-700">Especie {species.planta_id}: {species.cantidad} plantas</p>)}</Card>
+      <ProcedenciaRegistro registroId={data.registro_plantacion_id} audiencia="propia" />
       <Card as="section" className="space-y-2"><h2 className="font-bold text-brand-800">Ubicación evaluada</h2><p className="text-sm text-neutral-700">{data.latitud}, {data.longitud}</p><p className="text-sm text-neutral-700">{data.gps_dentro_poligono ? 'Dentro del polígono' : 'Exterior permitido registrado'}</p></Card>
       <Card as="section" className="space-y-3"><h2 className="font-bold text-brand-800">Personas y afiliaciones del registro</h2>{data.participantes.map((person) => <div key={person.usuario_id} className="border-t border-neutral-100 pt-2 text-sm"><p className="font-bold text-brand-800">{person.nombre_snapshot ?? 'Nombre histórico no disponible'} · {person.es_responsable ? 'Responsable' : 'Participante'}</p><p className="text-neutral-600">{person.afiliacion_estado === 'DECLARADA' ? person.afiliacion_snapshot : person.afiliacion_estado === 'NO_DECLARADA' ? 'Sin afiliación declarada' : 'Afiliación histórica no disponible'}</p></div>)}</Card>
       {data.observaciones_autor && <Card as="section" className="space-y-2"><h2 className="font-bold text-brand-800">Observaciones propias</h2><p className="whitespace-pre-wrap break-words text-sm text-neutral-700">{data.observaciones_autor}</p></Card>}

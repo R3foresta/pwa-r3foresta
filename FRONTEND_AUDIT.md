@@ -10,7 +10,7 @@ Entrega INT06 publicada en PWA `62f55dc`: 32 suites/445 tests, lint y build/Type
 
 | Prioridad | ID | Estado | Qué falta |
 | --- | --- | --- | --- |
-| Alta | AUD-038 | Iteraciones 1/2 verificadas e integradas local · iteración 3 y corte pendientes | Acreditar ADMIN109/110 y recorrido real. Integrar procedencia M3, vínculos y estados de evidencias; compatibilidad paginada corregida en la revisión del 16. |
+| Alta | AUD-038 | Iteración 3 verificada en Chrome | Procedencia ADMIN, vínculos y fotos cotejados con el registro 20. Pendiente aceptación en teléfono físico. |
 | Media | AUD-037 | Consulta corregida local · contrato histórico pendiente | Lectura autorizada para el autor de fotos de recepción, historial completo, movimientos y destinos de su origen. |
 | Alta | AUD-035 | Corte y aceptación pendientes | Recepción única 100: acreditar backend/migración, reinicio coordinado, recorrido autenticado y aceptación móvil en el destino. [Alcance y verificación](docs/QA_RECEPCION_UNICA.md). |
 | Media | AUD-036 | PENDIENTE · captura legada | Revisar corrección de fichas cuya fecha original supera 45 días: el formulario aún aplica la ventana de captura a toda edición. |
@@ -59,6 +59,8 @@ El cierre backend `3cb82e4` concreta ADMIN global para nuevos efectos y mantiene
 Ajuste de UI del 15 de noviembre solicitado por Pablo: la ficha completa de origen se retira de Resumen y se reúne en Historial, dentro de «Origen del lote», cerrado inicialmente. Resumen prioriza las acciones rápidas. El desplegable conserva campos, snapshots, advertencias y enlace autorizado a Recolección; los eventos permanecen visibles al cerrarlo. Verificación: `npm run test -- src/modules/vivero/screens/ViveroDetailScreen.test.tsx --maxWorkers=2` (18 pruebas), `npm run lint`, `npm run build` (TypeScript/PWA) y `git diff --check` aprobados. Aviso conocido de MapLibre conservado. Se intentó revisar navegador, pero el acceso local sigue no disponible para este chat; aceptación visual pendiente. Sin operaciones reales ni cambios de contrato.
 
 16 de noviembre: [revisión e integración local](docs/QA_T5_REVISION_2026-11-16.md) de las iteraciones 1/2 y del backend `3cb82e4` en `main`. Se cierra el riesgo de truncar el historial nuevo a la primera página: historial general y adaptabilidad reúnen páginas con cursor, sin publicar parciales ante fallo/cambio del corte o de sesión. Verificación: 106 archivos/1.473 pruebas, 34 pruebas focales finales, lint, build/TypeScript/PWA y diff-check aprobados. La respuesta legada sin paginación conserva sus límites; comunicar su completitud no acreditada en UI sigue pendiente. AUD-038 permanece abierto para procedencia M3, vínculos, estados de fotos, aplicación/cotejo de 109/110 y aceptación del recorrido. No se acredita push, despliegue ni nuevas operaciones reales.
+
+16 de noviembre, iteración 3. Procedencia implementada en el detalle propio y administrativo. Recorrido del registro 20 a la asignación 53 y lote 125 confirmado en Chrome. El usuario confirmó la aplicación de 109 y 110. [Verificación y límites](docs/QA_T5_ITERACION_3.md).
 
 ### AUD-037 — Consulta y detalle de Recolección
 

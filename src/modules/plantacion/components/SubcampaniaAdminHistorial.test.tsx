@@ -4,6 +4,8 @@ import { describe, expect, it, vi } from 'vitest'
 import type { ImpactoRegistro } from '../../impacto/types'
 import SubcampaniaAdminHistorial from './SubcampaniaAdminHistorial'
 
+vi.mock('../../../contexts/AuthContext', () => ({ useAuth: () => ({ user: { id: '7', rol: 'ADMIN' } }) }))
+
 const record: ImpactoRegistro = {
   id: '9007199254740993', codigo_trazabilidad: 'PLA-NORTE-01',
   campania_id: '7', subcampania_id: '51', campania_nombre: 'Palca', subcampania_nombre: 'Norte',

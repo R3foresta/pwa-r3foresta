@@ -18,9 +18,13 @@ export default function EvidencePhoto({ photo, onOpen, onRenew, renewing = false
     return () => window.clearTimeout(timer)
   }, [photo.expiraEn])
   const unavailable = !photo.url || failed || expired
+  const unavailableMessage = expired ? 'El acceso temporal a esta foto venció.'
+    : photo.estadoUrl === 'ERROR_FIRMA' ? 'No se pudo firmar el acceso a esta foto.'
+    : photo.estadoUrl === 'ERROR_URL' ? 'No se pudo obtener el enlace de esta foto.'
+    : 'No se pudo mostrar esta foto.'
   const preview = unavailable ? (
     <p className="flex min-h-24 items-center justify-center p-4 text-xs text-neutral-600" role="status">
-      {renewing ? 'Consultando fotos…' : expired ? 'El acceso temporal a esta foto venció.' : 'No se pudo mostrar esta foto.'}
+      {renewing ? 'Consultando fotos…' : unavailableMessage}
     </p>
   ) : (
     <>
@@ -34,7 +38,7 @@ export default function EvidencePhoto({ photo, onOpen, onRenew, renewing = false
       <div className="space-y-1 p-3 text-xs text-neutral-600">
         <p className="font-bold text-brand-900">{photo.titulo}</p>
         <p>{photo.fecha}</p>
-        <p>{photo.mimeType ?? 'Tipo no disponible'} · {photo.tamanoBytes == null ? 'Peso no disponible' : `${photo.tamanoBytes.toLocaleString('es-BO')} bytes`}</p>
+        <p>{photo.mimeType ?? 'Tipo no disponible'} · {photo.tamanoBytes == null ? 'Peso no disponible' : `${typeof photo.tamanoBytes === 'number' ? photo.tamanoBytes.toLocaleString('es-BO') : photo.tamanoBytes} bytes`}</p>
         {photo.expiraEn !== null && !expired && <p>Acceso temporal</p>}
         {unavailable && <Button variant="secondary" size="sm" onClick={onRenew} disabled={renewing}>{renewing ? 'Consultando…' : 'Renovar acceso a fotos'}</Button>}
       </div>

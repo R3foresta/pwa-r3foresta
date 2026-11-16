@@ -540,7 +540,14 @@ export interface RegistrarDescartePreEmbolsadoResponse {
   }
 }
 
+export type EstadoEvidencias = 'CONSULTADAS' | 'ERROR_CONSULTA'
+export type EstadoUrlFoto = 'DISPONIBLE' | 'ERROR_FIRMA' | 'ERROR_URL'
+export type FuenteResponsable = 'SNAPSHOT_INCORPORACION' | 'CUENTA_ACTUAL' | 'NO_REGISTRADO'
+
 export interface TimelineEventDto {
+  estado_evidencias?: EstadoEvidencias
+  responsable_nombre_fuente?: FuenteResponsable
+  registrado_en?: string | null
   id: ViveroId;
   tipo_evento: string;
   label?: string;
@@ -564,17 +571,18 @@ export interface LoteTimelinePage<TEvent = TimelineEventDto> {
 }
 
 export interface EvidenciaDto {
+  estado_url?: EstadoUrlFoto
   id: ViveroId
   bucket?: string
   public_url?: string | null
   signed_url?: string | null
-  url_expira_en_segundos?: number
+  url_expira_en_segundos?: number | null
   titulo?: string | null
   tomado_en?: string | null
   creado_en?: string | null
   mime_type?: string | null
   tipo_archivo?: string | null
-  tamano_bytes?: number | null
+  tamano_bytes?: number | string | null
 }
 
 // ─── Detalle de lote (GET /api/lotes-vivero/:id) ─────────────────────────────

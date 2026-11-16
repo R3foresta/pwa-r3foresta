@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Badge, Button, Card } from '../../../components/ui'
 import ImpactoRegistroContent from '../../impacto/components/ImpactoRegistroContent'
 import type { ImpactoRegistro } from '../../impacto/types'
+import ProcedenciaRegistro from '../procedencia/ProcedenciaRegistro'
 import {
   formatImpactoDate,
   formatImpactoNumber,
@@ -52,7 +53,7 @@ function RegistroCard({ record, onShowMap, returnTo }: {
     </div>
     <details onToggle={event => setExpanded(event.currentTarget.open)} className="border-t border-neutral-100">
       <summary className="min-h-11 cursor-pointer px-4 py-3 text-xs font-bold text-brand-700 focus-visible:outline-brand-500">Ver detalle del registro {record.codigo_trazabilidad}</summary>
-      {expanded && <div className="space-y-3 px-3 pb-3"><ImpactoRegistroContent data={record} returnTo={destination} /></div>}
+      {expanded && <div className="space-y-3 px-3 pb-3"><ImpactoRegistroContent data={record} returnTo={destination} /><ProcedenciaRegistro registroId={record.id} audiencia="administrativa" /></div>}
     </details>
   </li>
 }

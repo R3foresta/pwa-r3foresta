@@ -1,4 +1,4 @@
-import { exactId } from '../../accesos/accessPolicy'
+import { exactId, isExactId } from '../../accesos/accessPolicy'
 import type { LoteViveroDetalle, LoteViveroItem, TimelineEventDto, TipoEventoVivero } from '../types/contracts'
 import type { OrigenLoteView, ViveroLotCardData, ViveroLotDetailView, ViveroLotEventView } from '../types/view-models'
 import { daysSinceViveroDate, formatViveroDate, formatViveroPhotoDate } from '../utils/presentation'
@@ -97,6 +97,13 @@ export function mapLoteToDetailView(lot: LoteViveroItem): ViveroLotDetailView {
 const textOrNull = (value: unknown) => typeof value === 'string' && value ? value : null
 const numberOrNull = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? value : null
 
+const linkId = (value: unknown) => typeof value === 'string' && isExactId(value) ? value : null
+
+function formatRegistroLocal(value?: string | null): string | null {
+  if (!value || !/^\d{4}-\d\d-\d\dT.*(?:Z|[+-]\d\d:\d\d)$/.test(value) || !Number.isFinite(Date.parse(value))) return null
+  return formatViveroPhotoDate(value)
+}
+
 export function mapTimelineEventToView(e: TimelineEventDto): ViveroLotEventView {
   const p = e.payload
   const conocido = VALID_KINDS.has(e.tipo_evento as TipoEventoVivero)
@@ -110,7 +117,13 @@ export function mapTimelineEventToView(e: TimelineEventDto): ViveroLotEventView 
     label: e.label || (conocido ? `${e.tipo_evento.replaceAll('_', ' ')} registrado` : `Evento no reconocido: ${e.tipo_evento || 'tipo no disponible'}`),
     fecha: formatViveroDate(e.fecha_evento), fechaIso: e.fecha_evento || '', hora: null,
     responsableNombre: e.responsable_nombre || 'Responsable no disponible',
-    responsableEsSnapshot: e.tipo_evento === 'INCORPORACION',
+    fuenteResponsable: e.responsable_nombre_fuente,
+    registroLocal: e.tipo_evento === 'INCORPORACION' ? formatRegistroLocal(e.registrado_en) : null,
+    estadoEvidencias: e.estado_evidencias,
+    vinculos: e.tipo_evento === 'DESPACHO' || e.tipo_evento === 'DEVOLUCION_PLANTACION' ? {
+      origenDespacho: textOrNull(p?.origen_despacho), asignacion: linkId(p?.asignacion_id),
+      campania: linkId(p?.campania_id), subcampania: linkId(p?.subcampania_id), registro: linkId(p?.registro_plantacion_id),
+    } : undefined,
     cantidad, unidadMedidaEvento: unit,
     saldoAntes: numberOrNull(p?.saldo_vivo_antes), saldoDespues: numberOrNull(p?.saldo_vivo_despues),
     observacion: e.observaciones ?? null,
@@ -123,7 +136,8 @@ export function mapTimelineEventToView(e: TimelineEventDto): ViveroLotEventView 
     fotos: (e.evidencias ?? []).map(f => ({
       id: exactId(f.id),
       // El bucket privado nunca puede caer a public_url ni construirse desde ruta_archivo.
-      url: f.signed_url || (f.bucket === 'vivero_incorporaciones' ? null : f.public_url) || null,
+      estadoUrl: f.estado_url,
+      url: f.estado_url && f.estado_url !== 'DISPONIBLE' ? null : f.signed_url || (f.bucket === 'vivero_incorporaciones' ? null : f.public_url) || null,
       expiraEn: f.signed_url && typeof f.url_expira_en_segundos === 'number' ? Date.now() + f.url_expira_en_segundos * 1000 : null,
       titulo: f.titulo || `Evidencia #${exactId(f.id)}`,
       fecha: formatViveroPhotoDate(f.tomado_en ?? f.creado_en),

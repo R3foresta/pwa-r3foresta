@@ -99,7 +99,7 @@ El historial admite los nueve eventos y conserva tipos desconocidos con una pres
 
 La ficha prioriza las acciones rápidas en Resumen. Los datos completos del origen se consultan exclusivamente en Historial, dentro de «Origen del lote», cerrado inicialmente para dejar visibles los eventos. La sección conserva snapshots, cantidades iniciales, advertencias de procedencia y enlace autorizado a Recolección; el saldo actual sigue siendo independiente. El desplegable compartido comunica apertura y panel asociado mediante atributos ARIA.
 
-Alcance, pruebas y dependencias de completitud, vínculos y nombres históricos: [QA T5 iteración 1](docs/QA_T5_ITERACION_1.md). El alta y su recuperación se describen a continuación; procedencia M3 permanece pendiente de la iteración 3.
+Alcance, pruebas y dependencias de completitud, vínculos y nombres históricos: [QA T5 iteración 1](docs/QA_T5_ITERACION_1.md). El detalle propio y el historial del administrador muestran los consumos persistidos por registro, con lecturas privadas independientes de Impacto. La ficha del lote distingue los eventos cargados del corte, el resultado de consultar evidencias por evento y el acceso temporal de cada foto. [QA T5 iteración 3](docs/QA_T5_ITERACION_3.md).
 
 Desde la revisión del 16 de noviembre, el servicio reúne las páginas del timeline general y de adaptabilidad antes de exponerlas. Conserva filtros, token y cancelación, valida corte/conteos/cursores y descarta parciales ante fallo; reintentar inicia una lectura nueva. La respuesta legada sin paginación no acredita completitud. [Verificación y pendientes](docs/QA_T5_REVISION_2026-11-16.md).
 

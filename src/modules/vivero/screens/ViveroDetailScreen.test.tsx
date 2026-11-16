@@ -197,6 +197,31 @@ describe('seguimientos, tarjetas y evidencias', () => {
       expect(screen.getByRole('button', { name: 'Renovar acceso a fotos' })).toBeTruthy()
     } finally { vi.useRealTimers() }
   })
+  it('conserva vínculos exactos y fotos disponibles ante un fallo parcial', async () => {
+    const event = eventoFixture('DESPACHO', {
+      estado_evidencias: 'ERROR_CONSULTA', responsable_nombre_fuente: 'CUENTA_ACTUAL',
+      payload: { asignacion_id: BIG_A, campania_id: '91', subcampania_id: '104', registro_plantacion_id: BIG_B },
+      evidencias: [
+        { id: '101', estado_url: 'ERROR_FIRMA', titulo: 'Foto sin firma', bucket: 'vivero_incorporaciones', tamano_bytes: 16 },
+        { id: '102', estado_url: 'DISPONIBLE', titulo: 'Foto visible', signed_url: 'https://example.test/signed/102' },
+      ],
+    })
+    mount(loteFixture(), [event])
+    await screen.findByRole('heading', { name: 'Nombre histórico' })
+    fireEvent.click(screen.getByRole('button', { name: 'historial' }))
+    expect(screen.getByText(`Asignación · ${BIG_A}`)).toBeTruthy()
+    expect(screen.getByText(`Registro de plantación · ${BIG_B}`)).toBeTruthy()
+    expect(screen.getByRole('link', { name: '104' }).getAttribute('href')).toBe('/app/planting/subcampanias/104?pestana=registros')
+    expect(screen.getByText(/El servidor no confirmó si el historial está completo/)).toBeTruthy()
+    expect(screen.getByText(/No se pudieron consultar todas las evidencias/)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Ver todas las fotos del evento' }))
+    expect(screen.getByRole('button', { name: 'Cerrar galería' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar galería' }))
+    fireEvent.click(screen.getByRole('button', { name: 'evidencia' }))
+    expect(screen.getByText(/Consulta de evidencias incompleta/)).toBeTruthy()
+    expect(screen.getByText('No se pudo firmar el acceso a esta foto.')).toBeTruthy()
+    expect(screen.getByRole('img', { name: 'Foto visible' })).toBeTruthy()
+  })
   it('renderiza devolución, tipo desconocido y ausencia honesta de destino', async () => {
     mount(loteFixture(), [eventoFixture('DEVOLUCION_PLANTACION', { id: '10', payload: { cantidad_afectada: 5, saldo_vivo_antes: 0, saldo_vivo_despues: 5 } }), eventoFixture('FUTURO', { id: '11' }), eventoFixture('DESPACHO', { id: '12', payload: { cantidad_afectada: 10 }, evidencias: [] })])
     await screen.findByRole('heading', { name: 'Nombre histórico' })

@@ -65,7 +65,7 @@ function AccountMisRegistros({ enabled }: { enabled: boolean }) {
       {reading.loaded && !reading.records.length && !reading.loading && !reading.error && <Card className="space-y-3"><p className="text-sm leading-6">Todavía no hay registros donde figures como autor o participante. Puedes consultar dónde está habilitada tu cuenta para participar.</p><Link to="/participar" className="inline-flex min-h-11 items-center text-sm font-semibold text-brand-700 underline">Ver cómo participar</Link></Card>}
       {reading.records.length > 0 && <ul className="space-y-4">{reading.records.map(record => {
         const author = record.relaciones.includes('AUTOR')
-        const destination = author || !record.url_publica ? `/app/participacion/registros/${record.id}` : `/impacto/registros/${record.id}`
+        const destination = `/app/participacion/registros/${record.id}`
         return <li key={record.id}><Card as="article" padding="none" className="overflow-hidden">
           <div className="sm:flex">
             <div className="h-44 bg-neutral-50 sm:h-auto sm:w-48 sm:shrink-0">
@@ -77,7 +77,7 @@ function AccountMisRegistros({ enabled }: { enabled: boolean }) {
               <div className="space-y-1"><h2 className="break-words font-bold text-brand-800">{record.codigo_trazabilidad}</h2>{record.especies.length ? <ul className="space-y-1 text-sm text-neutral-700">{record.especies.map(species => <li key={species.planta_id} className="flex flex-wrap justify-between gap-x-3"><span className="break-words">{species.nombre ?? 'Nombre histórico no disponible'}</span><span className="font-semibold">{formatImpactoNumber(species.cantidad)} plantas</span></li>)}</ul> : <p className="text-sm text-neutral-500">Especies no disponibles en el resumen.</p>}</div>
               <p className="text-sm font-bold text-brand-800">{formatImpactoNumber(record.cantidad_total_plantada)} plantas del grupo</p>
               <p className="text-xs text-neutral-500">{record.subcampania_nombre || `Subcampaña ${record.subcampania_id}`}</p>
-              <div className="flex flex-wrap gap-4"><Link to={destination} state={returnState} className="inline-flex min-h-11 items-center text-sm font-semibold text-brand-700 underline">{author ? 'Ver mi registro guardado' : record.url_publica ? 'Ver registro público' : 'Ver registro histórico permitido'}</Link>{author && record.url_publica && <Link to={`/impacto/registros/${record.id}`} state={returnState} className="inline-flex min-h-11 items-center text-sm font-semibold text-brand-700 underline">Ver registro público</Link>}</div>
+              <div className="flex flex-wrap gap-4"><Link to={destination} state={returnState} className="inline-flex min-h-11 items-center text-sm font-semibold text-brand-700 underline">{author ? 'Ver mi registro guardado' : 'Ver registro histórico permitido'}</Link>{record.url_publica && <Link to={`/impacto/registros/${record.id}`} state={returnState} className="inline-flex min-h-11 items-center text-sm font-semibold text-brand-700 underline">Ver registro público</Link>}</div>
             </div>
           </div>
         </Card></li>
