@@ -37,8 +37,20 @@ export async function consultarVivero(filtros: FiltrosVivero, token: string, sig
   return validarReporteVivero(await leer('vivero', query, token, signal), filtros)
 }
 
-export async function consultarMermas(filtros: FiltrosMermas, token: string, signal?: AbortSignal) {
+function parametrosMermas(filtros: FiltrosMermas) {
   const query = new URLSearchParams({ desde: filtros.desde, hasta: filtros.hasta, pagina: String(filtros.pagina) })
   agregarAmbito(query, filtros)
+  return query
+}
+
+export async function consultarMermas(filtros: FiltrosMermas, token: string, signal?: AbortSignal) {
+  const query = parametrosMermas(filtros)
   return validarReporteMermas(await leer('mermas', query, token, signal), filtros)
+}
+
+export async function consultarMermasParaExportar(filtros: FiltrosMermas, token: string, signal: AbortSignal) {
+  const ambito = { ...filtros, pagina: 1 }
+  const query = parametrosMermas(ambito)
+  query.set('exportar', '1')
+  return validarReporteMermas(await leer('mermas', query, token, signal), ambito, true)
 }

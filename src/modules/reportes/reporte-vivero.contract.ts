@@ -131,7 +131,7 @@ export function validarReporteVivero(value: unknown, consulta: FiltrosVivero): R
   return { observado_en, filtros, totales, filas, por_vivero, opciones }
 }
 
-export function validarReporteMermas(value: unknown, consulta: FiltrosMermas): ReporteMermas {
+export function validarReporteMermas(value: unknown, consulta: FiltrosMermas, exportacionCompleta = false): ReporteMermas {
   const { data, observado_en, opciones } = leerReporte(value)
   const filtrosRow = object(data.filtros)
   const filtros = {
@@ -172,8 +172,12 @@ export function validarReporteMermas(value: unknown, consulta: FiltrosMermas): R
 
   const tamano_pagina = data.tamano_pagina
   const eventosRestantes = Math.max(0, totales.eventos - (filtros.pagina - 1) * tamano_pagina)
-  if (totales.eventos_sin_cantidad > totales.eventos || detalle.length !== Math.min(tamano_pagina, eventosRestantes) ||
-    detalle.filter(row => row.cantidad === null).length > totales.eventos_sin_cantidad ||
+  const eventosSinCantidad = detalle.filter(row => row.cantidad === null).length
+  const detalleIncompleto = exportacionCompleta
+    ? detalle.length !== totales.eventos || eventosSinCantidad !== totales.eventos_sin_cantidad ||
+      detalle.reduce((suma, row) => suma + (row.cantidad ?? 0), 0) !== totales.plantas
+    : detalle.length !== Math.min(tamano_pagina, eventosRestantes) || eventosSinCantidad > totales.eventos_sin_cantidad
+  if (totales.eventos_sin_cantidad > totales.eventos || detalleIncompleto ||
     totales.eventos !== por_causa.reduce((suma, row) => suma + row.eventos, 0) ||
     totales.plantas !== por_causa.reduce((suma, row) => suma + row.plantas, 0) ||
     totales.plantas !== meses.reduce((suma, row) => suma + row.plantas, 0)) return fail()

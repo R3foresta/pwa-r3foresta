@@ -6,9 +6,12 @@ import type { FiltrosReportePlantaciones, ReportePlantaciones } from './reporte-
 import { periodoInicial } from './reporte-plantaciones.presentacion'
 import type { FiltrosMermas, FiltrosVivero, ReporteMermas, ReporteVivero } from './reporte-vivero.contract'
 
-const { actor, descargar } = vi.hoisted(() => ({ actor: { rol: 'ADMIN', id: '47' }, descargar: vi.fn() }))
+const { actor, descargar, descargarVivero, descargarMermas } = vi.hoisted(() => ({
+  actor: { rol: 'ADMIN', id: '47' }, descargar: vi.fn(), descargarVivero: vi.fn(), descargarMermas: vi.fn(),
+}))
 vi.mock('../../contexts/AuthContext', () => ({ useAuth: () => ({ user: actor }) }))
 vi.mock('./reporte-plantaciones.pdf', () => ({ descargarReportePlantaciones: descargar }))
+vi.mock('./reporte-vivero.pdf', () => ({ descargarReporteVivero: descargarVivero, descargarReporteMermas: descargarMermas }))
 
 const desde = '2026-01-01'
 const hasta = '2026-11-18'
@@ -46,29 +49,31 @@ function fixtureVivero(filtros: FiltrosVivero): ReporteVivero {
   }
 }
 
-function fixtureMermas(filtros: FiltrosMermas, eventos: number): ReporteMermas {
+function fixtureMermas(filtros: FiltrosMermas, eventos: number, exportacionCompleta = false): ReporteMermas {
   const totalEventos = mismoVivero(filtros) ? eventos : 0
   const plantas = Math.max(totalEventos - 1, 0) * 2
   const detalle = Array.from({ length: totalEventos }, (_, index) => ({
     planta_id: aliso.planta_id, especie: aliso.especie, vivero_id: aliso.vivero_id, vivero: aliso.vivero,
     fecha: filtros.hasta, id: String(totalEventos - index), lote_id: '9007199254741000', codigo_lote: `LV-${index + 1}`,
     causa: index === 0 ? null : 'PLAGA', cantidad: index === 0 ? null : 2,
-  })).slice((filtros.pagina - 1) * 25, filtros.pagina * 25)
+  }))
   return {
-    observado_en, filtros, opciones: opcionesVivero, tamano_pagina: 25, detalle,
+    observado_en: exportacionCompleta ? '2026-11-18T16:00:00Z' : observado_en,
+    filtros, opciones: opcionesVivero, tamano_pagina: 25,
+    detalle: exportacionCompleta ? detalle : detalle.slice((filtros.pagina - 1) * 25, filtros.pagina * 25),
     totales: { plantas, eventos: totalEventos, eventos_sin_cantidad: totalEventos > 0 ? 1 : 0 },
     por_causa: totalEventos > 0 ? [{ causa: null, plantas: 0, eventos: 1 }, { causa: 'PLAGA', plantas, eventos: totalEventos - 1 }] : [],
     meses: totalEventos > 0 ? [{ mes: filtros.hasta.slice(0, 7), plantas }] : [],
   }
 }
 
-function response(input: RequestInfo | URL, eventos = 2) {
+function response(input: RequestInfo | URL, eventos = 2, truncarExportacion = false) {
   const { pathname, searchParams: query } = new URL(String(input), window.location.href)
   const ambito = { planta_id: query.get('planta_id'), vivero_id: query.get('vivero_id') }
   const periodo = { desde: query.get('desde') ?? '', hasta: query.get('hasta') ?? '' }
   if (pathname.endsWith('/permiso-exportacion')) return new Response(null, { status: 204 })
   const data = pathname.endsWith('/vivero') ? fixtureVivero(ambito)
-    : pathname.endsWith('/mermas') ? fixtureMermas({ ...periodo, ...ambito, pagina: Number(query.get('pagina') ?? 1) }, eventos)
+    : pathname.endsWith('/mermas') ? fixtureMermas({ ...periodo, ...ambito, pagina: Number(query.get('pagina') ?? 1) }, eventos, query.has('exportar') && !truncarExportacion)
       : fixture({ ...periodo, organizacion_id: query.get('organizacion_id'), campania_id: query.get('campania_id'), planta_id: ambito.planta_id })
   return new Response(JSON.stringify({ success: true, data }), { status: 200 })
 }
@@ -84,6 +89,8 @@ function renderReport() {
 beforeEach(() => {
   actor.rol = 'ADMIN'
   descargar.mockReset()
+  descargarVivero.mockReset()
+  descargarMermas.mockReset()
   localStorage.setItem('authToken', 'token-verificado-ilustrativo')
   vi.setSystemTime(new Date('2026-11-18T15:00:00Z'))
 })
@@ -233,5 +240,82 @@ describe('Impacto y reportes de plantaciones', () => {
     expect(await within(mermas).findByText('Página 1 de 2')).toBeTruthy()
     expect(consultas(fetcher.mock.calls, 'vivero')).toHaveLength(1)
     expect(consultas(fetcher.mock.calls, 'mermas').at(-1)?.searchParams.get('desde')).toBe('2026-03-01')
+  })
+
+  it('exporta el corte de inventario visible y vuelve a verificar permiso', async () => {
+    const fetcher = vi.fn(async (input: RequestInfo | URL) => response(input))
+    vi.stubGlobal('fetch', fetcher)
+    renderReport()
+    const vivero = screen.getByRole('region', { name: 'Vivero al corte' })
+    const generar = within(vivero).getByRole<HTMLButtonElement>('button', { name: 'Generar PDF de vivero' })
+    await waitFor(() => expect(generar.disabled).toBe(false))
+    fireEvent.change(screen.getByLabelText('Vivero'), { target: { value: aliso.vivero_id } })
+    expect(generar.disabled).toBe(true)
+    fireEvent.click(screen.getByRole('button', { name: 'Aplicar filtros' }))
+    await waitFor(() => expect(generar.disabled).toBe(false))
+    fireEvent.click(generar)
+    const preview = screen.getByRole('dialog', { name: 'Vista previa del PDF' })
+    expect(within(preview).getByText('Vivero Norte')).toBeTruthy()
+    expect(within(preview).getByText('140')).toBeTruthy()
+    fireEvent.click(within(preview).getByRole('button', { name: 'Descargar PDF' }))
+    await waitFor(() => expect(descargarVivero).toHaveBeenCalledOnce())
+    expect(descargarVivero).toHaveBeenCalledWith(fixtureVivero({ planta_id: null, vivero_id: aliso.vivero_id }), expect.any(Function))
+    expect(consultas(fetcher.mock.calls, 'vivero')).toHaveLength(2)
+    expect(consultas(fetcher.mock.calls, 'plantaciones/permiso-exportacion')).toHaveLength(1)
+  })
+
+  it('carga el detalle completo de mermas desde la segunda página, rechaza truncados y exporta el corte de la vista previa', async () => {
+    let truncado = true
+    const fetcher = vi.fn(async (input: RequestInfo | URL) => response(input, 27, truncado))
+    vi.stubGlobal('fetch', fetcher)
+    renderReport()
+    const mermas = screen.getByRole('region', { name: 'Mermas en vivero' })
+    fireEvent.click(await within(mermas).findByRole('button', { name: 'Página siguiente' }))
+    expect(await within(mermas).findByText('Página 2 de 2')).toBeTruthy()
+    fireEvent.click(within(mermas).getByRole('button', { name: 'Generar PDF de mermas' }))
+    const preview = screen.getByRole('dialog', { name: 'Vista previa del PDF' })
+    const boton = within(preview).getByRole<HTMLButtonElement>('button', { name: 'Descargar PDF' })
+    expect((await within(preview).findByRole('alert')).textContent).toContain('incompleto')
+    expect(boton.disabled).toBe(true)
+    expect(descargarMermas).not.toHaveBeenCalled()
+
+    truncado = false
+    fireEvent.click(within(preview).getByRole('button', { name: 'Reintentar consulta del PDF' }))
+    expect(await within(preview).findByText(/historial completo del corte \(27 eventos\)/)).toBeTruthy()
+    expect(preview.querySelector('time')?.dateTime).toBe('2026-11-18T16:00:00Z')
+    expect(within(mermas).getByText('Página 2 de 2')).toBeTruthy()
+    const exportaciones = consultas(fetcher.mock.calls, 'mermas').filter(url => url.searchParams.get('exportar') === '1')
+    expect(exportaciones.map(url => url.searchParams.get('pagina'))).toEqual(['1', '1'])
+    fireEvent.click(boton)
+    await waitFor(() => expect(descargarMermas).toHaveBeenCalledOnce())
+    const [reporte, detalle] = descargarMermas.mock.calls[0]
+    expect(reporte.observado_en).toBe('2026-11-18T16:00:00Z')
+    expect(detalle).toHaveLength(27)
+    expect(consultas(fetcher.mock.calls, 'plantaciones/permiso-exportacion')).toHaveLength(1)
+  })
+
+  it('cancela la lectura de exportación de mermas al cerrar la vista previa', async () => {
+    let signal: AbortSignal | null | undefined
+    const fetcher = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input).includes('exportar=1')) {
+        signal = init?.signal
+        return new Promise<Response>((_resolve, reject) => {
+          signal?.addEventListener('abort', () => reject(new DOMException('Cancelado', 'AbortError')), { once: true })
+        })
+      }
+      return Promise.resolve(response(input))
+    })
+    vi.stubGlobal('fetch', fetcher)
+    renderReport()
+    const generar = screen.getByRole<HTMLButtonElement>('button', { name: 'Generar PDF de mermas' })
+    await waitFor(() => expect(generar.disabled).toBe(false))
+    fireEvent.click(generar)
+    const preview = screen.getByRole('dialog', { name: 'Vista previa del PDF' })
+    await within(preview).findByText('Consultando el detalle completo de mermas…')
+    await waitFor(() => expect(signal?.aborted).toBe(false))
+    fireEvent.click(within(preview).getByRole('button', { name: 'Cerrar' }))
+    expect(signal?.aborted).toBe(true)
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(descargarMermas).not.toHaveBeenCalled()
   })
 })
