@@ -4,6 +4,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import ImpactoReportesScreen from './ImpactoReportesScreen'
 import type { FiltrosReportePlantaciones, ReportePlantaciones } from './reporte-plantaciones.contract'
 import { periodoInicial } from './reporte-plantaciones.presentacion'
+import type { ReporteMovimientosSemillas, ReporteSaldoSemillas } from './reporte-semillas.contract'
 import type { FiltrosMermas, FiltrosVivero, ReporteMermas, ReporteVivero } from './reporte-vivero.contract'
 
 const { actor, descargar, descargarVivero, descargarMermas } = vi.hoisted(() => ({
@@ -19,6 +20,8 @@ const tat = { planta_id: '9007199254740999', nombre_comun: 'Tajibo', nombre_cien
 const tob = { planta_id: '54', nombre_comun: 'Toborochi', nombre_cientifico: 'Ceiba speciosa', iniciales: 28, reposiciones: 12, total: 40 }
 const aliso = { planta_id: '55', especie: 'Aliso', vivero_id: '72', vivero: 'Vivero Norte', plantas: 140 }
 const opcionesVivero = { especies: [{ id: aliso.planta_id, nombre: aliso.especie }], viveros: [{ id: aliso.vivero_id, nombre: aliso.vivero }] }
+const semillas = { planta_id: '56', especie: 'Jacarandá', vivero_id: '73', vivero: 'Vivero de origen' }
+const opcionesSemillas = { especies: [{ id: semillas.planta_id, nombre: semillas.especie }], viveros: [{ id: semillas.vivero_id, nombre: semillas.vivero }] }
 const observado_en = '2026-11-18T15:00:00Z'
 
 function fixture(filtros: FiltrosReportePlantaciones): ReportePlantaciones {
@@ -67,12 +70,52 @@ function fixtureMermas(filtros: FiltrosMermas, eventos: number, exportacionCompl
   }
 }
 
+function coincideSemilla(filtros: FiltrosVivero) {
+  return (!filtros.planta_id || filtros.planta_id === semillas.planta_id) && (!filtros.vivero_id || filtros.vivero_id === semillas.vivero_id)
+}
+
+function fixtureSaldoSemillas(filtros: FiltrosVivero): ReporteSaldoSemillas {
+  const coincide = coincideSemilla(filtros)
+  return {
+    observado_en, filtros, opciones: opcionesSemillas,
+    totales: coincide ? { G: '9007199254740993.123456', UNIDAD: '15' } : { G: '0', UNIDAD: '0' },
+    filas: coincide ? [
+      { ...semillas, unidad: 'G', saldo: '9007199254740993.123456' },
+      { ...semillas, unidad: 'UNIDAD', saldo: '15' },
+    ] : [],
+  }
+}
+
+function fixtureMovimientosSemillas(filtros: FiltrosMermas): ReporteMovimientosSemillas {
+  const cero = { recibido: '0', consumido: '0', descartado: '0' }
+  if (!coincideSemilla(filtros)) return {
+    observado_en, filtros, opciones: opcionesSemillas, tamano_pagina: 25, detalle: [],
+    totales: { G: cero, UNIDAD: cero, eventos: 0, eventos_sin_cantidad: 0 },
+  }
+  const detalle: ReporteMovimientosSemillas['detalle'] = Array.from({ length: 27 }, (_, index) => ({
+    ...semillas,
+    tipo: index === 0 ? 'RECEPCION_CONFORME' : index === 2 ? 'DESECHO' : 'CONSUMO_A_VIVERO',
+    unidad: index === 2 ? null : index < 2 ? 'G' : 'UNIDAD',
+    cantidad: index === 2 ? null : index === 0 ? '25.125001' : index === 1 ? '3.125001' : '2',
+    id: String(27 - index), fecha: filtros.hasta,
+    recoleccion_id: '9007199254740999', codigo_recoleccion: `SEM-${index + 1}`,
+    vivero_destino: index === 1 || index > 2 ? 'Vivero de destino' : null,
+  }))
+  return {
+    observado_en, filtros, opciones: opcionesSemillas, tamano_pagina: 25,
+    detalle: detalle.slice((filtros.pagina - 1) * 25, filtros.pagina * 25),
+    totales: { G: { ...cero, recibido: '25.125001', consumido: '3.125001' }, UNIDAD: { ...cero, consumido: '48' }, eventos: 27, eventos_sin_cantidad: 1 },
+  }
+}
+
 function response(input: RequestInfo | URL, eventos = 2, truncarExportacion = false) {
   const { pathname, searchParams: query } = new URL(String(input), window.location.href)
   const ambito = { planta_id: query.get('planta_id'), vivero_id: query.get('vivero_id') }
   const periodo = { desde: query.get('desde') ?? '', hasta: query.get('hasta') ?? '' }
   if (pathname.endsWith('/permiso-exportacion')) return new Response(null, { status: 204 })
-  const data = pathname.endsWith('/vivero') ? fixtureVivero(ambito)
+  const data = pathname.endsWith('/semillas/movimientos') ? fixtureMovimientosSemillas({ ...periodo, ...ambito, pagina: Number(query.get('pagina') ?? 1) })
+    : pathname.endsWith('/semillas') ? fixtureSaldoSemillas(ambito)
+    : pathname.endsWith('/vivero') ? fixtureVivero(ambito)
     : pathname.endsWith('/mermas') ? fixtureMermas({ ...periodo, ...ambito, pagina: Number(query.get('pagina') ?? 1) }, eventos, query.has('exportar') && !truncarExportacion)
       : fixture({ ...periodo, organizacion_id: query.get('organizacion_id'), campania_id: query.get('campania_id'), planta_id: ambito.planta_id })
   return new Response(JSON.stringify({ success: true, data }), { status: 200 })
@@ -174,6 +217,78 @@ describe('Impacto y reportes de plantaciones', () => {
 
   it('abre el período al inicio del año según la fecha de Bolivia', () => {
     expect(periodoInicial(new Date('2026-01-01T02:34:00Z'))).toMatchObject({ desde: '2025-01-01', hasta: '2025-12-31' })
+  })
+
+  it('mantiene las unidades de semillas separadas y distingue custodia de destino', async () => {
+    const fetcher = vi.fn(async (input: RequestInfo | URL) => response(input))
+    vi.stubGlobal('fetch', fetcher)
+    renderReport()
+
+    expect(screen.getByRole('link', { name: 'Semillas' }).getAttribute('href')).toBe('#reporte-semillas')
+    const saldo = screen.getByRole('region', { name: 'Saldo actual de semillas' })
+    const inventario = await within(saldo).findByRole('region', { name: 'Saldo por especie y vivero de custodia' })
+    expect(within(inventario).getByText('9.007.199.254.740.993,123456 g')).toBeTruthy()
+    expect(within(inventario).getByText('15 u.')).toBeTruthy()
+    expect(within(saldo).getByText('Gramos disponibles')).toBeTruthy()
+    expect(within(saldo).getByText('Unidades disponibles')).toBeTruthy()
+
+    const historial = screen.getByRole('region', { name: 'Movimientos de semillas' })
+    const tabla = await within(historial).findByRole('table')
+    const consumo = within(tabla).getByRole('row', { name: /SEM-2 / })
+    expect(within(consumo).getByText('Vivero de origen')).toBeTruthy()
+    expect(within(consumo).getByText('Vivero de destino')).toBeTruthy()
+    expect(within(consumo).getByText('3,125001 g')).toBeTruthy()
+    expect(within(tabla).getByText('Recepción conforme')).toBeTruthy()
+    expect(within(tabla).getByText('Cantidad no disponible')).toBeTruthy()
+    expect(within(historial).getByText(/Movimientos sin cantidad verificable/)).toBeTruthy()
+  })
+
+  it('comparte filtros de especie y custodia, y cambia solamente el historial al cambiar el período', async () => {
+    const fetcher = vi.fn(async (input: RequestInfo | URL) => response(input, 27))
+    vi.stubGlobal('fetch', fetcher)
+    renderReport()
+
+    const historial = screen.getByRole('region', { name: 'Movimientos de semillas' })
+    fireEvent.click(await within(historial).findByRole('button', { name: 'Página siguiente' }))
+    expect(await within(historial).findByText('Página 2 de 2')).toBeTruthy()
+    expect(consultas(fetcher.mock.calls, 'semillas/movimientos').at(-1)?.searchParams.get('pagina')).toBe('2')
+    expect(consultas(fetcher.mock.calls, 'mermas')).toHaveLength(1)
+
+    fireEvent.change(screen.getByLabelText('Desde'), { target: { value: '2026-03-01' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Aplicar filtros' }))
+    expect(await within(historial).findByText('Página 1 de 2')).toBeTruthy()
+    expect(consultas(fetcher.mock.calls, 'semillas/movimientos').at(-1)?.searchParams.get('desde')).toBe('2026-03-01')
+    expect(consultas(fetcher.mock.calls, 'semillas')).toHaveLength(1)
+
+    fireEvent.change(screen.getByLabelText('Especie'), { target: { value: semillas.planta_id } })
+    fireEvent.change(screen.getByLabelText('Vivero'), { target: { value: semillas.vivero_id } })
+    fireEvent.click(screen.getByRole('button', { name: 'Aplicar filtros' }))
+    await waitFor(() => expect(consultas(fetcher.mock.calls, 'semillas')).toHaveLength(2))
+    for (const endpoint of ['semillas', 'semillas/movimientos']) {
+      const params = consultas(fetcher.mock.calls, endpoint).at(-1)?.searchParams
+      expect(params?.get('vivero_id')).toBe(semillas.vivero_id)
+      expect(params?.get('planta_id')).toBe(semillas.planta_id)
+    }
+    expect(consultas(fetcher.mock.calls, 'semillas').at(-1)?.searchParams.has('desde')).toBe(false)
+  })
+
+  it('reintenta movimientos sin invalidar el saldo de semillas', async () => {
+    let fallarMovimientos = true
+    const fetcher = vi.fn(async (input: RequestInfo | URL) => {
+      const url = new URL(String(input), window.location.href)
+      return fallarMovimientos && url.pathname.endsWith('/semillas/movimientos') ? new Response(null, { status: 503 }) : response(input)
+    })
+    vi.stubGlobal('fetch', fetcher)
+    renderReport()
+    const historial = screen.getByRole('region', { name: 'Movimientos de semillas' })
+    const saldo = screen.getByRole('region', { name: 'Saldo actual de semillas' })
+    expect(await within(historial).findByRole('alert')).toBeTruthy()
+    expect(await within(saldo).findByRole('table')).toBeTruthy()
+
+    fallarMovimientos = false
+    fireEvent.click(within(historial).getByRole('button', { name: 'Reintentar movimientos de semillas' }))
+    expect(await within(historial).findByRole('table')).toBeTruthy()
+    expect(consultas(fetcher.mock.calls, 'semillas')).toHaveLength(1)
   })
 
   it('aplica período, vivero y especie a las consultas que corresponden', async () => {

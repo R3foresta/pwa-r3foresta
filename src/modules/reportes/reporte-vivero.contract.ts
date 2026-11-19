@@ -1,11 +1,11 @@
 import { validarId } from '../participacion/api/participacion.contract'
 import { validarRegistroFecha } from '../participacion/api/registro.contract'
-import type { OpcionReporte } from './reporte-plantaciones.contract'
+import { cantidad, coincideAmbito, leerFiltros, leerReporte, list, object, reporteIncompleto as fail, text, type FiltrosVivero, type OpcionesVivero } from './reporte-consulta.contract'
 
-export type FiltrosVivero = { planta_id: string | null; vivero_id: string | null }
+export type { FiltrosVivero, OpcionesVivero } from './reporte-consulta.contract'
+
 export type FiltrosMermas = FiltrosVivero & { desde: string; hasta: string; pagina: number }
 
-export type OpcionesVivero = { viveros: OpcionReporte[]; especies: OpcionReporte[] }
 type AmbitoVivero = { vivero_id: string; vivero: string }
 type AmbitoEspecie = { planta_id: string; especie: string }
 type SaldoVivero = AmbitoVivero & { plantas: number }
@@ -37,65 +37,6 @@ export type ReporteMermas = {
   tamano_pagina: 25
   detalle: DetalleMerma[]
   opciones: OpcionesVivero
-}
-
-function fail(): never {
-  throw new Error('El reporte recibido es incompleto o no corresponde a la consulta.')
-}
-
-function object(value: unknown): Record<string, unknown> {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return fail()
-  return value as Record<string, unknown>
-}
-
-function text(value: unknown): string {
-  return typeof value === 'string' && value.trim() ? value : fail()
-}
-
-function cantidad(value: unknown, minimo = 0): number {
-  return typeof value === 'number' && Number.isSafeInteger(value) && value >= minimo ? value : fail()
-}
-
-function list<T, Key>(value: unknown, parse: (item: unknown) => T, key: (item: T) => Key): T[] {
-  if (!Array.isArray(value)) return fail()
-  const result = value.map(parse)
-  if (new Set(result.map(key)).size !== result.length) return fail()
-  return result
-}
-
-function leerReporte(value: unknown) {
-  const response = object(value)
-  if (response.success !== true) return fail()
-  const data = object(response.data)
-  const observado_en = text(data.observado_en)
-  if (!/^\d{4}-\d{2}-\d{2}T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(observado_en) ||
-    !Number.isFinite(Date.parse(observado_en))) return fail()
-  validarRegistroFecha(observado_en.slice(0, 10))
-
-  const opciones = object(data.opciones)
-  const parseOpcion = (option: unknown): OpcionReporte => {
-    const row = object(option)
-    return { id: validarId(row.id), nombre: text(row.nombre) }
-  }
-  return {
-    data, observado_en,
-    opciones: {
-      viveros: list(opciones.viveros, parseOpcion, row => row.id),
-      especies: list(opciones.especies, parseOpcion, row => row.id),
-    },
-  }
-}
-
-function coincideAmbito(ambito: FiltrosVivero, consulta: FiltrosVivero): boolean {
-  return (consulta.planta_id === null || ambito.planta_id === consulta.planta_id) &&
-    (consulta.vivero_id === null || ambito.vivero_id === consulta.vivero_id)
-}
-
-function leerFiltros(row: Record<string, unknown>, consulta: FiltrosVivero): FiltrosVivero {
-  const planta_id = row.planta_id === null ? null : validarId(row.planta_id)
-  const vivero_id = row.vivero_id === null ? null : validarId(row.vivero_id)
-  if (planta_id !== consulta.planta_id || vivero_id !== consulta.vivero_id) return fail()
-  return { planta_id, vivero_id }
 }
 
 function ambito(row: Record<string, unknown>): AmbitoEspecie & AmbitoVivero {

@@ -26,7 +26,7 @@ type Props = {
 export default function FiltrosImpactoReportes({ filtros, opciones, errorFechas, pendientes, cargando, actualizar, enviar }: Props) {
   return <form onSubmit={enviar} className="rounded-3xl border border-brand-100 bg-white p-4 shadow-sm sm:p-6">
     <h2 className="font-display text-base font-extrabold text-brand-900">Filtros del tablero</h2>
-    <p className="mt-1 text-sm text-neutral-600">El período se aplica a plantaciones y mermas. Empresa y campaña filtran plantaciones. Vivero filtra saldo y mermas.</p>
+    <p className="mt-1 text-sm text-neutral-600">El período filtra plantaciones, mermas y movimientos de semillas. Empresa y campaña se aplican a plantaciones. Vivero filtra el inventario, las mermas y las semillas bajo su custodia.</p>
     <div className="mt-3 grid gap-3 md:grid-cols-3 xl:grid-cols-[1fr_1fr_1.15fr_1.15fr_1.15fr_1.15fr_auto] xl:items-end">
       <div className="grid grid-cols-2 gap-3 md:col-span-2 xl:contents">
         {(['desde', 'hasta'] as const).map((campo) => <label key={campo} className="min-w-0 text-sm font-semibold text-brand-800">

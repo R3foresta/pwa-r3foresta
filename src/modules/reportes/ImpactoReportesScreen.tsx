@@ -7,12 +7,14 @@ import { WebAuthnService } from '../../services/webauthn.service'
 import { ParticipacionApiError } from '../participacion/api/participacion.transport'
 import FiltrosImpactoReportes, { type FiltrosTablero } from './FiltrosImpactoReportes'
 import ReportePlantacionesContenido from './ReportePlantacionesContenido'
+import ReporteSemillasPanel from './ReporteSemillasPanel'
 import { ReporteMermasPanel, ReporteViveroPanel } from './ReportesViveroContenido'
 import VistaPreviaPlantaciones from './VistaPreviaPlantaciones'
 import { VistaPreviaInventario, VistaPreviaMermas } from './VistaPreviaVivero'
 import { consultarPlantaciones, ReporteConsultaError } from './reporte-plantaciones.api'
 import { mismosFiltros, type FiltrosReportePlantaciones, type OpcionReporte, type ReportePlantaciones } from './reporte-plantaciones.contract'
 import { filtrosAplicados, formatearCorte, periodoInicial } from './reporte-plantaciones.presentacion'
+import { consultarMovimientosSemillas, consultarSaldoSemillas } from './reporte-semillas.api'
 import { consultarMermas, consultarVivero } from './reporte-vivero.api'
 import type { FiltrosVivero, ReporteMermas, ReporteVivero } from './reporte-vivero.contract'
 import { useLecturaVivero } from './useLecturaVivero'
@@ -29,6 +31,7 @@ const secciones = [
   { id: 'reporte-plantaciones', nombre: 'Plantaciones' },
   { id: 'reporte-vivero', nombre: 'Vivero' },
   { id: 'reporte-mermas', nombre: 'Mermas' },
+  { id: 'reporte-semillas', nombre: 'Semillas' },
 ] as const
 
 const collator = new Intl.Collator('es-BO')
@@ -67,6 +70,7 @@ function TableroReportes({ token }: { token: string }) {
   const [filtros, setFiltros] = useState<FiltrosTablero>(() => ({ ...consulta.filtros, vivero_id: null }))
   const [filtrosVivero, setFiltrosVivero] = useState<FiltrosVivero>({ planta_id: null, vivero_id: null })
   const [pagina, setPagina] = useState(1)
+  const [paginaSemillas, setPaginaSemillas] = useState(1)
   const [resultado, setResultado] = useState<Resultado | null>(null)
   const [catalogo, setCatalogo] = useState<{ token: string; opciones: ReportePlantaciones['opciones'] } | null>(null)
   const [seleccionPdf, setSeleccionPdf] = useState<VistaPrevia | null>(null)
@@ -74,12 +78,15 @@ function TableroReportes({ token }: { token: string }) {
 
   const { desde, hasta } = consulta.filtros
   const filtrosMermas = useMemo(() => ({ desde, hasta, ...filtrosVivero, pagina }), [desde, hasta, filtrosVivero, pagina])
+  const filtrosMovimientos = useMemo(() => ({ desde, hasta, ...filtrosVivero, pagina: paginaSemillas }), [desde, hasta, filtrosVivero, paginaSemillas])
   const vivero = useLecturaVivero(consultarVivero, filtrosVivero, token)
   const mermas = useLecturaVivero(consultarMermas, filtrosMermas, token)
+  const saldoSemillas = useLecturaVivero(consultarSaldoSemillas, filtrosVivero, token)
+  const movimientosSemillas = useLecturaVivero(consultarMovimientosSemillas, filtrosMovimientos, token)
   const lectura = resultado?.token === token && resultado.consulta === consulta ? resultado : null
   const opciones = catalogo?.token === token ? catalogo.opciones : null
-  const especies = unirOpciones(opciones?.especies, vivero.opciones?.especies, mermas.opciones?.especies)
-  const viveros = unirOpciones(vivero.opciones?.viveros, mermas.opciones?.viveros)
+  const especies = unirOpciones(opciones?.especies, vivero.opciones?.especies, mermas.opciones?.especies, saldoSemillas.opciones?.especies, movimientosSemillas.opciones?.especies)
+  const viveros = unirOpciones(vivero.opciones?.viveros, mermas.opciones?.viveros, saldoSemillas.opciones?.viveros, movimientosSemillas.opciones?.viveros)
   const lecturaPlantaciones = lectura?.reporte
   const nombreEspecie = especies.find(opcion => opcion.id === lecturaPlantaciones?.filtros.planta_id)?.nombre
   const reporte = useMemo(() => {
@@ -130,7 +137,10 @@ function TableroReportes({ token }: { token: string }) {
     const { vivero_id, ...plantaciones } = filtros
     if (plantacionesPendientes || !cambioVivero) setConsulta({ filtros: plantaciones })
     if (viveroPendiente) setFiltrosVivero({ vivero_id, planta_id: filtros.planta_id })
-    if (mermasPendientes) setPagina(1)
+    if (mermasPendientes) {
+      setPagina(1)
+      setPaginaSemillas(1)
+    }
   }
 
   const cerrarVistaPrevia = () => setSeleccionPdf(null)
@@ -140,7 +150,6 @@ function TableroReportes({ token }: { token: string }) {
     <header className="flex flex-wrap items-end justify-between gap-4 border-b border-brand-200 pb-5">
       <div>
         <h1 className="font-display text-3xl font-extrabold tracking-tight text-brand-900 sm:text-4xl">Impacto y reportes</h1>
-        <p className="mt-2 max-w-xl text-sm text-neutral-700 sm:text-base">Consulta las plantaciones y mermas del período y el saldo actual en vivero.</p>
       </div>
       <Button leftIcon="file" className="min-h-11" disabled={!reporte || plantacionesPendientes} onClick={() => reporte && setSeleccionPdf({ tipo: 'plantaciones', reporte, token })}>Generar PDF</Button>
     </header>
@@ -176,6 +185,7 @@ function TableroReportes({ token }: { token: string }) {
     </section>
     <ReporteViveroPanel {...vivero} abrirPdf={inventarioActual && !viveroPendiente ? () => setSeleccionPdf({ tipo: 'vivero', reporte: inventarioActual, token }) : undefined} />
     <ReporteMermasPanel {...mermas} cambiarPagina={setPagina} abrirPdf={mermasActuales && !mermasPendientes ? () => setSeleccionPdf({ tipo: 'mermas', reporte: mermasActuales, token }) : undefined} />
+    <ReporteSemillasPanel saldo={saldoSemillas} movimientos={movimientosSemillas} cambiarPagina={setPaginaSemillas} />
     {vistaPrevia?.tipo === 'plantaciones' && vistaPrevia.reporte === reporte && !plantacionesPendientes && <VistaPreviaPlantaciones reporte={vistaPrevia.reporte} token={token} onClose={cerrarVistaPrevia} />}
     {vistaPrevia?.tipo === 'vivero' && vistaPrevia.reporte === inventarioActual && !viveroPendiente && <VistaPreviaInventario reporte={vistaPrevia.reporte} token={token} onClose={cerrarVistaPrevia} />}
     {vistaPrevia?.tipo === 'mermas' && vistaPrevia.reporte === mermasActuales && !mermasPendientes && <VistaPreviaMermas origen={vistaPrevia.reporte} token={token} onClose={cerrarVistaPrevia} />}

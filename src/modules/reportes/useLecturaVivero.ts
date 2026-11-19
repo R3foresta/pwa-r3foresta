@@ -1,5 +1,5 @@
 import { useEffect, useReducer, useState } from 'react'
-import { ReporteViveroConsultaError } from './reporte-vivero.api'
+import { ReporteConsultaError } from './reporte-plantaciones.api'
 import type { FiltrosVivero, ReporteVivero } from './reporte-vivero.contract'
 
 type OpcionesVivero = ReporteVivero['opciones']
@@ -27,7 +27,7 @@ export function useLecturaVivero<F extends FiltrosVivero, T extends { opciones: 
       setResultado({ filtros, token, intento, datos, error: null })
     }).catch((cause: unknown) => {
       if (controller.signal.aborted) return
-      if (cause instanceof ReporteViveroConsultaError && (cause.status === 401 || cause.status === 403)) setCatalogo(null)
+      if (cause instanceof ReporteConsultaError && (cause.status === 401 || cause.status === 403)) setCatalogo(null)
       const error = cause instanceof Error ? cause.message : 'No pudimos completar la consulta. Intenta de nuevo.'
       setResultado({ filtros, token, intento, datos: null, error })
     })
