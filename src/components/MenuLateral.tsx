@@ -42,6 +42,7 @@ function MenuLateral({ isOpen, onClose }: Props) {
   const canAssignRoles = capabilities.status === 'ready' && capabilities.data?.data.actor?.usuario_id === user?.id && capabilities.data?.data.actor?.rol_global === 'ADMIN' && capabilities.data?.data.capacidades_globales?.asignar_roles === true
   const items: DrawerItem[] = [
     { label: 'Impacto público', path: '/impacto', icon: 'map' },
+    ...(user?.rol === 'ADMIN' ? [{ label: 'Impacto y reportes', path: '/app/reportes', icon: 'report' as const }] : []),
     { label: 'Mis registros', path: '/app/participacion/mis-registros', icon: 'leaf' },
     ...(hasInternalAppAccess(user?.rol) ? ITEMS : []),
     ...(canAssignRoles || hasPendingRole ? [{ label: hasPendingRole ? 'Recuperar permisos' : 'Usuarios y permisos', path: '/app/usuarios', icon: 'shield' as const }] : []),

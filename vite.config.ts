@@ -19,6 +19,10 @@ export default defineConfig({
     }),
   ],
   base: '/',
+  optimizeDeps: {
+    // Evita que la optimización en desarrollo recargue la primera descarga del PDF.
+    include: ['pdf-lib'],
+  },
   build: {
     chunkSizeWarningLimit: 1000, // Aumentar límite a 1000 KB
     rollupOptions: {

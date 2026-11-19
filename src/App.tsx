@@ -94,6 +94,7 @@ const RegistrarPlantacionScreen = lazy(
   () => import('./modules/plantacion/screens/RegistrarPlantacionScreen'),
 )
 const MapScreen = lazy(() => import('./modules/map/MapScreen'))
+const ImpactoReportesScreen = lazy(() => import('./modules/reportes/ImpactoReportesScreen'))
 const PerfilScreen = lazy(() => import('./modules/user_profile/perfil'))
 const CompleteProfileScreen = lazy(() =>
   import('./modules/user_profile/CompleteProfileScreen').then((module) => ({
@@ -258,6 +259,7 @@ function App() {
             <Route path="plantas/:id/editar" element={<EditarPlantaScreen />} />
             <Route path="scan" element={<PlaceholderScreen title="Escanear" />} />
             <Route path="report" element={<MapScreen />} />
+            <Route path="reportes" element={<ImpactoReportesScreen />} />
             <Route path="profile" element={<PerfilScreen />} />
             <Route path="edit-profile" element={<CompleteProfileScreen />} />
             <Route path="*" element={<PlaceholderScreen title="Próximamente" />} />

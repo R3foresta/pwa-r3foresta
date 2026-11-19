@@ -90,7 +90,7 @@ function BottomNav({ publicMode = false }: { publicMode?: boolean }) {
     hasInternalAccess && !isInQuickActionRoute && !isSubcampaniaWizardRoute && !isRegistroPlantacionRoute
 
   // Las tareas enfocadas conservan su propia navegación y evitan superponer acciones globales.
-  if (/^\/app\/usuarios\/?$/.test(pathname) || pathname === '/app/edit-profile' || /^\/app\/participacion\/subcampanias\/[^/]+\/registrar$/.test(pathname)) return null
+  if (/^\/app\/(usuarios|reportes)\/?$/.test(pathname) || pathname === '/app/edit-profile' || /^\/app\/participacion\/subcampanias\/[^/]+\/registrar$/.test(pathname)) return null
 
   return (
     <>
