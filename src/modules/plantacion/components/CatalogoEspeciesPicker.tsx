@@ -14,11 +14,12 @@ export type EspecieCatalogoItem = {
   especie: string
   nombre_cientifico: string
   nombre_comun_principal: string | null
-  saldo_disponible: number
+  saldo_disponible?: number
 }
 
 type Props = {
   open: boolean
+  mostrarStock?: boolean
   excludedPlantaIds: number[]
   onClose: () => void
   onConfirm: (items: EspecieCatalogoItem[]) => void
@@ -26,11 +27,9 @@ type Props = {
 
 const CATALOG_LIMIT = 200
 
-function CatalogoEspeciesPicker({ open, excludedPlantaIds, onClose, onConfirm }: Props) {
+function CatalogoEspeciesPicker({ open, mostrarStock = true, excludedPlantaIds, onClose, onConfirm }: Props) {
   const [plantas, setPlantas] = useState<PlantaCatalogo[]>([])
-  const [stockByPlantaId, setStockByPlantaId] = useState<Map<number, EspecieStockVivero>>(
-    () => new Map(),
-  )
+  const [stockByPlantaId, setStockByPlantaId] = useState<Map<number, EspecieStockVivero> | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [query, setQuery] = useState('')
@@ -48,7 +47,7 @@ function CatalogoEspeciesPicker({ open, excludedPlantaIds, onClose, onConfirm }:
 
     Promise.allSettled([
       PlantasService.listPlantas({ limit: CATALOG_LIMIT, incluir_inactivas: false }),
-      LotesViveroService.listStockEspecies(),
+      mostrarStock ? LotesViveroService.listStockEspecies() : Promise.resolve(null),
     ]).then(([plantasResult, stockResult]) => {
       if (cancelled) return
 
@@ -58,49 +57,37 @@ function CatalogoEspeciesPicker({ open, excludedPlantaIds, onClose, onConfirm }:
           reason instanceof Error ? reason.message : 'No se pudo cargar el catálogo de especies.',
         )
         setPlantas([])
-        setStockByPlantaId(new Map())
+        setStockByPlantaId(null)
         setLoading(false)
         return
       }
 
       setPlantas(plantasResult.value.data ?? [])
 
-      if (stockResult.status === 'fulfilled') {
-        const nextStockMap = new Map<number, EspecieStockVivero>()
-        for (const item of stockResult.value) {
-          nextStockMap.set(item.planta_id, item)
-        }
-        setStockByPlantaId(nextStockMap)
-      } else {
-        console.error('Stock de vivero no disponible:', stockResult.reason)
-        setStockByPlantaId(new Map())
-      }
-
+      const stock = stockResult.status === 'fulfilled' ? stockResult.value : null
+      setStockByPlantaId(stock && new Map(stock.map(item => [item.planta_id, item])))
       setLoading(false)
     })
 
     return () => {
       cancelled = true
     }
-  }, [open])
+  }, [open, mostrarStock])
 
   const excludedSet = useMemo(() => new Set(excludedPlantaIds), [excludedPlantaIds])
 
   const items: EspecieCatalogoItem[] = useMemo(() => {
     const normalized = query.trim().toLowerCase()
+    const stock = mostrarStock ? stockByPlantaId : null
     return plantas
       .filter((planta) => !excludedSet.has(planta.id))
       .map((planta) => {
-        const stock = stockByPlantaId.get(planta.id)
         return {
           planta_id: planta.id,
           especie: planta.especie,
           nombre_cientifico: planta.nombre_cientifico,
           nombre_comun_principal: planta.nombre_comun_principal,
-          // Modelo físico: el stock asignable/plantable es el saldo vivo actual
-          // agregado (antes `saldo_disponible_total`, ya eliminado). El copy y el
-          // resto de PLA-06 se migran en su ticket; esto es solo la fuente del dato.
-          saldo_disponible: stock?.saldo_vivo_actual_total ?? 0,
+          ...(stock !== null && { saldo_disponible: stock.get(planta.id)?.saldo_vivo_actual_total ?? 0 }),
         }
       })
       .filter((item) => {
@@ -111,12 +98,13 @@ function CatalogoEspeciesPicker({ open, excludedPlantaIds, onClose, onConfirm }:
         return haystack.includes(normalized)
       })
       .sort((a, b) => {
-        if (a.saldo_disponible !== b.saldo_disponible) {
+        if (a.saldo_disponible !== undefined && b.saldo_disponible !== undefined &&
+            a.saldo_disponible !== b.saldo_disponible) {
           return b.saldo_disponible - a.saldo_disponible
         }
         return a.especie.localeCompare(b.especie)
       })
-  }, [plantas, stockByPlantaId, excludedSet, query])
+  }, [plantas, mostrarStock, stockByPlantaId, excludedSet, query])
 
   const handleToggle = (plantaId: number) => {
     setSelectedIds((current) => {
@@ -209,6 +197,12 @@ function CatalogoEspeciesPicker({ open, excludedPlantaIds, onClose, onConfirm }:
             </p>
           )}
 
+          {!loading && !error && mostrarStock && stockByPlantaId === null && plantas.length > 0 && (
+            <p role="status" className="mb-3 text-xs font-semibold text-neutral-600">
+              No se pudo consultar el stock de vivero. Puedes elegir especies.
+            </p>
+          )}
+
           {!loading && !error && items.length === 0 && (
             <p className="rounded-2xl bg-neutral-50 px-4 py-6 text-center text-sm font-semibold text-neutral-500">
               {query.trim()
@@ -220,7 +214,7 @@ function CatalogoEspeciesPicker({ open, excludedPlantaIds, onClose, onConfirm }:
           {!loading && !error && items.length > 0 && (
             <ul className="space-y-2">
               {items.map((item) => {
-                const isOutOfStock = item.saldo_disponible <= 0
+                const saldo = item.saldo_disponible
                 const isSelected = selectedIds.has(item.planta_id)
                 return (
                   <li key={item.planta_id}>
@@ -251,17 +245,15 @@ function CatalogoEspeciesPicker({ open, excludedPlantaIds, onClose, onConfirm }:
                           </p>
                         </div>
                       </div>
-                      <span
+                      {saldo !== undefined && <span
                         className={`shrink-0 rounded-full px-2.5 py-1 text-[10.5px] font-extrabold uppercase tracking-wider ring-1 ${
-                          isOutOfStock
+                          saldo <= 0
                             ? 'bg-warning-50 text-warning-700 ring-warning-200'
                             : 'bg-brand-50 text-brand-700 ring-brand-100'
                         }`}
                       >
-                        {isOutOfStock
-                          ? '0 disponibles'
-                          : `${item.saldo_disponible.toLocaleString('es-BO')} disponibles`}
-                      </span>
+                        {saldo <= 0 ? '0 disponibles' : `${saldo.toLocaleString('es-BO')} disponibles`}
+                      </span>}
                     </button>
                   </li>
                 )

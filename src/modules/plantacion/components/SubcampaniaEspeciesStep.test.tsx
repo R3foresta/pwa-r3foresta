@@ -1,6 +1,6 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { PlantacionService } from '../../../services/plantacion.service'
 import type { Campania, GetPlanData, Subcampania } from '../types/contracts'
 import { loadSubcampaniaBaseDraft, saveSubcampaniaBaseDraft, type SubcampaniaBaseDraft } from '../utils/subcampaniaDraft'
@@ -48,6 +48,8 @@ beforeEach(() => {
   }))
   saveSubcampaniaBaseDraft(draft)
 })
+
+afterEach(() => vi.unstubAllGlobals())
 
 function renderStep() {
   const onNext = vi.fn()
@@ -213,7 +215,24 @@ describe('Plan coherente del asistente de subcampaña', () => {
     }, 'auth-1')
   })
 
-  it('reutiliza el reparto del catálogo y permite planificar una especie sin stock', async () => {
+  it('compara las mismas metas que guarda y permite avanzar con una especie sin saldo', async () => {
+    const viveros = [{ id: '7', nombre: 'Vivero Norte' }, { id: '8', nombre: 'Vivero Sur' }]
+    const leerInventario = vi.fn(async () => new Response(JSON.stringify({
+      success: true,
+      data: {
+        observado_en: '2026-11-19T15:00:00.000Z',
+        filtros: { planta_id: null, vivero_id: null },
+        opciones: { especies: [{ id: '1', nombre: 'Molle' }], viveros },
+        totales: { plantas: 100, especies: 1, viveros: 2 },
+        filas: viveros.map(({ id, nombre }, index) => ({
+          planta_id: '1', especie: 'Molle', vivero_id: id, vivero: nombre, plantas: index === 0 ? 25 : 75,
+        })),
+        por_vivero: viveros.map(({ id, nombre }, index) => ({
+          vivero_id: id, vivero: nombre, plantas: index === 0 ? 25 : 75,
+        })),
+      },
+    }), { status: 200 }))
+    vi.stubGlobal('fetch', leerInventario)
     const user = userEvent.setup()
     const { onNext } = renderStep()
     await waitFor(() => expect(PlantacionService.getSubcampaniaPlan).toHaveBeenCalledOnce())
@@ -223,7 +242,17 @@ describe('Plan coherente del asistente de subcampaña', () => {
     await user.click(screen.getByRole('button', { name: 'Elegir Tara del catálogo' }))
     expect((screen.getByLabelText('Porcentaje propuesto de Tara') as HTMLInputElement).value).toBe('50')
     expect(screen.getAllByText(/Equivale a/).map(item => item.textContent)).toEqual(['Equivale a 30 árboles', 'Equivale a 30 árboles'])
-    expect(screen.getByText('No hay stock en vivero todavía. Puedes definir la planificación.')).toBeTruthy()
+    expect(screen.queryByText(/disponibles \(referencia\)/)).toBeNull()
+    expect(leerInventario).not.toHaveBeenCalled()
+    await user.click(screen.getByRole('button', { name: 'Comprobar disponibilidad' }))
+    const disponibilidad = within(screen.getByRole('region', { name: 'Disponibilidad de plantas' }))
+    expect(await disponibilidad.findByText('Faltan 30')).toBeTruthy()
+    expect(disponibilidad.getByRole('heading', { name: 'Tara' })).toBeTruthy()
+    expect(leerInventario).toHaveBeenCalledExactlyOnceWith(
+      expect.stringMatching(/\/api\/v1\/reportes\/vivero$/),
+      expect.objectContaining({ headers: { Authorization: 'Bearer token-login' }, cache: 'no-store' }),
+    )
+    expect(PlantacionService.revisarSubcampaniaPlan).not.toHaveBeenCalled()
     await user.click(screen.getByRole('button', { name: 'Siguiente' }))
     await waitFor(() => expect(onNext).toHaveBeenCalledOnce())
     expect(PlantacionService.revisarSubcampaniaPlan).toHaveBeenCalledWith(54, {

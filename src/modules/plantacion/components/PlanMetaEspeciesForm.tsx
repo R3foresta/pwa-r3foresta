@@ -18,6 +18,7 @@ type PlanMetaEspeciesFormProps = {
   disabled?: boolean
   metaLabel?: string
   manualQuantities?: boolean
+  mostrarReferenciaStock?: boolean
   currentMetas?: PlanEspecieMeta[]
   onMetaChange: (raw: string) => void
   onMetaStep: (delta: number) => void
@@ -46,6 +47,7 @@ type SpeciesRowProps = {
   disabled: boolean
   showCurrent: boolean
   current?: PlanEspecieMeta
+  referenciaStock?: number
   onPercentageChange: PlanMetaEspeciesFormProps['onPercentageChange']
   onPercentageStep: PlanMetaEspeciesFormProps['onPercentageStep']
   onQuantityChange: PlanMetaEspeciesFormProps['onQuantityChange']
@@ -53,7 +55,7 @@ type SpeciesRowProps = {
 }
 
 function PlanSpeciesRow({
-  item, index, fieldId, error, manualQuantities, disabled, showCurrent, current,
+  item, index, fieldId, error, manualQuantities, disabled, showCurrent, current, referenciaStock,
   onPercentageChange, onPercentageStep, onQuantityChange, onRemoveSpecies,
 }: SpeciesRowProps) {
   const nombre = getPlanEspecieNombre(item)
@@ -61,9 +63,9 @@ function PlanSpeciesRow({
   const porcentaje = planPercentage(item.porcentaje)
   const percentageId = `${fieldId}-porcentaje-${index}`
   const percentageErrorId = `${percentageId}-error`
-  const hasStockReference = item.saldo_disponible !== undefined
-  const noStock = hasStockReference && item.saldo_disponible! <= 0 && (porcentaje ?? 0) > 0
-  const exceedsStock = hasStockReference && item.saldo_disponible! > 0 && quantity !== null && quantity > item.saldo_disponible!
+  const hasStockReference = referenciaStock !== undefined
+  const noStock = hasStockReference && referenciaStock <= 0 && (porcentaje ?? 0) > 0
+  const exceedsStock = hasStockReference && referenciaStock > 0 && quantity !== null && quantity > referenciaStock
 
   return (
     <div className="rounded-2xl bg-white px-3 py-3 shadow-soft ring-1 ring-black/5">
@@ -78,8 +80,8 @@ function PlanSpeciesRow({
             </p>
           )}
           {hasStockReference && (
-            <p className={`mt-1 text-[10px] font-bold ${item.saldo_disponible! <= 0 ? 'text-warning-700' : 'text-neutral-500'}`}>
-              Vivero: <span className="tabular-nums">{formatNumber(item.saldo_disponible!)}</span> disponibles (referencia)
+            <p className={`mt-1 text-[10px] font-bold ${referenciaStock <= 0 ? 'text-warning-700' : 'text-neutral-500'}`}>
+              Vivero: <span className="tabular-nums">{formatNumber(referenciaStock)}</span> disponibles (referencia)
             </p>
           )}
         </div>
@@ -156,7 +158,7 @@ function PlanSpeciesRow({
         <p className="mt-2 rounded-xl bg-warning-50 px-2 py-1 text-[10.5px] font-extrabold text-warning-800 ring-1 ring-warning-100">
           {noStock
             ? 'No hay stock en vivero todavía. Puedes definir la planificación.'
-            : `La cantidad planificada supera la referencia de vivero (${formatNumber(item.saldo_disponible!)}). No bloquea el plan.`}
+            : `La cantidad planificada supera la referencia de vivero (${formatNumber(referenciaStock)}). No bloquea el plan.`}
         </p>
       )}
     </div>
@@ -166,7 +168,7 @@ function PlanSpeciesRow({
 /** Controles compartidos de planificación. Cada flujo carga, confirma y guarda su propio plan. */
 function PlanMetaEspeciesForm({
   value, errors, disabled = false, metaLabel = 'Meta total de árboles', manualQuantities = false,
-  currentMetas, onMetaChange, onMetaStep, onPercentageChange, onPercentageStep,
+  mostrarReferenciaStock = true, currentMetas, onMetaChange, onMetaStep, onPercentageChange, onPercentageStep,
   onQuantityChange, onRemoveSpecies, onOpenCatalog, onRecalculate,
 }: PlanMetaEspeciesFormProps) {
   const fieldId = useId()
@@ -263,6 +265,7 @@ function PlanMetaEspeciesForm({
               disabled={disabled}
               showCurrent={currentMetas !== undefined}
               current={currentMetas?.find((saved) => saved.planta_id === item.planta_id)}
+              referenciaStock={mostrarReferenciaStock ? item.saldo_disponible : undefined}
               onPercentageChange={onPercentageChange}
               onPercentageStep={onPercentageStep}
               onQuantityChange={onQuantityChange}

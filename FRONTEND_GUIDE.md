@@ -115,6 +115,8 @@ Descartar antes del alta sólo elimina la preparación local, con aviso sobre la
 
 Reutilizar `PlanMetaEspeciesForm`, `usePlanMetaEspeciesForm` y utilidades del módulo. Asistente y detalle conservan su propia carga, autorización, confirmación y persistencia.
 
+En **Nueva subcampaña → Meta**, **Comprobar disponibilidad** consulta `GET /api/v1/reportes/vivero` a pedido del ADMIN. Compara las cantidades validadas del plan por especie con el inventario físico de un mismo corte y permite acotar la comparación por vivero. El faltante es informativo. La entrega de stock se confirma en el flujo de asignación y el guardado del plan conserva sus reglas. Ante un fallo de lectura el saldo queda sin confirmar.
+
 Nombres operativos del catálogo: `getPlantaNombre` prioriza `nombre_comun_principal` y sólo recurre a `nombre_cientifico` si falta/está vacío. `especie` puede contener una familia o clasificación y no sirve como nombre legible alternativo. El GET del plan entrega común/foto opcional; contexto v1 resuelve su `nombre` en backend para plan participante, stock y captura, y admite `especies[].imagen_url` opcional/nullable. ADMIN y participantes usan la misma `SubcampaniaSpeciesCard`, con foto si existe y texto conservado ante fallo; sólo la composición interna autorizada recibe `onEdit`. No consultar el catálogo interno desde la pantalla participante para completar fotos. Al recuperar una propuesta del editor se actualizan únicamente los nombres desde el plan consultado, conservando cantidades y porcentajes exactos. Los históricos conservan sus snapshots; no completar sus nombres desde el catálogo vivo.
 
 - GET/PUT del plan requieren Bearer; no usan `x-auth-id`. Sin token no enviar petición. El detalle ofrece edición a ADMIN global en BORRADOR/ACTIVA.

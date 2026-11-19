@@ -13,8 +13,9 @@ import {
   type SubcampaniaEspecieDraft,
 } from '../utils/subcampaniaDraft'
 import { usePlanMetaEspeciesForm } from '../hooks/usePlanMetaEspeciesForm'
-import { createPlanFormFromDraft, getPlanPercentageTotal, planFormToDraft, planPercentage, positivePlanInteger, validatePlanForm } from '../utils/planMetaEspeciesForm'
+import { createPlanFormFromDraft, getPlanEspecieNombre, getPlanPercentageTotal, planFormToDraft, planPercentage, positivePlanInteger, validatePlanForm } from '../utils/planMetaEspeciesForm'
 import PlanMetaEspeciesForm from './PlanMetaEspeciesForm'
+import DisponibilidadPlanSubcampania from './DisponibilidadPlanSubcampania'
 import CatalogoEspeciesPicker, {
   type EspecieCatalogoItem,
 } from './CatalogoEspeciesPicker'
@@ -111,8 +112,8 @@ function SubcampaniaEspeciesStep({
   }
 
   // Si ya existe la subcampaña en backend, precargar el plan de metas por especie.
-  // El plan aporta nombres vivos; se conserva la propuesta y la referencia de
-  // stock del draft. Servidores anteriores pueden omitir el nombre común.
+  // El plan aporta nombres vivos y se conserva la propuesta local.
+  // Servidores anteriores pueden omitir el nombre común.
   useEffect(() => {
     const subcampaniaId = initialDraft?.subcampania_id
     if (!subcampaniaId || !isAuthenticated || !token || accessError) return
@@ -462,6 +463,15 @@ function SubcampaniaEspeciesStep({
     )
   }
 
+  const nombresEspecies = new Map(value.especies.map(item => [item.planta_id, getPlanEspecieNombre(item)]))
+  const necesidades = planPayload.every(({ planta_id }) => Number.isSafeInteger(planta_id) && planta_id > 0)
+    ? planPayload.map(({ planta_id, cantidad_objetivo }) => ({
+      planta_id: String(planta_id),
+      nombre: nombresEspecies.get(planta_id) ?? `Especie #${planta_id}`,
+      cantidad: cantidad_objetivo,
+    }))
+    : []
+
   return (
     <>
       <main className="space-y-4 px-5 pt-4">
@@ -495,11 +505,13 @@ function SubcampaniaEspeciesStep({
               setSubmitError(null)
             }}>Revisé el plan vigente</Button>}
         </section>}
-        <PlanMetaEspeciesForm value={value} disabled={formDisabled}
+        <PlanMetaEspeciesForm value={value} disabled={formDisabled} mostrarReferenciaStock={false}
           errors={{ ...validation.errors, meta: value.meta === '' ? undefined : validation.errors.meta }}
           onMetaChange={form.changeMeta} onMetaStep={form.stepMeta}
           onPercentageChange={form.changePercentage} onPercentageStep={form.stepPercentage}
           onRemoveSpecies={form.removeSpecies} onOpenCatalog={() => setPickerOpen(true)} />
+        {token && !accessBlocked && !stateError &&
+          <DisponibilidadPlanSubcampania key={token} token={token} necesidades={necesidades} />}
       </main>
 
       <div className="px-5">
@@ -542,6 +554,7 @@ function SubcampaniaEspeciesStep({
 
       <CatalogoEspeciesPicker
         open={pickerOpen && !formDisabled}
+        mostrarStock={false}
         excludedPlantaIds={especies.map((especie) => especie.planta_id)}
         onClose={() => setPickerOpen(false)}
         onConfirm={handleAddEspecies}
