@@ -17,8 +17,8 @@ import type {
 } from '../modules/plantacion/types/contracts'
 import { WebAuthnService } from '../services/webauthn.service'
 
-const RAW_API_URL = import.meta.env.VITE_API_URL as string | undefined
-const API_BASE_URL = `${(RAW_API_URL || '').replace(/\/$/, '')}/api`
+const RAW_VITE_API_URL = import.meta.env.VITE_API_URL as string | undefined
+const API_BASE_URL = `${(RAW_VITE_API_URL || '').replace(/\/$/, '')}/api`
 
 function getRequiredAuthId(authId?: string): string {
   const resolved = authId || localStorage.getItem('auth_id') || undefined

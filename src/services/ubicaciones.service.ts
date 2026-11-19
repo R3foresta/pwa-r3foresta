@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL
+const VITE_API_URL = import.meta.env.VITE_API_URL
 
 type ApiEnvelope<T> = {
   success?: boolean
@@ -84,7 +84,7 @@ export class UbicacionesService {
   }
 
   static async getPaises(): Promise<PaisCatalogo[]> {
-    const response = await fetch(`${API_URL}/api/ubicaciones/paises`, {
+    const response = await fetch(`${VITE_API_URL}/api/ubicaciones/paises`, {
       method: 'GET',
       headers: this.getAuthHeaders(),
     })
@@ -104,7 +104,7 @@ export class UbicacionesService {
       params.append('parent_id', String(parentId))
     }
 
-    const response = await fetch(`${API_URL}/api/ubicaciones/divisiones?${params.toString()}`, {
+    const response = await fetch(`${VITE_API_URL}/api/ubicaciones/divisiones?${params.toString()}`, {
       method: 'GET',
       headers: this.getAuthHeaders(),
     })
@@ -123,7 +123,7 @@ export class UbicacionesService {
   static async ensureFlexibleDivision(
     data: EnsureFlexibleDivisionDto,
   ): Promise<EnsureFlexibleDivisionResult> {
-    const response = await fetch(`${API_URL}/api/ubicaciones/divisiones/flexible`, {
+    const response = await fetch(`${VITE_API_URL}/api/ubicaciones/divisiones/flexible`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
       body: JSON.stringify(data),

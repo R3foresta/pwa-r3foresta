@@ -1,5 +1,5 @@
-const RAW_API_URL = import.meta.env.VITE_API_URL as string | undefined
-const API_BASE_URL = `${(RAW_API_URL || '').replace(/\/$/, '')}/api`
+const RAW_VITE_API_URL = import.meta.env.VITE_API_URL as string | undefined
+const API_BASE_URL = `${(RAW_VITE_API_URL || '').replace(/\/$/, '')}/api`
 
 function getAuthHeaders(includeContentType = false): HeadersInit {
   const token = localStorage.getItem('authToken')

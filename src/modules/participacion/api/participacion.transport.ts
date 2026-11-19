@@ -22,7 +22,7 @@ export class ParticipacionApiError extends Error {
   }
 }
 
-export const PARTICIPACION_API_URL = `${(import.meta.env.VITE_API_URL || '').replace(/\/$/, '')}/api/v1`
+export const PARTICIPACION_VITE_API_URL = `${(import.meta.env.VITE_API_URL || '').replace(/\/$/, '')}/api/v1`
 export const PARTICIPACION_REQUEST_TIMEOUT_MS = 40_000
 export function sessionError(message = 'Ingresa nuevamente con la cuenta que confirmó esta operación.'): ParticipacionApiError {
   return new ParticipacionApiError(401, { codigo: 'SESION_INVALIDA', mensaje: message, campos: [], ambitos: [], reintento: 'RECUPERAR_SESION' })
@@ -55,7 +55,7 @@ export async function requestPrivada(path: string, init: RequestInit = {}, expec
     const { response, body } = await Promise.race([
       (async () => {
         if (controller.signal.aborted) throw new DOMException('Consulta cancelada', 'AbortError')
-        const response = await fetch(`${PARTICIPACION_API_URL}${path}`, {
+        const response = await fetch(`${PARTICIPACION_VITE_API_URL}${path}`, {
           ...init,
           signal: controller.signal,
           cache: 'no-store',

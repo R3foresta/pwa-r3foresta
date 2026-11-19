@@ -1,7 +1,7 @@
 import { client } from '@passwordless-id/webauthn'
 import type { AuthResponse, ChallengeResponse } from '../types/auth.types'
 
-const API_URL = import.meta.env.VITE_API_URL
+const VITE_API_URL = import.meta.env.VITE_API_URL
 
 function backendMessage(value: unknown, fallback: string): string {
   if (typeof value === 'object' && value !== null && 'message' in value) {
@@ -33,7 +33,7 @@ function validateAuthResponse(value: unknown): AuthResponse {
 
 export class WebAuthnService {
   static async getChallenge(): Promise<ChallengeResponse> {
-    const response = await fetch(`${API_URL}/api/auth/challenge`)
+    const response = await fetch(`${VITE_API_URL}/api/auth/challenge`)
     const data = await readJson(response)
     if (!response.ok) throw new Error(backendMessage(data, 'No se pudo obtener el challenge'))
     if (typeof data !== 'object' || data === null || !('challenge' in data) || typeof data.challenge !== 'string' || !data.challenge) {
@@ -52,7 +52,7 @@ export class WebAuthnService {
       timeout: 60000,
       attestation: false,
     })
-    const response = await fetch(`${API_URL}/api/auth/register`, {
+    const response = await fetch(`${VITE_API_URL}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, email: email?.trim() || undefined, registration, challenge }),
@@ -72,7 +72,7 @@ export class WebAuthnService {
     })
     const credentialId = (authentication as { credentialId?: string; id?: string }).credentialId || authentication.id
     if (!credentialId) throw new Error('No se pudo obtener el ID de la credencial')
-    const response = await fetch(`${API_URL}/api/auth/login`, {
+    const response = await fetch(`${VITE_API_URL}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ authentication: { ...authentication, credentialId }, challenge }),

@@ -4,7 +4,7 @@ import type { UbicacionApi, UbicacionCreateInput } from '../types/ubicacion'
 import { mapToCantidadYUnidadCanonica, type UnidadCanonicaRecoleccion } from '../utils/recoleccionUnidad'
 import type { PlantaCatalogo } from '../types/plantas.types';
 
-const API_URL = import.meta.env.VITE_API_URL
+const VITE_API_URL = import.meta.env.VITE_API_URL
 
 export type TipoMaterialCanonico = 'SEMILLA' | 'ESQUEJE'
 export type FuenteUbicacionCanonica = 'GPS_MOVIL' | 'MAPA' | 'MANUAL' | 'LEGACY'
@@ -401,7 +401,7 @@ export class RecoleccionesService {
     }
 
     const query = params.toString()
-    const url = `${API_URL}/api/recolecciones${query ? `?${query}` : ''}`
+    const url = `${VITE_API_URL}/api/recolecciones${query ? `?${query}` : ''}`
 
     const response = await fetch(url, {
       signal,
@@ -414,7 +414,7 @@ export class RecoleccionesService {
   }
 
   static async getStockSummary(): Promise<RecoleccionStockResult> {
-    const response = await fetch(`${API_URL}/api/recolecciones/stock-summary`, {
+    const response = await fetch(`${VITE_API_URL}/api/recolecciones/stock-summary`, {
       method: 'GET',
       headers: this.getAuthHeaders(),
     })
@@ -438,7 +438,7 @@ export class RecoleccionesService {
   }
 
   static async getById(id: number, signal?: AbortSignal): Promise<{ success: boolean; data: Recoleccion }> {
-    const response = await fetch(`${API_URL}/api/recolecciones/${id}`, {
+    const response = await fetch(`${VITE_API_URL}/api/recolecciones/${id}`, {
       signal,
       method: 'GET',
       headers: this.getAuthHeaders(),
@@ -482,7 +482,7 @@ export class RecoleccionesService {
       formData.append('fotos', foto)
     })
 
-    const response = await fetch(`${API_URL}/api/recolecciones`, {
+    const response = await fetch(`${VITE_API_URL}/api/recolecciones`, {
       method: 'POST',
       headers: this.getAuthHeaders({ includeContentType: false, requireAuthId: true }),
       body: formData,
@@ -538,7 +538,7 @@ export class RecoleccionesService {
     })
 
     const response = await fetch(
-      `${API_URL}/api/evidencias-trazabilidad/recolecciones/${recoleccionId}`,
+      `${VITE_API_URL}/api/evidencias-trazabilidad/recolecciones/${recoleccionId}`,
       {
         method: 'POST',
         headers: this.getAuthHeaders({ includeContentType: false, requireAuthId: true }),
@@ -567,7 +567,7 @@ export class RecoleccionesService {
 
 
   static async getMetodos(): Promise<MetodoRecoleccionCatalogo[]> {
-    const response = await fetch(`${API_URL}/api/metodos-recoleccion`, {
+    const response = await fetch(`${VITE_API_URL}/api/metodos-recoleccion`, {
       method: 'GET',
       headers: this.getAuthHeaders(),
     })
@@ -583,7 +583,7 @@ export class RecoleccionesService {
   }
 
   static async getViveros(): Promise<ViveroCatalogo[]> {
-    const response = await fetch(`${API_URL}/api/viveros`, {
+    const response = await fetch(`${VITE_API_URL}/api/viveros`, {
       method: 'GET',
       headers: this.getAuthHeaders(),
     })
@@ -662,7 +662,7 @@ export class RecoleccionesService {
   }
 
   static async submit(id: number): Promise<{ success: boolean; data: Recoleccion }> {
-    const response = await fetch(`${API_URL}/api/recolecciones/${id}/submit`, {
+    const response = await fetch(`${VITE_API_URL}/api/recolecciones/${id}/submit`, {
       method: 'PATCH',
       headers: this.getAuthHeadersWithRole({ includeContentType: false }),
     })
@@ -683,7 +683,7 @@ export class RecoleccionesService {
       throw new Error('Vuelve a iniciar sesión antes de eliminar la recolección.')
     }
 
-    const response = await fetch(`${API_URL}/api/recolecciones/${id}`, {
+    const response = await fetch(`${VITE_API_URL}/api/recolecciones/${id}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -725,7 +725,7 @@ export class RecoleccionesService {
     }
     const payloadRequest = this.buildDraftPayload(data, files)
 
-    const response = await fetch(`${API_URL}/api/recolecciones/${id}/draft`, {
+    const response = await fetch(`${VITE_API_URL}/api/recolecciones/${id}/draft`, {
       method: 'PATCH',
       headers: payloadRequest.headers,
       body: payloadRequest.body,
@@ -750,7 +750,7 @@ export class RecoleccionesService {
       throw new Error('La cantidad a desechar debe ser mayor que cero.')
     }
 
-    const response = await fetch(`${API_URL}/api/recolecciones/${id}/desecho`, {
+    const response = await fetch(`${VITE_API_URL}/api/recolecciones/${id}/desecho`, {
       method: 'POST',
       headers: this.getAuthHeaders({ requireAuthId: true }),
       body: JSON.stringify({ cantidad: data.cantidad }),

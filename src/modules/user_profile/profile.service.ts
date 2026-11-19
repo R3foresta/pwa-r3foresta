@@ -5,7 +5,7 @@ import type {
   UserProfileResponse,
 } from './types'
 
-const API_URL = import.meta.env.VITE_API_URL
+const VITE_API_URL = import.meta.env.VITE_API_URL
 
 export class ProfileRequestError extends Error {
   readonly status: number
@@ -30,7 +30,7 @@ export class ProfileService {
     try {
       const response = await Promise.race([
         (async () => {
-          const result = await fetch(`${API_URL}/api/users/profile`, {
+          const result = await fetch(`${VITE_API_URL}/api/users/profile`, {
             method: 'GET',
             headers: { Authorization: `Bearer ${token}` },
             signal: controller.signal,
@@ -62,7 +62,7 @@ export class ProfileService {
       const token = localStorage.getItem('authToken')
       if (!token) throw new ProfileRequestError(401, 'La sesión no tiene token')
 
-      const response = await fetch(`${API_URL}/api/users/register-form`, {
+      const response = await fetch(`${VITE_API_URL}/api/users/register-form`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -156,7 +156,7 @@ export class ProfileService {
       const formData = new FormData()
       formData.append('file', file) // 'file' debe coincidir con el Interceptor del Backend
 
-      const response = await fetch(`${API_URL}/api/users/profile/photo`, {
+      const response = await fetch(`${VITE_API_URL}/api/users/profile/photo`, {
         method: 'PATCH',
         headers: {
           Authorization: `Bearer ${token}`,
