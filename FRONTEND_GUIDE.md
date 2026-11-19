@@ -111,6 +111,10 @@ La preparación conserva UUID, intención y File originales antes de subir. Web 
 
 Descartar antes del alta sólo elimina la preparación local, con aviso sobre las fotos remotas; después de un posible POST no se cambian clave/cuerpo/evidencias. Sólo un confirmado reconocido libera el slot. El GET propio puede consultarse sin Web Locks; los efectos nuevos se bloquean si el navegador no permite coordinarlos. [QA, límites y corte 109 pendiente](docs/QA_T5_ITERACION_2.md).
 
+## Impacto y reportes
+
+En **Plantaciones → Plantado por especie → Ver registros**, la PWA envía los filtros aplicados y la versión de la fila al backend. La lista muestra cuánto aporta cada registro a esa especie. Al abrir su ficha se ve el total de la jornada y su distribución completa, incluida la cantidad sin desglose cuando corresponda. Si una corrección cambia las fichas, la API devuelve 409 y la pantalla permite actualizar el reporte antes de continuar. [Contrato del reporte de Plantaciones](../Backend-r3foresta/documentacion/frontend/modulos/reportes-plantaciones.md)
+
 ## Plan de Plantación
 
 Reutilizar `PlanMetaEspeciesForm`, `usePlanMetaEspeciesForm` y utilidades del módulo. Asistente y detalle conservan su propia carga, autorización, confirmación y persistencia.

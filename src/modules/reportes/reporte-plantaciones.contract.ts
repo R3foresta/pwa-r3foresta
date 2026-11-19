@@ -12,6 +12,7 @@ export type OpcionReporte = { id: string; nombre: string }
 export type MesPlantado = { mes: string; iniciales: number; reposiciones: number }
 export type EspeciePlantada = {
   planta_id: string | null
+  version_detalle?: string
   nombre_comun: string | null
   nombre_cientifico: string | null
   iniciales: number
@@ -75,8 +76,11 @@ function parseEspecie(value: unknown): EspeciePlantada {
   const reposiciones = cantidad(row.reposiciones)
   const total = cantidad(row.total)
   if (iniciales + reposiciones !== total) return fail()
+  const version = row.version_detalle
+  if (version !== undefined && (typeof version !== 'string' || !/^[0-9a-f]{64}$/.test(version))) return fail()
   return {
     planta_id: nullableId(row.planta_id),
+    ...(version ? { version_detalle: version } : {}),
     nombre_comun: nullableText(row.nombre_comun),
     nombre_cientifico: nullableText(row.nombre_cientifico),
     iniciales,

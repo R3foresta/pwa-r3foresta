@@ -17,7 +17,7 @@ vi.mock('./reporte-semillas.pdf', () => ({ descargarReporteSemillas: descargarSe
 
 const desde = '2026-01-01'
 const hasta = '2026-11-18'
-const tat = { planta_id: '9007199254740999', nombre_comun: 'Tajibo', nombre_cientifico: 'Handroanthus impetiginosus', iniciales: 60, reposiciones: 0, total: 60 }
+const tat = { version_detalle: 'a'.repeat(64), planta_id: '9007199254740999', nombre_comun: 'Tajibo', nombre_cientifico: 'Handroanthus impetiginosus', iniciales: 60, reposiciones: 0, total: 60 }
 const tob = { planta_id: '54', nombre_comun: 'Toborochi', nombre_cientifico: 'Ceiba speciosa', iniciales: 28, reposiciones: 12, total: 40 }
 const aliso = { planta_id: '55', especie: 'Aliso', vivero_id: '72', vivero: 'Vivero Norte', plantas: 140 }
 const opcionesVivero = { especies: [{ id: aliso.planta_id, nombre: aliso.especie }], viveros: [{ id: aliso.vivero_id, nombre: aliso.vivero }] }
@@ -198,6 +198,86 @@ describe('Impacto y reportes de plantaciones', () => {
     await waitFor(() => expect(descargar).toHaveBeenCalledOnce())
     expect(consultas(fetcher.mock.calls, 'plantaciones/permiso-exportacion')).toHaveLength(1)
     expect(descargar.mock.calls[0][0]).toMatchObject({ observado_en: '2026-11-18T15:00:00Z', filtros: { organizacion_id: '11', planta_id: '54' }, totales: { registros: 1, total: 40 } })
+  })
+
+  it('abre la ficha mixta desde el aporte de la especie con los filtros y el corte originales', async () => {
+    const fetcher = vi.fn(async (input: RequestInfo | URL) => {
+      const url = new URL(String(input), window.location.href)
+      if (!url.pathname.endsWith('/plantaciones/registros')) return response(input)
+      return Response.json({ success: true, data: {
+        filtros: { desde, hasta, planta_id: tat.planta_id, campania_id: '80', organizacion_id: '11', especie: tat.planta_id, pagina: 1 },
+        version_detalle: tat.version_detalle, totales: { registros: 1, iniciales: 60, reposiciones: 0, total: 60 }, tamano_pagina: 25,
+        detalle: [{ registro_id: '9007199254740997', codigo_trazabilidad: 'PL-100', subcampania_id: '82', subcampania: 'Ribera Norte',
+          fecha: hasta, es_reposicion: false, cantidad: 60, cantidad_total: 100, especies: [
+            { planta_id: tat.planta_id, nombre: 'Tajibo', cantidad: 60 }, { planta_id: tob.planta_id, nombre: 'Toborochi', cantidad: 40 },
+          ] }],
+      } })
+    })
+    vi.stubGlobal('fetch', fetcher)
+    renderReport()
+    const nombre = 'Ver registros de Tajibo'
+    const inicial = await screen.findByRole<HTMLButtonElement>('button', { name: nombre })
+    fireEvent.change(screen.getByLabelText('Empresa'), { target: { value: '11' } })
+    fireEvent.change(screen.getByLabelText('Campaña'), { target: { value: '80' } })
+    fireEvent.change(screen.getByLabelText('Especie'), { target: { value: tat.planta_id } })
+    expect(inicial.disabled).toBe(true)
+    fireEvent.click(screen.getByRole('button', { name: 'Aplicar filtros' }))
+    fireEvent.click(await screen.findByRole('button', { name: nombre }))
+    const dialogo = within(await screen.findByRole('dialog', { name: 'Registros de Tajibo' }))
+    expect(await dialogo.findByText('Ribera Norte')).toBeTruthy()
+    expect(dialogo.getByText('Aporte a la fila').textContent).toContain('60')
+    const ficha = dialogo.getByText('Ver ficha PL-100')
+    fireEvent.click(ficha)
+    expect(ficha.closest('details')?.open).toBe(true)
+    expect(dialogo.getByText('Total del registro · 100 plantas')).toBeTruthy()
+    expect(dialogo.getByText('Toborochi')).toBeTruthy()
+    expect(Object.fromEntries(consultas(fetcher.mock.calls, 'plantaciones/registros')[0].searchParams)).toEqual({
+      desde, hasta, campania_id: '80', organizacion_id: '11', planta_id: tat.planta_id,
+      especie: tat.planta_id, pagina: '1', version_detalle: tat.version_detalle,
+    })
+  })
+
+  it('pagina Sin desglose y ante un cambio de corte descarta las fichas y permite actualizar el resumen', async () => {
+    const version = 'd'.repeat(64)
+    const filtros = { desde, hasta, planta_id: null, organizacion_id: null, campania_id: null }
+    let actualizado = false
+    const fetcher = vi.fn(async (input: RequestInfo | URL) => {
+      const url = new URL(String(input), window.location.href)
+      if (url.pathname.endsWith('/reportes/plantaciones') && !actualizado) {
+        return Response.json({ success: true, data: { ...fixture(filtros),
+          totales: { registros: 26, iniciales: 0, reposiciones: 26, total: 26 },
+          meses: [{ mes: '2026-11', iniciales: 0, reposiciones: 26 }],
+          especies: [{ planta_id: null, nombre_comun: 'Sin desglose de especie', nombre_cientifico: null, version_detalle: version, iniciales: 0, reposiciones: 26, total: 26 }],
+        } })
+      }
+      if (!url.pathname.endsWith('/plantaciones/registros')) return response(input)
+      if (url.searchParams.get('pagina') === '2') {
+        actualizado = true
+        return new Response(null, { status: 409 })
+      }
+      return Response.json({ success: true, data: {
+        filtros: { ...filtros, especie: 'sin_desglose', pagina: 1 }, version_detalle: version, tamano_pagina: 25,
+        totales: { registros: 26, iniciales: 0, reposiciones: 26, total: 26 },
+        detalle: Array.from({ length: 25 }, (_, i) => ({
+          registro_id: String(26 - i), codigo_trazabilidad: `PL-${26 - i}`, fecha: hasta, subcampania_id: '23', subcampania: 'Parque Central',
+          es_reposicion: true, cantidad: 1, cantidad_total: 1, especies: [{ planta_id: null, nombre: 'Sin desglose de especie', cantidad: 1 }],
+        })),
+      } })
+    })
+    vi.stubGlobal('fetch', fetcher)
+    renderReport()
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver registros de Sin desglose de especie' }))
+    const dialogo = within(await screen.findByRole('dialog'))
+    expect(await dialogo.findByText('Página 1 de 2')).toBeTruthy()
+    expect(dialogo.getAllByText('Parque Central')).toHaveLength(25)
+    fireEvent.click(dialogo.getByRole('button', { name: 'Página siguiente' }))
+    expect((await dialogo.findByRole('alert')).textContent).toContain('Los registros cambiaron')
+    expect(dialogo.queryByText('Parque Central')).toBeNull()
+    const segunda = consultas(fetcher.mock.calls, 'plantaciones/registros')[1].searchParams
+    expect([segunda.get('especie'), segunda.get('version_detalle'), segunda.get('pagina')]).toEqual(['sin_desglose', version, '2'])
+    fireEvent.click(dialogo.getByRole('button', { name: 'Actualizar reporte' }))
+    expect(await screen.findByRole('button', { name: 'Ver registros de Tajibo' })).toBeTruthy()
+    expect(screen.queryByRole('dialog')).toBeNull()
   })
 
   it('explica un rechazo de exportación sin descargar el archivo', async () => {

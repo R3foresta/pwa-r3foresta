@@ -1,5 +1,6 @@
 import { useId } from 'react'
 import Icon, { type IconName } from '../../components/Icon'
+import { Button } from '../../components/ui'
 import type { EspeciePlantada, ReportePlantaciones } from './reporte-plantaciones.contract'
 import { formatearCantidad, formatearMes, formatearProporcion, nombreEspecie } from './reporte-plantaciones.presentacion'
 
@@ -108,7 +109,11 @@ function MezclaEspecies({ especies, total, tablaId }: { especies: EspeciePlantad
   </section>
 }
 
-export function TablaEspecies({ especies, tablaId }: { especies: EspeciePlantada[]; tablaId: string }) {
+type AccionRegistros = { verRegistros?: (especie: EspeciePlantada) => void; filtrosPendientes?: boolean }
+
+export function TablaEspecies({ especies, tablaId, verRegistros, filtrosPendientes }: {
+  especies: EspeciePlantada[]; tablaId: string
+} & AccionRegistros) {
   const title = useId()
   return <section id={tablaId} className={panel} aria-labelledby={title}>
     <h2 id={title} className="font-display text-lg font-extrabold text-brand-900">Plantado por especie</h2>
@@ -127,6 +132,9 @@ export function TablaEspecies({ especies, tablaId }: { especies: EspeciePlantada
             <th scope="row" className="px-3 py-3 text-left font-semibold text-brand-900 sm:px-4">
               {nombreEspecie(especie)}
               {especie.nombre_comun && especie.nombre_cientifico && <span className="block text-xs font-normal italic text-neutral-600">{especie.nombre_cientifico}</span>}
+              {verRegistros && especie.version_detalle && <Button variant="ghost" size="sm" className="mt-1 block min-h-11"
+                disabled={filtrosPendientes} aria-haspopup="dialog" aria-label={`Ver registros de ${nombreEspecie(especie)}`}
+                onClick={() => verRegistros(especie)}>Ver registros</Button>}
             </th>
             <td className="px-3 py-3 text-right tabular-nums text-neutral-700">{formatearCantidad(especie.iniciales)}</td>
             <td className="px-3 py-3 text-right tabular-nums text-neutral-700">{formatearCantidad(especie.reposiciones)}</td>
@@ -138,7 +146,7 @@ export function TablaEspecies({ especies, tablaId }: { especies: EspeciePlantada
   </section>
 }
 
-export default function ReportePlantacionesContenido({ reporte }: { reporte: ReportePlantaciones }) {
+export default function ReportePlantacionesContenido({ reporte, verRegistros, filtrosPendientes }: { reporte: ReportePlantaciones } & AccionRegistros) {
   const especies = [...reporte.especies].sort((a, b) => b.total - a.total)
   const tablaId = 'especies-plantadas'
   return <>
@@ -147,6 +155,6 @@ export default function ReportePlantacionesContenido({ reporte }: { reporte: Rep
       <PlantacionMensual meses={reporte.meses} />
       <MezclaEspecies especies={especies} total={reporte.totales.total} tablaId={tablaId} />
     </div>
-    <TablaEspecies especies={especies} tablaId={tablaId} />
+    <TablaEspecies especies={especies} tablaId={tablaId} verRegistros={verRegistros} filtrosPendientes={filtrosPendientes} />
   </>
 }

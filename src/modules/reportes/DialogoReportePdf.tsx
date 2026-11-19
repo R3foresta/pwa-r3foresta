@@ -1,5 +1,5 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
-import { createPortal } from 'react-dom'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import DialogoReporte from './DialogoReporte'
 import { Button } from '../../components/ui'
 import { WebAuthnService } from '../../services/webauthn.service'
 import { ReporteConsultaError, verificarPermisoExportacion } from './reporte-plantaciones.api'
@@ -12,25 +12,11 @@ type Props = {
 }
 
 export default function DialogoReportePdf({ token, onClose, onDownload, children }: Props) {
-  const heading = useId()
-  const dialog = useRef<HTMLDialogElement>(null)
   const pendingExport = useRef<AbortController | null>(null)
   const [descargando, setDescargando] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    const element = dialog.current
-    const focus = document.activeElement instanceof HTMLElement ? document.activeElement : null
-    const { overflow } = document.body.style
-    document.body.style.overflow = 'hidden'
-    element?.showModal()
-    return () => {
-      pendingExport.current?.abort()
-      element?.close()
-      document.body.style.overflow = overflow
-      if (focus?.isConnected) focus.focus()
-    }
-  }, [])
+  useEffect(() => () => pendingExport.current?.abort(), [])
 
   async function descargar() {
     if (!onDownload || pendingExport.current) return
@@ -51,26 +37,14 @@ export default function DialogoReportePdf({ token, onClose, onDownload, children
     }
   }
 
-  return createPortal(<dialog ref={dialog} aria-labelledby={heading} onCancel={(event) => {
-    event.preventDefault()
-    onClose()
-  }} className="m-auto max-h-[90dvh] w-[calc(100%-1rem)] max-w-4xl overflow-hidden rounded-3xl bg-white p-0 text-brand-900 shadow-xl backdrop:bg-brand-950/60">
-    <div className="flex max-h-[90dvh] flex-col">
-      <header className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-brand-100 px-4 py-4 sm:px-6">
-        <h2 id={heading} className="font-display text-xl font-extrabold">Vista previa del PDF</h2>
-        <Button variant="ghost" size="sm" leftIcon="x" onClick={onClose}>Cerrar</Button>
-      </header>
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-brand-50/50 px-4 py-4 sm:px-6" role="region" aria-label="Contenido del reporte" tabIndex={0}>
-        {children}
-      </div>
-      <footer className="shrink-0 border-t border-brand-100 px-4 py-4 sm:px-6">
-        <div className="flex flex-wrap items-center justify-end gap-3">
-          {error && <p role="alert" className="mr-auto text-sm font-medium text-danger-700">{error}</p>}
-          <Button leftIcon="arrow-down" loading={descargando} disabled={!onDownload} onClick={() => void descargar()}>
-            {descargando ? 'Preparando PDF…' : 'Descargar PDF'}
-          </Button>
-        </div>
-      </footer>
+  return <DialogoReporte titulo="Vista previa del PDF" onClose={onClose} pie={
+    <div className="flex flex-wrap items-center justify-end gap-3">
+      {error && <p role="alert" className="mr-auto text-sm font-medium text-danger-700">{error}</p>}
+      <Button leftIcon="arrow-down" loading={descargando} disabled={!onDownload} onClick={() => void descargar()}>
+        {descargando ? 'Preparando PDF…' : 'Descargar PDF'}
+      </Button>
     </div>
-  </dialog>, document.body)
+  }>
+    {children}
+  </DialogoReporte>
 }

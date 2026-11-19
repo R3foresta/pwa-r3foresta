@@ -7,13 +7,14 @@ import { WebAuthnService } from '../../services/webauthn.service'
 import { ParticipacionApiError } from '../participacion/api/participacion.transport'
 import FiltrosImpactoReportes, { type FiltrosTablero } from './FiltrosImpactoReportes'
 import ReportePlantacionesContenido from './ReportePlantacionesContenido'
+import RegistrosPlantadosPorEspecie from './RegistrosPlantadosPorEspecie'
 import ReporteSemillasPanel from './ReporteSemillasPanel'
 import { ReporteMermasPanel, ReporteViveroPanel } from './ReportesViveroContenido'
 import VistaPreviaPlantaciones from './VistaPreviaPlantaciones'
 import VistaPreviaSemillas from './VistaPreviaSemillas'
 import { VistaPreviaInventario, VistaPreviaMermas } from './VistaPreviaVivero'
 import { consultarPlantaciones, ReporteConsultaError } from './reporte-plantaciones.api'
-import { mismosFiltros, type FiltrosReportePlantaciones, type OpcionReporte, type ReportePlantaciones } from './reporte-plantaciones.contract'
+import { mismosFiltros, type EspeciePlantada, type FiltrosReportePlantaciones, type OpcionReporte, type ReportePlantaciones } from './reporte-plantaciones.contract'
 import { filtrosAplicados, formatearCorte, periodoInicial } from './reporte-plantaciones.presentacion'
 import { consultarMovimientosSemillas, consultarSaldoSemillas } from './reporte-semillas.api'
 import type { ReporteMovimientosSemillas, ReporteSaldoSemillas } from './reporte-semillas.contract'
@@ -77,6 +78,7 @@ function TableroReportes({ token }: { token: string }) {
   const [resultado, setResultado] = useState<Resultado | null>(null)
   const [catalogo, setCatalogo] = useState<{ token: string; opciones: ReportePlantaciones['opciones'] } | null>(null)
   const [seleccionPdf, setSeleccionPdf] = useState<VistaPrevia | null>(null)
+  const [detalleEspecie, setDetalleEspecie] = useState<EspeciePlantada | null>(null)
   const [errorFechas, setErrorFechas] = useState<string | null>(null)
 
   if (seleccionPdf && seleccionPdf.token !== token) setSeleccionPdf(null)
@@ -130,6 +132,7 @@ function TableroReportes({ token }: { token: string }) {
 
   function actualizar(patch: Partial<FiltrosTablero>) {
     setSeleccionPdf(null)
+    setDetalleEspecie(null)
     setFiltros(anteriores => ({ ...anteriores, ...patch }))
     if (patch.desde !== undefined || patch.hasta !== undefined) setErrorFechas(null)
   }
@@ -187,7 +190,13 @@ function TableroReportes({ token }: { token: string }) {
           <p className="text-neutral-600">Datos al <time dateTime={reporte.observado_en}>{formatearCorte(reporte.observado_en)}</time> (Bolivia)</p>
         </div>
         {reporte.filtros.organizacion_id && <p className="rounded-xl bg-brand-100 px-4 py-2 text-sm text-brand-800">Plantaciones asociadas. Las campañas compartidas pueden figurar en los reportes de otras empresas.</p>}
-        <ReportePlantacionesContenido reporte={reporte} />
+        <ReportePlantacionesContenido reporte={reporte} verRegistros={setDetalleEspecie} filtrosPendientes={plantacionesPendientes} />
+        {detalleEspecie && reporte.especies.includes(detalleEspecie) && !plantacionesPendientes &&
+          <RegistrosPlantadosPorEspecie reporte={reporte} especie={detalleEspecie} token={token} cerrar={() => setDetalleEspecie(null)}
+            actualizar={() => {
+              setDetalleEspecie(null)
+              setConsulta({ filtros: reporte.filtros })
+            }} />}
       </>}
     </section>
     <ReporteViveroPanel {...vivero} abrirPdf={inventarioActual && !viveroPendiente ? () => setSeleccionPdf({ tipo: 'vivero', reporte: inventarioActual, token }) : undefined} />
