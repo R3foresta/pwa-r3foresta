@@ -31,10 +31,23 @@ export async function consultarSaldoSemillas(filtros: FiltrosVivero, token: stri
   return validarSaldoSemillas(await leer('', parametros(filtros), token, 'el saldo de semillas', signal), filtros)
 }
 
-export async function consultarMovimientosSemillas(filtros: FiltrosMermas, token: string, signal?: AbortSignal) {
+function parametrosMovimientos(filtros: FiltrosMermas): URLSearchParams {
   const query = parametros(filtros)
   query.set('desde', filtros.desde)
   query.set('hasta', filtros.hasta)
   query.set('pagina', String(filtros.pagina))
+  return query
+}
+
+export async function consultarMovimientosSemillas(filtros: FiltrosMermas, token: string, signal?: AbortSignal) {
+  const query = parametrosMovimientos(filtros)
   return validarMovimientosSemillas(await leer('/movimientos', query, token, 'los movimientos de semillas', signal), filtros)
+}
+
+export async function consultarMovimientosSemillasParaExportar(filtros: FiltrosMermas, token: string, signal: AbortSignal) {
+  const consulta = { ...filtros, pagina: 1 }
+  const query = parametrosMovimientos(consulta)
+  query.set('exportar', '1')
+  const data = await leer('/movimientos', query, token, 'el historial completo de semillas', signal)
+  return validarMovimientosSemillas(data, consulta, true)
 }

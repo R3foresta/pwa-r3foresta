@@ -7,12 +7,13 @@ import { periodoInicial } from './reporte-plantaciones.presentacion'
 import type { ReporteMovimientosSemillas, ReporteSaldoSemillas } from './reporte-semillas.contract'
 import type { FiltrosMermas, FiltrosVivero, ReporteMermas, ReporteVivero } from './reporte-vivero.contract'
 
-const { actor, descargar, descargarVivero, descargarMermas } = vi.hoisted(() => ({
-  actor: { rol: 'ADMIN', id: '47' }, descargar: vi.fn(), descargarVivero: vi.fn(), descargarMermas: vi.fn(),
+const { actor, descargar, descargarVivero, descargarMermas, descargarSemillas } = vi.hoisted(() => ({
+  actor: { rol: 'ADMIN', id: '47' }, descargar: vi.fn(), descargarVivero: vi.fn(), descargarMermas: vi.fn(), descargarSemillas: vi.fn(),
 }))
 vi.mock('../../contexts/AuthContext', () => ({ useAuth: () => ({ user: actor }) }))
 vi.mock('./reporte-plantaciones.pdf', () => ({ descargarReportePlantaciones: descargar }))
 vi.mock('./reporte-vivero.pdf', () => ({ descargarReporteVivero: descargarVivero, descargarReporteMermas: descargarMermas }))
+vi.mock('./reporte-semillas.pdf', () => ({ descargarReporteSemillas: descargarSemillas }))
 
 const desde = '2026-01-01'
 const hasta = '2026-11-18'
@@ -86,10 +87,11 @@ function fixtureSaldoSemillas(filtros: FiltrosVivero): ReporteSaldoSemillas {
   }
 }
 
-function fixtureMovimientosSemillas(filtros: FiltrosMermas): ReporteMovimientosSemillas {
+function fixtureMovimientosSemillas(filtros: FiltrosMermas, exportacionCompleta = false): ReporteMovimientosSemillas {
   const cero = { recibido: '0', consumido: '0', descartado: '0' }
+  const corte = exportacionCompleta ? '2026-11-18T17:00:00Z' : observado_en
   if (!coincideSemilla(filtros)) return {
-    observado_en, filtros, opciones: opcionesSemillas, tamano_pagina: 25, detalle: [],
+    observado_en: corte, filtros, opciones: opcionesSemillas, tamano_pagina: 25, detalle: [],
     totales: { G: cero, UNIDAD: cero, eventos: 0, eventos_sin_cantidad: 0 },
   }
   const detalle: ReporteMovimientosSemillas['detalle'] = Array.from({ length: 27 }, (_, index) => ({
@@ -102,8 +104,8 @@ function fixtureMovimientosSemillas(filtros: FiltrosMermas): ReporteMovimientosS
     vivero_destino: index === 1 || index > 2 ? 'Vivero de destino' : null,
   }))
   return {
-    observado_en, filtros, opciones: opcionesSemillas, tamano_pagina: 25,
-    detalle: detalle.slice((filtros.pagina - 1) * 25, filtros.pagina * 25),
+    observado_en: corte, filtros, opciones: opcionesSemillas, tamano_pagina: 25,
+    detalle: exportacionCompleta ? detalle : detalle.slice((filtros.pagina - 1) * 25, filtros.pagina * 25),
     totales: { G: { ...cero, recibido: '25.125001', consumido: '3.125001' }, UNIDAD: { ...cero, consumido: '48' }, eventos: 27, eventos_sin_cantidad: 1 },
   }
 }
@@ -113,7 +115,7 @@ function response(input: RequestInfo | URL, eventos = 2, truncarExportacion = fa
   const ambito = { planta_id: query.get('planta_id'), vivero_id: query.get('vivero_id') }
   const periodo = { desde: query.get('desde') ?? '', hasta: query.get('hasta') ?? '' }
   if (pathname.endsWith('/permiso-exportacion')) return new Response(null, { status: 204 })
-  const data = pathname.endsWith('/semillas/movimientos') ? fixtureMovimientosSemillas({ ...periodo, ...ambito, pagina: Number(query.get('pagina') ?? 1) })
+  const data = pathname.endsWith('/semillas/movimientos') ? fixtureMovimientosSemillas({ ...periodo, ...ambito, pagina: Number(query.get('pagina') ?? 1) }, query.has('exportar') && !truncarExportacion)
     : pathname.endsWith('/semillas') ? fixtureSaldoSemillas(ambito)
     : pathname.endsWith('/vivero') ? fixtureVivero(ambito)
     : pathname.endsWith('/mermas') ? fixtureMermas({ ...periodo, ...ambito, pagina: Number(query.get('pagina') ?? 1) }, eventos, query.has('exportar') && !truncarExportacion)
@@ -121,12 +123,16 @@ function response(input: RequestInfo | URL, eventos = 2, truncarExportacion = fa
   return new Response(JSON.stringify({ success: true, data }), { status: 200 })
 }
 
-function consultas(llamadas: [RequestInfo | URL][], endpoint: string): URL[] {
+function consultas(llamadas: Parameters<typeof fetch>[], endpoint: string): URL[] {
   return llamadas.map(([input]) => new URL(String(input), window.location.href)).filter(url => url.pathname.endsWith(`/reportes/${endpoint}`))
 }
 
+function ReportRoute() {
+  return <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}><ImpactoReportesScreen /></MemoryRouter>
+}
+
 function renderReport() {
-  return render(<MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}><ImpactoReportesScreen /></MemoryRouter>)
+  return render(<ReportRoute />)
 }
 
 beforeEach(() => {
@@ -134,6 +140,7 @@ beforeEach(() => {
   descargar.mockReset()
   descargarVivero.mockReset()
   descargarMermas.mockReset()
+  descargarSemillas.mockReset()
   localStorage.setItem('authToken', 'token-verificado-ilustrativo')
   vi.setSystemTime(new Date('2026-11-18T15:00:00Z'))
 })
@@ -284,11 +291,101 @@ describe('Impacto y reportes de plantaciones', () => {
     const saldo = screen.getByRole('region', { name: 'Saldo actual de semillas' })
     expect(await within(historial).findByRole('alert')).toBeTruthy()
     expect(await within(saldo).findByRole('table')).toBeTruthy()
+    const generar = screen.getByRole<HTMLButtonElement>('button', { name: 'Generar PDF de semillas' })
+    expect(generar.disabled).toBe(true)
 
     fallarMovimientos = false
     fireEvent.click(within(historial).getByRole('button', { name: 'Reintentar movimientos de semillas' }))
     expect(await within(historial).findByRole('table')).toBeTruthy()
     expect(consultas(fetcher.mock.calls, 'semillas')).toHaveLength(1)
+    expect(generar.disabled).toBe(false)
+  })
+
+  it('exporta el saldo visible y todos los movimientos filtrados desde la segunda página', async () => {
+    let truncado = true
+    const fetcher = vi.fn(async (input: RequestInfo | URL) => response(input, 2, truncado))
+    vi.stubGlobal('fetch', fetcher)
+    renderReport()
+    const generar = screen.getByRole<HTMLButtonElement>('button', { name: 'Generar PDF de semillas' })
+    await waitFor(() => expect(generar.disabled).toBe(false))
+    fireEvent.change(screen.getByLabelText('Empresa'), { target: { value: '11' } })
+    expect(generar.disabled).toBe(false)
+    fireEvent.change(screen.getByLabelText('Desde'), { target: { value: '2026-03-01' } })
+    expect(generar.disabled).toBe(true)
+    fireEvent.change(screen.getByLabelText('Especie'), { target: { value: semillas.planta_id } })
+    fireEvent.change(screen.getByLabelText('Vivero'), { target: { value: semillas.vivero_id } })
+    fireEvent.click(screen.getByRole('button', { name: 'Aplicar filtros' }))
+    const historial = screen.getByRole('region', { name: 'Movimientos de semillas' })
+    fireEvent.click(await within(historial).findByRole('button', { name: 'Página siguiente' }))
+    expect(await within(historial).findByText('Página 2 de 2')).toBeTruthy()
+
+    fireEvent.click(generar)
+    const preview = screen.getByRole('dialog', { name: 'Vista previa del PDF' })
+    const boton = within(preview).getByRole<HTMLButtonElement>('button', { name: 'Descargar PDF' })
+    expect((await within(preview).findByRole('alert')).textContent).toContain('incompleto')
+    expect(boton.disabled).toBe(true)
+    expect(descargarSemillas).not.toHaveBeenCalled()
+
+    truncado = false
+    fireEvent.click(within(preview).getByRole('button', { name: 'Reintentar consulta del PDF' }))
+    expect(await within(preview).findByText('Movimientos en el historial completo · 27')).toBeTruthy()
+    expect(within(preview).getByText('Filas de saldo por especie, vivero y unidad · 2')).toBeTruthy()
+    expect(within(preview).getByText('Jacarandá')).toBeTruthy()
+    expect(within(preview).getByText('Vivero de origen')).toBeTruthy()
+    expect(within(preview).getByText('9.007.199.254.740.993,123456')).toBeTruthy()
+    expect(within(preview).getByText('25,125001')).toBeTruthy()
+    expect([...preview.querySelectorAll('time')].map(time => time.dateTime)).toEqual([observado_en, '2026-03-01', hasta, '2026-11-18T17:00:00Z'])
+    expect(within(historial).getByText('Página 2 de 2')).toBeTruthy()
+
+    const exportaciones = consultas(fetcher.mock.calls, 'semillas/movimientos').filter(url => url.searchParams.has('exportar'))
+    expect(exportaciones.map(url => Object.fromEntries(url.searchParams))).toEqual(Array.from({ length: 2 }, () => ({
+      planta_id: semillas.planta_id, vivero_id: semillas.vivero_id, desde: '2026-03-01', hasta, pagina: '1', exportar: '1',
+    })))
+    expect(consultas(fetcher.mock.calls, 'semillas')).toHaveLength(2)
+    expect(consultas(fetcher.mock.calls, 'plantaciones/permiso-exportacion')).toHaveLength(0)
+
+    fireEvent.click(boton)
+    await waitFor(() => expect(descargarSemillas).toHaveBeenCalledOnce())
+    const [saldo, movimientos] = descargarSemillas.mock.calls[0]
+    expect(saldo).toEqual(fixtureSaldoSemillas({ planta_id: semillas.planta_id, vivero_id: semillas.vivero_id }))
+    expect(movimientos).toMatchObject({ observado_en: '2026-11-18T17:00:00Z', filtros: { pagina: 1 } })
+    expect(movimientos.detalle).toHaveLength(27)
+    expect(consultas(fetcher.mock.calls, 'plantaciones/permiso-exportacion')).toHaveLength(1)
+  })
+
+  it.each(['cerrar la vista previa', 'cambiar de sesión', 'cambiar el período'])('cancela la exportación de semillas al %s', async (accion) => {
+    let signal: AbortSignal | null | undefined
+    const fetcher = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = new URL(String(input), window.location.href)
+      if (!url.pathname.endsWith('/semillas/movimientos') || !url.searchParams.has('exportar')) return Promise.resolve(response(input))
+      signal = init?.signal
+      return new Promise<Response>((_resolve, reject) => {
+        signal?.addEventListener('abort', () => reject(new DOMException('Cancelado', 'AbortError')), { once: true })
+      })
+    })
+    vi.stubGlobal('fetch', fetcher)
+    const { rerender } = renderReport()
+    const generar = screen.getByRole<HTMLButtonElement>('button', { name: 'Generar PDF de semillas' })
+    await waitFor(() => expect(generar.disabled).toBe(false))
+    fireEvent.click(generar)
+    const preview = screen.getByRole('dialog', { name: 'Vista previa del PDF' })
+    expect(within(preview).getByText('Consultando el historial completo de semillas…')).toBeTruthy()
+    expect(within(preview).getByRole<HTMLButtonElement>('button', { name: 'Descargar PDF' }).disabled).toBe(true)
+    await waitFor(() => expect(signal?.aborted).toBe(false))
+
+    if (accion === 'cerrar la vista previa') fireEvent.click(within(preview).getByRole('button', { name: 'Cerrar' }))
+    if (accion === 'cambiar el período') fireEvent.change(screen.getByLabelText('Desde'), { target: { value: '2026-03-01' } })
+    if (accion === 'cambiar de sesión') {
+      localStorage.setItem('authToken', 'otro-token')
+      rerender(<ReportRoute />)
+      localStorage.setItem('authToken', 'token-verificado-ilustrativo')
+      rerender(<ReportRoute />)
+      await waitFor(() => expect(generar.disabled).toBe(false))
+      expect(consultas(fetcher.mock.calls, 'semillas/movimientos').filter(url => url.searchParams.has('exportar'))).toHaveLength(1)
+    }
+    expect(signal?.aborted).toBe(true)
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(descargarSemillas).not.toHaveBeenCalled()
   })
 
   it('aplica período, vivero y especie a las consultas que corresponden', async () => {

@@ -89,7 +89,42 @@ function leerTotales(value: unknown, unidad: UnidadSemilla): TotalesMovimientos 
   }
 }
 
-export function validarMovimientosSemillas(value: unknown, consulta: FiltrosMermas): ReporteMovimientosSemillas {
+const subtotalPorTipo = {
+  RECEPCION_CONFORME: 'recibido',
+  CONSUMO_A_VIVERO: 'consumido',
+  DESECHO: 'descartado',
+} as const satisfies Record<TipoMovimientoSemilla, keyof TotalesMovimientos>
+
+function claveMovimiento({ tipo, id }: MovimientoSemilla): string {
+  return `${tipo}:${id}`
+}
+
+export function validarDetalleCompletoSemillas({ totales, detalle }: Pick<ReporteMovimientosSemillas, 'totales' | 'detalle'>): void {
+  if (detalle.length !== totales.eventos || new Set(detalle.map(claveMovimiento)).size !== detalle.length) return fail()
+  const sumas = {
+    G: { recibido: 0n, consumido: 0n, descartado: 0n },
+    UNIDAD: { recibido: 0n, consumido: 0n, descartado: 0n },
+  }
+  let sinCantidad = 0
+  for (const movimiento of detalle) {
+    if (movimiento.cantidad === null) {
+      sinCantidad++
+    } else if (movimiento.unidad !== null) {
+      sumas[movimiento.unidad][subtotalPorTipo[movimiento.tipo]] += unidadesExactas(movimiento.cantidad)
+    } else {
+      return fail()
+    }
+  }
+  if (sinCantidad !== totales.eventos_sin_cantidad) return fail()
+  for (const unidad of ['G', 'UNIDAD'] as const) {
+    const suma = sumas[unidad]
+    if (suma.recibido !== unidadesExactas(totales[unidad].recibido) ||
+        suma.consumido !== unidadesExactas(totales[unidad].consumido) ||
+        suma.descartado !== unidadesExactas(totales[unidad].descartado)) return fail()
+  }
+}
+
+export function validarMovimientosSemillas(value: unknown, consulta: FiltrosMermas, exportacionCompleta = false): ReporteMovimientosSemillas {
   const { data, observado_en, opciones } = leerReporte(value)
   const row = object(data.filtros)
   const filtros = {
@@ -116,10 +151,14 @@ export function validarMovimientosSemillas(value: unknown, consulta: FiltrosMerm
       fecha, recoleccion_id: validarId(event.recoleccion_id), codigo_recoleccion: textoOpcional(event.codigo_recoleccion),
       vivero_destino: textoOpcional(event.vivero_destino), unidad, cantidad: monto,
     }
-  }, event => `${event.tipo}:${event.id}`)
+  }, claveMovimiento)
   const tamano_pagina = data.tamano_pagina
-  if (detalle.length !== Math.min(tamano_pagina, Math.max(0, totales.eventos - (filtros.pagina - 1) * tamano_pagina)) ||
-      totales.eventos_sin_cantidad > totales.eventos ||
-      detalle.filter(event => event.cantidad === null).length > totales.eventos_sin_cantidad) return fail()
+  if (exportacionCompleta) {
+    validarDetalleCompletoSemillas({ totales, detalle })
+  } else {
+    const esperados = Math.min(tamano_pagina, Math.max(0, totales.eventos - (filtros.pagina - 1) * tamano_pagina))
+    if (detalle.length !== esperados || totales.eventos_sin_cantidad > totales.eventos ||
+        detalle.filter(event => event.cantidad === null).length > totales.eventos_sin_cantidad) return fail()
+  }
   return { observado_en, filtros, opciones, totales, detalle, tamano_pagina }
 }

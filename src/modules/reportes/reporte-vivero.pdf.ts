@@ -1,11 +1,10 @@
 import { formatearCantidad, formatearFecha, formatearMes } from './reporte-plantaciones.presentacion'
-import { bottom, colors, contentWidth, crearReportePdf, descargarPdf, linesFor, margin, pageHeight, pageWidth } from './reporte-pdf.layout'
+import { bottom, colors, contentWidth, crearReportePdf, descargarPdf, linesFor, margin, pageWidth, tablaReportePdf } from './reporte-pdf.layout'
 import type { DetalleMerma, ReporteMermas, ReporteVivero } from './reporte-vivero.contract'
 import { filtrosViveroAplicados, nombreCausaMerma } from './reporte-vivero.presentacion'
 
 type PdfLayout = Awaited<ReturnType<typeof crearReportePdf>>
 type Barra = { nombre: string; plantas: number; eventos?: number }
-type Columna = { nombre: string; ancho: number; derecha?: boolean }
 
 function barras(pdf: PdfLayout, titulo: string, datos: Barra[]) {
   if (datos.length === 0) return
@@ -43,64 +42,6 @@ function barras(pdf: PdfLayout, titulo: string, datos: Barra[]) {
   pdf.cursor -= 13
 }
 
-function tabla(pdf: PdfLayout, titulo: string, columnas: Columna[], filas: string[][], vacio: string) {
-  if (filas.length === 0) {
-    pdf.ensureSpace(42)
-    pdf.write(titulo, margin, pdf.cursor, 15, pdf.bold)
-    pdf.cursor -= 20
-    pdf.note(vacio)
-    return
-  }
-  const posiciones = columnas.map(({ ancho, ...columna }, index) => ({
-    ...columna, ancho,
-    x: margin + columnas.slice(0, index).reduce((x, column) => x + column.ancho, 0),
-  }))
-  const altoLinea = 11
-  const relleno = 11
-  const maxLineas = Math.floor((pageHeight - 120 - bottom - relleno) / altoLinea)
-
-  function encabezado() {
-    pdf.write(titulo, margin, pdf.cursor, 15, pdf.bold)
-    pdf.cursor -= 10
-    pdf.page.drawRectangle({ x: margin, y: pdf.cursor - 25, width: contentWidth, height: 25, color: colors.green })
-    for (const { nombre, ancho, x, derecha } of posiciones) {
-      if (derecha) pdf.right(nombre, x + ancho - 7, pdf.cursor - 16, 9, pdf.bold, colors.white)
-      else pdf.write(nombre, x + 7, pdf.cursor - 16, 9, pdf.bold, colors.white)
-    }
-    pdf.cursor -= 25
-  }
-
-  pdf.ensureSpace(78)
-  encabezado()
-
-  for (const [index, fila] of filas.entries()) {
-    const celdas = posiciones.map(({ ancho, derecha }, columna) =>
-      linesFor(fila[columna], derecha ? pdf.bold : pdf.regular, 9, ancho - 14))
-    const cantidadLineas = Math.max(1, ...celdas.map(celda => celda.length))
-
-    for (let offset = 0; offset < cantidadLineas; offset += maxLineas) {
-      const lineasEnPagina = Math.min(maxLineas, cantidadLineas - offset)
-      const alto = relleno + lineasEnPagina * altoLinea
-      if (pdf.cursor - alto < bottom) {
-        pdf.nextPage()
-        encabezado()
-      }
-      if (index % 2 === 0) {
-        pdf.page.drawRectangle({ x: margin, y: pdf.cursor - alto, width: contentWidth, height: alto, color: colors.pale })
-      }
-      posiciones.forEach(({ x, ancho, derecha }, columna) => {
-        celdas[columna].slice(offset, offset + lineasEnPagina).forEach((linea, fila) => {
-          const y = pdf.cursor - 14 - fila * altoLinea
-          if (derecha) pdf.right(linea, x + ancho - 7, y, 9, pdf.bold)
-          else pdf.write(linea, x + 7, y, 9)
-        })
-      })
-      pdf.cursor -= alto
-      pdf.rule(pdf.cursor)
-    }
-  }
-}
-
 function metadata(pdf: PdfLayout, reporte: ReporteVivero | ReporteMermas) {
   for (const { etiqueta, valor } of filtrosViveroAplicados(reporte)) pdf.metadata(etiqueta, valor)
   pdf.fechas(reporte.observado_en)
@@ -120,7 +61,7 @@ export async function generarReporteViveroPdf(
     { label: 'Viveros con saldo', value: reporte.totales.viveros },
   ])
   barras(pdf, 'Saldo por vivero', reporte.por_vivero.map(row => ({ nombre: row.vivero, plantas: row.plantas })))
-  tabla(pdf, 'Inventario por especie y vivero', [
+  tablaReportePdf(pdf, 'Inventario por especie y vivero', [
     { nombre: 'Especie', ancho: 217 },
     { nombre: 'Vivero', ancho: contentWidth - 307 },
     { nombre: 'Plantas', ancho: 90, derecha: true },
@@ -161,7 +102,7 @@ export async function generarReporteMermasPdf(
   if (meses.length > 1) {
     barras(pdf, 'Mermas por mes', meses.map(row => ({ nombre: formatearMes(row.mes), plantas: row.plantas })))
   }
-  tabla(pdf, 'Historial de eventos de merma', [
+  tablaReportePdf(pdf, 'Historial de eventos de merma', [
     { nombre: 'Fecha', ancho: 77 },
     { nombre: 'Lote', ancho: 92 },
     { nombre: 'Especie', ancho: 84 },

@@ -10,11 +10,13 @@ import ReportePlantacionesContenido from './ReportePlantacionesContenido'
 import ReporteSemillasPanel from './ReporteSemillasPanel'
 import { ReporteMermasPanel, ReporteViveroPanel } from './ReportesViveroContenido'
 import VistaPreviaPlantaciones from './VistaPreviaPlantaciones'
+import VistaPreviaSemillas from './VistaPreviaSemillas'
 import { VistaPreviaInventario, VistaPreviaMermas } from './VistaPreviaVivero'
 import { consultarPlantaciones, ReporteConsultaError } from './reporte-plantaciones.api'
 import { mismosFiltros, type FiltrosReportePlantaciones, type OpcionReporte, type ReportePlantaciones } from './reporte-plantaciones.contract'
 import { filtrosAplicados, formatearCorte, periodoInicial } from './reporte-plantaciones.presentacion'
 import { consultarMovimientosSemillas, consultarSaldoSemillas } from './reporte-semillas.api'
+import type { ReporteMovimientosSemillas, ReporteSaldoSemillas } from './reporte-semillas.contract'
 import { consultarMermas, consultarVivero } from './reporte-vivero.api'
 import type { FiltrosVivero, ReporteMermas, ReporteVivero } from './reporte-vivero.contract'
 import { useLecturaVivero } from './useLecturaVivero'
@@ -25,6 +27,7 @@ type VistaPrevia = { token: string } & (
   | { tipo: 'plantaciones'; reporte: ReportePlantaciones }
   | { tipo: 'vivero'; reporte: ReporteVivero }
   | { tipo: 'mermas'; reporte: ReporteMermas }
+  | { tipo: 'semillas'; saldo: ReporteSaldoSemillas; movimientos: ReporteMovimientosSemillas }
 )
 
 const secciones = [
@@ -76,6 +79,8 @@ function TableroReportes({ token }: { token: string }) {
   const [seleccionPdf, setSeleccionPdf] = useState<VistaPrevia | null>(null)
   const [errorFechas, setErrorFechas] = useState<string | null>(null)
 
+  if (seleccionPdf && seleccionPdf.token !== token) setSeleccionPdf(null)
+
   const { desde, hasta } = consulta.filtros
   const filtrosMermas = useMemo(() => ({ desde, hasta, ...filtrosVivero, pagina }), [desde, hasta, filtrosVivero, pagina])
   const filtrosMovimientos = useMemo(() => ({ desde, hasta, ...filtrosVivero, pagina: paginaSemillas }), [desde, hasta, filtrosVivero, paginaSemillas])
@@ -102,8 +107,10 @@ function TableroReportes({ token }: { token: string }) {
   const cambioVivero = filtros.vivero_id !== filtrosVivero.vivero_id
   const inventarioActual = vivero.datos
   const mermasActuales = mermas.datos
+  const saldoSemillasActual = saldoSemillas.datos
+  const movimientosSemillasActuales = movimientosSemillas.datos
   const viveroPendiente = cambioVivero || filtros.planta_id !== filtrosVivero.planta_id
-  const mermasPendientes = viveroPendiente || filtros.desde !== desde || filtros.hasta !== hasta
+  const movimientosPendientes = viveroPendiente || filtros.desde !== desde || filtros.hasta !== hasta
   const vistaPrevia = seleccionPdf?.token === token ? seleccionPdf : null
 
   useEffect(() => {
@@ -137,7 +144,7 @@ function TableroReportes({ token }: { token: string }) {
     const { vivero_id, ...plantaciones } = filtros
     if (plantacionesPendientes || !cambioVivero) setConsulta({ filtros: plantaciones })
     if (viveroPendiente) setFiltrosVivero({ vivero_id, planta_id: filtros.planta_id })
-    if (mermasPendientes) {
+    if (movimientosPendientes) {
       setPagina(1)
       setPaginaSemillas(1)
     }
@@ -184,10 +191,19 @@ function TableroReportes({ token }: { token: string }) {
       </>}
     </section>
     <ReporteViveroPanel {...vivero} abrirPdf={inventarioActual && !viveroPendiente ? () => setSeleccionPdf({ tipo: 'vivero', reporte: inventarioActual, token }) : undefined} />
-    <ReporteMermasPanel {...mermas} cambiarPagina={setPagina} abrirPdf={mermasActuales && !mermasPendientes ? () => setSeleccionPdf({ tipo: 'mermas', reporte: mermasActuales, token }) : undefined} />
-    <ReporteSemillasPanel saldo={saldoSemillas} movimientos={movimientosSemillas} cambiarPagina={setPaginaSemillas} />
+    <ReporteMermasPanel {...mermas} cambiarPagina={setPagina} abrirPdf={mermasActuales && !movimientosPendientes ? () => setSeleccionPdf({ tipo: 'mermas', reporte: mermasActuales, token }) : undefined} />
+    <ReporteSemillasPanel
+      saldo={saldoSemillas}
+      movimientos={movimientosSemillas}
+      cambiarPagina={setPaginaSemillas}
+      abrirPdf={saldoSemillasActual && movimientosSemillasActuales && !movimientosPendientes
+        ? () => setSeleccionPdf({ tipo: 'semillas', saldo: saldoSemillasActual, movimientos: movimientosSemillasActuales, token })
+        : undefined}
+    />
     {vistaPrevia?.tipo === 'plantaciones' && vistaPrevia.reporte === reporte && !plantacionesPendientes && <VistaPreviaPlantaciones reporte={vistaPrevia.reporte} token={token} onClose={cerrarVistaPrevia} />}
     {vistaPrevia?.tipo === 'vivero' && vistaPrevia.reporte === inventarioActual && !viveroPendiente && <VistaPreviaInventario reporte={vistaPrevia.reporte} token={token} onClose={cerrarVistaPrevia} />}
-    {vistaPrevia?.tipo === 'mermas' && vistaPrevia.reporte === mermasActuales && !mermasPendientes && <VistaPreviaMermas origen={vistaPrevia.reporte} token={token} onClose={cerrarVistaPrevia} />}
+    {vistaPrevia?.tipo === 'mermas' && vistaPrevia.reporte === mermasActuales && !movimientosPendientes && <VistaPreviaMermas origen={vistaPrevia.reporte} token={token} onClose={cerrarVistaPrevia} />}
+    {vistaPrevia?.tipo === 'semillas' && vistaPrevia.saldo === saldoSemillasActual && vistaPrevia.movimientos === movimientosSemillasActuales && !movimientosPendientes &&
+      <VistaPreviaSemillas saldo={vistaPrevia.saldo} filtros={vistaPrevia.movimientos.filtros} token={token} onClose={cerrarVistaPrevia} />}
   </main>
 }

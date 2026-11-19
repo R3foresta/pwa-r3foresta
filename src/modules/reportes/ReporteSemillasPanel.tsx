@@ -1,22 +1,11 @@
 import { Button } from '../../components/ui'
 import { formatearCantidad, formatearCorte, formatearFecha } from './reporte-plantaciones.presentacion'
-import type { ReporteMovimientosSemillas, ReporteSaldoSemillas, UnidadSemilla } from './reporte-semillas.contract'
-import { escalaMovimientosSemilla, formatearCantidadSemilla } from './reporte-semillas.presentacion'
+import type { ReporteMovimientosSemillas, ReporteSaldoSemillas } from './reporte-semillas.contract'
+import {
+  cantidadConUnidad, categoriasMovimientoSemilla, escalaMovimientosSemilla, formatearCantidadSemilla,
+  nombresMovimientoSemilla, unidadesSemilla,
+} from './reporte-semillas.presentacion'
 
-const unidades = [
-  { codigo: 'G', nombre: 'Gramos', sufijo: 'g' },
-  { codigo: 'UNIDAD', nombre: 'Unidades', sufijo: 'u.' },
-] as const
-const tiposMovimiento = {
-  RECEPCION_CONFORME: 'Recepción conforme',
-  CONSUMO_A_VIVERO: 'Consumo hacia vivero',
-  DESECHO: 'Descarte',
-}
-const categorias = [
-  { clave: 'recibido', nombre: 'Recibidas' },
-  { clave: 'consumido', nombre: 'Consumidas' },
-  { clave: 'descartado', nombre: 'Descartadas' },
-] as const
 const panel = 'min-w-0 rounded-3xl border border-brand-100 bg-white p-4 shadow-sm sm:p-6'
 const tableFrame = 'overflow-x-auto rounded-2xl border border-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400'
 const tableHeader = 'bg-brand-50 text-brand-800'
@@ -28,10 +17,7 @@ type Props = {
   saldo: Lectura<ReporteSaldoSemillas>
   movimientos: Lectura<ReporteMovimientosSemillas>
   cambiarPagina: (pagina: number) => void
-}
-
-function cantidadConUnidad(cantidad: string, unidad: UnidadSemilla): string {
-  return `${formatearCantidadSemilla(cantidad)} ${unidad === 'G' ? 'g' : 'u.'}`
+  abrirPdf?: () => void
 }
 
 function ErrorSemillas({ error, reintentar, etiqueta }: { error: string; reintentar: () => void; etiqueta: string }) {
@@ -43,6 +29,48 @@ function ErrorSemillas({ error, reintentar, etiqueta }: { error: string; reinten
 
 function CorteSemillas({ observado }: { observado: string }) {
   return <p className="text-sm text-neutral-600">Datos al <time dateTime={observado}>{formatearCorte(observado)}</time> (Bolivia)</p>
+}
+
+export function IndicadoresSaldoSemillas({ totales }: Pick<ReporteSaldoSemillas, 'totales'>) {
+  return <dl aria-label="Saldo de semillas por unidad" className="grid grid-cols-2 gap-3">
+    {unidadesSemilla.map(({ codigo, nombre, sufijo }) => <div key={codigo} className="min-w-0 rounded-2xl border border-brand-100 bg-brand-50 p-3 sm:p-4">
+      <dt className="text-sm font-semibold text-brand-800">{nombre} disponibles</dt>
+      <dd className="mt-1 break-words font-display text-xl font-extrabold tabular-nums text-brand-900 sm:text-2xl">
+        {formatearCantidadSemilla(totales[codigo])} <span className="text-sm">{sufijo}</span>
+      </dd>
+    </div>)}
+  </dl>
+}
+
+export function IndicadoresMovimientosSemillas({
+  totales,
+  encabezado: Encabezado = 'h4',
+}: Pick<ReporteMovimientosSemillas, 'totales'> & { encabezado?: 'h4' | 'h5' }) {
+  return <>
+    <div className="grid gap-3 md:grid-cols-2">
+      {unidadesSemilla.map(({ codigo, nombre }) => {
+        const resumen = totales[codigo]
+        const proporciones = escalaMovimientosSemilla(categoriasMovimientoSemilla.map(({ clave }) => resumen[clave]))
+        return <div key={codigo} className="min-w-0 rounded-2xl border border-brand-100 bg-brand-50 p-3 sm:p-4">
+          <Encabezado className="font-semibold text-brand-900">{nombre}</Encabezado>
+          <dl aria-label={`${nombre} por movimiento`} className="mt-2 grid grid-cols-3 gap-2 text-neutral-700">
+            {categoriasMovimientoSemilla.map(({ clave, nombre }, indice) => <div key={clave} className="min-w-0">
+              <dt className="text-sm">{nombre}</dt>
+              <dd className="mt-1 break-words text-base font-bold tabular-nums text-brand-900">
+                {formatearCantidadSemilla(resumen[clave])}
+                <div aria-hidden="true" className="mt-2 h-1.5 rounded-full bg-brand-100">
+                  <div className="h-full rounded-full bg-brand-600" style={{ width: `${proporciones[indice]}%` }} />
+                </div>
+              </dd>
+            </div>)}
+          </dl>
+        </div>
+      })}
+    </div>
+    {totales.eventos_sin_cantidad > 0 && <p role="status" className="rounded-2xl border border-warning-100 bg-warning-50 p-3 text-sm text-warning-800">
+      Movimientos sin cantidad verificable · {formatearCantidad(totales.eventos_sin_cantidad)}. Los totales suman las cantidades disponibles.
+    </p>}
+  </>
 }
 
 function SaldoSemillas({ datos, cargando, error, reintentar }: Lectura<ReporteSaldoSemillas>) {
@@ -58,14 +86,7 @@ function SaldoSemillas({ datos, cargando, error, reintentar }: Lectura<ReporteSa
     {cargando && <p role="status" className="text-sm text-neutral-600">Consultando el saldo de semillas…</p>}
     {error && <ErrorSemillas error={error} reintentar={reintentar} etiqueta="Reintentar saldo de semillas" />}
     {datos && <>
-      <dl aria-label="Saldo de semillas por unidad" className="grid grid-cols-2 gap-3">
-        {unidades.map(({ codigo, nombre, sufijo }) => <div key={codigo} className="min-w-0 rounded-2xl border border-brand-100 bg-brand-50 p-3 sm:p-4">
-          <dt className="text-sm font-semibold text-brand-800">{nombre} disponibles</dt>
-          <dd className="mt-1 break-words font-display text-xl font-extrabold tabular-nums text-brand-900 sm:text-2xl">
-            {formatearCantidadSemilla(datos.totales[codigo])} <span className="text-sm">{sufijo}</span>
-          </dd>
-        </div>)}
-      </dl>
+      <IndicadoresSaldoSemillas totales={datos.totales} />
       {datos.filas.length === 0 ? <p className="text-sm text-neutral-700">No hay semillas con saldo disponible para los filtros aplicados.</p>
         : <div className={tableFrame} role="region" aria-label="Saldo por especie y vivero de custodia" tabIndex={0}>
           <table className="w-full min-w-[20rem] border-collapse text-sm">
@@ -106,7 +127,7 @@ function TablaMovimientos({ datos, cambiarPagina }: { datos: ReporteMovimientosS
         <tbody className="divide-y divide-neutral-100 text-neutral-700">
           {datos.detalle.map(({ id, tipo, fecha, recoleccion_id, codigo_recoleccion, especie, vivero, vivero_destino, unidad, cantidad }) => <tr key={`${tipo}:${id}`}>
             <td className={`${cell} whitespace-nowrap`}><time dateTime={fecha}>{formatearFecha(fecha)}</time></td>
-            <th scope="row" className={`${cell} font-semibold text-brand-900`}>{tiposMovimiento[tipo]}</th>
+            <th scope="row" className={`${cell} font-semibold text-brand-900`}>{nombresMovimientoSemilla[tipo]}</th>
             <td className={`${cell} break-words`}>{codigo_recoleccion ?? `ID ${recoleccion_id}`}</td>
             <td className={`${cell} break-words`}>{especie}</td>
             <td className={`${cell} break-words`}>{vivero ?? 'Sin dato'}</td>
@@ -137,38 +158,19 @@ function MovimientosSemillas({ datos, cargando, error, reintentar, cambiarPagina
     {cargando && <p role="status" className="text-sm text-neutral-600">Consultando movimientos de semillas…</p>}
     {error && <ErrorSemillas error={error} reintentar={reintentar} etiqueta="Reintentar movimientos de semillas" />}
     {datos && <>
-      <div className="grid gap-3 md:grid-cols-2">
-        {unidades.map(({ codigo, nombre }) => {
-          const resumen = datos.totales[codigo]
-          const proporciones = escalaMovimientosSemilla(categorias.map(({ clave }) => resumen[clave]))
-          return <div key={codigo} className="min-w-0 rounded-2xl border border-brand-100 bg-brand-50 p-3 sm:p-4">
-            <h4 className="font-semibold text-brand-900">{nombre}</h4>
-            <dl aria-label={`${nombre} por movimiento`} className="mt-2 grid grid-cols-3 gap-2 text-neutral-700">
-              {categorias.map(({ clave, nombre }, indice) => <div key={clave} className="min-w-0">
-                <dt className="text-sm">{nombre}</dt>
-                <dd className="mt-1 break-words text-base font-bold tabular-nums text-brand-900">
-                  {formatearCantidadSemilla(resumen[clave])}
-                  <div aria-hidden="true" className="mt-2 h-1.5 rounded-full bg-brand-100">
-                    <div className="h-full rounded-full bg-brand-600" style={{ width: `${proporciones[indice]}%` }} />
-                  </div>
-                </dd>
-              </div>)}
-            </dl>
-          </div>
-        })}
-      </div>
-      {datos.totales.eventos_sin_cantidad > 0 && <p role="status" className="rounded-2xl border border-warning-100 bg-warning-50 p-3 text-sm text-warning-800">
-        Movimientos sin cantidad verificable · {formatearCantidad(datos.totales.eventos_sin_cantidad)}. Los totales suman las cantidades disponibles.
-      </p>}
+      <IndicadoresMovimientosSemillas totales={datos.totales} />
       {datos.totales.eventos > 0 ? <TablaMovimientos datos={datos} cambiarPagina={cambiarPagina} />
         : <p className="text-sm text-neutral-700">No hay movimientos de semillas para los filtros aplicados.</p>}
     </>}
   </section>
 }
 
-export default function ReporteSemillasPanel({ saldo, movimientos, cambiarPagina }: Props) {
+export default function ReporteSemillasPanel({ saldo, movimientos, cambiarPagina, abrirPdf }: Props) {
   return <section id="reporte-semillas" tabIndex={-1} aria-labelledby="titulo-reporte-semillas" className="min-w-0 scroll-mt-4 space-y-4">
-    <h2 id="titulo-reporte-semillas" className="font-display text-xl font-extrabold text-brand-900">Semillas</h2>
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <h2 id="titulo-reporte-semillas" className="font-display text-xl font-extrabold text-brand-900">Semillas</h2>
+      <Button variant="secondary" leftIcon="file" className="min-h-11" disabled={!abrirPdf} onClick={abrirPdf}>Generar PDF de semillas</Button>
+    </div>
     <SaldoSemillas {...saldo} />
     <MovimientosSemillas {...movimientos} cambiarPagina={cambiarPagina} />
   </section>

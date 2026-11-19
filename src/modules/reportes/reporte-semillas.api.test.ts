@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { consultarMovimientosSemillas, consultarSaldoSemillas } from './reporte-semillas.api'
+import { consultarMovimientosSemillas, consultarMovimientosSemillasParaExportar, consultarSaldoSemillas } from './reporte-semillas.api'
 import { formatearCantidadSemilla } from './reporte-semillas.presentacion'
 
 const token = 'admin-sintetico'
@@ -32,6 +32,23 @@ const historico = {
     eventos: 2, eventos_sin_cantidad: 1,
   },
   detalle: [evento, { ...evento, tipo: 'DESECHO', vivero_destino: null, cantidad: null }],
+}
+
+const exportacion = {
+  ...historico,
+  totales: {
+    ...historico.totales,
+    G: { ...historico.totales.G, consumido: '9007199254740993.125001' },
+    UNIDAD: { ...historico.totales.UNIDAD, recibido: '48' },
+    eventos: 26,
+  },
+  detalle: [
+    ...Array.from({ length: 24 }, (_, index) => ({
+      ...evento, id: String(index + 1), tipo: 'RECEPCION_CONFORME', unidad: 'UNIDAD', cantidad: '2', vivero_destino: null,
+    })),
+    { ...evento, cantidad: '9007199254740993.125001' },
+    historico.detalle[1],
+  ],
 }
 
 function responder(data: unknown, estado = 200) {
@@ -74,6 +91,32 @@ describe('Lecturas administrativas de semillas', () => {
     await expect(consultarSaldoSemillas(filtros, token)).rejects.toThrow(/incompleto/)
     responder({ ...historico, detalle: [evento] })
     await expect(consultarMovimientosSemillas(periodo, token)).rejects.toThrow(/incompleto/)
+  })
+
+  it('exporta todos los movimientos de los filtros activos desde cualquier página', async () => {
+    const fetcher = responder(exportacion)
+    const { signal } = new AbortController()
+    const resultado = await consultarMovimientosSemillasParaExportar({ ...periodo, pagina: 2 }, token, signal)
+    expect(resultado.detalle).toEqual(exportacion.detalle)
+    expect(fetcher).toHaveBeenCalledWith(
+      expect.stringContaining(`/api/v1/reportes/semillas/movimientos?planta_id=${planta_id}&vivero_id=${vivero_id}&desde=2026-01-01&hasta=2026-01-31&pagina=1&exportar=1`),
+      expect.objectContaining({ cache: 'no-store', headers: { Authorization: `Bearer ${token}` } }),
+    )
+  })
+
+  it('rechaza exportaciones truncadas o con cantidades inconsistentes', async () => {
+    const consulta = () => consultarMovimientosSemillasParaExportar(periodo, token, new AbortController().signal)
+    responder({ ...exportacion, detalle: exportacion.detalle.slice(0, 25) })
+    await expect(consulta()).rejects.toThrow(/incompleto/)
+
+    responder({ ...exportacion, totales: { ...exportacion.totales, eventos_sin_cantidad: 0 } })
+    await expect(consulta()).rejects.toThrow(/incompleto/)
+
+    responder({
+      ...exportacion,
+      totales: { ...exportacion.totales, G: { ...exportacion.totales.G, consumido: '9007199254740993.125002' } },
+    })
+    await expect(consulta()).rejects.toThrow(/incompleto/)
   })
 
   it('distingue una consulta caída de un saldo válido de cero', async () => {

@@ -116,7 +116,7 @@ export async function crearReportePdf(title: string, generadoEn: Date, logo?: Ar
   write(title, margin, pageHeight - 90, 30, bold, colors.white)
   write('Impacto y reportes', margin, pageHeight - 114, 12, regular, colors.white)
 
-  function indicators(indicators: { label: string; value: number }[]) {
+  function indicators(indicators: { label: string; value: number | string }[]) {
     ensureSpace(75)
     const boxGap = 8
     const boxWidth = (contentWidth - boxGap * (indicators.length - 1)) / indicators.length
@@ -126,7 +126,7 @@ export async function crearReportePdf(title: string, generadoEn: Date, logo?: Ar
       const background = index === 0 ? colors.green : colors.pale
       page.drawRectangle({ x, y: cursor - boxHeight, width: boxWidth, height: boxHeight, color: background })
       write(label, x + 11, cursor - 17, 9, bold, index === 0 ? colors.white : colors.muted)
-      const digits = formatearCantidad(value)
+      const digits = typeof value === 'string' ? value : formatearCantidad(value)
       const size = Math.min(23, (boxWidth - 22) / bold.widthOfTextAtSize(digits, 1))
       write(digits, x + 11, cursor - 43, size, bold, index === 0 ? colors.white : colors.text)
     })
@@ -162,6 +162,84 @@ export async function crearReportePdf(title: string, generadoEn: Date, logo?: Ar
     get page() { return page },
     get cursor() { return cursor },
     set cursor(value: number) { cursor = value },
+  }
+}
+
+type PdfLayout = Awaited<ReturnType<typeof crearReportePdf>>
+type Columna = { nombre: string; ancho: number; derecha?: boolean; ajustarTexto?: 'linea' | 'palabra' }
+
+export function tablaReportePdf(pdf: PdfLayout, titulo: string, columnas: Columna[], filas: string[][], vacio: string) {
+  if (filas.length === 0) {
+    pdf.ensureSpace(42)
+    pdf.write(titulo, margin, pdf.cursor, 15, pdf.bold)
+    pdf.cursor -= 20
+    pdf.note(vacio)
+    return
+  }
+  const posiciones = columnas.map(({ ancho, ...columna }, index) => ({
+    ...columna, ancho,
+    x: margin + columnas.slice(0, index).reduce((x, column) => x + column.ancho, 0),
+    encabezado: linesFor(columna.nombre, pdf.bold, 9, ancho - 14),
+  }))
+  const altoLinea = 11
+  const relleno = 11
+  const altoEncabezado = 14 + altoLinea * Math.max(...posiciones.map(columna => columna.encabezado.length))
+  const altoTitulo = 10
+  const maxLineas = Math.floor((pageHeight - 79 - altoTitulo - altoEncabezado - bottom - relleno) / altoLinea)
+
+  function encabezado() {
+    pdf.write(titulo, margin, pdf.cursor, 15, pdf.bold)
+    pdf.cursor -= altoTitulo
+    pdf.page.drawRectangle({ x: margin, y: pdf.cursor - altoEncabezado, width: contentWidth, height: altoEncabezado, color: colors.green })
+    for (const { encabezado: lineas, ancho, x, derecha } of posiciones) {
+      lineas.forEach((linea, index) => {
+        const y = pdf.cursor - 16 - index * altoLinea
+        if (derecha) pdf.right(linea, x + ancho - 7, y, 9, pdf.bold, colors.white)
+        else pdf.write(linea, x + 7, y, 9, pdf.bold, colors.white)
+      })
+    }
+    pdf.cursor -= altoEncabezado
+  }
+
+  for (const [index, fila] of filas.entries()) {
+    const celdas = posiciones.map(({ ancho, derecha, ajustarTexto }, columna) => {
+      const fuente = derecha ? pdf.bold : pdf.regular
+      const valor = fila[columna]
+      const anchoTexto = ancho - 14
+      let tamano = 9
+      if (ajustarTexto) {
+        const partes = ajustarTexto === 'linea' ? [valor] : valor.split(/\s+/)
+        const anchoMaximo = Math.max(...partes.map(parte => fuente.widthOfTextAtSize(printable(parte, fuente), 1)))
+        tamano = Math.max(7, Math.min(9, (anchoTexto - 0.1) / anchoMaximo))
+      }
+      return { tamano, lineas: linesFor(valor, fuente, tamano, anchoTexto) }
+    })
+    const cantidadLineas = Math.max(1, ...celdas.map(celda => celda.lineas.length))
+
+    for (let offset = 0; offset < cantidadLineas; offset += maxLineas) {
+      const lineasEnPagina = Math.min(maxLineas, cantidadLineas - offset)
+      const alto = relleno + lineasEnPagina * altoLinea
+      if (index === 0 && offset === 0) {
+        pdf.ensureSpace(altoTitulo + altoEncabezado + alto)
+        encabezado()
+      } else if (pdf.cursor - alto < bottom) {
+        pdf.nextPage()
+        encabezado()
+      }
+      if (index % 2 === 0) {
+        pdf.page.drawRectangle({ x: margin, y: pdf.cursor - alto, width: contentWidth, height: alto, color: colors.pale })
+      }
+      posiciones.forEach(({ x, ancho, derecha }, columna) => {
+        const { tamano, lineas } = celdas[columna]
+        lineas.slice(offset, offset + lineasEnPagina).forEach((linea, fila) => {
+          const y = pdf.cursor - 14 - fila * altoLinea
+          if (derecha) pdf.right(linea, x + ancho - 7, y, tamano, pdf.bold)
+          else pdf.write(linea, x + 7, y, tamano)
+        })
+      })
+      pdf.cursor -= alto
+      pdf.rule(pdf.cursor)
+    }
   }
 }
 
